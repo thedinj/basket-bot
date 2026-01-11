@@ -1,0 +1,44 @@
+{
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit",
+        "source.organizeImports": "explicit"
+    },
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "files.eol": "\n",
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/.next": true,
+        "**/.turbo": true,
+        "**/coverage": true
+    },
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "typescript.preferences.importModuleSpecifier": "non-relative",
+    "eslint.workingDirectories": [
+        { "directory": "./packages/core", "changeProcessCWD": true },
+        { "directory": "./apps/backend", "changeProcessCWD": true },
+        { "directory": "./apps/mobile", "changeProcessCWD": true }
+    ],
+    "[prisma]": {
+        "editor.defaultFormatter": "Prisma.prisma"
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/.next": true,
+        "**/.turbo": true,
+        "**/coverage": true,
+        "pnpm-lock.yaml": true
+    },
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "terminal.integrated.cwd": "${workspaceFolder}",
+    "git.ignoreLimitWarning": true
+}

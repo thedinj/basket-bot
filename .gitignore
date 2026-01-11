@@ -51,7 +51,6 @@ ios/
 *.ipa
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo

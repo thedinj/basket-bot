@@ -1,0 +1,220 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Install Dependencies",
+            "type": "shell",
+            "command": "pnpm install",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build All",
+            "type": "shell",
+            "command": "pnpm build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": ["$tsc"]
+        },
+        {
+            "label": "Build Core",
+            "type": "shell",
+            "command": "pnpm --filter @basket-bot/core build",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": ["$tsc"]
+        },
+        {
+            "label": "Generate Prisma Client",
+            "type": "shell",
+            "command": "pnpm db:generate",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/backend"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Prisma Migrations",
+            "type": "shell",
+            "command": "pnpm db:migrate",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/backend"
+            },
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Seed Database",
+            "type": "shell",
+            "command": "pnpm db:seed",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/backend"
+            },
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Setup Database (Migrate + Seed)",
+            "dependsOn": ["Generate Prisma Client", "Run Prisma Migrations", "Seed Database"],
+            "dependsOrder": "sequence",
+            "group": "none",
+            "problemMatcher": []
+        },
+        {
+            "label": "Dev: All Apps",
+            "type": "shell",
+            "command": "pnpm dev",
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^.*started server.*$",
+                    "endsPattern": "^.*Ready in.*$"
+                }
+            }
+        },
+        {
+            "label": "Dev: Backend Only",
+            "type": "shell",
+            "command": "pnpm dev",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/backend"
+            },
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "dev"
+            },
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".",
+                    "endsPattern": "(Local:|ready)"
+                }
+            }
+        },
+        {
+            "label": "Dev: Mobile Only",
+            "type": "shell",
+            "command": "pnpm dev",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/mobile"
+            },
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "dev"
+            },
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".",
+                    "endsPattern": "ready in"
+                }
+            }
+        },
+        {
+            "label": "Open Prisma Studio",
+            "type": "shell",
+            "command": "pnpm db:studio",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/backend"
+            },
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Lint: All",
+            "type": "shell",
+            "command": "pnpm lint",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": ["$eslint-stylish"]
+        },
+        {
+            "label": "Type Check: All",
+            "type": "shell",
+            "command": "pnpm type-check",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": ["$tsc"]
+        },
+        {
+            "label": "Clean: All",
+            "type": "shell",
+            "command": "pnpm clean",
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
+    ]
+}
