@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  // url moved to prisma.config.ts for Prisma 7
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  scopes    String   @default("") // comma-separated list
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  households    HouseholdMember[]
+  refreshTokens RefreshToken[]
+}
+
+model Household {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members HouseholdMember[]
+  lists   List[]
+}
+
+model HouseholdMember {
+  id          String   @id @default(uuid())
+  householdId String
+  userId      String
+  role        String // "owner" | "editor" | "viewer"
+  createdAt   DateTime @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, userId])
+}
+
+model List {
+  id          String   @id @default(uuid())
+  householdId String
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  household Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  items     ListItem[]
+}
+
+model ListItem {
+  id        String   @id @default(uuid())
+  listId    String
+  name      String
+  quantity  Int?
+  unit      String?
+  checked   Boolean  @default(false)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  list List @relation(fields: [listId], references: [id], onDelete: Cascade)
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

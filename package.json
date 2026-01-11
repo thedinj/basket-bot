@@ -1,0 +1,30 @@
+{
+  "name": "basket-bot",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Basket Bot - Shopping list system with Next.js backend and Ionic mobile app",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "@turbo/gen": "^2.4.0",
+    "prettier": "^3.4.2",
+    "turbo": "^2.4.0",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.15.1"
+}
