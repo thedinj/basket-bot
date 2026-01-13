@@ -1,14 +1,14 @@
 import {
-    IonContent,
-    IonHeader,
-    IonPage,
-    IonTitle,
-    IonToolbar,
     IonButton,
     IonCard,
     IonCardContent,
     IonCardHeader,
     IonCardTitle,
+    IonContent,
+    IonHeader,
+    IonPage,
+    IonTitle,
+    IonToolbar,
 } from "@ionic/react";
 import "./HomePage.scss";
 

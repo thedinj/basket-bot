@@ -43,7 +43,30 @@ Copilot: prioritize correctness, consistency, and boring maintainable patterns o
 ---
 
 ## Conventions and “source of truth”
+### Schema synchronization (critical)
 
+**When modifying database schema, you MUST update all three layers together:**
+
+1. **SQL migration** (`apps/backend/prisma/migrations/*/migration.sql`)
+2. **Prisma schema** (`apps/backend/prisma/schema.prisma`)
+3. **Zod schemas** (`packages/core/src/schemas/*.ts`)
+
+These three must always stay perfectly in sync. When adding/removing/renaming fields:
+
+-   Update the migration SQL with correct DDL statements
+-   Update the Prisma schema with matching field definitions and relations
+-   Update all relevant Zod schemas (base schemas AND extended/detailed schemas)
+-   Ensure field types match across all three (e.g., `TEXT`/`String`/`z.string()`)
+-   Ensure nullability matches (`NULL`/`?`/`.nullable()`)
+-   Keep naming consistent (camelCase in Prisma/Zod, snake_case if SQL requires it)
+
+**Example: Adding a field to `Store`**
+
+1. SQL: `ALTER TABLE "Store" ADD COLUMN "newField" TEXT NOT NULL;`
+2. Prisma: `newField String` in `model Store`
+3. Zod: `newField: z.string()` in `storeSchema`
+
+Failure to keep these in sync will cause runtime validation errors, type mismatches, and migration failures.
 ### Shared types and validation
 
 -   **All domain entities and API DTOs must have Zod schemas in `packages/core/src/schemas`.**

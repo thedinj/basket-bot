@@ -8,6 +8,8 @@ export type HouseholdRole = z.infer<typeof householdRoleSchema>;
 export const householdSchema = z.object({
     id: z.string().uuid(),
     name: z.string().min(1),
+    createdById: z.string().uuid(),
+    updatedById: z.string().uuid(),
     createdAt: z.date(),
     updatedAt: z.date(),
 });

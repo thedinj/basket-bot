@@ -215,6 +215,72 @@
                 "panel": "shared"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "Mobile: Build & Sync Android",
+            "type": "shell",
+            "command": "pnpm build && pnpm cap:sync",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/mobile"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Mobile: Run on Android",
+            "type": "shell",
+            "command": "pnpm android",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/mobile"
+            },
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Dev: Full Stack Android",
+            "dependsOn": ["Dev: Backend Only", "Dev: Mobile Only", "Mobile: Run on Android"],
+            "dependsOrder": "parallel",
+            "group": "none",
+            "presentation": {
+                "reveal": "always"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Mobile: Build Production APK",
+            "type": "shell",
+            "command": "pnpm android:prod",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/mobile"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Mobile: Open Android Studio",
+            "type": "shell",
+            "command": "pnpm cap:open:android",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/mobile"
+            },
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
         }
     ]
 }
