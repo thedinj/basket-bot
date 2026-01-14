@@ -171,7 +171,21 @@
             "problemMatcher": []
         },
         {
-            "label": "Mobile: Run on Android",
+            "label": "Mobile: Run on Android (Dev)",
+            "type": "shell",
+            "command": "pnpm android:dev",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/mobile"
+            },
+            "group": "none",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Mobile: Run on Android (Production)",
             "type": "shell",
             "command": "pnpm android",
             "options": {
@@ -186,7 +200,7 @@
         },
         {
             "label": "Dev: Full Stack Android",
-            "dependsOn": ["Dev: Backend Only", "Dev: Mobile Only", "Mobile: Run on Android"],
+            "dependsOn": ["Dev: Backend Only", "Dev: Mobile Only", "Mobile: Run on Android (Dev)"],
             "dependsOrder": "parallel",
             "group": "none",
             "presentation": {

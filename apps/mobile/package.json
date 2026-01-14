@@ -21,6 +21,7 @@
         "cap:open:ios": "cap open ios",
         "cap:run:android": "cap run android",
         "cap:run:ios": "cap run ios",
+        "android:dev": "cross-env CAP_DEV_SERVER=true pnpm cap:run:android",
         "android": "pnpm build && pnpm cap:sync && pnpm cap:run:android",
         "android:prod": "pnpm build:prod && pnpm cap:sync:prod && pnpm cap:run:android",
         "ios": "pnpm build && pnpm cap:sync && pnpm cap:run:ios",
