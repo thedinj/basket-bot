@@ -1,45 +1,43 @@
 {
-  "name": "@basket-bot/backend",
-  "version": "0.0.1",
-  "private": true,
-  "description": "Next.js backend with API and admin portal",
-  "scripts": {
-    "dev": "next dev",
-    "build": "prisma generate && next build",
-    "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "clean": "rm -rf .next",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
-  },
-  "dependencies": {
-    "@basket-bot/core": "workspace:*",
-    "@mantine/core": "^7.15.3",
-    "@mantine/form": "^7.15.3",
-    "@mantine/hooks": "^7.15.3",
-    "@prisma/client": "^7.0.0",
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
-    "next": "^15.1.6",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "sass": "^1.83.4",
-    "zod": "^3.24.1"
-  },
-  "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/jsonwebtoken": "^9.0.7",
-    "@types/node": "^22.10.5",
-    "@types/react": "^19.0.6",
-    "@types/react-dom": "^19.0.2",
-    "eslint": "^9.18.0",
-    "eslint-config-next": "^15.1.6",
-    "prisma": "^7.0.0",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
-  }
+    "name": "@basket-bot/backend",
+    "version": "0.0.1",
+    "private": true,
+    "description": "Next.js backend with API and admin portal",
+    "scripts": {
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+        "lint": "next lint",
+        "typecheck": "tsc --noEmit",
+        "db:init": "tsx db/seed.ts",
+        "db:seed": "tsx db/seed.ts",
+        "postinstall": "pnpm rebuild better-sqlite3"
+    },
+    "dependencies": {
+        "@basket-bot/core": "workspace:*",
+        "@mantine/core": "^7.15.3",
+        "@mantine/form": "^7.15.3",
+        "@mantine/hooks": "^7.15.3",
+        "bcryptjs": "^2.4.3",
+        "better-sqlite3": "^11.8.1",
+        "jsonwebtoken": "^9.0.2",
+        "next": "^15.1.6",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "sass": "^1.83.4",
+        "zod": "^3.24.1"
+    },
+    "devDependencies": {
+        "@types/bcryptjs": "^2.4.6",
+        "@types/better-sqlite3": "^7.6.12",
+        "@types/jsonwebtoken": "^9.0.7",
+        "@types/node": "^22.10.5",
+        "@types/react": "^19.0.6",
+        "@types/react-dom": "^19.0.2",
+        "eslint": "^9.18.0",
+        "eslint-config-next": "^15.1.6",
+        "rimraf": "^6.1.2",
+        "tsx": "^4.19.2",
+        "typescript": "^5.7.2"
+    }
 }

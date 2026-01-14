@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { loginRequestSchema, LoginResponse } from "@basket-bot/core";
-import { prisma } from "@/lib/db/prisma";
-import { verifyPassword } from "@/lib/auth/password";
 import { generateAccessToken, generateRefreshToken, getRefreshTokenExpiry } from "@/lib/auth/jwt";
+import { verifyPassword } from "@/lib/auth/password";
+import { db } from "@/lib/db/db";
+import { loginRequestSchema, LoginResponse } from "@basket-bot/core";
+import { randomUUID } from "crypto";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
     try {
@@ -10,7 +11,7 @@ export async function POST(req: NextRequest) {
         const { email, password } = loginRequestSchema.parse(body);
 
         // Find user
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = db.prepare("SELECT * FROM User WHERE email = ?").get(email) as any;
         if (!user) {
             return NextResponse.json(
                 { code: "AUTHENTICATION_FAILED", message: "Invalid credentials" },
@@ -39,13 +40,14 @@ export async function POST(req: NextRequest) {
         const refreshToken = generateRefreshToken();
 
         // Store refresh token
-        await prisma.refreshToken.create({
-            data: {
-                userId: user.id,
-                token: refreshToken,
-                expiresAt: getRefreshTokenExpiry(),
-            },
-        });
+        const tokenId = randomUUID();
+        const expiresAt = getRefreshTokenExpiry();
+        db.prepare(
+            `
+            INSERT INTO RefreshToken (id, userId, token, expiresAt, createdAt)
+            VALUES (?, ?, ?, ?, datetime('now'))
+        `
+        ).run(tokenId, user.id, refreshToken, expiresAt.toISOString());
 
         const response: LoginResponse = {
             accessToken,

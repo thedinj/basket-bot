@@ -10,7 +10,6 @@
         "preview": "vite preview",
         "typecheck": "tsc --noEmit",
         "lint": "eslint . --ext ts,tsx",
-        "clean": "rm -rf www dist",
         "ionic:build": "npm run build",
         "ionic:serve": "npm run dev",
         "cap": "cap",

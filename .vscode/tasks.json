@@ -38,9 +38,9 @@
             "problemMatcher": ["$tsc"]
         },
         {
-            "label": "Generate Prisma Client",
+            "label": "Initialize Database",
             "type": "shell",
-            "command": "pnpm db:generate",
+            "command": "pnpm db:init",
             "options": {
                 "cwd": "${workspaceFolder}/apps/backend"
             },
@@ -49,41 +49,6 @@
                 "reveal": "always",
                 "panel": "shared"
             },
-            "problemMatcher": []
-        },
-        {
-            "label": "Run Prisma Migrations",
-            "type": "shell",
-            "command": "pnpm db:migrate",
-            "options": {
-                "cwd": "${workspaceFolder}/apps/backend"
-            },
-            "group": "none",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Seed Database",
-            "type": "shell",
-            "command": "pnpm db:seed",
-            "options": {
-                "cwd": "${workspaceFolder}/apps/backend"
-            },
-            "group": "none",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Setup Database (Migrate + Seed)",
-            "dependsOn": ["Generate Prisma Client", "Run Prisma Migrations", "Seed Database"],
-            "dependsOrder": "sequence",
-            "group": "none",
             "problemMatcher": []
         },
         {
@@ -170,21 +135,7 @@
             }
         },
         {
-            "label": "Open Prisma Studio",
-            "type": "shell",
-            "command": "pnpm db:studio",
-            "options": {
-                "cwd": "${workspaceFolder}/apps/backend"
-            },
-            "isBackground": true,
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Lint: All",
+            "label": "Dev: All Apps",
             "type": "shell",
             "command": "pnpm lint",
             "group": "test",
@@ -204,17 +155,6 @@
                 "panel": "shared"
             },
             "problemMatcher": ["$tsc"]
-        },
-        {
-            "label": "Clean: All",
-            "type": "shell",
-            "command": "pnpm clean",
-            "group": "none",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            },
-            "problemMatcher": []
         },
         {
             "label": "Mobile: Build & Sync Android",

@@ -27,9 +27,6 @@
         { "directory": "./apps/backend", "changeProcessCWD": true },
         { "directory": "./apps/mobile", "changeProcessCWD": true }
     ],
-    "[prisma]": {
-        "editor.defaultFormatter": "Prisma.prisma"
-    },
     "search.exclude": {
         "**/node_modules": true,
         "**/dist": true,

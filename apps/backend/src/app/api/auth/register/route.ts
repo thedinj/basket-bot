@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createUserRequestSchema } from "@basket-bot/core";
-import { prisma } from "@/lib/db/prisma";
 import { hashPassword } from "@/lib/auth/password";
+import { db } from "@/lib/db/db";
+import { createUserRequestSchema } from "@basket-bot/core";
+import { randomUUID } from "crypto";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
     try {
@@ -9,7 +10,7 @@ export async function POST(req: NextRequest) {
         const { email, name, password } = createUserRequestSchema.parse(body);
 
         // Check if user exists
-        const existingUser = await prisma.user.findUnique({ where: { email } });
+        const existingUser = db.prepare("SELECT * FROM User WHERE email = ?").get(email) as any;
         if (existingUser) {
             return NextResponse.json(
                 { code: "CONFLICT", message: "User with this email already exists" },
@@ -21,20 +22,19 @@ export async function POST(req: NextRequest) {
         const hashedPassword = await hashPassword(password);
 
         // Create user
-        const user = await prisma.user.create({
-            data: {
-                email,
-                name,
-                password: hashedPassword,
-                scopes: "",
-            },
-        });
+        const userId = randomUUID();
+        db.prepare(
+            `
+            INSERT INTO User (id, email, name, password, scopes, createdAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        `
+        ).run(userId, email, name, hashedPassword, "");
 
         return NextResponse.json(
             {
-                id: user.id,
-                email: user.email,
-                name: user.name,
+                id: userId,
+                email,
+                name,
                 scopes: [],
             },
             { status: 201 }

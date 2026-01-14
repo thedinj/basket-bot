@@ -15,7 +15,7 @@ This is a TypeScript monorepo managed with pnpm workspaces and Turbo.
 
 - **Language**: TypeScript (strict mode)
 - **Monorepo**: pnpm workspaces + Turbo
-- **Backend**: Next.js App Router, Prisma, SQLite
+- **Backend**: Next.js App Router, better-sqlite3, SQLite
 - **Mobile**: Ionic, Capacitor
 - **Validation**: Zod
 - **Auth**: JWT (access + refresh tokens)
@@ -57,12 +57,14 @@ Contains domain models, Zod schemas, and shared utilities. No framework dependen
 ### Backend (`apps/backend`)
 
 Next.js application with:
+
 - `/api/*` - JSON REST API (JWT protected)
 - `/admin/*` - Admin portal (Mantine UI, admin scope required)
 
 ### Mobile (`apps/mobile`)
 
 Ionic/Capacitor application:
+
 - Always-online (no offline sync)
 - TanStack Query for server state
 - Secure token storage

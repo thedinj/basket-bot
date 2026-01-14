@@ -36,6 +36,7 @@ pnpm install
 ```
 
 This will install dependencies for:
+
 - Root workspace
 - `packages/core`
 - `apps/backend`
@@ -45,6 +46,7 @@ This will install dependencies for:
 
 #### Backend Configuration
 
+\
 Create environment file for the backend:
 
 ```bash
@@ -94,25 +96,22 @@ VITE_API_URL=http://localhost:3000
 
 ### 4. Initialize the Database
 
-The backend uses Prisma with SQLite. Initialize the database:
+The backend uses better-sqlite3 with SQLite. Initialize the database:
 
 ```bash
 cd apps/backend
 
-# Generate Prisma client
-pnpm db:generate
-
-# Run migrations to create database schema
-pnpm db:migrate
-
-# Seed the database with admin user
-pnpm db:seed
+# Initialize database schema and seed with test data
+pnpm db:init
 ```
 
 This will:
-- Generate the Prisma client
+
 - Create the SQLite database with all tables
-- Create an admin user with credentials from your `.env` file
+- Seed the database with:
+    - Admin user with credentials from your `.env` file
+    - Sample household and store data
+    - Default quantity units
 
 ### 5. Build Shared Packages
 
@@ -141,6 +140,7 @@ pnpm dev
 ```
 
 This will start:
+
 - `packages/core` in watch mode
 - Backend server at `http://localhost:3000`
 - Mobile dev server at `http://localhost:8100`
@@ -155,6 +155,7 @@ pnpm dev
 ```
 
 The backend will be available at:
+
 - API: `http://localhost:3000/api`
 - Admin Portal: `http://localhost:3000/admin`
 - Health Check: `http://localhost:3000/api/health`
@@ -235,31 +236,14 @@ pnpm --filter @basket-bot/mobile build
 
 ## Database Management
 
-### View Database with Prisma Studio
-
-```bash
-cd apps/backend
-pnpm db:studio
-```
-
-This opens a web interface at `http://localhost:5555` to browse and edit your database.
-
-### Create New Migration
-
-After modifying `apps/backend/prisma/schema.prisma`:
-
-```bash
-cd apps/backend
-pnpm db:migrate
-```
-
 ### Reset Database (Development Only)
 
+To reinitialize the database from scratch:
+
 ```bash
 cd apps/backend
-rm -f prisma/dev.db prisma/dev.db-journal
-pnpm db:migrate
-pnpm db:seed
+rm -f dev.db dev.db-journal
+pnpm db:init
 ```
 
 ## Mobile Native Development (iOS/Android)
@@ -321,9 +305,6 @@ pnpm typecheck
 
 # Format all code
 pnpm format
-
-# Clean all build outputs
-pnpm clean
 ```
 
 ### Backend Commands
@@ -341,10 +322,7 @@ pnpm build
 pnpm start
 
 # Database commands
-pnpm db:generate    # Generate Prisma client
-pnpm db:migrate     # Run migrations
-pnpm db:studio      # Open Prisma Studio
-pnpm db:seed        # Seed database
+pnpm db:init        # Initialize database schema and seed with test data
 ```
 
 ### Mobile Commands
@@ -379,15 +357,6 @@ Make sure you've built the core package:
 pnpm --filter @basket-bot/core build
 ```
 
-### Prisma Client Issues
-
-Regenerate the Prisma client:
-
-```bash
-cd apps/backend
-pnpm db:generate
-```
-
 ### Port Already in Use
 
 If port 3000 (backend) or 8100 (mobile) is already in use, you can:
@@ -397,7 +366,7 @@ If port 3000 (backend) or 8100 (mobile) is already in use, you can:
 
 ### Database Locked Error
 
-SQLite database is locked. Close Prisma Studio or any other database connections.
+SQLite database is locked. Close any database connections or terminate processes accessing the database file.
 
 ### TypeScript Errors After Installing Dependencies
 
@@ -414,10 +383,10 @@ pnpm typecheck
 2. **Start Building Features**: Follow the feature development checklist in the copilot instructions.
 
 3. **Explore the Codebase**:
-   - `packages/core/src/schemas/` - Shared Zod schemas
-   - `apps/backend/src/app/api/` - API route handlers
-   - `apps/backend/src/lib/` - Backend utilities and services
-   - `apps/mobile/src/` - Mobile app components and pages
+    - `packages/core/src/schemas/` - Shared Zod schemas
+    - `apps/backend/src/app/api/` - API route handlers
+    - `apps/backend/src/lib/` - Backend utilities and services
+    - `apps/mobile/src/` - Mobile app components and pages
 
 4. **Set Up Deployment**: For Raspberry Pi deployment, see the deployment section below.
 
@@ -444,7 +413,7 @@ pnpm build
 
 # Create deployment archive (from backend directory)
 cd apps/backend
-tar -czf basket-bot-backend.tar.gz .next node_modules package.json prisma
+tar -czf basket-bot-backend.tar.gz .next node_modules package.json db src
 ```
 
 On the Raspberry Pi:
@@ -507,6 +476,7 @@ sudo journalctl -u basket-bot -f
 ## Support
 
 For issues or questions, refer to:
+
 - [README.md](README.md) - Project overview
 - [.github/copilot-instructions.md](.github/copilot-instructions.md) - Detailed coding guidelines
 - Project documentation in `docs/` (if available)
