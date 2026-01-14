@@ -1,0 +1,75 @@
+import { Capacitor } from "@capacitor/core";
+import { Database } from "./types";
+import { SQLiteDatabase } from "./sqlite";
+import { FakeDatabase } from "./fake";
+import { RemoteDatabase } from "./remote";
+
+export type DatabaseType = "sqlite" | "fake" | "remote";
+
+let databaseInstance: Database | null = null;
+
+/**
+ * Get the configured database type from environment variables
+ */
+function getDatabaseType(): DatabaseType {
+    // Default: use SQLite on native platforms, fake on web
+    if (Capacitor.isNativePlatform()) {
+        return "sqlite";
+    }
+
+    return "fake";
+}
+
+/**
+ * Factory function to get the appropriate database implementation
+ * Returns a singleton instance that persists across calls
+ */
+export async function getDatabase(): Promise<Database> {
+    if (databaseInstance) {
+        return databaseInstance;
+    }
+
+    const dbType = getDatabaseType();
+
+    let db: Database;
+    switch (dbType) {
+        case "sqlite":
+            db = new SQLiteDatabase();
+            break;
+        case "fake":
+            db = new FakeDatabase();
+            break;
+        case "remote":
+            db = new RemoteDatabase();
+            break;
+        default:
+            throw new Error(`Unknown database type: ${dbType}`);
+    }
+
+    await db.initialize();
+    databaseInstance = db;
+    return db;
+}
+
+/**
+ * Reset the database singleton (useful for testing or switching implementations)
+ */
+export async function resetDatabaseInstance(): Promise<void> {
+    if (databaseInstance) {
+        await databaseInstance.close();
+        databaseInstance = null;
+    }
+}
+
+// Re-export types for convenience
+export type {
+    Database,
+    CoreDatabase,
+    EntityDatabase,
+    DatabaseEvents,
+    DatabaseChangeListener,
+} from "./types";
+export { BaseDatabase } from "./base";
+export { SQLiteDatabase } from "./sqlite";
+export { FakeDatabase } from "./fake";
+export { RemoteDatabase } from "./remote";

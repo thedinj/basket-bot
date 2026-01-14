@@ -1,0 +1,59 @@
+import {
+    IonContent,
+    IonFab,
+    IonFabButton,
+    IonIcon,
+    IonPage,
+} from "@ionic/react";
+import { add } from "ionicons/icons";
+import { useParams } from "react-router-dom";
+import { AppHeader } from "../components/layout/AppHeader";
+import { FabSpacer } from "../components/shared/FabSpacer";
+import AisleSectionList from "../components/store/AisleSectionList";
+import { useStoreManagement } from "../components/store/StoreManagementContext";
+import { StoreManagementProvider } from "../components/store/StoreManagementProvider";
+import { useStore } from "../db/hooks";
+
+const StoreAislesPageContent: React.FC<{ storeId: string }> = ({ storeId }) => {
+    const { data: store } = useStore(storeId);
+    const { openCreateModal, mode } = useStoreManagement();
+
+    const handleFabClick = () => {
+        if (mode === "aisles") {
+            openCreateModal("aisle");
+        } else {
+            openCreateModal();
+        }
+    };
+
+    return (
+        <IonPage>
+            <AppHeader
+                title={`${store?.name || "Store"} Aisles & Sections`}
+                showBackButton
+                backButtonHref={`/stores/${encodeURIComponent(storeId)}`}
+            />
+            <IonContent fullscreen>
+                <AisleSectionList storeId={storeId} />
+                <FabSpacer />
+                <IonFab slot="fixed" vertical="bottom" horizontal="end">
+                    <IonFabButton onClick={handleFabClick}>
+                        <IonIcon icon={add} />
+                    </IonFabButton>
+                </IonFab>
+            </IonContent>
+        </IonPage>
+    );
+};
+
+const StoreAislesPage: React.FC = () => {
+    const { id } = useParams<{ id: string }>();
+
+    return (
+        <StoreManagementProvider>
+            <StoreAislesPageContent storeId={id} />
+        </StoreManagementProvider>
+    );
+};
+
+export default StoreAislesPage;

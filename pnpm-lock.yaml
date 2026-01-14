@@ -103,12 +103,21 @@ importers:
       '@basket-bot/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@capacitor-community/keep-awake':
+        specifier: ^8.0.0
+        version: 8.0.0(@capacitor/core@6.2.1)
+      '@capacitor-community/sqlite':
+        specifier: ^7.0.3
+        version: 7.0.3(@capacitor/core@6.2.1)
       '@capacitor/android':
         specifier: ^6.2.0
         version: 6.2.1(@capacitor/core@6.2.1)
       '@capacitor/app':
         specifier: ^6.0.2
         version: 6.0.3(@capacitor/core@6.2.1)
+      '@capacitor/camera':
+        specifier: ^8.0.0
+        version: 8.0.0(@capacitor/core@6.2.1)
       '@capacitor/core':
         specifier: ^6.2.0
         version: 6.2.1
@@ -127,6 +136,12 @@ importers:
       '@capacitor/status-bar':
         specifier: ^6.0.2
         version: 6.0.3(@capacitor/core@6.2.1)
+      '@hookform/resolvers':
+        specifier: ^5.2.2
+        version: 5.2.2(react-hook-form@7.71.1(react@19.2.3))
+      '@ionic/core':
+        specifier: ^8.7.17
+        version: 8.7.17
       '@ionic/react':
         specifier: ^8.4.1
         version: 8.7.16(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -136,24 +151,36 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.68.2
         version: 5.90.16(react@19.2.3)
+      capacitor-secure-storage-plugin:
+        specifier: ^0.13.0
+        version: 0.13.0(@capacitor/core@6.2.1)
       history:
         specifier: ^5.3.0
         version: 5.3.0
       ionicons:
         specifier: ^7.4.0
         version: 7.4.0
+      pluralize:
+        specifier: ^8.0.0
+        version: 8.0.0
       react:
         specifier: ^19.0.0
         version: 19.2.3
       react-dom:
         specifier: ^19.0.0
         version: 19.2.3(react@19.2.3)
+      react-hook-form:
+        specifier: ^7.71.1
+        version: 7.71.1(react@19.2.3)
       react-router:
         specifier: ^5.3.4
         version: 5.3.4(react@19.2.3)
       react-router-dom:
         specifier: ^5.3.4
         version: 5.3.4(react@19.2.3)
+      use-debounce:
+        specifier: ^10.1.0
+        version: 10.1.0(react@19.2.3)
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -161,6 +188,12 @@ importers:
       '@capacitor/cli':
         specifier: ^6.2.0
         version: 6.2.1
+      '@types/node':
+        specifier: ^22.19.5
+        version: 22.19.5
+      '@types/pluralize':
+        specifier: ^0.0.33
+        version: 0.0.33
       '@types/react':
         specifier: ^19.0.6
         version: 19.2.8
@@ -301,6 +334,17 @@ packages:
     resolution: {integrity: sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA==}
     engines: {node: '>=6.9.0'}
 
+  '@capacitor-community/keep-awake@8.0.0':
+    resolution: {integrity: sha512-+bNAILA4R8PU+rm6OuKfgW6T4N24oAb2Idut5whfX5JAz09j7UBKFBEmT5C0QFJ7S8NZzp9d/yBsbIhLj+JkAA==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capacitor-community/sqlite@7.0.3':
+    resolution: {integrity: sha512-aKOCM3RglhF9Q2XA7NMyT923tc+dY9ANLzB+FgKy6Q6jxJIHuJ6YRZbFHJKicBjheCOP1k7HpPIdnZ05GpsGVg==}
+    engines: {node: '>=16.0.0'}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
+
   '@capacitor/android@6.2.1':
     resolution: {integrity: sha512-8gd4CIiQO5LAIlPIfd5mCuodBRxMMdZZEdj8qG8m+dQ1sQ2xyemVpzHmRK8qSCHorsBUCg3D62j2cp6bEBAkdw==}
     peerDependencies:
@@ -310,6 +354,11 @@ packages:
     resolution: {integrity: sha512-4gFUCbcVz0N/YYN32OBFerocWXslIv3Nc90gDiRsBkJc0plwK6kIUT6PKa5WtW2kfhteUeCVXQbvArH2fH+0Ug==}
     peerDependencies:
       '@capacitor/core': ^6.0.0
+
+  '@capacitor/camera@8.0.0':
+    resolution: {integrity: sha512-Iu8j2oxoIhY2mLuoEckbL7PFgw1XFm1nqmeWdIkILpcT3H9A+BrSDUDlzWqM/EeaDKo6JnhR59tYHwUhOdXaUg==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
 
   '@capacitor/cli@6.2.1':
     resolution: {integrity: sha512-JKl0FpFge8PgQNInw12kcKieQ4BmOyazQ4JGJOfEpVXlgrX1yPhSZTPjngupzTCiK3I7q7iGG5kjun0fDqgSCA==}
@@ -866,6 +915,11 @@ packages:
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
 
+  '@hookform/resolvers@5.2.2':
+    resolution: {integrity: sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA==}
+    peerDependencies:
+      react-hook-form: ^7.55.0
+
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
     engines: {node: '>=18.18.0'}
@@ -1025,6 +1079,10 @@ packages:
 
   '@ionic/core@8.7.16':
     resolution: {integrity: sha512-+vdv/o2Z/2YfoZJIDBLnoh11eJmOOZqQdfwC0zl2MemAVRSofjGuIQlUTZqiUUNht56Rnk9oo53TvmgjNCtmDA==}
+    engines: {node: '>= 16'}
+
+  '@ionic/core@8.7.17':
+    resolution: {integrity: sha512-gp7PIEJX27NX/FkjiUlpjQUtJiFFE5W1lofRC5CfORQ8p4PrLh9wJO9EJH0YryCr2qZS0k47sYgRQP5FwiXlpg==}
     engines: {node: '>= 16'}
 
   '@ionic/react-router@8.7.16':
@@ -1450,6 +1508,9 @@ packages:
   '@rushstack/eslint-patch@1.15.0':
     resolution: {integrity: sha512-ojSshQPKwVvSMR8yT2L/QtUkV5SXi/IfDiJ4/8d6UbTPjiHVmxZzUAzGD8Tzks1b9+qQkZa0isUOvYObedITaw==}
 
+  '@standard-schema/utils@0.3.0':
+    resolution: {integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==}
+
   '@stencil/core@4.38.0':
     resolution: {integrity: sha512-oC3QFKO0X1yXVvETgc8OLY525MNKhn9vISBrbtKnGoPlokJ6rI8Vk1RK22TevnNrHLI4SExNLbcDnqilKR35JQ==}
     engines: {node: '>=16.0.0', npm: '>=7.10.0'}
@@ -1548,6 +1609,9 @@ packages:
 
   '@types/node@22.19.5':
     resolution: {integrity: sha512-HfF8+mYcHPcPypui3w3mvzuIErlNOh2OAG+BCeBZCEwyiD5ls2SiCwEyT47OELtf7M3nHxBdu0FsmzdKxkN52Q==}
+
+  '@types/pluralize@0.0.33':
+    resolution: {integrity: sha512-JOqsl+ZoCpP4e8TDke9W79FDcSgPAR0l6pixx2JHkhnRjvShyYiAYw2LVsnA7K08Y6DeOnaU6ujmENO4os/cYg==}
 
   '@types/react-dom@19.2.3':
     resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
@@ -1931,6 +1995,9 @@ packages:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
     engines: {node: '>=8'}
 
+  browser-fs-access@0.35.0:
+    resolution: {integrity: sha512-sLoadumpRfsjprP8XzVjpQc0jK8yqHBx0PtUTGYj2fftT+P/t+uyDAQdMgGAPKD011in/O+YYGh7fIs0oG/viw==}
+
   browserslist@4.28.1:
     resolution: {integrity: sha512-ZC5Bd0LgJXgwGqUknZY/vkUQ04r8NXnJZ3yYi4vDmSiZmC/pdSN0NbNRPxZpbtO4uAfDUAFffO8IZoM3Gj8IkA==}
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
@@ -1973,6 +2040,11 @@ packages:
 
   caniuse-lite@1.0.30001764:
     resolution: {integrity: sha512-9JGuzl2M+vPL+pz70gtMF9sHdMFbY9FJaQBi186cHKH3pSzDvzoUJUPV6fqiKIMyXbud9ZLg4F3Yza1vJ1+93g==}
+
+  capacitor-secure-storage-plugin@0.13.0:
+    resolution: {integrity: sha512-+rLC/9Z0LTaRRt6L6HjBwcDh5gqgI3NPmDSwo4hk41XQOy3EBrRo81VleIqFsowsMA3oMT+E59Bl8/HiWk0nhQ==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
 
   chai@5.3.3:
     resolution: {integrity: sha512-4zNhdJD/iOjSH0A05ea+Ke6MU5mmpQcbQsSOkgdaUMJ9zTlDTD/GYlwohmIE2u0gaxHYiVHEn1Fw9mZ/ktJWgw==}
@@ -2070,6 +2142,9 @@ packages:
 
   core-js-pure@3.47.0:
     resolution: {integrity: sha512-BcxeDbzUrRnXGYIVAGFtcGQVNpFcUhVjr6W7F8XktvQW2iJP9e66GP6xdKotCRFlrxBvNIBrhwKteRXqMV86Nw==}
+
+  core-util-is@1.0.3:
+    resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
 
   create-require@1.1.1:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
@@ -2676,6 +2751,9 @@ packages:
     resolution: {integrity: sha512-Hs59xBNfUIunMFgWAbGX5cq6893IbWg4KnrjbYwX3tx0ztorVgTDA6B2sxf8ejHJ4wz8BqGUMYlnzNBer5NvGg==}
     engines: {node: '>= 4'}
 
+  immediate@3.0.6:
+    resolution: {integrity: sha512-XXOFtyqDjNDAQxVfYxuF7g9Il/IbWmmlQg2MYKOH8ExIT1qg6xc4zyS3HaEEATgs1btfzxq15ciUiY7gjSXRGQ==}
+
   immutable@5.1.4:
     resolution: {integrity: sha512-p6u1bG3YSnINT5RQmx/yRZBpenIl30kVxkTLDyHLIMk0gict704Q9n+thfDI7lTRm9vXdDYutVzXhzcThxTnXA==}
 
@@ -2872,6 +2950,9 @@ packages:
   isarray@0.0.1:
     resolution: {integrity: sha512-D2S+3GLxWH+uhrNEcoh/fnmYeP8E8/zHl644d/jdA0g2uyXvy3sb0qxotE+ne0LtccHknQzWwZEzhak7oJ0COQ==}
 
+  isarray@1.0.0:
+    resolution: {integrity: sha512-VLghIWNM6ELQzo7zwmcg0NmTVyWKYjvIeM83yjp0wRDTmUnrM678fQbcKBo6n2CJEF0szoG//ytg+TKla89ALQ==}
+
   isarray@2.0.5:
     resolution: {integrity: sha512-xHjhDr3cNBK0BzdUJSPXZntQUx/mwMS5Rw4A7lPJ90XGAO6ISP/ePDNuo0vhqOZU+UD5JoodwCAAoZQd3FeAKw==}
 
@@ -2885,6 +2966,9 @@ packages:
   iterator.prototype@1.1.5:
     resolution: {integrity: sha512-H0dkQoCa3b2VEeKQBOxFph+JAbcrQdE7KC0UkqwpLmv2EC4P41QXP+rqo9wYodACiG5/WM5s9oDApTU8utwj9g==}
     engines: {node: '>= 0.4'}
+
+  jeep-sqlite@2.8.0:
+    resolution: {integrity: sha512-FWNUP6OAmrUHwiW7H1xH5YUQ8tN2O4l4psT1sLd7DQtHd5PfrA1nvNdeKPNj+wQBtu7elJa8WoUibTytNTaaCg==}
 
   jiti@2.6.1:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
@@ -2935,6 +3019,9 @@ packages:
     resolution: {integrity: sha512-ZZow9HBI5O6EPgSJLUb8n2NKgmVWTwCvHGwFuJlMjvLFqlGG6pjirPhtdsseaLZjSibD8eegzmYpUZwoIlj2cQ==}
     engines: {node: '>=4.0'}
 
+  jszip@3.10.1:
+    resolution: {integrity: sha512-xXDvecyTpGLrqFrvkrUSoxxfJI5AH7U8zxxtVclpsUtMCq4JQ290LY8AW5c7Ggnr/Y/oK+bQMbqK2qmtk3pN4g==}
+
   jwa@2.0.1:
     resolution: {integrity: sha512-hRF04fqJIP8Abbkq5NKGN0Bbr3JxlQ+qhZufXVr0DvujKy93ZCbXZMHDL4EOtodSbCWxOqR8MS1tXA5hwqCXDg==}
 
@@ -2966,6 +3053,15 @@ packages:
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
+
+  lie@3.1.1:
+    resolution: {integrity: sha512-RiNhHysUjhrDQntfYSfY4MU24coXXdEOgw9WGcKHNeEwffDYbF//u87M1EWaMGzuFoSbqW0C9C6lEEhDOAswfw==}
+
+  lie@3.3.0:
+    resolution: {integrity: sha512-UaiMJzeWRlEujzAuw5LokY1L5ecNQYZKfmyZ9L7wDHb/p5etKaxXhohBcrw0EYby+G/NA52vRSN4N39dxHAIwQ==}
+
+  localforage@1.10.0:
+    resolution: {integrity: sha512-14/H1aX7hzBBmmh7sGPd+AOMkkIrHM3Z1PAyGgZigA1H1p5O5ANnMyWzvpAETtG68/dC4pC0ncy3+PPGzXZHPg==}
 
   locate-path@6.0.0:
     resolution: {integrity: sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==}
@@ -3282,6 +3378,9 @@ packages:
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
 
+  pako@1.0.11:
+    resolution: {integrity: sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==}
+
   param-case@2.1.1:
     resolution: {integrity: sha512-eQE845L6ot89sk2N8liD8HAuH4ca6Vvr7VWAWwt7+kvvG5aBcPmmphQ68JsEG2qa9n1TykS2DLeMt363AAH8/w==}
 
@@ -3353,6 +3452,10 @@ packages:
     resolution: {integrity: sha512-uysumyrvkUX0rX/dEVqt8gC3sTBzd4zoWfLeS29nb53imdaXVvLINYXTI2GNqzaMuvacNx4uJQ8+b3zXR0pkgQ==}
     engines: {node: '>=10.4.0'}
 
+  pluralize@8.0.0:
+    resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
+    engines: {node: '>=4'}
+
   possible-typed-array-names@1.1.0:
     resolution: {integrity: sha512-/+5VFTchJDoVj3bhoqi6UeymcD00DAwb1nJwamzPvHEszJ4FpF6SNNbUbOS8yI56qHzdV8eK0qEfOSiodkTdxg==}
     engines: {node: '>= 0.4'}
@@ -3378,6 +3481,9 @@ packages:
     resolution: {integrity: sha512-v6UNi1+3hSlVvv8fSaoUbggEM5VErKmmpGA7Pl3HF8V6uKY7rvClBOJlH6yNwQtfTueNkGVpOv/mtWL9L4bgRA==}
     engines: {node: '>=14'}
     hasBin: true
+
+  process-nextick-args@2.0.1:
+    resolution: {integrity: sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==}
 
   prompts@2.4.2:
     resolution: {integrity: sha512-NxNv/kLguCA7p3jE8oL2aEBsrJWgAakBpgmgK6lpPWV+WuOmY6r2/zbAVnP+T8bQlA0nzHXSJSJW0Hq7ylaD2Q==}
@@ -3411,6 +3517,12 @@ packages:
     resolution: {integrity: sha512-yELu4WmLPw5Mr/lmeEpox5rw3RETacE++JgHqQzd2dg+YbJuat3jH4ingc+WPZhxaoFzdv9y33G+F7Nl5O0GBg==}
     peerDependencies:
       react: ^19.2.3
+
+  react-hook-form@7.71.1:
+    resolution: {integrity: sha512-9SUJKCGKo8HUSsCO+y0CtqkqI5nNuaDqTxyqPsZPqIwudpj4rCrAz/jZV+jn57bx5gtZKOh3neQu94DXMc+w5w==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      react: ^16.8.0 || ^17 || ^18 || ^19
 
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
@@ -3474,6 +3586,9 @@ packages:
   react@19.2.3:
     resolution: {integrity: sha512-Ku/hhYbVjOQnXDZFv2+RibmLFGwFdeeKHFcOTlrt7xplBnya5OGn/hIRDsqDiSUcfORsDC7MPxwork8jBwsIWA==}
     engines: {node: '>=0.10.0'}
+
+  readable-stream@2.3.8:
+    resolution: {integrity: sha512-8p0AUk4XODgIewSi0l8Epjs+EVnWiK7NoDIEGU0HhE7+ZyY8D1IMY7odu5lRrFXGg71L15KG8QrPmum45RTtdA==}
 
   readable-stream@3.6.2:
     resolution: {integrity: sha512-9u/sniCrY3D5WdsERHzHE4G2YCXqoG5FTHUiCC4SIbr6XcLZBY05ya9EKjYek9O5xOAwjGq+1JdGBAS7Q9ScoA==}
@@ -3563,6 +3678,9 @@ packages:
     resolution: {integrity: sha512-AURm5f0jYEOydBj7VQlVvDrjeFgthDdEF5H1dP+6mNpoXOMo1quQqJ4wvJDyRZ9+pO3kGWoOdmV08cSv2aJV6Q==}
     engines: {node: '>=0.4'}
 
+  safe-buffer@5.1.2:
+    resolution: {integrity: sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g==}
+
   safe-buffer@5.2.1:
     resolution: {integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==}
 
@@ -3620,6 +3738,9 @@ packages:
   set-proto@1.0.0:
     resolution: {integrity: sha512-RJRdvCo6IAnPdsvP/7m6bsQqNnn1FCBX5ZNtFL98MmFF/4xAIJTIg1YbHW5DC2W5SKZanrC6i4HsJqlajw/dZw==}
     engines: {node: '>= 0.4'}
+
+  setimmediate@1.0.5:
+    resolution: {integrity: sha512-MATJdZp8sLqDl/68LfQmbP8zKPLQNV6BIZoIgrscFDQ+RsvK/BxeDQOgyxKKoh0y/8h3BqVFnCqQ/gd+reiIXA==}
 
   sharp@0.34.5:
     resolution: {integrity: sha512-Ou9I5Ft9WNcCbXrU9cMgPBcCK8LiwLqcbywW3t4oDV37n1pzpuNLsYiAV8eODnjbtQlSDwZ2cUEeQz4E54Hltg==}
@@ -3699,6 +3820,9 @@ packages:
     resolution: {integrity: sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg==}
     engines: {node: '>= 10.x'}
 
+  sql.js@1.13.0:
+    resolution: {integrity: sha512-RJbVP1HRDlUUXahJ7VMTcu9Rm1Nzw+EBpoPr94vnbD4LwR715F3CcxE2G2k45PewcaZ57pjetYa+LoSJLAASgA==}
+
   stable-hash@0.0.5:
     resolution: {integrity: sha512-+L3ccpzibovGXFK+Ap/f8LOS0ahMrHTf3xu7mMLSpEGU0EO9ucaysSylKo9eRDFNhWve/y275iPmIZ4z39a9iA==}
 
@@ -3738,6 +3862,9 @@ packages:
   string.prototype.trimstart@1.0.8:
     resolution: {integrity: sha512-UXSH262CSZY1tfu3G3Secr6uGLCFVPMhIqHjlgCUtCCcgihYc/xKs9djMTMUOb2j1mVSeU8EU6NWc/iQKU6Gfg==}
     engines: {node: '>= 0.4'}
+
+  string_decoder@1.1.1:
+    resolution: {integrity: sha512-n/ShnvDi6FHbbVfviro+WojiFzv+s8MPMHBczVePfUpDJLwoLT0ht1l4YwBCbi8pJAveEEdnkHyPyTP/mzRfwg==}
 
   string_decoder@1.3.0:
     resolution: {integrity: sha512-hkRX8U1WjJFd8LsDJ2yQ/wWWxaopEsABU1XfkM8A+j0+85JAGppt16cr1Whg6KIbb4okU6Mql6BOj+uup/wKeA==}
@@ -4022,6 +4149,12 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  use-debounce@10.1.0:
+    resolution: {integrity: sha512-lu87Za35V3n/MyMoEpD5zJv0k7hCn0p+V/fK2kWD+3k2u3kOCwO593UArbczg1fhfs2rqPEnHpULJ3KmGdDzvg==}
+    engines: {node: '>= 16.0.0'}
+    peerDependencies:
+      react: '*'
 
   use-isomorphic-layout-effect@1.2.1:
     resolution: {integrity: sha512-tpZZ+EX0gaghDAiFR37hj5MgY6ZN55kLiPkJsKxBMZ6GZdOSPJXiOzPM984oPYZ5AnehYx5WQp1+ME8I/P/pRA==}
@@ -4360,11 +4493,24 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
+  '@capacitor-community/keep-awake@8.0.0(@capacitor/core@6.2.1)':
+    dependencies:
+      '@capacitor/core': 6.2.1
+
+  '@capacitor-community/sqlite@7.0.3(@capacitor/core@6.2.1)':
+    dependencies:
+      '@capacitor/core': 6.2.1
+      jeep-sqlite: 2.8.0
+
   '@capacitor/android@6.2.1(@capacitor/core@6.2.1)':
     dependencies:
       '@capacitor/core': 6.2.1
 
   '@capacitor/app@6.0.3(@capacitor/core@6.2.1)':
+    dependencies:
+      '@capacitor/core': 6.2.1
+
+  '@capacitor/camera@8.0.0(@capacitor/core@6.2.1)':
     dependencies:
       '@capacitor/core': 6.2.1
 
@@ -4730,6 +4876,11 @@ snapshots:
 
   '@floating-ui/utils@0.2.10': {}
 
+  '@hookform/resolvers@5.2.2(react-hook-form@7.71.1(react@19.2.3))':
+    dependencies:
+      '@standard-schema/utils': 0.3.0
+      react-hook-form: 7.71.1(react@19.2.3)
+
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.7':
@@ -4847,6 +4998,12 @@ snapshots:
       - supports-color
 
   '@ionic/core@8.7.16':
+    dependencies:
+      '@stencil/core': 4.38.0
+      ionicons: 8.0.13
+      tslib: 2.8.1
+
+  '@ionic/core@8.7.17':
     dependencies:
       '@stencil/core': 4.38.0
       ionicons: 8.0.13
@@ -5231,6 +5388,8 @@ snapshots:
 
   '@rushstack/eslint-patch@1.15.0': {}
 
+  '@standard-schema/utils@0.3.0': {}
+
   '@stencil/core@4.38.0':
     optionalDependencies:
       '@rollup/rollup-darwin-arm64': 4.34.9
@@ -5376,6 +5535,8 @@ snapshots:
   '@types/node@22.19.5':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/pluralize@0.0.33': {}
 
   '@types/react-dom@19.2.3(@types/react@19.2.8)':
     dependencies:
@@ -5787,6 +5948,8 @@ snapshots:
     dependencies:
       fill-range: 7.1.1
 
+  browser-fs-access@0.35.0: {}
+
   browserslist@4.28.1:
     dependencies:
       baseline-browser-mapping: 2.9.14
@@ -5835,6 +5998,10 @@ snapshots:
       upper-case: 1.1.3
 
   caniuse-lite@1.0.30001764: {}
+
+  capacitor-secure-storage-plugin@0.13.0(@capacitor/core@6.2.1):
+    dependencies:
+      '@capacitor/core': 6.2.1
 
   chai@5.3.3:
     dependencies:
@@ -5935,6 +6102,8 @@ snapshots:
   convert-source-map@2.0.0: {}
 
   core-js-pure@3.47.0: {}
+
+  core-util-is@1.0.3: {}
 
   create-require@1.1.1: {}
 
@@ -6790,6 +6959,8 @@ snapshots:
 
   ignore@7.0.5: {}
 
+  immediate@3.0.6: {}
+
   immutable@5.1.4: {}
 
   import-fresh@3.3.1:
@@ -7002,6 +7173,8 @@ snapshots:
 
   isarray@0.0.1: {}
 
+  isarray@1.0.0: {}
+
   isarray@2.0.5: {}
 
   isbinaryfile@4.0.10: {}
@@ -7016,6 +7189,14 @@ snapshots:
       get-proto: 1.0.1
       has-symbols: 1.1.0
       set-function-name: 2.0.2
+
+  jeep-sqlite@2.8.0:
+    dependencies:
+      '@stencil/core': 4.41.1
+      browser-fs-access: 0.35.0
+      jszip: 3.10.1
+      localforage: 1.10.0
+      sql.js: 1.13.0
 
   jiti@2.6.1:
     optional: true
@@ -7070,6 +7251,13 @@ snapshots:
       object.assign: 4.1.7
       object.values: 1.2.1
 
+  jszip@3.10.1:
+    dependencies:
+      lie: 3.3.0
+      pako: 1.0.11
+      readable-stream: 2.3.8
+      setimmediate: 1.0.5
+
   jwa@2.0.1:
     dependencies:
       buffer-equal-constant-time: 1.0.1
@@ -7101,6 +7289,18 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
       type-check: 0.4.0
+
+  lie@3.1.1:
+    dependencies:
+      immediate: 3.0.6
+
+  lie@3.3.0:
+    dependencies:
+      immediate: 3.0.6
+
+  localforage@1.10.0:
+    dependencies:
+      lie: 3.1.1
 
   locate-path@6.0.0:
     dependencies:
@@ -7438,6 +7638,8 @@ snapshots:
 
   package-json-from-dist@1.0.1: {}
 
+  pako@1.0.11: {}
+
   param-case@2.1.1:
     dependencies:
       no-case: 2.3.2
@@ -7499,6 +7701,8 @@ snapshots:
       base64-js: 1.5.1
       xmlbuilder: 15.1.1
 
+  pluralize@8.0.0: {}
+
   possible-typed-array-names@1.1.0: {}
 
   postcss@8.4.31:
@@ -7531,6 +7735,8 @@ snapshots:
   prelude-ls@1.2.1: {}
 
   prettier@3.7.4: {}
+
+  process-nextick-args@2.0.1: {}
 
   prompts@2.4.2:
     dependencies:
@@ -7578,6 +7784,10 @@ snapshots:
     dependencies:
       react: 19.2.3
       scheduler: 0.27.0
+
+  react-hook-form@7.71.1(react@19.2.3):
+    dependencies:
+      react: 19.2.3
 
   react-is@16.13.1: {}
 
@@ -7649,6 +7859,16 @@ snapshots:
       - '@types/react'
 
   react@19.2.3: {}
+
+  readable-stream@2.3.8:
+    dependencies:
+      core-util-is: 1.0.3
+      inherits: 2.0.4
+      isarray: 1.0.0
+      process-nextick-args: 2.0.1
+      safe-buffer: 5.1.2
+      string_decoder: 1.1.1
+      util-deprecate: 1.0.2
 
   readable-stream@3.6.2:
     dependencies:
@@ -7778,6 +7998,8 @@ snapshots:
       has-symbols: 1.1.0
       isarray: 2.0.5
 
+  safe-buffer@5.1.2: {}
+
   safe-buffer@5.2.1: {}
 
   safe-push-apply@1.0.0:
@@ -7839,6 +8061,8 @@ snapshots:
       dunder-proto: 1.0.1
       es-errors: 1.3.0
       es-object-atoms: 1.1.1
+
+  setimmediate@1.0.5: {}
 
   sharp@0.34.5:
     dependencies:
@@ -7953,6 +8177,8 @@ snapshots:
 
   split2@4.2.0: {}
 
+  sql.js@1.13.0: {}
+
   stable-hash@0.0.5: {}
 
   stackback@0.0.2: {}
@@ -8019,6 +8245,10 @@ snapshots:
       call-bind: 1.0.8
       define-properties: 1.2.1
       es-object-atoms: 1.1.1
+
+  string_decoder@1.1.1:
+    dependencies:
+      safe-buffer: 5.1.2
 
   string_decoder@1.3.0:
     dependencies:
@@ -8316,6 +8546,10 @@ snapshots:
       react: 19.2.3
     optionalDependencies:
       '@types/react': 19.2.8
+
+  use-debounce@10.1.0(react@19.2.3):
+    dependencies:
+      react: 19.2.3
 
   use-isomorphic-layout-effect@1.2.1(@types/react@19.2.8)(react@19.2.3):
     dependencies:

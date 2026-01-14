@@ -298,6 +298,22 @@ Token handling:
 - Avoid heavy abstraction; this is a simple app.
 - Use `async/await`.
 - Avoid `any`; use inferred types from Zod schemas.
+- **Follow DRY (Don't Repeat Yourself) principles:**
+    - When you notice repeated logic, types, or UI patterns, create shared infrastructure (utilities, hooks, components, schemas, etc.) in the appropriate shared location.
+    - Prefer extracting reusable code to `packages/core` (for domain logic/schemas) or shared folders in each app (e.g., `src/components/shared/`, `src/lib/`).
+    - If a pattern is repeated in multiple places, refactor to a single source of truth.
+    - Document new shared infrastructure for future contributors.
+
+### Monorepo dependency management
+
+- **Always use `pnpm` for installing dependencies.**
+- To add a dependency to a specific app or package, run:
+    - `pnpm add <package> --filter <workspace-name>`
+        - Example: `pnpm add react-hook-form --filter @basket-bot/mobile`
+    - Or, from the app/package directory: `pnpm add <package>`
+- Never use `npm install` or `yarn add`—this repo is pnpm-only.
+- For dev dependencies, use `pnpm add -D <package> --filter <workspace-name>`.
+- For global workspace tools, use `pnpm add -w <package>`.
 
 ### Zod usage
 
@@ -398,6 +414,8 @@ When implementing a new feature, follow this order and keep changes minimal and 
 - implementing schemas in `packages/core` first,
 - then backend route handler + service/repo,
 - then mobile client call + UI integration.
+
+**Always use pnpm commands for installs, builds, and scripts.**
 
 If something is ambiguous, pick the simplest approach consistent with:
 

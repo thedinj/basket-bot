@@ -1,0 +1,80 @@
+.loading-fallback {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    gap: 1.5rem;
+}
+
+/* Robot Head Container */
+
+.floating-icon {
+    animation: float 3s ease-in-out infinite;
+    display: block;
+    margin: 0 auto;
+}
+
+
+/* Animations */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 4px 12px rgba(107, 70, 193, 0.4);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(107, 70, 193, 0.8);
+    }
+}
+
+@keyframes blink {
+    0%, 90%, 100% {
+        opacity: 1;
+    }
+    95% {
+        opacity: 0.3;
+    }
+}
+
+@keyframes eyeGlow {
+    0%, 100% {
+        box-shadow: 0 0 4px rgba(66, 153, 225, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 12px rgba(66, 153, 225, 1);
+    }
+}
+
+@keyframes spinLeft {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(-360deg);
+    }
+}
+
+@keyframes spinRight {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Loading Text */
+.loading-fallback p {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
