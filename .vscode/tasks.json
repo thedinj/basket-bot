@@ -1,8 +1,11 @@
 {
     "version": "2.0.0",
     "tasks": [
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Setup & Build Tasks (Production)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         {
-            "label": "Install Dependencies",
+            "label": "Setup: Install Dependencies",
             "type": "shell",
             "command": "pnpm install",
             "group": "build",
@@ -13,7 +16,7 @@
             "problemMatcher": []
         },
         {
-            "label": "Build All",
+            "label": "Build: All Packages",
             "type": "shell",
             "command": "pnpm build",
             "group": {
@@ -27,7 +30,7 @@
             "problemMatcher": ["$tsc"]
         },
         {
-            "label": "Build Core",
+            "label": "Build: Core Package Only",
             "type": "shell",
             "command": "pnpm --filter @basket-bot/core build",
             "group": "build",
@@ -38,7 +41,35 @@
             "problemMatcher": ["$tsc"]
         },
         {
-            "label": "Initialize Database",
+            "label": "Build: Mobile for Android",
+            "type": "shell",
+            "command": "pnpm build && pnpm cap:sync",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/mobile"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build: Production APK",
+            "type": "shell",
+            "command": "pnpm android:prod",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/mobile"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Setup: Initialize Database",
             "type": "shell",
             "command": "pnpm db:init",
             "options": {
@@ -51,33 +82,11 @@
             },
             "problemMatcher": []
         },
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Development Tasks (Hot-reload / Live-updating)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         {
-            "label": "Dev: All Apps",
-            "type": "shell",
-            "command": "pnpm dev",
-            "isBackground": true,
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated"
-            },
-            "problemMatcher": {
-                "pattern": {
-                    "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
-                    "file": 1,
-                    "line": 2,
-                    "column": 3,
-                    "severity": 4,
-                    "message": 5
-                },
-                "background": {
-                    "activeOnStart": true,
-                    "beginsPattern": "^.*started server.*$",
-                    "endsPattern": "^.*Ready in.*$"
-                }
-            }
-        },
-        {
-            "label": "Dev: Backend Only",
+            "label": "Dev: Backend (Hot-reload)",
             "type": "shell",
             "command": "pnpm dev",
             "options": {
@@ -106,7 +115,7 @@
             }
         },
         {
-            "label": "Dev: Mobile Only",
+            "label": "Dev: Mobile (Hot-reload)",
             "type": "shell",
             "command": "pnpm dev",
             "options": {
@@ -135,43 +144,46 @@
             }
         },
         {
-            "label": "Dev: All Apps",
+            "label": "Dev: Full Stack (Web Preview, Hot-reload)",
             "type": "shell",
-            "command": "pnpm lint",
-            "group": "test",
+            "command": "pnpm dev",
+            "isBackground": true,
             "presentation": {
                 "reveal": "always",
-                "panel": "shared"
+                "panel": "dedicated"
             },
-            "problemMatcher": ["$eslint-stylish"]
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^.*started server.*$",
+                    "endsPattern": "^.*Ready in.*$"
+                }
+            }
         },
         {
-            "label": "Type Check: All",
-            "type": "shell",
-            "command": "pnpm type-check",
-            "group": "test",
+            "label": "Dev: Full Stack (Native Android, Hot-reload)",
+            "dependsOn": [
+                "Dev: Backend (Hot-reload)",
+                "Dev: Mobile (Hot-reload)",
+                "Dev: Run Android (Debug)"
+            ],
+            "dependsOrder": "parallel",
+            "group": "none",
             "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            },
-            "problemMatcher": ["$tsc"]
-        },
-        {
-            "label": "Mobile: Build & Sync Android",
-            "type": "shell",
-            "command": "pnpm build && pnpm cap:sync",
-            "options": {
-                "cwd": "${workspaceFolder}/apps/mobile"
-            },
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
+                "reveal": "always"
             },
             "problemMatcher": []
         },
         {
-            "label": "Mobile: Run on Android (Dev)",
+            "label": "Dev: Run Android (Debug)",
             "type": "shell",
             "command": "pnpm android:dev",
             "options": {
@@ -184,8 +196,33 @@
             },
             "problemMatcher": []
         },
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Testing & Validation Tasks
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         {
-            "label": "Mobile: Run on Android (Production)",
+            "label": "Test: Lint All",
+            "type": "shell",
+            "command": "pnpm lint",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": ["$eslint-stylish"]
+        },
+        {
+            "label": "Test: Type Check All",
+            "type": "shell",
+            "command": "pnpm type-check",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": ["$tsc"]
+        },
+        {
+            "label": "Test: Run Android (Production Build)",
             "type": "shell",
             "command": "pnpm android",
             "options": {
@@ -198,32 +235,11 @@
             },
             "problemMatcher": []
         },
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Utility Tasks
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         {
-            "label": "Dev: Full Stack Android",
-            "dependsOn": ["Dev: Backend Only", "Dev: Mobile Only", "Mobile: Run on Android (Dev)"],
-            "dependsOrder": "parallel",
-            "group": "none",
-            "presentation": {
-                "reveal": "always"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Mobile: Build Production APK",
-            "type": "shell",
-            "command": "pnpm android:prod",
-            "options": {
-                "cwd": "${workspaceFolder}/apps/mobile"
-            },
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Mobile: Open Android Studio",
+            "label": "Util: Open Android Studio",
             "type": "shell",
             "command": "pnpm cap:open:android",
             "options": {

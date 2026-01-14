@@ -1,8 +1,11 @@
 {
     "version": "0.2.0",
     "configurations": [
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Backend Debugging (Hot-reload)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         {
-            "name": "Debug Backend",
+            "name": "Debug: Backend (Hot-reload)",
             "type": "node",
             "request": "launch",
             "cwd": "${workspaceFolder}/apps/backend",
@@ -14,10 +17,10 @@
             "env": {
                 "NODE_ENV": "development"
             },
-            "preLaunchTask": "Build Core"
+            "preLaunchTask": "Build: Core Package Only"
         },
         {
-            "name": "Debug Backend (Attach)",
+            "name": "Debug: Backend (Attach to Running)",
             "type": "node",
             "request": "attach",
             "port": 9229,
@@ -26,8 +29,11 @@
             "localRoot": "${workspaceFolder}/apps/backend",
             "remoteRoot": "${workspaceFolder}/apps/backend"
         },
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Mobile Debugging (Hot-reload)
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         {
-            "name": "Debug Mobile",
+            "name": "Debug: Mobile Web Preview (Hot-reload)",
             "type": "chrome",
             "request": "launch",
             "url": "http://localhost:8100",
@@ -35,10 +41,18 @@
             "sourceMapPathOverrides": {
                 "webpack:///./src/*": "${webRoot}/src/*"
             },
-            "preLaunchTask": "Dev: Mobile Only"
+            "preLaunchTask": "Dev: Mobile (Hot-reload)"
         },
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Note: For Android debugging, use Chrome DevTools directly:
+        // 1. Run: Dev: Full Stack (Native Android, Hot-reload) task
+        // 2. Open Chrome and navigate to: chrome://inspect
+        // 3. Click "inspect" on your device/emulator
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Testing
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         {
-            "name": "Debug Backend Tests",
+            "name": "Debug: Backend Tests (Watch)",
             "type": "node",
             "request": "launch",
             "cwd": "${workspaceFolder}/apps/backend",
@@ -51,11 +65,14 @@
     ],
     "compounds": [
         {
-            "name": "Debug Full Stack",
-            "configurations": ["Debug Backend", "Debug Mobile"],
+            "name": "Debug: Full Stack (Web Preview, Hot-reload)",
+            "configurations": [
+                "Debug: Backend (Hot-reload)",
+                "Debug: Mobile Web Preview (Hot-reload)"
+            ],
             "presentation": {
                 "hidden": false,
-                "group": "fullstack",
+                "group": "development",
                 "order": 1
             },
             "stopAll": true
