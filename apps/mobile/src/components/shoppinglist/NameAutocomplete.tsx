@@ -1,5 +1,5 @@
 import { IonInput, IonItem, IonLabel, IonList, IonText } from "@ionic/react";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Controller } from "react-hook-form";
 import { useDebounce } from "use-debounce";
 import { useStoreItemAutocomplete } from "../../db/hooks";
@@ -7,15 +7,11 @@ import type { AutocompleteItem } from "./itemEditorSchema";
 import { useItemEditorContext } from "./useItemEditorContext";
 
 export const NameAutocomplete: React.FC = () => {
-    const { control, errors, setValue, storeId, aisles, sections, watch } =
-        useItemEditorContext();
+    const { control, errors, setValue, storeId, aisles, sections, watch } = useItemEditorContext();
 
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
-    const { data: autocompleteResults } = useStoreItemAutocomplete(
-        storeId,
-        debouncedSearchTerm
-    );
+    const { data: autocompleteResults } = useStoreItemAutocomplete(storeId, debouncedSearchTerm);
     const [showAutocomplete, setShowAutocomplete] = useState(false);
 
     // Sync searchTerm with form value (important for editing existing items)
@@ -38,19 +34,19 @@ export const NameAutocomplete: React.FC = () => {
     const handleAutocompleteSelect = useCallback(
         (item: AutocompleteItem) => {
             setValue("name", item.name, { shouldValidate: true });
-            setValue("sectionId", item.section_id, { shouldValidate: true });
+            setValue("sectionId", item.sectionId, { shouldValidate: true });
 
             // If section is present, use section->aisle mapping to ensure consistency
-            // Otherwise, use the store item's aisle_id
-            if (item.section_id && sections) {
-                const section = sections.find((s) => s.id === item.section_id);
+            // Otherwise, use the store item's aisleId
+            if (item.sectionId && sections) {
+                const section = sections.find((s) => s.id === item.sectionId);
                 if (section) {
-                    setValue("aisleId", section.aisle_id, {
+                    setValue("aisleId", section.aisleId, {
                         shouldValidate: true,
                     });
                 }
-            } else if (item.aisle_id) {
-                setValue("aisleId", item.aisle_id, { shouldValidate: true });
+            } else if (item.aisleId) {
+                setValue("aisleId", item.aisleId, { shouldValidate: true });
             }
 
             setSearchTerm(item.name);
@@ -70,12 +66,8 @@ export const NameAutocomplete: React.FC = () => {
                         <IonInput
                             value={searchTerm}
                             placeholder="Enter item name"
-                            onIonInput={(e) =>
-                                handleSearchChange(e.detail.value || "")
-                            }
-                            onIonFocus={() =>
-                                setShowAutocomplete(searchTerm.length >= 2)
-                            }
+                            onIonInput={(e) => handleSearchChange(e.detail.value || "")}
+                            onIonFocus={() => setShowAutocomplete(searchTerm.length >= 2)}
                             autocapitalize="sentences"
                         />
                     </IonItem>
@@ -93,56 +85,45 @@ export const NameAutocomplete: React.FC = () => {
                     )}
 
                     {/* Autocomplete dropdown */}
-                    {showAutocomplete &&
-                        autocompleteResults &&
-                        autocompleteResults.length > 0 && (
-                            <IonList
-                                style={{
-                                    position: "absolute",
-                                    top: "100%",
-                                    left: 0,
-                                    right: 0,
-                                    zIndex: 1000,
-                                    maxHeight: "200px",
-                                    overflow: "auto",
-                                    border: "1px solid var(--ion-color-medium)",
-                                    borderRadius: "4px",
-                                    backgroundColor:
-                                        "var(--ion-background-color)",
-                                }}
-                            >
-                                {autocompleteResults.map((item) => {
-                                    const section = sections?.find(
-                                        (s) => s.id === item.section_id
-                                    );
-                                    const aisle = aisles?.find(
-                                        (a) => a.id === section?.aisle_id
-                                    );
-                                    return (
-                                        <IonItem
-                                            key={item.id}
-                                            button
-                                            onClick={() =>
-                                                handleAutocompleteSelect(item)
-                                            }
-                                        >
-                                            <IonLabel>
-                                                <h3>{item.name}</h3>
-                                                {(aisle || section) && (
-                                                    <p>
-                                                        {aisle?.name}
-                                                        {aisle &&
-                                                            section &&
-                                                            " • "}
-                                                        {section?.name}
-                                                    </p>
-                                                )}
-                                            </IonLabel>
-                                        </IonItem>
-                                    );
-                                })}
-                            </IonList>
-                        )}
+                    {showAutocomplete && autocompleteResults && autocompleteResults.length > 0 && (
+                        <IonList
+                            style={{
+                                position: "absolute",
+                                top: "100%",
+                                left: 0,
+                                right: 0,
+                                zIndex: 1000,
+                                maxHeight: "200px",
+                                overflow: "auto",
+                                border: "1px solid var(--ion-color-medium)",
+                                borderRadius: "4px",
+                                backgroundColor: "var(--ion-background-color)",
+                            }}
+                        >
+                            {autocompleteResults.map((item) => {
+                                const section = sections?.find((s) => s.id === item.sectionId);
+                                const aisle = aisles?.find((a) => a.id === section?.aisleId);
+                                return (
+                                    <IonItem
+                                        key={item.id}
+                                        button
+                                        onClick={() => handleAutocompleteSelect(item)}
+                                    >
+                                        <IonLabel>
+                                            <h3>{item.name}</h3>
+                                            {(aisle || section) && (
+                                                <p>
+                                                    {aisle?.name}
+                                                    {aisle && section && " • "}
+                                                    {section?.name}
+                                                </p>
+                                            )}
+                                        </IonLabel>
+                                    </IonItem>
+                                );
+                            })}
+                        </IonList>
+                    )}
                 </div>
             )}
         />

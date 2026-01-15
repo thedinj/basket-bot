@@ -1,10 +1,9 @@
 import { Capacitor } from "@capacitor/core";
-import { Database } from "./types";
-import { SQLiteDatabase } from "./sqlite";
 import { FakeDatabase } from "./fake";
 import { RemoteDatabase } from "./remote";
+import { Database } from "./types";
 
-export type DatabaseType = "sqlite" | "fake" | "remote";
+export type DatabaseType = "fake" | "remote";
 
 let databaseInstance: Database | null = null;
 
@@ -14,7 +13,7 @@ let databaseInstance: Database | null = null;
 function getDatabaseType(): DatabaseType {
     // Default: use SQLite on native platforms, fake on web
     if (Capacitor.isNativePlatform()) {
-        return "sqlite";
+        return "fake";
     }
 
     return "fake";
@@ -33,9 +32,6 @@ export async function getDatabase(): Promise<Database> {
 
     let db: Database;
     switch (dbType) {
-        case "sqlite":
-            db = new SQLiteDatabase();
-            break;
         case "fake":
             db = new FakeDatabase();
             break;
@@ -62,14 +58,13 @@ export async function resetDatabaseInstance(): Promise<void> {
 }
 
 // Re-export types for convenience
-export type {
-    Database,
-    CoreDatabase,
-    EntityDatabase,
-    DatabaseEvents,
-    DatabaseChangeListener,
-} from "./types";
 export { BaseDatabase } from "./base";
-export { SQLiteDatabase } from "./sqlite";
 export { FakeDatabase } from "./fake";
 export { RemoteDatabase } from "./remote";
+export type {
+    CoreDatabase,
+    Database,
+    DatabaseChangeListener,
+    DatabaseEvents,
+    EntityDatabase,
+} from "./types";

@@ -1,12 +1,6 @@
-import {
-    IonButton,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonReorder,
-} from "@ionic/react";
+import type { StoreSection } from "@basket-bot/core";
+import { IonButton, IonIcon, IonItem, IonLabel, IonReorder } from "@ionic/react";
 import { create } from "ionicons/icons";
-import { StoreSection } from "../../models/Store";
 import { useStoreManagement } from "./StoreManagementContext";
 
 interface SectionItemProps {
@@ -14,10 +8,7 @@ interface SectionItemProps {
     showReorderHandle?: boolean;
 }
 
-export const SectionItem = ({
-    section,
-    showReorderHandle = true,
-}: SectionItemProps) => {
+export const SectionItem = ({ section, showReorderHandle = true }: SectionItemProps) => {
     const { openEditSectionModal } = useStoreManagement();
 
     return (

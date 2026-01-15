@@ -5,12 +5,12 @@ import { ItemGroup } from "./grouping.types";
  */
 interface GroupableItem {
     id: number | string;
-    aisle_id: number | string | null;
-    section_id: number | string | null;
-    aisle_name?: string | null;
-    section_name?: string | null;
-    aisle_sort_order?: number | null;
-    section_sort_order?: number | null;
+    aisleId: number | string | null;
+    sectionId: number | string | null;
+    aisleName?: string | null;
+    sectionName?: string | null;
+    aisleSortOrder?: number | null;
+    sectionSortOrder?: number | null;
 }
 
 /**
@@ -39,16 +39,16 @@ interface AisleSectionGroupConfig {
 }
 
 interface AisleGroupInternal {
-    aisle_id: number | string | null;
-    aisle_name: string;
-    aisle_sort_order: number;
+    aisleId: number | string | null;
+    aisleName: string;
+    aisleSortOrder: number;
     sections: SectionGroupInternal[];
 }
 
 interface SectionGroupInternal {
-    section_id: number | string | null;
-    section_name: string;
-    section_sort_order: number;
+    sectionId: number | string | null;
+    sectionName: string;
+    sectionSortOrder: number;
     items: GroupableItem[];
 }
 
@@ -70,34 +70,30 @@ export function createAisleSectionGroups<T extends GroupableItem>(
     const aisleMap = new Map<number | string | null, AisleGroupInternal>();
 
     for (const item of items) {
-        const aisleId = item.aisle_id;
-        const sectionId = item.section_id;
-        const aisleName = item.aisle_name || "Uncategorized";
-        const sectionName = item.section_name || "Uncategorized";
-        const aisleSortOrder =
-            aisleId === null ? -1 : item.aisle_sort_order ?? 0;
-        const sectionSortOrder =
-            sectionId === null ? -1 : item.section_sort_order ?? 0;
+        const aisleId = item.aisleId;
+        const sectionId = item.sectionId;
+        const aisleName = item.aisleName || "Uncategorized";
+        const sectionName = item.sectionName || "Uncategorized";
+        const aisleSortOrder = aisleId === null ? -1 : (item.aisleSortOrder ?? 0);
+        const sectionSortOrder = sectionId === null ? -1 : (item.sectionSortOrder ?? 0);
 
         let aisleGroup = aisleMap.get(aisleId);
         if (!aisleGroup) {
             aisleGroup = {
-                aisle_id: aisleId,
-                aisle_name: aisleName,
-                aisle_sort_order: aisleSortOrder,
+                aisleId: aisleId,
+                aisleName: aisleName,
+                aisleSortOrder: aisleSortOrder,
                 sections: [],
             };
             aisleMap.set(aisleId, aisleGroup);
         }
 
-        let sectionGroup = aisleGroup.sections.find(
-            (s) => s.section_id === sectionId
-        );
+        let sectionGroup = aisleGroup.sections.find((s) => s.sectionId === sectionId);
         if (!sectionGroup) {
             sectionGroup = {
-                section_id: sectionId,
-                section_name: sectionName,
-                section_sort_order: sectionSortOrder,
+                sectionId: sectionId,
+                sectionName: sectionName,
+                sectionSortOrder: sectionSortOrder,
                 items: [],
             };
             aisleGroup.sections.push(sectionGroup);
@@ -108,20 +104,20 @@ export function createAisleSectionGroups<T extends GroupableItem>(
 
     // Sort aisles and sections
     const sortedAisles = Array.from(aisleMap.values()).sort((a, b) => {
-        const aIsUncategorized = a.aisle_id === null;
-        const bIsUncategorized = b.aisle_id === null;
+        const aIsUncategorized = a.aisleId === null;
+        const bIsUncategorized = b.aisleId === null;
         if (aIsUncategorized && !bIsUncategorized) return -1;
         if (!aIsUncategorized && bIsUncategorized) return 1;
-        return a.aisle_sort_order - b.aisle_sort_order;
+        return a.aisleSortOrder - b.aisleSortOrder;
     });
 
     for (const aisle of sortedAisles) {
         aisle.sections.sort((a, b) => {
-            const aIsUncategorized = a.section_id === null;
-            const bIsUncategorized = b.section_id === null;
+            const aIsUncategorized = a.sectionId === null;
+            const bIsUncategorized = b.sectionId === null;
             if (aIsUncategorized && !bIsUncategorized) return -1;
             if (!aIsUncategorized && bIsUncategorized) return 1;
-            return a.section_sort_order - b.section_sort_order;
+            return a.sectionSortOrder - b.sectionSortOrder;
         });
     }
 
@@ -131,7 +127,7 @@ export function createAisleSectionGroups<T extends GroupableItem>(
 
     for (const aisle of sortedAisles) {
         const aisleGroup: ItemGroup<T> = {
-            id: `aisle-${aisle.aisle_id}`,
+            id: `aisle-${aisle.aisleId}`,
             items: [],
             sortOrder: sortOrderOffset + groupIndex++,
             children: [],
@@ -140,7 +136,7 @@ export function createAisleSectionGroups<T extends GroupableItem>(
         // Add aisle header if configured
         if (showAisleHeaders) {
             aisleGroup.header = {
-                label: aisle.aisle_name,
+                label: aisle.aisleName,
                 color: "light",
                 sticky: true,
                 labelStyle: {
@@ -155,16 +151,16 @@ export function createAisleSectionGroups<T extends GroupableItem>(
         // Create section groups as children
         for (const section of aisle.sections) {
             const sectionGroup: ItemGroup<T> = {
-                id: `section-${section.section_id}`,
+                id: `section-${section.sectionId}`,
                 items: section.items as T[],
-                sortOrder: section.section_sort_order,
+                sortOrder: section.sectionSortOrder,
                 indentLevel: showSectionHeaders ? sectionIndentLevel : 0,
             };
 
             // Add section header if configured and not uncategorized
-            if (showSectionHeaders && section.section_id !== null) {
+            if (showSectionHeaders && section.sectionId !== null) {
                 sectionGroup.header = {
-                    label: section.section_name,
+                    label: section.sectionName,
                     color: "light",
                     labelStyle: {
                         fontSize: "0.85rem",

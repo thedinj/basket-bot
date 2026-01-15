@@ -1,5 +1,5 @@
-import { AppSetting } from "../models/AppSetting";
-import {
+import type {
+    AppSetting,
     QuantityUnit,
     ShoppingListItem,
     ShoppingListItemOptionalId,
@@ -9,16 +9,10 @@ import {
     StoreItem,
     StoreItemWithDetails,
     StoreSection,
-} from "../models/Store";
+} from "@basket-bot/core";
 
 // Re-export types for convenience
-export type {
-    ShoppingListItem,
-    StoreAisle,
-    StoreItem,
-    StoreItemWithDetails,
-    StoreSection,
-};
+export type { ShoppingListItem, StoreAisle, StoreItem, StoreItemWithDetails, StoreSection };
 
 /**
  * Default tables to preserve during database reset
@@ -114,7 +108,7 @@ export interface EntityDatabase {
     insertAisle(storeId: string, name: string): Promise<StoreAisle>;
 
     /**
-     * Get all non-deleted aisles for a store (ordered by sort_order)
+     * Get all non-deleted aisles for a store (ordered by sortOrder)
      */
     getAislesByStore(storeId: string): Promise<StoreAisle[]>;
 
@@ -136,22 +130,16 @@ export interface EntityDatabase {
     /**
      * Update sort order for multiple aisles
      */
-    reorderAisles(
-        updates: Array<{ id: string; sort_order: number }>
-    ): Promise<void>;
+    reorderAisles(updates: Array<{ id: string; sortOrder: number }>): Promise<void>;
 
     // ========== StoreSection Operations ==========
     /**
      * Insert a new section
      */
-    insertSection(
-        storeId: string,
-        name: string,
-        aisleId: string
-    ): Promise<StoreSection>;
+    insertSection(storeId: string, name: string, aisleId: string): Promise<StoreSection>;
 
     /**
-     * Get all non-deleted sections for a store (ordered by sort_order)
+     * Get all non-deleted sections for a store (ordered by sortOrder)
      */
     getSectionsByStore(storeId: string): Promise<StoreSection[]>;
 
@@ -163,11 +151,7 @@ export interface EntityDatabase {
     /**
      * Update a section's name and/or aisle assignment
      */
-    updateSection(
-        id: string,
-        name: string,
-        aisleId: string
-    ): Promise<StoreSection>;
+    updateSection(id: string, name: string, aisleId: string): Promise<StoreSection>;
 
     /**
      * Soft delete a section
@@ -177,9 +161,7 @@ export interface EntityDatabase {
     /**
      * Update sort order for multiple sections
      */
-    reorderSections(
-        updates: Array<{ id: string; sort_order: number }>
-    ): Promise<void>;
+    reorderSections(updates: Array<{ id: string; sortOrder: number }>): Promise<void>;
 
     // ========== StoreItem Operations ==========
     /**
@@ -200,9 +182,7 @@ export interface EntityDatabase {
     /**
      * Get all non-deleted, non-hidden items for a store with location details
      */
-    getItemsByStoreWithDetails(
-        storeId: string
-    ): Promise<StoreItemWithDetails[]>;
+    getItemsByStoreWithDetails(storeId: string): Promise<StoreItemWithDetails[]>;
 
     /**
      * Get a single item by ID
@@ -232,11 +212,7 @@ export interface EntityDatabase {
     /**
      * Search for items by name prefix (for autocomplete)
      */
-    searchStoreItems(
-        storeId: string,
-        searchTerm: string,
-        limit?: number
-    ): Promise<StoreItem[]>;
+    searchStoreItems(storeId: string, searchTerm: string, limit?: number): Promise<StoreItem[]>;
 
     /**
      * Get or create a store item by name
@@ -253,28 +229,21 @@ export interface EntityDatabase {
     // ========== ShoppingList Operations ==========
     /**
      * Get all shopping list items for a store, joined with aisle/section info
-     * Ordered by: is_checked, aisle sort_order, section sort_order, item name
+     * Ordered by: isChecked, aisle sortOrder, section sortOrder, item name
      */
-    getShoppingListItems(
-        storeId: string
-    ): Promise<Array<ShoppingListItemWithDetails>>;
+    getShoppingListItems(storeId: string): Promise<Array<ShoppingListItemWithDetails>>;
 
     /**
      * Insert or update a shopping list item
-     * Auto-creates StoreItem if it doesn't exist (by name_norm)
+     * Auto-creates StoreItem if it doesn't exist (by nameNorm)
      * Updates StoreItem usage tracking
      */
-    upsertShoppingListItem(
-        params: ShoppingListItemOptionalId
-    ): Promise<ShoppingListItem>;
+    upsertShoppingListItem(params: ShoppingListItemOptionalId): Promise<ShoppingListItem>;
 
     /**
      * Toggle the checked status of a shopping list item
      */
-    toggleShoppingListItemChecked(
-        id: string,
-        isChecked: boolean
-    ): Promise<void>;
+    toggleShoppingListItemChecked(id: string, isChecked: boolean): Promise<void>;
 
     /**
      * Delete a shopping list item
@@ -296,7 +265,4 @@ export interface EntityDatabase {
 /**
  * Combined database interface with both core and entity operations
  */
-export interface Database
-    extends CoreDatabase,
-        EntityDatabase,
-        DatabaseEvents {}
+export interface Database extends CoreDatabase, EntityDatabase, DatabaseEvents {}

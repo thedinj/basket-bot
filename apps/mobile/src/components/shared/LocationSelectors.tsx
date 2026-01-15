@@ -1,3 +1,4 @@
+import type { StoreAisle, StoreSection } from "@basket-bot/core";
 import { IonAlert } from "@ionic/react";
 import { useMemo, useState } from "react";
 import {
@@ -13,7 +14,6 @@ import { useStoreAisles, useStoreSections } from "../../db/hooks";
 import { useToast } from "../../hooks/useToast";
 import { useAutoCategorize } from "../../llm/features/useAutoCategorize";
 import { LLMButton } from "../../llm/shared";
-import { StoreAisle, StoreSection } from "../../models/Store";
 import { naturalSort } from "../../utils/stringUtils";
 import { ClickableSelectionField } from "./ClickableSelectionField";
 import type { SelectableItem } from "./ClickableSelectionModal";
@@ -53,17 +53,14 @@ export function LocationSelectors<T extends FieldValues = FieldValues>({
         // Import objectSortFn from utils/stringUtils if not already
         return sections
             ?.filter(
-                (section: StoreSection) =>
-                    !currentAisleId || section.aisle_id === currentAisleId
+                (section: StoreSection) => !currentAisleId || section.aisleId === currentAisleId
             )
             .sort(naturalSort((section: StoreSection) => section.name));
     }, [sections, currentAisleId]);
 
     // Sort aisles alphabetically
     const sortedAisles = useMemo(() => {
-        return aisles
-            ?.slice()
-            .sort(naturalSort((aisle: StoreAisle) => aisle.name));
+        return aisles?.slice().sort(naturalSort((aisle: StoreAisle) => aisle.name));
     }, [aisles]);
 
     // Convert to SelectableItem format
@@ -106,22 +103,14 @@ export function LocationSelectors<T extends FieldValues = FieldValues>({
                     sortedAisles?.map((aisle) => ({
                         id: aisle.id,
                         name: aisle.name,
-                        sections:
-                            sections?.filter((s) => s.aisle_id === aisle.id) ||
-                            [],
+                        sections: sections?.filter((s) => s.aisleId === aisle.id) || [],
                     })) || [],
             });
 
             // Apply categorization
-            setValue(
-                "aisleId" as Path<T>,
-                result.aisleId as PathValue<T, Path<T>>
-            );
+            setValue("aisleId" as Path<T>, result.aisleId as PathValue<T, Path<T>>);
             if (result.sectionId) {
-                setValue(
-                    "sectionId" as Path<T>,
-                    result.sectionId as PathValue<T, Path<T>>
-                );
+                setValue("sectionId" as Path<T>, result.sectionId as PathValue<T, Path<T>>);
             }
 
             showSuccess(
@@ -130,11 +119,7 @@ export function LocationSelectors<T extends FieldValues = FieldValues>({
                 }`
             );
         } catch (error) {
-            showError(
-                error instanceof Error
-                    ? error.message
-                    : "Auto-categorize failed"
-            );
+            showError(error instanceof Error ? error.message : "Auto-categorize failed");
         } finally {
             setIsAutoCategorizing(false);
         }
@@ -189,13 +174,9 @@ export function LocationSelectors<T extends FieldValues = FieldValues>({
                                     // Clear section if aisle changed and section doesn't belong to new aisle
                                     if (currentSectionId) {
                                         const section = sections?.find(
-                                            (s: StoreSection) =>
-                                                s.id === currentSectionId
+                                            (s: StoreSection) => s.id === currentSectionId
                                         );
-                                        if (
-                                            section &&
-                                            section.aisle_id !== aisleId
-                                        ) {
+                                        if (section && section.aisleId !== aisleId) {
                                             setValue(
                                                 "sectionId" as Path<T>,
                                                 null as PathValue<T, Path<T>>
@@ -226,16 +207,12 @@ export function LocationSelectors<T extends FieldValues = FieldValues>({
                                     // If a section is selected, automatically set its aisle
                                     if (sectionId && sections) {
                                         const section = sections.find(
-                                            (s: StoreSection) =>
-                                                s.id === sectionId
+                                            (s: StoreSection) => s.id === sectionId
                                         );
                                         if (section) {
                                             setValue(
                                                 "aisleId" as Path<T>,
-                                                section.aisle_id as PathValue<
-                                                    T,
-                                                    Path<T>
-                                                >
+                                                section.aisleId as PathValue<T, Path<T>>
                                             );
                                         }
                                     }

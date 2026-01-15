@@ -1,35 +1,26 @@
+import type { ShoppingListItemWithDetails } from "@basket-bot/core";
 import { ReactNode, useEffect, useState } from "react";
 import { useDeleteShoppingListItem, useStores } from "../../db/hooks";
 import { useLastShoppingListStore } from "../../hooks/useLastShoppingListStore";
-import { ShoppingListItemWithDetails } from "../../models/Store";
-import {
-    ShoppingListContext,
-    ShoppingListContextValue,
-} from "./ShoppingListContext";
+import { ShoppingListContext, ShoppingListContextValue } from "./ShoppingListContext";
 
 interface ShoppingListProviderProps {
     children: ReactNode;
 }
 
-export const ShoppingListProvider = ({
-    children,
-}: ShoppingListProviderProps) => {
+export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) => {
     const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-    const [editingItem, setEditingItem] =
-        useState<ShoppingListItemWithDetails | null>(null);
+    const [editingItem, setEditingItem] = useState<ShoppingListItemWithDetails | null>(null);
     const [deleteAlert, setDeleteAlert] = useState<{
         id: string;
         name: string;
     } | null>(null);
-    const [newlyImportedItemIds, setNewlyImportedItemIds] = useState<
-        Set<string>
-    >(new Set());
+    const [newlyImportedItemIds, setNewlyImportedItemIds] = useState<Set<string>>(new Set());
 
     const deleteItemMutation = useDeleteShoppingListItem();
     const { data: stores } = useStores();
-    const { lastShoppingListStoreId, saveLastShoppingListStore } =
-        useLastShoppingListStore();
+    const { lastShoppingListStoreId, saveLastShoppingListStore } = useLastShoppingListStore();
 
     // Restore last selected store on mount
     useEffect(() => {
@@ -114,9 +105,5 @@ export const ShoppingListProvider = ({
         markAsNewlyImported,
     };
 
-    return (
-        <ShoppingListContext.Provider value={value}>
-            {children}
-        </ShoppingListContext.Provider>
-    );
+    return <ShoppingListContext.Provider value={value}>{children}</ShoppingListContext.Provider>;
 };

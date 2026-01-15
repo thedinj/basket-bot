@@ -1,3 +1,4 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonAlert,
     IonButton,
@@ -12,18 +13,13 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller } from "react-hook-form";
-import { StoreItemEditorProvider } from "./StoreItemEditorProvider";
-import { ItemNameAndLocationFields } from "../shared/ItemNameAndLocationFields";
-import {
-    storeItemEditorSchema,
-    StoreItemFormData,
-} from "./storeItemEditorSchema";
+import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { useCreateItem, useDeleteItem, useUpdateItem } from "../../db/hooks";
 import { StoreItem } from "../../db/types";
-import { useEffect, useState } from "react";
+import { ItemNameAndLocationFields } from "../shared/ItemNameAndLocationFields";
+import { StoreItemEditorProvider } from "./StoreItemEditorProvider";
+import { storeItemEditorSchema, StoreItemFormData } from "./storeItemEditorSchema";
 
 interface StoreItemEditorModalProps {
     isOpen: boolean;
@@ -66,8 +62,8 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
             if (editingItem) {
                 reset({
                     name: editingItem.name,
-                    aisleId: editingItem.aisle_id,
-                    sectionId: editingItem.section_id,
+                    aisleId: editingItem.aisleId,
+                    sectionId: editingItem.sectionId,
                 });
             } else {
                 reset({
@@ -124,16 +120,13 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
         }
     };
 
-    const isPending =
-        createItem.isPending || updateItem.isPending || deleteItem.isPending;
+    const isPending = createItem.isPending || updateItem.isPending || deleteItem.isPending;
 
     return (
         <IonModal isOpen={isOpen} onDidDismiss={handleClose}>
             <IonHeader>
                 <IonToolbar>
-                    <IonTitle>
-                        {editingItem ? "Edit Item" : "Add Item"}
-                    </IonTitle>
+                    <IonTitle>{editingItem ? "Edit Item" : "Add Item"}</IonTitle>
                     <IonButtons slot="end">
                         <IonButton onClick={handleClose} disabled={isPending}>
                             Cancel
@@ -158,16 +151,12 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
                                     render={({ field }) => (
                                         <>
                                             <IonItem>
-                                                <IonLabel position="stacked">
-                                                    Item Name
-                                                </IonLabel>
+                                                <IonLabel position="stacked">Item Name</IonLabel>
                                                 <IonInput
                                                     value={field.value}
                                                     placeholder="Enter item name"
                                                     onIonInput={(e) =>
-                                                        field.onChange(
-                                                            e.detail.value
-                                                        )
+                                                        field.onChange(e.detail.value)
                                                     }
                                                     disabled={isPending}
                                                 />

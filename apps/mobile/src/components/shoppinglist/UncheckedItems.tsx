@@ -1,4 +1,4 @@
-import { ShoppingListItemWithDetails } from "../../models/Store";
+import type { ShoppingListItemWithDetails } from "@basket-bot/core";
 import { GroupedShoppingList } from "./GroupedShoppingList";
 
 interface UncheckedItemsProps {

@@ -5,12 +5,12 @@
 import { useCallback } from "react";
 import { useSecureApiKey } from "../../hooks/useSecureStorage";
 import { callLLMDirect } from "../shared/directCall";
-import { AUTO_CATEGORIZE_PROMPT } from "./autoCategorizePrompt";
 import {
-    validateAutoCategorizeResult,
     transformAutoCategorizeResult,
+    validateAutoCategorizeResult,
     type AutoCategorizeInput,
 } from "./autoCategorize";
+import { AUTO_CATEGORIZE_PROMPT } from "./autoCategorizePrompt";
 
 export interface UseAutoCategorizeOptions {
     itemName: string;
@@ -49,7 +49,7 @@ export function useAutoCategorize() {
             }
 
             const input: AutoCategorizeInput = {
-                item_name: itemName,
+                itemName: itemName,
                 aisles,
             };
 
@@ -62,7 +62,7 @@ export function useAutoCategorize() {
 
             if (!validateAutoCategorizeResult(response.data)) {
                 throw new Error(
-                    "Invalid response from AI: expected aisle_name, section_name, confidence, and reasoning fields"
+                    "Invalid response from AI: expected aisleName, sectionName, confidence, and reasoning fields"
                 );
             }
 

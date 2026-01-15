@@ -44,9 +44,7 @@ const StoreItemsPage: React.FC = () => {
     const { showSuccess, showError } = useToast();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState<StoreItemWithDetails | null>(
-        null
-    );
+    const [editingItem, setEditingItem] = useState<StoreItemWithDetails | null>(null);
     const [removeFromListAlert, setRemoveFromListAlert] = useState<{
         itemId: string;
         itemName: string;
@@ -55,14 +53,14 @@ const StoreItemsPage: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
 
-    // Create a map of store_item_id -> shopping_list_item for quick lookups
+    // Create a map of storeItemId -> shopping_list_item for quick lookups
     const shoppingListItemMap = useMemo(() => {
         const map = new Map<string, string>();
         if (shoppingListItems) {
             for (const item of shoppingListItems) {
-                // Skip ideas (they have null store_item_id)
-                if (item.store_item_id) {
-                    map.set(item.store_item_id, item.id);
+                // Skip ideas (they have null storeItemId)
+                if (item.storeItemId) {
+                    map.set(item.storeItemId, item.id);
                 }
             }
         }
@@ -76,13 +74,11 @@ const StoreItemsPage: React.FC = () => {
         let filtered = items;
         if (debouncedSearchTerm.trim()) {
             const lowerSearch = debouncedSearchTerm.toLowerCase();
-            filtered = items.filter((item) =>
-                item.name.toLowerCase().includes(lowerSearch)
-            );
+            filtered = items.filter((item) => item.name.toLowerCase().includes(lowerSearch));
         }
 
-        const favorites = filtered.filter((item) => item.is_favorite === 1);
-        const regular = filtered.filter((item) => item.is_favorite === 0);
+        const favorites = filtered.filter((item) => item.isFavorite);
+        const regular = filtered.filter((item) => !item.isFavorite);
 
         // Favorites groups organized by aisle/section
         const favoriteGroups: ItemGroup<StoreItemWithDetails>[] =
@@ -142,10 +138,10 @@ const StoreItemsPage: React.FC = () => {
         async (item: StoreItemWithDetails) => {
             try {
                 await upsertShoppingListItem.mutateAsync({
-                    store_id: storeId,
-                    store_item_id: item.id,
+                    storeId: storeId,
+                    storeItemId: item.id,
                     qty: null,
-                    unit_id: null,
+                    unitId: null,
                     notes: null,
                 });
                 showSuccess("Added to shopping list");
@@ -187,7 +183,7 @@ const StoreItemsPage: React.FC = () => {
 
     const renderItem = (item: StoreItemWithDetails) => {
         const isInShoppingList = shoppingListItemMap.has(item.id);
-        const isFavorite = item.is_favorite === 1;
+        const isFavorite = item.isFavorite;
 
         return (
             <IonItem key={item.id}>
@@ -203,10 +199,7 @@ const StoreItemsPage: React.FC = () => {
                         color={isFavorite ? "warning" : "medium"}
                     />
                 </div>
-                <IonLabel
-                    style={{ cursor: "pointer" }}
-                    onClick={() => openEditModal(item)}
-                >
+                <IonLabel style={{ cursor: "pointer" }} onClick={() => openEditModal(item)}>
                     {item.name}
                 </IonLabel>
                 <IonButton
@@ -253,14 +246,13 @@ const StoreItemsPage: React.FC = () => {
                     <div style={{ padding: "20px", textAlign: "center" }}>
                         <IonText color="medium">Loading items...</IonText>
                     </div>
-                ) : favoriteGroups.length === 0 &&
-                  regularGroups.length === 0 ? (
+                ) : favoriteGroups.length === 0 && regularGroups.length === 0 ? (
                     <div style={{ padding: "20px", textAlign: "center" }}>
                         <IonText color="medium">
                             {items?.length === 0 ? (
                                 <>
-                                    No items yet. Add items to track products
-                                    and their locations in this store.
+                                    No items yet. Add items to track products and their locations in
+                                    this store.
                                 </>
                             ) : (
                                 <>No items match your search.</>

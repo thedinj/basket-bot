@@ -12,13 +12,9 @@ interface StoreManagementProviderProps {
     children: ReactNode;
 }
 
-export const StoreManagementProvider = ({
-    children,
-}: StoreManagementProviderProps) => {
+export const StoreManagementProvider = ({ children }: StoreManagementProviderProps) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingEntity, setEditingEntity] = useState<EditingEntity | null>(
-        null
-    );
+    const [editingEntity, setEditingEntity] = useState<EditingEntity | null>(null);
     const [forcedType, setForcedType] = useState<EntityType | null>(null);
     const [deleteAlert, setDeleteAlert] = useState<DeleteEntity | null>(null);
     const [mode, setMode] = useState<ReorderMode>("sections");
@@ -34,11 +30,7 @@ export const StoreManagementProvider = ({
         setIsModalOpen(true);
     };
 
-    const openEditSectionModal = (section: {
-        id: string;
-        name: string;
-        aisle_id: string;
-    }) => {
+    const openEditSectionModal = (section: { id: string; name: string; aisleId: string }) => {
         setEditingEntity({ ...section, type: "section" });
         setIsModalOpen(true);
     };
@@ -78,8 +70,6 @@ export const StoreManagementProvider = ({
     };
 
     return (
-        <StoreManagementContext.Provider value={value}>
-            {children}
-        </StoreManagementContext.Provider>
+        <StoreManagementContext.Provider value={value}>{children}</StoreManagementContext.Provider>
     );
 };

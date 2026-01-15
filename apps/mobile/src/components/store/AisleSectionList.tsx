@@ -1,11 +1,5 @@
 import { ItemReorderEventDetail } from "@ionic/core";
-import {
-    IonLabel,
-    IonList,
-    IonReorderGroup,
-    IonSegment,
-    IonSegmentButton,
-} from "@ionic/react";
+import { IonLabel, IonList, IonReorderGroup, IonSegment, IonSegmentButton } from "@ionic/react";
 import React from "react";
 import {
     useMoveSection,
@@ -30,15 +24,12 @@ interface AisleSectionListProps {
 const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
     const { mode, setMode } = useStoreManagement();
     const { data: aisles, isLoading: aislesLoading } = useStoreAisles(storeId);
-    const { data: sections, isLoading: sectionsLoading } =
-        useStoreSections(storeId);
+    const { data: sections, isLoading: sectionsLoading } = useStoreSections(storeId);
     const reorderAisles = useReorderAisles();
     const reorderSections = useReorderSections();
     const moveSection = useMoveSection();
 
-    const handleAisleReorder = async (
-        event: CustomEvent<ItemReorderEventDetail>
-    ) => {
+    const handleAisleReorder = async (event: CustomEvent<ItemReorderEventDetail>) => {
         if (!aisles) return;
 
         const from = event.detail.from;
@@ -50,7 +41,7 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
 
         const updates = reordered.map((aisle, index) => ({
             id: aisle.id,
-            sort_order: index,
+            sortOrder: index,
         }));
 
         await reorderAisles.mutateAsync({ updates, storeId });
@@ -66,7 +57,7 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
 
         if (!sections) return;
 
-        const aisleSections = sections.filter((s) => s.aisle_id === aisleId);
+        const aisleSections = sections.filter((s) => s.aisleId === aisleId);
         const from = event.detail.from;
         const to = event.detail.to;
 
@@ -76,7 +67,7 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
 
         const updates = reordered.map((section, index) => ({
             id: section.id,
-            sort_order: index,
+            sortOrder: index,
         }));
 
         await reorderSections.mutateAsync({ updates, storeId });
@@ -84,9 +75,7 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
         event.detail.complete();
     };
 
-    const handleFlatSectionReorder = async (
-        event: CustomEvent<ItemReorderEventDetail>
-    ) => {
+    const handleFlatSectionReorder = async (event: CustomEvent<ItemReorderEventDetail>) => {
         if (!sections || !aisles) return;
 
         const from = event.detail.from;
@@ -99,18 +88,17 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
         }> = [];
         aisles.forEach((aisle: StoreAisle) => {
             flatList.push({ type: "aisle", item: aisle });
-            const aisleSections = sections.filter(
-                (s: StoreSection) => s.aisle_id === aisle.id
-            );
+            const aisleSections = sections.filter((s: StoreSection) => s.aisleId === aisle.id);
             aisleSections.forEach((section: StoreSection) => {
                 flatList.push({ type: "section", item: section });
             });
         });
 
         // Get section-only list for index mapping
-        const sectionOnlyList = flatList.filter(
-            (item) => item.type === "section"
-        ) as Array<{ type: "section"; item: StoreSection }>;
+        const sectionOnlyList = flatList.filter((item) => item.type === "section") as Array<{
+            type: "section";
+            item: StoreSection;
+        }>;
 
         if (from >= sectionOnlyList.length || to >= sectionOnlyList.length) {
             event.detail.complete();
@@ -118,7 +106,7 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
         }
 
         const movedSection: StoreSection = sectionOnlyList[from].item;
-        const sourceAisleId = movedSection.aisle_id;
+        const sourceAisleId = movedSection.aisleId;
 
         // Find destination aisle by looking at flat list position
         // Map "to" index (in section-only list) back to flat list
@@ -138,13 +126,9 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
 
         // Same aisle - simple reorder
         if (sourceAisleId === destAisleId) {
-            const aisleSections = sections.filter(
-                (s: StoreSection) => s.aisle_id === sourceAisleId
-            );
+            const aisleSections = sections.filter((s: StoreSection) => s.aisleId === sourceAisleId);
             const reordered = [...aisleSections];
-            const sourceIndex = reordered.findIndex(
-                (s) => s.id === movedSection.id
-            );
+            const sourceIndex = reordered.findIndex((s) => s.id === movedSection.id);
             const [moved] = reordered.splice(sourceIndex, 1);
 
             // Calculate destination index within this aisle
@@ -154,7 +138,7 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
 
             const updates = reordered.map((section, index) => ({
                 id: section.id,
-                sort_order: index,
+                sortOrder: index,
             }));
 
             await reorderSections.mutateAsync({ updates, storeId });
@@ -162,37 +146,30 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
             // Cross-aisle move
             const sourceSections = sections
                 .filter(
-                    (s: StoreSection) =>
-                        s.aisle_id === sourceAisleId && s.id !== movedSection.id
+                    (s: StoreSection) => s.aisleId === sourceAisleId && s.id !== movedSection.id
                 )
                 .map((s: StoreSection, index: number) => ({
                     id: s.id,
-                    sort_order: index,
+                    sortOrder: index,
                 }));
 
-            const destSections = sections.filter(
-                (s: StoreSection) => s.aisle_id === destAisleId
-            );
+            const destSections = sections.filter((s: StoreSection) => s.aisleId === destAisleId);
 
             // Calculate position within destination aisle
             const destAisleSectionList = sectionOnlyList.filter(
-                (item) => item.item.aisle_id === destAisleId
+                (item) => item.item.aisleId === destAisleId
             );
             const destSectionIndexInAisle = destAisleSectionList.findIndex(
                 (item) => sectionOnlyList.indexOf(item) >= to
             );
             const newSortOrder =
-                destSectionIndexInAisle === -1
-                    ? destSections.length
-                    : destSectionIndexInAisle;
+                destSectionIndexInAisle === -1 ? destSections.length : destSectionIndexInAisle;
 
             // Make room in destination
-            const updatedDestSections = destSections.map(
-                (s: StoreSection, index: number) => ({
-                    id: s.id,
-                    sort_order: index >= newSortOrder ? index + 1 : index,
-                })
-            );
+            const updatedDestSections = destSections.map((s: StoreSection, index: number) => ({
+                id: s.id,
+                sortOrder: index >= newSortOrder ? index + 1 : index,
+            }));
 
             await moveSection.mutateAsync({
                 sectionId: movedSection.id,
@@ -220,11 +197,7 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
         );
     }
 
-    if (
-        !aisles ||
-        !sections ||
-        (aisles.length === 0 && sections.length === 0)
-    ) {
+    if (!aisles || !sections || (aisles.length === 0 && sections.length === 0)) {
         return (
             <>
                 <EmptyState />
@@ -252,17 +225,12 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
 
             <IonList>
                 {mode === "aisles" ? (
-                    <IonReorderGroup
-                        disabled={false}
-                        onIonItemReorder={handleAisleReorder}
-                    >
+                    <IonReorderGroup disabled={false} onIonItemReorder={handleAisleReorder}>
                         {aisles.map((aisle) => (
                             <AisleItem
                                 key={aisle.id}
                                 aisle={aisle}
-                                sections={
-                                    [] /* sections omitted intentionally */
-                                }
+                                sections={[] /* sections omitted intentionally */}
                                 onSectionReorder={handleSectionReorder}
                                 showReorderHandle={true}
                                 showSectionReorderHandles={false}
@@ -270,14 +238,9 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
                         ))}
                     </IonReorderGroup>
                 ) : (
-                    <IonReorderGroup
-                        disabled={false}
-                        onIonItemReorder={handleFlatSectionReorder}
-                    >
+                    <IonReorderGroup disabled={false} onIonItemReorder={handleFlatSectionReorder}>
                         {aisles.map((aisle) => {
-                            const aisleSections = sections.filter(
-                                (s) => s.aisle_id === aisle.id
-                            );
+                            const aisleSections = sections.filter((s) => s.aisleId === aisle.id);
                             return (
                                 <React.Fragment key={aisle.id}>
                                     <AisleItem

@@ -1,34 +1,34 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
-    IonModal,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonButtons,
+    IonAlert,
     IonButton,
-    IonIcon,
+    IonButtons,
     IonContent,
+    IonHeader,
+    IonIcon,
+    IonInput,
     IonItem,
     IonLabel,
-    IonInput,
+    IonModal,
     IonText,
-    IonAlert,
+    IonTitle,
+    IonToolbar,
 } from "@ionic/react";
 import { closeOutline } from "ionicons/icons";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { ClickableSelectionField } from "../shared/ClickableSelectionField";
-import type { SelectableItem } from "../shared/ClickableSelectionModal";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useState, useEffect, useMemo } from "react";
-import { useStoreManagement } from "./StoreManagementContext";
 import {
     useCreateAisle,
-    useUpdateAisle,
     useCreateSection,
-    useUpdateSection,
     useDeleteAisle,
     useDeleteSection,
+    useUpdateAisle,
+    useUpdateSection,
 } from "../../db/hooks";
+import { ClickableSelectionField } from "../shared/ClickableSelectionField";
+import type { SelectableItem } from "../shared/ClickableSelectionModal";
+import { useStoreManagement } from "./StoreManagementContext";
 
 const entityFormSchema = z
     .object({
@@ -37,18 +37,18 @@ const entityFormSchema = z
             .min(1, "Name is required")
             .transform((val) => val.trim()),
         type: z.enum(["aisle", "section"]),
-        aisle_id: z.string().optional(),
+        aisleId: z.string().optional(),
     })
     .refine(
         (data) => {
             if (data.type === "section") {
-                return !!data.aisle_id;
+                return !!data.aisleId;
             }
             return true;
         },
         {
             message: "Aisle is required for sections",
-            path: ["aisle_id"],
+            path: ["aisleId"],
         }
     );
 
@@ -60,8 +60,7 @@ interface EntityFormModalProps {
 }
 
 export const EntityFormModal = ({ storeId, aisles }: EntityFormModalProps) => {
-    const { isModalOpen, editingEntity, forcedType, closeModal } =
-        useStoreManagement();
+    const { isModalOpen, editingEntity, forcedType, closeModal } = useStoreManagement();
     const createAisle = useCreateAisle();
     const updateAisle = useUpdateAisle();
     const createSection = useCreateSection();
@@ -82,7 +81,7 @@ export const EntityFormModal = ({ storeId, aisles }: EntityFormModalProps) => {
         defaultValues: {
             name: "",
             type: "aisle",
-            aisle_id: undefined,
+            aisleId: undefined,
         },
     });
 
@@ -103,14 +102,14 @@ export const EntityFormModal = ({ storeId, aisles }: EntityFormModalProps) => {
             reset({
                 name: editingEntity.name,
                 type: editingEntity.type,
-                aisle_id:
+                aisleId:
                     editingEntity.type === "section"
-                        ? editingEntity.aisle_id || undefined
+                        ? editingEntity.aisleId || undefined
                         : undefined,
             });
         } else if (isModalOpen && !editingEntity) {
             const initialType = forcedType || "aisle";
-            reset({ name: "", type: initialType, aisle_id: undefined });
+            reset({ name: "", type: initialType, aisleId: undefined });
         }
     }, [isModalOpen, editingEntity, forcedType, reset]);
 
@@ -126,21 +125,21 @@ export const EntityFormModal = ({ storeId, aisles }: EntityFormModalProps) => {
                 await createAisle.mutateAsync({ storeId, name: data.name });
             }
         } else {
-            if (!data.aisle_id) {
+            if (!data.aisleId) {
                 throw new Error("Aisle is required for sections");
             }
             if (editingEntity) {
                 await updateSection.mutateAsync({
                     id: editingEntity.id,
                     name: data.name,
-                    aisleId: data.aisle_id,
+                    aisleId: data.aisleId,
                     storeId,
                 });
             } else {
                 await createSection.mutateAsync({
                     storeId,
                     name: data.name,
-                    aisleId: data.aisle_id,
+                    aisleId: data.aisleId,
                 });
             }
         }
@@ -171,9 +170,7 @@ export const EntityFormModal = ({ storeId, aisles }: EntityFormModalProps) => {
 
     const getModalTitle = () => {
         if (editingEntity) {
-            return `Edit ${
-                editingEntity.type === "aisle" ? "Aisle" : "Section"
-            }`;
+            return `Edit ${editingEntity.type === "aisle" ? "Aisle" : "Section"}`;
         }
         if (forcedType === "aisle") {
             return "New Aisle";
@@ -181,13 +178,10 @@ export const EntityFormModal = ({ storeId, aisles }: EntityFormModalProps) => {
         if (forcedType === "section") {
             return "New Section";
         }
-        return aisles && aisles.length > 0
-            ? "New Aisle or Section"
-            : "New Aisle";
+        return aisles && aisles.length > 0 ? "New Aisle or Section" : "New Aisle";
     };
 
-    const showTypeSelector =
-        !editingEntity && !forcedType && aisles && aisles.length > 0;
+    const showTypeSelector = !editingEntity && !forcedType && aisles && aisles.length > 0;
 
     return (
         <IonModal isOpen={isModalOpen} onDidDismiss={closeModal}>
@@ -229,30 +223,18 @@ export const EntityFormModal = ({ storeId, aisles }: EntityFormModalProps) => {
                                     >
                                         <IonButton
                                             expand="block"
-                                            fill={
-                                                field.value === "aisle"
-                                                    ? "solid"
-                                                    : "outline"
-                                            }
+                                            fill={field.value === "aisle" ? "solid" : "outline"}
                                             color="primary"
-                                            onClick={() =>
-                                                field.onChange("aisle")
-                                            }
+                                            onClick={() => field.onChange("aisle")}
                                             style={{ flex: 1 }}
                                         >
                                             Aisle
                                         </IonButton>
                                         <IonButton
                                             expand="block"
-                                            fill={
-                                                field.value === "section"
-                                                    ? "solid"
-                                                    : "outline"
-                                            }
+                                            fill={field.value === "section" ? "solid" : "outline"}
                                             color="primary"
-                                            onClick={() =>
-                                                field.onChange("section")
-                                            }
+                                            onClick={() => field.onChange("section")}
                                             style={{ flex: 1 }}
                                         >
                                             Section
@@ -265,7 +247,7 @@ export const EntityFormModal = ({ storeId, aisles }: EntityFormModalProps) => {
 
                     {entityType === "section" && (
                         <Controller
-                            name="aisle_id"
+                            name="aisleId"
                             control={control}
                             render={({ field }) => (
                                 <ClickableSelectionField
@@ -277,7 +259,7 @@ export const EntityFormModal = ({ storeId, aisles }: EntityFormModalProps) => {
                                     modalTitle="Select Aisle"
                                     showSearch={true}
                                     searchPlaceholder="Search aisles..."
-                                    errorMessage={errors.aisle_id?.message}
+                                    errorMessage={errors.aisleId?.message}
                                 />
                             )}
                         />
@@ -292,13 +274,9 @@ export const EntityFormModal = ({ storeId, aisles }: EntityFormModalProps) => {
                                 <IonInput
                                     value={field.value}
                                     placeholder={`Enter ${
-                                        entityType === "aisle"
-                                            ? "aisle"
-                                            : "section"
+                                        entityType === "aisle" ? "aisle" : "section"
                                     } name`}
-                                    onIonInput={(e) =>
-                                        field.onChange(e.detail.value)
-                                    }
+                                    onIonInput={(e) => field.onChange(e.detail.value)}
                                     autocapitalize="sentences"
                                 />
                             </IonItem>
@@ -333,15 +311,10 @@ export const EntityFormModal = ({ storeId, aisles }: EntityFormModalProps) => {
                             color="danger"
                             fill="outline"
                             onClick={() => setShowDeleteAlert(true)}
-                            disabled={
-                                deleteAisle.isPending || deleteSection.isPending
-                            }
+                            disabled={deleteAisle.isPending || deleteSection.isPending}
                             style={{ marginTop: "10px" }}
                         >
-                            Delete{" "}
-                            {editingEntity.type === "aisle"
-                                ? "Aisle"
-                                : "Section"}
+                            Delete {editingEntity.type === "aisle" ? "Aisle" : "Section"}
                         </IonButton>
                     )}
                 </form>
@@ -349,9 +322,7 @@ export const EntityFormModal = ({ storeId, aisles }: EntityFormModalProps) => {
                 <IonAlert
                     isOpen={showDeleteAlert}
                     onDidDismiss={() => setShowDeleteAlert(false)}
-                    header={`Delete ${
-                        editingEntity?.type === "aisle" ? "Aisle" : "Section"
-                    }`}
+                    header={`Delete ${editingEntity?.type === "aisle" ? "Aisle" : "Section"}`}
                     message={`Are you sure you want to delete "${
                         editingEntity?.name
                     }"? This will also affect ${

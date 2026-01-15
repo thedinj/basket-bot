@@ -1,7 +1,7 @@
+import type { ShoppingListItemWithDetails } from "@basket-bot/core";
 import { IonButton, IonIcon } from "@ionic/react";
 import { bulbOutline, checkmarkDone } from "ionicons/icons";
 import { useMemo } from "react";
-import { ShoppingListItemWithDetails } from "../../models/Store";
 import { GroupedItemList } from "../shared/GroupedItemList";
 import { ItemGroup } from "../shared/grouping.types";
 import { createAisleSectionGroups } from "../shared/grouping.utils";
@@ -58,8 +58,8 @@ export const GroupedShoppingList = ({
             itemGroups.push(headerGroup);
         } else {
             // UNCHECKED ITEMS: Ideas + Categorized items
-            const ideas = items.filter((item) => item.is_idea === 1);
-            const regularItems = items.filter((item) => item.is_idea !== 1);
+            const ideas = items.filter((item) => item.isIdea);
+            const regularItems = items.filter((item) => !item.isIdea);
 
             // Group 1: Ideas (if any)
             if (ideas.length > 0) {
@@ -69,8 +69,7 @@ export const GroupedShoppingList = ({
                     header: {
                         label: (
                             <>
-                                <IonIcon icon={bulbOutline} color="warning" />{" "}
-                                Ideas
+                                <IonIcon icon={bulbOutline} color="warning" /> Ideas
                             </>
                         ),
                         color: "light",
@@ -108,11 +107,7 @@ export const GroupedShoppingList = ({
         <GroupedItemList<ShoppingListItemWithDetails>
             groups={groups}
             renderItem={(item) => (
-                <ShoppingListItem
-                    key={item.id}
-                    item={item}
-                    isChecked={isChecked}
-                />
+                <ShoppingListItem key={item.id} item={item} isChecked={isChecked} />
             )}
         />
     );

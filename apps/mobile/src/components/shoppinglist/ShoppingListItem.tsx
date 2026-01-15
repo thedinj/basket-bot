@@ -1,3 +1,4 @@
+import type { ShoppingListItemWithDetails, Store } from "@basket-bot/core";
 import {
     IonAlert,
     IonButton,
@@ -14,13 +15,8 @@ import {
 } from "@ionic/react";
 import { closeOutline, swapHorizontalOutline } from "ionicons/icons";
 import { useState } from "react";
-import {
-    useMoveItemToStore,
-    useStores,
-    useToggleItemChecked,
-} from "../../db/hooks";
+import { useMoveItemToStore, useStores, useToggleItemChecked } from "../../db/hooks";
 import { useToast } from "../../hooks/useToast";
-import { ShoppingListItemWithDetails, Store } from "../../models/Store";
 import { formatShortDate } from "../../utils/dateUtils";
 import { GenericStoreSelector } from "../shared/GenericStoreSelector";
 import { useShoppingListContext } from "./useShoppingListContext";
@@ -32,10 +28,7 @@ interface ShoppingListItemProps {
     isChecked: boolean;
 }
 
-export const ShoppingListItem = ({
-    item,
-    isChecked,
-}: ShoppingListItemProps) => {
+export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => {
     const toast = useToast();
     const { openEditModal, newlyImportedItemIds } = useShoppingListContext();
     const [showMoveModal, setShowMoveModal] = useState(false);
@@ -63,13 +56,13 @@ export const ShoppingListItem = ({
             const result = await moveItemToStore.mutateAsync({
                 item: {
                     id: item.id,
-                    item_name: item.item_name,
+                    itemName: item.itemName,
                     notes: item.notes,
                     qty: item.qty,
-                    unit_id: item.unit_id,
-                    is_idea: item.is_idea,
+                    unitId: item.unitId,
+                    isIdea: item.isIdea,
                 },
-                sourceStoreId: item.store_id,
+                sourceStoreId: item.storeId,
                 targetStoreId: pendingMove.id,
                 targetStoreName: pendingMove.name,
             });
@@ -88,7 +81,7 @@ export const ShoppingListItem = ({
         toggleChecked.mutate({
             id: item.id,
             isChecked: checked,
-            storeId: item.store_id,
+            storeId: item.storeId,
         });
     };
 
@@ -105,15 +98,12 @@ export const ShoppingListItem = ({
           }
         : {};
 
-    const titleToUse = item.is_idea ? item.notes : item.item_name;
-    const notesToUse = item.is_idea ? "" : item.notes;
+    const titleToUse = item.isIdea ? item.notes : item.itemName;
+    const notesToUse = item.isIdea ? "" : item.notes;
 
     // Check if item is snoozed
-    const isSnoozed =
-        item.snoozed_until && new Date(item.snoozed_until) > new Date();
-    const formattedSnoozeDate = isSnoozed
-        ? formatShortDate(item.snoozed_until!)
-        : null;
+    const isSnoozed = item.snoozedUntil && new Date(item.snoozedUntil) > new Date();
+    const formattedSnoozeDate = isSnoozed ? formatShortDate(item.snoozedUntil!) : null;
 
     return (
         <IonItem style={itemStyle} button={false}>
@@ -134,36 +124,27 @@ export const ShoppingListItem = ({
                     handleCheckboxClick(e);
                 }}
             >
-                <IonCheckbox
-                    checked={isChecked}
-                    style={{ pointerEvents: "none" }}
-                />
+                <IonCheckbox checked={isChecked} style={{ pointerEvents: "none" }} />
             </div>
             <IonLabel
                 style={{ cursor: "pointer" }}
-                onClick={() =>
-                    openEditModal(item as ShoppingListItemWithDetails)
-                }
+                onClick={() => openEditModal(item as ShoppingListItemWithDetails)}
             >
                 <>
                     <h2
                         className={isNewlyImported ? "shimmer-text" : ""}
                         style={{
-                            color: isSnoozed
-                                ? "var(--ion-color-medium)"
-                                : undefined,
+                            color: isSnoozed ? "var(--ion-color-medium)" : undefined,
                         }}
                     >
                         {titleToUse}{" "}
-                        {(item.qty !== null || item.unit_abbreviation) && (
+                        {(item.qty !== null || item.unitAbbreviation) && (
                             <span>
                                 ({item.qty !== null ? item.qty : ""}
-                                {item.unit_abbreviation &&
-                                    ` ${item.unit_abbreviation}`}
-                                )
+                                {item.unitAbbreviation && ` ${item.unitAbbreviation}`})
                             </span>
                         )}{" "}
-                        {item.is_sample === 1 ? (
+                        {item.isSample ? (
                             <span
                                 style={{
                                     fontSize: "0.6em",
@@ -175,9 +156,7 @@ export const ShoppingListItem = ({
                             </span>
                         ) : null}
                     </h2>
-                    {notesToUse && (
-                        <p style={{ fontStyle: "italic" }}>{notesToUse}</p>
-                    )}
+                    {notesToUse && <p style={{ fontStyle: "italic" }}>{notesToUse}</p>}
                     {isSnoozed && (
                         <p
                             style={{
@@ -194,11 +173,7 @@ export const ShoppingListItem = ({
             </IonLabel>
 
             {stores && stores.length > 1 && (
-                <IonButton
-                    slot="end"
-                    fill="clear"
-                    onClick={() => setShowMoveModal(true)}
-                >
+                <IonButton slot="end" fill="clear" onClick={() => setShowMoveModal(true)}>
                     <IonIcon icon={swapHorizontalOutline} color="medium" />
                 </IonButton>
             )}
@@ -234,10 +209,7 @@ export const ShoppingListItem = ({
             />
 
             {/* Move to Store Modal */}
-            <IonModal
-                isOpen={showMoveModal}
-                onDidDismiss={() => setShowMoveModal(false)}
-            >
+            <IonModal isOpen={showMoveModal} onDidDismiss={() => setShowMoveModal(false)}>
                 <IonHeader>
                     <IonToolbar>
                         <IonTitle>Move to Store</IonTitle>
@@ -259,7 +231,7 @@ export const ShoppingListItem = ({
                         onStoreSelect={handleStoreSelected}
                         modalTitle="Select Destination Store"
                         placeholderText="Select destination store"
-                        excludeStoreIds={[item.store_id]}
+                        excludeStoreIds={[item.storeId]}
                         allowClear={false}
                     />
                 </IonContent>

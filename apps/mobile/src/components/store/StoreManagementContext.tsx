@@ -6,7 +6,7 @@ export interface EditingEntity {
     id: string;
     name: string;
     type: EntityType;
-    aisle_id?: string | null;
+    aisleId?: string | null;
 }
 
 export interface DeleteEntity {
@@ -24,11 +24,7 @@ export interface StoreManagementContextType {
     forcedType: EntityType | null;
     openCreateModal: (forceType?: EntityType) => void;
     openEditAisleModal: (aisle: { id: string; name: string }) => void;
-    openEditSectionModal: (section: {
-        id: string;
-        name: string;
-        aisle_id: string;
-    }) => void;
+    openEditSectionModal: (section: { id: string; name: string; aisleId: string }) => void;
     closeModal: () => void;
 
     // Delete alert state
@@ -42,16 +38,14 @@ export interface StoreManagementContextType {
     setMode: (mode: ReorderMode) => void;
 }
 
-export const StoreManagementContext = createContext<
-    StoreManagementContextType | undefined
->(undefined);
+export const StoreManagementContext = createContext<StoreManagementContextType | undefined>(
+    undefined
+);
 
 export const useStoreManagement = () => {
     const context = useContext(StoreManagementContext);
     if (!context) {
-        throw new Error(
-            "useStoreManagement must be used within StoreManagementProvider"
-        );
+        throw new Error("useStoreManagement must be used within StoreManagementProvider");
     }
     return context;
 };

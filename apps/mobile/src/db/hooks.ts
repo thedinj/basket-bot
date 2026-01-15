@@ -1,3 +1,4 @@
+import type { ShoppingListItem, ShoppingListItemOptionalId } from "@basket-bot/core";
 import {
     useQueryClient,
     useMutation as useTanstackMutation,
@@ -5,10 +6,6 @@ import {
 } from "@tanstack/react-query";
 import { use } from "react";
 import { useToast } from "../hooks/useToast";
-import type {
-    ShoppingListItem,
-    ShoppingListItemOptionalId,
-} from "../models/Store";
 import { DatabaseContext } from "./context";
 import { type Database } from "./types";
 
@@ -105,8 +102,7 @@ export function useUpdateStore() {
     const { showError } = useToast();
 
     return useTanstackMutation({
-        mutationFn: ({ id, name }: { id: string; name: string }) =>
-            database.updateStore(id, name),
+        mutationFn: ({ id, name }: { id: string; name: string }) => database.updateStore(id, name),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ["stores"] });
             queryClient.invalidateQueries({
@@ -169,8 +165,7 @@ export function useResetDatabase() {
     const { showError } = useToast();
 
     return useTanstackMutation({
-        mutationFn: (tablesToPersist?: string[]) =>
-            database.reset(tablesToPersist),
+        mutationFn: (tablesToPersist?: string[]) => database.reset(tablesToPersist),
         onSuccess: () => {
             // Invalidate all queries after reset
             queryClient.invalidateQueries();
@@ -240,14 +235,8 @@ export function useUpdateAisle() {
     const { showError } = useToast();
 
     return useTanstackMutation({
-        mutationFn: ({
-            id,
-            name,
-        }: {
-            id: string;
-            name: string;
-            storeId: string;
-        }) => database.updateAisle(id, name),
+        mutationFn: ({ id, name }: { id: string; name: string; storeId: string }) =>
+            database.updateAisle(id, name),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["aisles", variables.storeId],
@@ -271,8 +260,7 @@ export function useDeleteAisle() {
     const { showError } = useToast();
 
     return useTanstackMutation({
-        mutationFn: ({ id }: { id: string; storeId: string }) =>
-            database.deleteAisle(id),
+        mutationFn: ({ id }: { id: string; storeId: string }) => database.deleteAisle(id),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["aisles", variables.storeId],
@@ -296,7 +284,7 @@ export function useReorderAisles() {
         mutationFn: ({
             updates,
         }: {
-            updates: Array<{ id: string; sort_order: number }>;
+            updates: Array<{ id: string; sortOrder: number }>;
             storeId: string;
         }) => database.reorderAisles(updates),
         onSuccess: (_, variables) => {
@@ -409,8 +397,7 @@ export function useDeleteSection() {
     const { showError } = useToast();
 
     return useTanstackMutation({
-        mutationFn: ({ id }: { id: string; storeId: string }) =>
-            database.deleteSection(id),
+        mutationFn: ({ id }: { id: string; storeId: string }) => database.deleteSection(id),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["sections", variables.storeId],
@@ -441,12 +428,12 @@ export function useMoveSection() {
             sectionId: string;
             newAisleId: string;
             newSortOrder: number;
-            sourceSections: Array<{ id: string; sort_order: number }>;
-            destSections: Array<{ id: string; sort_order: number }>;
+            sourceSections: Array<{ id: string; sortOrder: number }>;
+            destSections: Array<{ id: string; sortOrder: number }>;
             storeId: string;
             sectionName: string;
         }) => {
-            // Update section's aisle (sort_order will be set by reorderSections)
+            // Update section's aisle (sortOrder will be set by reorderSections)
             await database.updateSection(sectionId, sectionName, newAisleId);
 
             // Reorder sections in source aisle (close the gap)
@@ -454,7 +441,7 @@ export function useMoveSection() {
                 await database.reorderSections(sourceSections);
             }
 
-            // Reorder sections in destination aisle (make room and set moved section's sort_order)
+            // Reorder sections in destination aisle (make room and set moved section's sortOrder)
             if (destSections.length > 0) {
                 await database.reorderSections(destSections);
             }
@@ -482,7 +469,7 @@ export function useReorderSections() {
         mutationFn: ({
             updates,
         }: {
-            updates: Array<{ id: string; sort_order: number }>;
+            updates: Array<{ id: string; sortOrder: number }>;
             storeId: string;
         }) => database.reorderSections(updates),
         onSuccess: (_, variables) => {
@@ -512,11 +499,11 @@ export function useBulkReplaceAislesAndSections() {
             sections,
         }: {
             storeId: string;
-            aisles: Array<{ name: string; sort_order: number }>;
+            aisles: Array<{ name: string; sortOrder: number }>;
             sections: Array<{
                 aisleName: string;
                 name: string;
-                sort_order: number;
+                sortOrder: number;
             }>;
         }) => {
             // Step 1: Get all existing aisles
@@ -531,18 +518,15 @@ export function useBulkReplaceAislesAndSections() {
             const aisleNameToId = new Map<string, string>();
 
             for (const aisleData of aisles) {
-                const createdAisle = await database.insertAisle(
-                    storeId,
-                    aisleData.name
-                );
+                const createdAisle = await database.insertAisle(storeId, aisleData.name);
                 aisleNameToId.set(aisleData.name, createdAisle.id);
 
                 // Update sort order if needed (insertAisle assigns automatically)
-                if (createdAisle.sort_order !== aisleData.sort_order) {
+                if (createdAisle.sortOrder !== aisleData.sortOrder) {
                     await database.reorderAisles([
                         {
                             id: createdAisle.id,
-                            sort_order: aisleData.sort_order,
+                            sortOrder: aisleData.sortOrder,
                         },
                     ]);
                 }
@@ -565,11 +549,11 @@ export function useBulkReplaceAislesAndSections() {
                 );
 
                 // Update sort order if needed
-                if (createdSection.sort_order !== sectionData.sort_order) {
+                if (createdSection.sortOrder !== sectionData.sortOrder) {
                     await database.reorderSections([
                         {
                             id: createdSection.id,
-                            sort_order: sectionData.sort_order,
+                            sortOrder: sectionData.sortOrder,
                         },
                     ]);
                 }
@@ -730,13 +714,7 @@ export function useGetOrCreateStoreItem() {
             name: string;
             aisleId?: string | null;
             sectionId?: string | null;
-        }) =>
-            database.getOrCreateStoreItemByName(
-                storeId,
-                name,
-                aisleId,
-                sectionId
-            ),
+        }) => database.getOrCreateStoreItemByName(storeId, name, aisleId, sectionId),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["items", variables.storeId],
@@ -760,8 +738,7 @@ export function useDeleteItem() {
     const { showError } = useToast();
 
     return useTanstackMutation({
-        mutationFn: ({ id }: { id: string; storeId: string }) =>
-            database.deleteItem(id),
+        mutationFn: ({ id }: { id: string; storeId: string }) => database.deleteItem(id),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["items", variables.storeId],
@@ -785,8 +762,7 @@ export function useToggleFavorite() {
     const { showError } = useToast();
 
     return useTanstackMutation({
-        mutationFn: ({ id }: { id: string; storeId: string }) =>
-            database.toggleItemFavorite(id),
+        mutationFn: ({ id }: { id: string; storeId: string }) => database.toggleItemFavorite(id),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["items", variables.storeId],
@@ -841,25 +817,19 @@ export function useUpsertShoppingListItem() {
     const queryClient = useQueryClient();
     const { showError } = useToast();
 
-    return useTanstackMutation<
-        ShoppingListItem,
-        Error,
-        ShoppingListItemOptionalId
-    >({
+    return useTanstackMutation<ShoppingListItem, Error, ShoppingListItemOptionalId>({
         mutationFn: (params) =>
-            database.upsertShoppingListItem(
-                params
-            ) as Promise<ShoppingListItem>,
+            database.upsertShoppingListItem(params) as Promise<ShoppingListItem>,
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.store_id],
+                queryKey: ["shopping-list-items", variables.storeId],
             });
             // Also invalidate store items for autocomplete
             queryClient.invalidateQueries({
-                queryKey: ["items", variables.store_id],
+                queryKey: ["items", variables.storeId],
             });
             queryClient.invalidateQueries({
-                queryKey: ["store-items", "search", variables.store_id],
+                queryKey: ["store-items", "search", variables.storeId],
             });
         },
         onError: (error: Error) => {
@@ -877,11 +847,7 @@ export function useToggleItemChecked() {
     const { showError } = useToast();
 
     return useTanstackMutation({
-        mutationFn: (params: {
-            id: string;
-            isChecked: boolean;
-            storeId: string;
-        }) =>
+        mutationFn: (params: { id: string; isChecked: boolean; storeId: string }) =>
             database.toggleShoppingListItemChecked(params.id, params.isChecked),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
@@ -973,48 +939,47 @@ export function useMoveItemToStore() {
         mutationFn: async (params: {
             item: {
                 id: string;
-                item_name: string;
+                itemName: string | null;
                 notes: string | null;
                 qty: number | null;
-                unit_id: string | null;
-                is_idea: number;
+                unitId: string | null;
+                isIdea: boolean;
             };
             sourceStoreId: string;
             targetStoreId: string;
             targetStoreName: string;
         }) => {
             const { item, targetStoreId, targetStoreName } = params;
-            const itemName = item.is_idea ? item.notes || "" : item.item_name;
+            const itemName = item.isIdea ? item.notes || "" : item.itemName;
 
-            if (item.is_idea) {
+            if (item.isIdea) {
                 // Move idea - just notes, no store item needed
                 await database.upsertShoppingListItem({
-                    store_id: targetStoreId,
-                    store_item_id: null,
+                    storeId: targetStoreId,
+                    storeItemId: null,
                     qty: 1,
-                    unit_id: null,
+                    unitId: null,
                     notes: item.notes,
-                    is_idea: 1,
+                    isIdea: true,
                 });
             } else {
                 // Move regular item - get or create store item at target store
                 // This will match by normalized_name if item exists at target store
-                const targetStoreItem =
-                    await database.getOrCreateStoreItemByName(
-                        targetStoreId,
-                        item.item_name,
-                        null, // Will use existing location if item found by normalized_name
-                        null
-                    );
+                const targetStoreItem = await database.getOrCreateStoreItemByName(
+                    targetStoreId,
+                    item.itemName!,
+                    null, // Will use existing location if item found by normalized_name
+                    null
+                );
 
                 // Create shopping list item at target store
                 await database.upsertShoppingListItem({
-                    store_id: targetStoreId,
-                    store_item_id: targetStoreItem.id,
+                    storeId: targetStoreId,
+                    storeItemId: targetStoreItem.id,
                     qty: item.qty,
-                    unit_id: item.unit_id,
+                    unitId: item.unitId,
                     notes: item.notes,
-                    is_idea: 0,
+                    isIdea: false,
                 });
             }
 

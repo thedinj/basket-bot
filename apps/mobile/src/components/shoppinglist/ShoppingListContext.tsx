@@ -1,5 +1,5 @@
+import type { ShoppingListItemWithDetails } from "@basket-bot/core";
 import { createContext } from "react";
-import { ShoppingListItemWithDetails } from "../../models/Store";
 
 export interface ShoppingListContextValue {
     // Selected store
@@ -24,6 +24,4 @@ export interface ShoppingListContextValue {
     markAsNewlyImported: (itemIds: string[]) => void;
 }
 
-export const ShoppingListContext = createContext<
-    ShoppingListContextValue | undefined
->(undefined);
+export const ShoppingListContext = createContext<ShoppingListContextValue | undefined>(undefined);

@@ -215,6 +215,14 @@ export const shoppingListItemWithDetailsSchema = shoppingListItemSchema.extend({
 
 export type ShoppingListItemWithDetails = z.infer<typeof shoppingListItemWithDetailsSchema>;
 
+// ShoppingListItem with optional ID (for creating new items)
+export type ShoppingListItemOptionalId = Omit<
+    ShoppingListItem,
+    "id" | "createdById" | "updatedById" | "createdAt" | "updatedAt"
+> & {
+    id?: string;
+};
+
 export const createShoppingListItemRequestSchema = z.object({
     storeId: z.string().uuid(),
     storeItemId: z.string().uuid().optional().nullable(),

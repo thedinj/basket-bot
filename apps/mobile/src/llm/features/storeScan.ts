@@ -20,21 +20,19 @@ export interface StoreScanResult {
 export interface TransformedStoreScanData {
     aisles: Array<{
         name: string;
-        sort_order: number;
+        sortOrder: number;
     }>;
     sections: Array<{
         aisleName: string;
         name: string;
-        sort_order: number;
+        sortOrder: number;
     }>;
 }
 
 /**
  * Transform LLM scan result into database-ready structure
  */
-export function transformStoreScanResult(
-    result: StoreScanResult
-): TransformedStoreScanData {
+export function transformStoreScanResult(result: StoreScanResult): TransformedStoreScanData {
     const transformed: TransformedStoreScanData = {
         aisles: [],
         sections: [],
@@ -54,31 +52,26 @@ export function transformStoreScanResult(
         if (aHasNumber && !bHasNumber) return 1;
 
         // Within same group, use natural sort
-        return naturalSort<StoreScanResult["aisles"][number]>((x) => x.name)(
-            a,
-            b
-        );
+        return naturalSort<StoreScanResult["aisles"][number]>((x) => x.name)(a, b);
     });
 
     sortedAisles.forEach((aisle, aisleIndex) => {
-        // Add aisle with sort_order
+        // Add aisle with sortOrder
         transformed.aisles.push({
             name: aisle.name.trim(),
-            sort_order: aisleIndex,
+            sortOrder: aisleIndex,
         });
 
         // Add sections for this aisle
         if (aisle.sections && aisle.sections.length > 0) {
             // Sort sections naturally (case-insensitive, numeric-aware)
-            const sortedSections = [...aisle.sections].sort(
-                naturalSort((s) => s)
-            );
+            const sortedSections = [...aisle.sections].sort(naturalSort((s) => s));
 
             sortedSections.forEach((section, sectionIndex) => {
                 transformed.sections.push({
                     aisleName: aisle.name.trim(),
                     name: section.trim(),
-                    sort_order: sectionIndex,
+                    sortOrder: sectionIndex,
                 });
             });
         }
@@ -90,9 +83,7 @@ export function transformStoreScanResult(
 /**
  * Validate that the scan result has the expected structure
  */
-export function validateStoreScanResult(
-    data: unknown
-): data is StoreScanResult {
+export function validateStoreScanResult(data: unknown): data is StoreScanResult {
     if (!data || typeof data !== "object") {
         return false;
     }

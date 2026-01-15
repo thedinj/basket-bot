@@ -1,5 +1,5 @@
+import type { StoreAisle, StoreItem, StoreSection } from "@basket-bot/core";
 import { z } from "zod";
-import type { StoreAisle, StoreItem, StoreSection } from "../../models/Store";
 
 export const itemFormSchema = z
     .object({
@@ -39,9 +39,6 @@ export type ItemFormData = z.infer<typeof itemFormSchema>;
 
 export type Aisle = Pick<StoreAisle, "id" | "name">;
 
-export type Section = Pick<StoreSection, "id" | "name" | "aisle_id">;
+export type Section = Pick<StoreSection, "id" | "name" | "aisleId">;
 
-export type AutocompleteItem = Pick<
-    StoreItem,
-    "id" | "name" | "aisle_id" | "section_id"
->;
+export type AutocompleteItem = Pick<StoreItem, "id" | "name" | "aisleId" | "sectionId">;

@@ -1,18 +1,17 @@
-import { AppSetting } from "../models/AppSetting";
-import {
+import type {
+    AppSetting,
+    QuantityUnit,
     ShoppingListItem,
     ShoppingListItemOptionalId,
     ShoppingListItemWithDetails,
     Store,
-    StoreItemWithDetails,
-} from "../models/Store";
-import { BaseDatabase } from "./base";
-import {
-    DEFAULT_TABLES_TO_PERSIST,
     StoreAisle,
     StoreItem,
+    StoreItemWithDetails,
     StoreSection,
-} from "./types";
+} from "@basket-bot/core";
+import { BaseDatabase } from "./base";
+import { DEFAULT_TABLES_TO_PERSIST } from "./types";
 
 /**
  * Remote database implementation stub for future API integration
@@ -28,9 +27,7 @@ export class RemoteDatabase extends BaseDatabase {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
-    async reset(
-        _tablesToPersist: string[] = DEFAULT_TABLES_TO_PERSIST
-    ): Promise<void> {
+    async reset(_tablesToPersist: string[] = DEFAULT_TABLES_TO_PERSIST): Promise<void> {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
@@ -43,9 +40,7 @@ export class RemoteDatabase extends BaseDatabase {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
-    async loadAllQuantityUnits(): Promise<
-        import("../models/Store").QuantityUnit[]
-    > {
+    async loadAllQuantityUnits(): Promise<QuantityUnit[]> {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
@@ -95,18 +90,12 @@ export class RemoteDatabase extends BaseDatabase {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
-    async reorderAisles(
-        _updates: Array<{ id: string; sort_order: number }>
-    ): Promise<void> {
+    async reorderAisles(_updates: Array<{ id: string; sortOrder: number }>): Promise<void> {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
     // ========== StoreSection Operations ==========
-    async insertSection(
-        _storeId: string,
-        _name: string,
-        _aisleId: string
-    ): Promise<StoreSection> {
+    async insertSection(_storeId: string, _name: string, _aisleId: string): Promise<StoreSection> {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
@@ -118,11 +107,7 @@ export class RemoteDatabase extends BaseDatabase {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
-    async updateSection(
-        _id: string,
-        _name: string,
-        _aisleId: string
-    ): Promise<StoreSection> {
+    async updateSection(_id: string, _name: string, _aisleId: string): Promise<StoreSection> {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
@@ -130,9 +115,7 @@ export class RemoteDatabase extends BaseDatabase {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
-    async reorderSections(
-        _updates: Array<{ id: string; sort_order: number }>
-    ): Promise<void> {
+    async reorderSections(_updates: Array<{ id: string; sortOrder: number }>): Promise<void> {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
@@ -150,9 +133,7 @@ export class RemoteDatabase extends BaseDatabase {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
-    async getItemsByStoreWithDetails(
-        _storeId: string
-    ): Promise<StoreItemWithDetails[]> {
+    async getItemsByStoreWithDetails(_storeId: string): Promise<StoreItemWithDetails[]> {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
@@ -169,7 +150,7 @@ export class RemoteDatabase extends BaseDatabase {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
-    toggleItemFavorite(id: string): Promise<StoreItem> {
+    toggleItemFavorite(_id: string): Promise<StoreItem> {
         throw new Error("RemoteDatabase not yet implemented.");
     }
 
@@ -195,22 +176,15 @@ export class RemoteDatabase extends BaseDatabase {
     }
 
     // ========== ShoppingList Operations ==========
-    async getShoppingListItems(
-        _storeId: string
-    ): Promise<ShoppingListItemWithDetails[]> {
+    async getShoppingListItems(_storeId: string): Promise<ShoppingListItemWithDetails[]> {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
-    async upsertShoppingListItem(
-        params: ShoppingListItemOptionalId
-    ): Promise<ShoppingListItem> {
+    async upsertShoppingListItem(_params: ShoppingListItemOptionalId): Promise<ShoppingListItem> {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
-    async toggleShoppingListItemChecked(
-        _id: string,
-        _isChecked: boolean
-    ): Promise<void> {
+    async toggleShoppingListItemChecked(_id: string, _isChecked: boolean): Promise<void> {
         throw new Error("RemoteDatabase not yet implemented");
     }
 

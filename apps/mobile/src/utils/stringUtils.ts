@@ -22,7 +22,7 @@ export const toSentenceCase = (str: string): string => {
  * enabling proper matching while preserving the user's original input in the display name.
  *
  * @param name - The item name to normalize
- * @returns The normalized name for storage in name_norm field
+ * @returns The normalized name for storage in nameNorm field
  */
 export const normalizeItemName = (name: string): string => {
     const trimmed = name.trim();
@@ -36,9 +36,7 @@ export const normalizeItemName = (name: string): string => {
  * @param mapFn - Function to map an object to a string for comparison
  * @returns Sort function for use as .sort(objectSortFn(mapFn))
  */
-export const naturalSort = <T>(
-    mapFn: (obj: T) => string
-): ((a: T, b: T) => number) => {
+export const naturalSort = <T>(mapFn: (obj: T) => string): ((a: T, b: T) => number) => {
     const collator = new Intl.Collator(undefined, {
         numeric: true,
         sensitivity: "base",

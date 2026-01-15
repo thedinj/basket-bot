@@ -3,14 +3,14 @@
  */
 
 export interface AutoCategorizeResult {
-    aisle_name: string;
-    section_name: string | null;
+    aisleName: string;
+    sectionName: string | null;
     confidence: number;
     reasoning: string;
 }
 
 export interface AutoCategorizeInput {
-    item_name: string;
+    itemName: string;
     aisles: Array<{
         id: string;
         name: string;
@@ -24,9 +24,7 @@ export interface AutoCategorizeInput {
 /**
  * Validates the LLM response for auto-categorization
  */
-export function validateAutoCategorizeResult(
-    data: unknown
-): data is AutoCategorizeResult {
+export function validateAutoCategorizeResult(data: unknown): data is AutoCategorizeResult {
     if (typeof data !== "object" || data === null) {
         return false;
     }
@@ -34,9 +32,8 @@ export function validateAutoCategorizeResult(
     const result = data as Record<string, unknown>;
 
     return (
-        typeof result.aisle_name === "string" &&
-        (typeof result.section_name === "string" ||
-            result.section_name === null) &&
+        typeof result.aisleName === "string" &&
+        (typeof result.sectionName === "string" || result.sectionName === null) &&
         typeof result.confidence === "number" &&
         typeof result.reasoning === "string"
     );
@@ -50,9 +47,7 @@ export function transformAutoCategorizeResult(
     aisles: AutoCategorizeInput["aisles"]
 ): { aisleId: string | null; sectionId: string | null } {
     // Find matching aisle (case-insensitive)
-    const aisle = aisles.find(
-        (a) => a.name.toLowerCase() === result.aisle_name.toLowerCase()
-    );
+    const aisle = aisles.find((a) => a.name.toLowerCase() === result.aisleName.toLowerCase());
 
     if (!aisle) {
         return { aisleId: null, sectionId: null };
@@ -60,9 +55,9 @@ export function transformAutoCategorizeResult(
 
     // Find matching section if provided
     let sectionId: string | null = null;
-    if (result.section_name) {
+    if (result.sectionName) {
         const section = aisle.sections.find(
-            (s) => s.name.toLowerCase() === result.section_name!.toLowerCase()
+            (s) => s.name.toLowerCase() === result.sectionName!.toLowerCase()
         );
         sectionId = section?.id || null;
     }

@@ -1,7 +1,5 @@
-import { AppSetting } from "../models/AppSetting";
-import {
-    getInitializedStore,
-    QUANTITY_UNITS,
+import type {
+    AppSetting,
     QuantityUnit,
     ShoppingListItem,
     ShoppingListItemOptionalId,
@@ -11,7 +9,8 @@ import {
     StoreItem,
     StoreItemWithDetails,
     StoreSection,
-} from "../models/Store";
+} from "@basket-bot/core";
+import { QUANTITY_UNITS } from "@basket-bot/core";
 import { normalizeItemName } from "../utils/stringUtils";
 import { BaseDatabase } from "./base";
 import { DEFAULT_TABLES_TO_PERSIST } from "./types";
@@ -45,7 +44,7 @@ export class FakeDatabase extends BaseDatabase {
     }
 
     private initializeQuantityUnits(): void {
-        QUANTITY_UNITS.forEach((unit) => this.quantityUnits.set(unit.id, unit));
+        QUANTITY_UNITS.forEach((unit: QuantityUnit) => this.quantityUnits.set(unit.id, unit));
     }
 
     async close(): Promise<void> {
@@ -58,9 +57,7 @@ export class FakeDatabase extends BaseDatabase {
         return this.stores.size > 0;
     }
 
-    async reset(
-        tablesToPersist: string[] = DEFAULT_TABLES_TO_PERSIST
-    ): Promise<void> {
+    async reset(tablesToPersist: string[] = DEFAULT_TABLES_TO_PERSIST): Promise<void> {
         // Clear all data except persisted tables
         if (!tablesToPersist.includes("store")) {
             this.stores.clear();
@@ -85,9 +82,7 @@ export class FakeDatabase extends BaseDatabase {
     }
 
     async loadAllQuantityUnits(): Promise<QuantityUnit[]> {
-        return Array.from(this.quantityUnits.values()).sort(
-            (a, b) => a.sort_order - b.sort_order
-        );
+        return Array.from(this.quantityUnits.values()).sort((a, b) => a.sortOrder - b.sortOrder);
     }
 
     async loadAllStores(): Promise<Store[]> {
@@ -113,7 +108,7 @@ export class FakeDatabase extends BaseDatabase {
         const updatedStore: Store = {
             ...store,
             name,
-            updated_at: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         };
         this.stores.set(id, updatedStore);
         this.notifyChange();
@@ -129,22 +124,22 @@ export class FakeDatabase extends BaseDatabase {
         // CASCADE: Delete all related entities
         // Delete shopping list items for this store
         Array.from(this.shoppingListItems.values())
-            .filter((item) => item.store_id === id)
+            .filter((item) => item.storeId === id)
             .forEach((item) => this.shoppingListItems.delete(item.id));
 
         // Delete store items for this store
         Array.from(this.items.values())
-            .filter((item) => item.store_id === id)
+            .filter((item) => item.storeId === id)
             .forEach((item) => this.items.delete(item.id));
 
         // Delete sections for this store
         Array.from(this.sections.values())
-            .filter((section) => section.store_id === id)
+            .filter((section) => section.storeId === id)
             .forEach((section) => this.sections.delete(section.id));
 
         // Delete aisles for this store
         Array.from(this.aisles.values())
-            .filter((aisle) => aisle.store_id === id)
+            .filter((aisle) => aisle.storeId === id)
             .forEach((aisle) => this.aisles.delete(aisle.id));
 
         // Delete the store itself
@@ -161,7 +156,7 @@ export class FakeDatabase extends BaseDatabase {
         const setting: AppSetting = {
             key,
             value,
-            updated_at: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         };
         this.appSettings.set(key, setting);
         this.notifyChange();
@@ -172,17 +167,17 @@ export class FakeDatabase extends BaseDatabase {
         const id = crypto.randomUUID();
         const now = new Date().toISOString();
         const existingAisles = Array.from(this.aisles.values()).filter(
-            (a) => a.store_id === storeId
+            (a) => a.storeId === storeId
         );
-        const sort_order = existingAisles.length;
+        const sortOrder = existingAisles.length;
 
         const aisle: StoreAisle = {
             id,
-            store_id: storeId,
+            storeId: storeId,
             name,
-            sort_order,
-            created_at: now,
-            updated_at: now,
+            sortOrder,
+            createdAt: now,
+            updatedAt: now,
         };
         this.aisles.set(id, aisle);
         this.notifyChange();
@@ -191,8 +186,8 @@ export class FakeDatabase extends BaseDatabase {
 
     async getAislesByStore(storeId: string): Promise<StoreAisle[]> {
         return Array.from(this.aisles.values())
-            .filter((aisle) => aisle.store_id === storeId)
-            .sort((a, b) => a.sort_order - b.sort_order);
+            .filter((aisle) => aisle.storeId === storeId)
+            .sort((a, b) => a.sortOrder - b.sortOrder);
     }
 
     async getAisleById(id: string): Promise<StoreAisle | null> {
@@ -209,7 +204,7 @@ export class FakeDatabase extends BaseDatabase {
         const updated: StoreAisle = {
             ...aisle,
             name,
-            updated_at: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         };
         this.aisles.set(id, updated);
         this.notifyChange();
@@ -224,17 +219,15 @@ export class FakeDatabase extends BaseDatabase {
         }
     }
 
-    async reorderAisles(
-        updates: Array<{ id: string; sort_order: number }>
-    ): Promise<void> {
+    async reorderAisles(updates: Array<{ id: string; sortOrder: number }>): Promise<void> {
         const now = new Date().toISOString();
-        for (const { id, sort_order } of updates) {
+        for (const { id, sortOrder } of updates) {
             const aisle = this.aisles.get(id);
             if (aisle) {
                 this.aisles.set(id, {
                     ...aisle,
-                    sort_order,
-                    updated_at: now,
+                    sortOrder,
+                    updatedAt: now,
                 });
             }
         }
@@ -242,26 +235,22 @@ export class FakeDatabase extends BaseDatabase {
     }
 
     // ========== StoreSection Operations ==========
-    async insertSection(
-        storeId: string,
-        name: string,
-        aisleId: string
-    ): Promise<StoreSection> {
+    async insertSection(storeId: string, name: string, aisleId: string): Promise<StoreSection> {
         const id = crypto.randomUUID();
         const now = new Date().toISOString();
         const existingSections = Array.from(this.sections.values()).filter(
-            (s) => s.aisle_id === aisleId
+            (s) => s.aisleId === aisleId
         );
-        const sort_order = existingSections.length;
+        const sortOrder = existingSections.length;
 
         const section: StoreSection = {
             id,
-            store_id: storeId,
-            aisle_id: aisleId,
+            storeId: storeId,
+            aisleId: aisleId,
             name,
-            sort_order,
-            created_at: now,
-            updated_at: now,
+            sortOrder,
+            createdAt: now,
+            updatedAt: now,
         };
         this.sections.set(id, section);
         this.notifyChange();
@@ -270,8 +259,8 @@ export class FakeDatabase extends BaseDatabase {
 
     async getSectionsByStore(storeId: string): Promise<StoreSection[]> {
         return Array.from(this.sections.values())
-            .filter((section) => section.store_id === storeId)
-            .sort((a, b) => a.sort_order - b.sort_order);
+            .filter((section) => section.storeId === storeId)
+            .sort((a, b) => a.sortOrder - b.sortOrder);
     }
 
     async getSectionById(id: string): Promise<StoreSection | null> {
@@ -279,11 +268,7 @@ export class FakeDatabase extends BaseDatabase {
         return section ? section : null;
     }
 
-    async updateSection(
-        id: string,
-        name: string,
-        aisleId: string
-    ): Promise<StoreSection> {
+    async updateSection(id: string, name: string, aisleId: string): Promise<StoreSection> {
         const section = this.sections.get(id);
         if (!section) {
             throw new Error(`Section with id ${id} not found`);
@@ -292,8 +277,8 @@ export class FakeDatabase extends BaseDatabase {
         const updated: StoreSection = {
             ...section,
             name,
-            aisle_id: aisleId,
-            updated_at: new Date().toISOString(),
+            aisleId: aisleId,
+            updatedAt: new Date().toISOString(),
         };
         this.sections.set(id, updated);
         this.notifyChange();
@@ -308,17 +293,15 @@ export class FakeDatabase extends BaseDatabase {
         }
     }
 
-    async reorderSections(
-        updates: Array<{ id: string; sort_order: number }>
-    ): Promise<void> {
+    async reorderSections(updates: Array<{ id: string; sortOrder: number }>): Promise<void> {
         const now = new Date().toISOString();
-        for (const { id, sort_order } of updates) {
+        for (const { id, sortOrder } of updates) {
             const section = this.sections.get(id);
             if (section) {
                 this.sections.set(id, {
                     ...section,
-                    sort_order,
-                    updated_at: now,
+                    sortOrder,
+                    updatedAt: now,
                 });
             }
         }
@@ -334,25 +317,25 @@ export class FakeDatabase extends BaseDatabase {
     ): Promise<StoreItem> {
         const id = crypto.randomUUID();
         const now = new Date().toISOString();
-        const name_norm = normalizeItemName(name);
+        const nameNorm = normalizeItemName(name);
 
         // Normalize: store only section when present (null aisle), else store aisle
-        const normalizedAisleId = sectionId ? null : aisleId ?? null;
+        const normalizedAisleId = sectionId ? null : (aisleId ?? null);
         const normalizedSectionId = sectionId ?? null;
 
         const item: StoreItem = {
             id,
-            store_id: storeId,
+            storeId: storeId,
             name,
-            name_norm,
-            aisle_id: normalizedAisleId,
-            section_id: normalizedSectionId,
-            usage_count: 0,
-            last_used_at: null,
-            is_hidden: 0,
-            is_favorite: 0,
-            created_at: now,
-            updated_at: now,
+            nameNorm,
+            aisleId: normalizedAisleId,
+            sectionId: normalizedSectionId,
+            usageCount: 0,
+            lastUsedAt: null,
+            isHidden: false,
+            isFavorite: false,
+            createdAt: now,
+            updatedAt: now,
         };
         this.items.set(id, item);
         this.notifyChange();
@@ -361,45 +344,40 @@ export class FakeDatabase extends BaseDatabase {
 
     async getItemsByStore(storeId: string): Promise<StoreItem[]> {
         return Array.from(this.items.values())
-            .filter((item) => item.store_id === storeId && item.is_hidden === 0)
-            .sort((a, b) => a.name_norm.localeCompare(b.name_norm));
+            .filter((item) => item.storeId === storeId && !item.isHidden)
+            .sort((a, b) => a.nameNorm.localeCompare(b.nameNorm));
     }
 
-    async getItemsByStoreWithDetails(
-        storeId: string
-    ): Promise<StoreItemWithDetails[]> {
+    async getItemsByStoreWithDetails(storeId: string): Promise<StoreItemWithDetails[]> {
         const items = Array.from(this.items.values()).filter(
-            (item) => item.store_id === storeId && item.is_hidden === 0
+            (item) => item.storeId === storeId && !item.isHidden
         );
 
         return items
             .map((item) => {
-                const section = item.section_id
-                    ? this.sections.get(item.section_id)
-                    : null;
-                const aisleId = section?.aisle_id || item.aisle_id;
+                const section = item.sectionId ? this.sections.get(item.sectionId) : null;
+                const aisleId = section?.aisleId || item.aisleId;
                 const aisle = aisleId ? this.aisles.get(aisleId) : null;
 
                 return {
                     ...item,
-                    aisle_id: aisleId || null,
-                    aisle_name: aisle?.name || null,
-                    aisle_sort_order: aisle?.sort_order || null,
-                    section_name: section?.name || null,
-                    section_sort_order: section?.sort_order || null,
+                    aisleId: aisleId || null,
+                    aisleName: aisle?.name || null,
+                    aisleSortOrder: aisle?.sortOrder || null,
+                    sectionName: section?.name || null,
+                    sectionSortOrder: section?.sortOrder || null,
                 };
             })
             .sort((a, b) => {
-                const aSortOrder = a.aisle_sort_order ?? 999999;
-                const bSortOrder = b.aisle_sort_order ?? 999999;
+                const aSortOrder = a.aisleSortOrder ?? 999999;
+                const bSortOrder = b.aisleSortOrder ?? 999999;
                 if (aSortOrder !== bSortOrder) return aSortOrder - bSortOrder;
 
-                const aSectionSort = a.section_sort_order ?? 999999;
-                const bSectionSort = b.section_sort_order ?? 999999;
-                if (aSectionSort !== bSectionSort)
-                    return aSectionSort - bSectionSort;
+                const aSectionSort = a.sectionSortOrder ?? 999999;
+                const bSectionSort = b.sectionSortOrder ?? 999999;
+                if (aSectionSort !== bSectionSort) return aSectionSort - bSectionSort;
 
-                return a.name_norm.localeCompare(b.name_norm);
+                return a.nameNorm.localeCompare(b.nameNorm);
             });
     }
 
@@ -419,19 +397,19 @@ export class FakeDatabase extends BaseDatabase {
             throw new Error(`Item with id ${id} not found`);
         }
 
-        const name_norm = normalizeItemName(name);
+        const nameNorm = normalizeItemName(name);
 
         // Normalize: store only section when present (null aisle), else store aisle
-        const normalizedAisleId = sectionId ? null : aisleId ?? null;
+        const normalizedAisleId = sectionId ? null : (aisleId ?? null);
         const normalizedSectionId = sectionId ?? null;
 
         const updated: StoreItem = {
             ...item,
             name,
-            name_norm,
-            aisle_id: normalizedAisleId,
-            section_id: normalizedSectionId,
-            updated_at: new Date().toISOString(),
+            nameNorm,
+            aisleId: normalizedAisleId,
+            sectionId: normalizedSectionId,
+            updatedAt: new Date().toISOString(),
         };
         this.items.set(id, updated);
         this.notifyChange();
@@ -446,8 +424,8 @@ export class FakeDatabase extends BaseDatabase {
 
         const updated: StoreItem = {
             ...item,
-            is_favorite: item.is_favorite === 0 ? 1 : 0,
-            updated_at: new Date().toISOString(),
+            isFavorite: !item.isFavorite,
+            updatedAt: new Date().toISOString(),
         };
         this.items.set(id, updated);
         this.notifyChange();
@@ -471,98 +449,84 @@ export class FakeDatabase extends BaseDatabase {
         return Array.from(this.items.values())
             .filter(
                 (item) =>
-                    item.store_id === storeId &&
-                    item.is_hidden === 0 &&
-                    item.name_norm.includes(searchNorm)
+                    item.storeId === storeId && !item.isHidden && item.nameNorm.includes(searchNorm)
             )
             .sort((a, b) => {
                 // Prioritize items that start with search term
-                const aStarts = a.name_norm.startsWith(searchNorm);
-                const bStarts = b.name_norm.startsWith(searchNorm);
+                const aStarts = a.nameNorm.startsWith(searchNorm);
+                const bStarts = b.nameNorm.startsWith(searchNorm);
                 if (aStarts !== bStarts) {
                     return bStarts ? 1 : -1;
                 }
 
-                // Then sort by usage_count desc, last_used_at desc, then name
-                if (b.usage_count !== a.usage_count) {
-                    return b.usage_count - a.usage_count;
+                // Then sort by usageCount desc, lastUsedAt desc, then name
+                if (b.usageCount !== a.usageCount) {
+                    return b.usageCount - a.usageCount;
                 }
-                if (a.last_used_at && b.last_used_at) {
-                    return (
-                        new Date(b.last_used_at).getTime() -
-                        new Date(a.last_used_at).getTime()
-                    );
+                if (a.lastUsedAt && b.lastUsedAt) {
+                    return new Date(b.lastUsedAt).getTime() - new Date(a.lastUsedAt).getTime();
                 }
-                return a.name_norm.localeCompare(b.name_norm);
+                return a.nameNorm.localeCompare(b.nameNorm);
             })
             .slice(0, limit);
     }
 
     // ========== ShoppingList Operations ==========
-    async getShoppingListItems(
-        storeId: string
-    ): Promise<ShoppingListItemWithDetails[]> {
+    async getShoppingListItems(storeId: string): Promise<ShoppingListItemWithDetails[]> {
         const items = Array.from(this.shoppingListItems.values())
-            .filter((item) => item.store_id === storeId)
+            .filter((item) => item.storeId === storeId)
             .map((item) => {
-                // For ideas, store_item_id is null
-                const storeItem = item.store_item_id
-                    ? this.items.get(item.store_item_id)
-                    : null;
+                // For ideas, storeItemId is null
+                const storeItem = item.storeItemId ? this.items.get(item.storeItemId) : null;
 
                 // Join with quantity_unit
-                const unit = item.unit_id
-                    ? this.quantityUnits.get(item.unit_id)
-                    : null;
+                const unit = item.unitId ? this.quantityUnits.get(item.unitId) : null;
 
                 // Join with section and aisle from store_item (if exists)
                 const section =
-                    storeItem && storeItem.section_id
-                        ? this.sections.get(storeItem.section_id)
+                    storeItem && storeItem.sectionId
+                        ? this.sections.get(storeItem.sectionId)
                         : null;
-                // Prefer section's aisle_id over item's direct aisle_id
-                const calculatedAisleId =
-                    section?.aisle_id ?? storeItem?.aisle_id ?? null;
-                const aisle = calculatedAisleId
-                    ? this.aisles.get(calculatedAisleId)
-                    : null;
+                // Prefer section's aisleId over item's direct aisleId
+                const calculatedAisleId = section?.aisleId ?? storeItem?.aisleId ?? null;
+                const aisle = calculatedAisleId ? this.aisles.get(calculatedAisleId) : null;
 
                 return {
                     ...item,
-                    item_name: storeItem?.name ?? "",
-                    unit_abbreviation: unit?.abbreviation ?? null,
-                    section_id: section?.id ?? null,
-                    aisle_id: calculatedAisleId,
-                    section_name: section?.name ?? null,
-                    section_sort_order: section?.sort_order ?? null,
-                    aisle_name: aisle?.name ?? null,
-                    aisle_sort_order: aisle?.sort_order ?? null,
+                    itemName: storeItem?.name ?? "",
+                    unitAbbreviation: unit?.abbreviation ?? null,
+                    sectionId: section?.id ?? null,
+                    aisleId: calculatedAisleId,
+                    sectionName: section?.name ?? null,
+                    sectionSortOrder: section?.sortOrder ?? null,
+                    aisleName: aisle?.name ?? null,
+                    aisleSortOrder: aisle?.sortOrder ?? null,
                 } as ShoppingListItemWithDetails;
             })
             .sort((a, b) => {
-                // Sort by: is_checked, is_idea (DESC), aisle, section, item name/notes
-                if (a.is_checked !== b.is_checked) {
-                    return a.is_checked - b.is_checked;
+                // Sort by: isChecked, isIdea (DESC), aisle, section, item name/notes
+                if (a.isChecked !== b.isChecked) {
+                    return Number(a.isChecked) - Number(b.isChecked);
                 }
                 // Ideas first (1 before 0)
-                const aIsIdea = a.is_idea ?? 0;
-                const bIsIdea = b.is_idea ?? 0;
+                const aIsIdea = a.isIdea ?? 0;
+                const bIsIdea = b.isIdea ?? 0;
                 if (aIsIdea !== bIsIdea) {
-                    return bIsIdea - aIsIdea;
+                    return Number(bIsIdea) - Number(aIsIdea);
                 }
-                const aAisleOrder = a.aisle_sort_order ?? 999999;
-                const bAisleOrder = b.aisle_sort_order ?? 999999;
+                const aAisleOrder = a.aisleSortOrder ?? 999999;
+                const bAisleOrder = b.aisleSortOrder ?? 999999;
                 if (aAisleOrder !== bAisleOrder) {
                     return aAisleOrder - bAisleOrder;
                 }
-                const aSectionOrder = a.section_sort_order ?? 999999;
-                const bSectionOrder = b.section_sort_order ?? 999999;
+                const aSectionOrder = a.sectionSortOrder ?? 999999;
+                const bSectionOrder = b.sectionSortOrder ?? 999999;
                 if (aSectionOrder !== bSectionOrder) {
                     return aSectionOrder - bSectionOrder;
                 }
-                // Use notes for ideas, item_name for regular items
-                const aName = a.item_name || a.notes || "";
-                const bName = b.item_name || b.notes || "";
+                // Use notes for ideas, itemName for regular items
+                const aName = a.itemName || a.notes || "";
+                const bName = b.itemName || b.notes || "";
                 return aName.localeCompare(bName);
             });
 
@@ -576,27 +540,25 @@ export class FakeDatabase extends BaseDatabase {
         sectionId?: string | null
     ): Promise<StoreItem> {
         const now = new Date().toISOString();
-        const name_norm = normalizeItemName(name);
+        const nameNorm = normalizeItemName(name);
 
         // Try to find existing item
         const existingItem = Array.from(this.items.values()).find(
-            (item) => item.store_id === storeId && item.name_norm === name_norm
+            (item) => item.storeId === storeId && item.nameNorm === nameNorm
         );
 
         if (existingItem) {
-            // Update usage count, last_used_at, and location if provided
-            const normalizedAisleId = sectionId
-                ? null
-                : aisleId ?? existingItem.aisle_id;
-            const normalizedSectionId = sectionId ?? existingItem.section_id;
+            // Update usage count, lastUsedAt, and location if provided
+            const normalizedAisleId = sectionId ? null : (aisleId ?? existingItem.aisleId);
+            const normalizedSectionId = sectionId ?? existingItem.sectionId;
 
             const updatedItem: StoreItem = {
                 ...existingItem,
-                usage_count: existingItem.usage_count + 1,
-                last_used_at: now,
-                aisle_id: normalizedAisleId,
-                section_id: normalizedSectionId,
-                updated_at: now,
+                usageCount: existingItem.usageCount + 1,
+                lastUsedAt: now,
+                aisleId: normalizedAisleId,
+                sectionId: normalizedSectionId,
+                updatedAt: now,
             };
             this.items.set(existingItem.id, updatedItem);
             this.notifyChange();
@@ -607,9 +569,7 @@ export class FakeDatabase extends BaseDatabase {
         }
     }
 
-    async upsertShoppingListItem(
-        params: ShoppingListItemOptionalId
-    ): Promise<ShoppingListItem> {
+    async upsertShoppingListItem(params: ShoppingListItemOptionalId): Promise<ShoppingListItem> {
         const now = new Date().toISOString();
 
         if (params.id) {
@@ -621,14 +581,14 @@ export class FakeDatabase extends BaseDatabase {
 
             const updated: ShoppingListItem = {
                 ...existing,
-                store_item_id: params.store_item_id || null,
+                storeItemId: params.storeItemId || null,
                 qty: params.qty ?? null,
-                unit_id: params.unit_id || null,
+                unitId: params.unitId || null,
                 notes: params.notes,
-                is_sample: params.is_sample ?? null,
-                is_idea: params.is_idea ? 1 : 0,
-                snoozed_until: params.snoozed_until || null,
-                updated_at: now,
+                isSample: params.isSample ?? null,
+                isIdea: params.isIdea,
+                snoozedUntil: params.snoozedUntil || null,
+                updatedAt: now,
             };
             this.shoppingListItems.set(params.id, updated);
             this.notifyChange();
@@ -639,18 +599,18 @@ export class FakeDatabase extends BaseDatabase {
 
             const newItem: ShoppingListItem = {
                 id,
-                store_id: params.store_id,
-                store_item_id: params.store_item_id || null,
+                storeId: params.storeId,
+                storeItemId: params.storeItemId || null,
                 qty: params.qty ?? null,
-                unit_id: params.unit_id || null,
+                unitId: params.unitId || null,
                 notes: params.notes,
-                is_checked: 0,
-                checked_at: null,
-                is_sample: params.is_sample ?? null,
-                is_idea: params.is_idea ? 1 : 0,
-                snoozed_until: params.snoozed_until || null,
-                created_at: now,
-                updated_at: now,
+                isChecked: false,
+                checkedAt: null,
+                isSample: params.isSample ?? null,
+                isIdea: params.isIdea,
+                snoozedUntil: params.snoozedUntil || null,
+                createdAt: now,
+                updatedAt: now,
             };
             this.shoppingListItems.set(id, newItem);
             this.notifyChange();
@@ -658,18 +618,15 @@ export class FakeDatabase extends BaseDatabase {
         }
     }
 
-    async toggleShoppingListItemChecked(
-        id: string,
-        isChecked: boolean
-    ): Promise<void> {
+    async toggleShoppingListItemChecked(id: string, isChecked: boolean): Promise<void> {
         const item = this.shoppingListItems.get(id);
         if (item) {
             const now = new Date().toISOString();
             this.shoppingListItems.set(id, {
                 ...item,
-                is_checked: isChecked ? 1 : 0,
-                checked_at: isChecked ? now : null,
-                updated_at: now,
+                isChecked: isChecked,
+                checkedAt: isChecked ? now : null,
+                updatedAt: now,
             });
             this.notifyChange();
         }
@@ -682,8 +639,8 @@ export class FakeDatabase extends BaseDatabase {
             this.shoppingListItems.delete(id);
 
             // If there was an associated store item, delete it too (cascade)
-            if (item.store_item_id) {
-                this.items.delete(item.store_item_id);
+            if (item.storeItemId) {
+                this.items.delete(item.storeItemId);
             }
 
             this.notifyChange();
@@ -698,7 +655,7 @@ export class FakeDatabase extends BaseDatabase {
 
     async clearCheckedShoppingListItems(storeId: string): Promise<void> {
         const items = Array.from(this.shoppingListItems.values()).filter(
-            (item) => item.store_id === storeId && item.is_checked === 1
+            (item) => item.storeId === storeId && item.isChecked
         );
 
         for (const item of items) {

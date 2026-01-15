@@ -1,24 +1,14 @@
+import type { StoreAisle, StoreSection } from "@basket-bot/core";
 import { ItemReorderEventDetail } from "@ionic/core";
-import {
-    IonButton,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonReorder,
-    IonReorderGroup,
-} from "@ionic/react";
+import { IonButton, IonIcon, IonItem, IonLabel, IonReorder, IonReorderGroup } from "@ionic/react";
 import { create } from "ionicons/icons";
-import { StoreAisle, StoreSection } from "../../models/Store";
 import { SectionItem } from "./SectionItem";
 import { useStoreManagement } from "./StoreManagementContext";
 
 interface AisleItemProps {
     aisle: StoreAisle;
     sections: Array<StoreSection>;
-    onSectionReorder: (
-        event: CustomEvent<ItemReorderEventDetail>,
-        aisleId: string
-    ) => void;
+    onSectionReorder: (event: CustomEvent<ItemReorderEventDetail>, aisleId: string) => void;
     showReorderHandle?: boolean;
     showSectionReorderHandles?: boolean;
 }
@@ -32,7 +22,7 @@ export const AisleItem = ({
 }: AisleItemProps) => {
     const { openEditAisleModal } = useStoreManagement();
 
-    const aisleSections = sections.filter((s) => s.aisle_id === aisle.id);
+    const aisleSections = sections.filter((s) => s.aisleId === aisle.id);
 
     return (
         <div>

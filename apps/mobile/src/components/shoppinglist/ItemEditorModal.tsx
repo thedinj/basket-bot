@@ -1,3 +1,4 @@
+import type { ShoppingListItem, ShoppingListItemOptionalId } from "@basket-bot/core";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonAlert,
@@ -22,10 +23,6 @@ import {
     useUpdateItem,
     useUpsertShoppingListItem,
 } from "../../db/hooks";
-import {
-    ShoppingListItem,
-    ShoppingListItemOptionalId,
-} from "../../models/Store";
 import { ItemEditorProvider } from "./ItemEditorContext";
 import { ItemFormData, itemFormSchema } from "./itemEditorSchema";
 import { LocationSelectors } from "./LocationSelectors";
@@ -41,8 +38,7 @@ interface ItemEditorModalProps {
 }
 
 export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
-    const { isItemModalOpen, editingItem, closeItemModal } =
-        useShoppingListContext();
+    const { isItemModalOpen, editingItem, closeItemModal } = useShoppingListContext();
     const upsertItem = useUpsertShoppingListItem();
     const getOrCreateStoreItem = useGetOrCreateStoreItem();
     const updateItem = useUpdateItem();
@@ -79,18 +75,15 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
     useEffect(() => {
         if (isItemModalOpen && editingItem) {
             reset({
-                name: editingItem.item_name || "",
+                name: editingItem.itemName || "",
                 qty: editingItem.qty,
-                unitId: editingItem.unit_id,
+                unitId: editingItem.unitId,
                 notes: editingItem.notes,
-                aisleId: editingItem.aisle_id,
-                sectionId: editingItem.section_id,
-                isIdea: editingItem.is_idea === 1,
+                aisleId: editingItem.aisleId,
+                sectionId: editingItem.sectionId,
+                isIdea: editingItem.isIdea,
                 // Clear snoozedUntil if item is checked (checked items cannot be snoozed)
-                snoozedUntil:
-                    editingItem.is_checked === 1
-                        ? null
-                        : editingItem.snoozed_until,
+                snoozedUntil: editingItem.isChecked ? null : editingItem.snoozedUntil,
             });
         } else if (isItemModalOpen) {
             reset({
@@ -127,20 +120,19 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
 
     const onSubmit = async (data: ItemFormData) => {
         // Defensive check: clear snoozedUntil if item is checked (checked items cannot be snoozed)
-        const snoozedUntil =
-            editingItem?.is_checked === 1 ? null : data.snoozedUntil || null;
+        const snoozedUntil = editingItem?.isChecked ? null : data.snoozedUntil || null;
 
         if (isIdea) {
             // Idea - no store item needed
             await upsertItem.mutateAsync({
                 id: editingItem?.id,
-                store_id: storeId,
-                store_item_id: null,
+                storeId: storeId,
+                storeItemId: null,
                 qty: null,
-                unit_id: null,
+                unitId: null,
                 notes: data.notes || null,
-                is_idea: 1,
-                snoozed_until: snoozedUntil,
+                isIdea: true,
+                snoozedUntil: snoozedUntil,
             });
         } else {
             // Regular item - need store item
@@ -149,13 +141,13 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
             if (editingItem) {
                 // Update existing store item
                 await updateItem.mutateAsync({
-                    id: editingItem.store_item_id!,
+                    id: editingItem.storeItemId!,
                     name: data.name,
                     aisleId: data.aisleId || null,
                     sectionId: data.sectionId || null,
                     storeId,
                 });
-                storeItemId = editingItem.store_item_id!;
+                storeItemId = editingItem.storeItemId!;
             } else {
                 // Get or create store item
                 const storeItem = await getOrCreateStoreItem.mutateAsync({
@@ -170,13 +162,13 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
             // Update or create shopping list item
             await upsertItem.mutateAsync({
                 id: editingItem?.id,
-                store_id: storeId,
-                store_item_id: storeItemId,
+                storeId: storeId,
+                storeItemId: storeItemId,
                 qty: data.qty ?? null,
-                unit_id: data.unitId || null,
+                unitId: data.unitId || null,
                 notes: data.notes || null,
-                is_idea: 0,
-                snoozed_until: snoozedUntil,
+                isIdea: false,
+                snoozedUntil: snoozedUntil,
             });
         }
         closeItemModal();
@@ -207,8 +199,8 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                                 ? "Edit Idea"
                                 : "Edit Item"
                             : isIdea
-                            ? "Add Idea"
-                            : "Add Item"}
+                              ? "Add Idea"
+                              : "Add Item"}
                     </IonTitle>
                     <IonButtons slot="end">
                         <IonButton onClick={closeItemModal}>
@@ -266,9 +258,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                             <>
                                 <NotesInput />
                                 {/* Hide snooze selector if editing a checked idea */}
-                                {editingItem?.is_checked !== 1 && (
-                                    <SnoozeDateSelector />
-                                )}
+                                {!editingItem?.isChecked && <SnoozeDateSelector />}
                             </>
                         ) : (
                             // Regular Item mode - all fields
@@ -279,9 +269,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                                 <LocationSelectors />
                                 <NotesInput />
                                 {/* Hide snooze selector if editing a checked item */}
-                                {editingItem?.is_checked !== 1 && (
-                                    <SnoozeDateSelector />
-                                )}
+                                {!editingItem?.isChecked && <SnoozeDateSelector />}
                             </>
                         )}
 
@@ -312,7 +300,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                     onDidDismiss={() => setShowDeleteAlert(false)}
                     header={`Remove ${isIdea ? "Idea" : "Item"}`}
                     message={`Permanently remove "${
-                        editingItem?.item_name || editingItem?.notes
+                        editingItem?.itemName || editingItem?.notes
                     }" from your store and shopping list?`}
                     buttons={[
                         {
@@ -333,11 +321,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
 
 const SaveButton: React.FC<{
     isValid: boolean;
-    upsertItem: UseMutationResult<
-        ShoppingListItem,
-        Error,
-        ShoppingListItemOptionalId
-    >;
+    upsertItem: UseMutationResult<ShoppingListItem, Error, ShoppingListItemOptionalId>;
     editingItem: ShoppingListItem | null;
     isIdea: boolean | undefined;
 }> = ({ isValid, upsertItem, editingItem, isIdea }) => {

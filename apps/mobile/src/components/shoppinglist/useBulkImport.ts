@@ -1,3 +1,4 @@
+import type { ShoppingListItemOptionalId } from "@basket-bot/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import {
@@ -10,7 +11,6 @@ import {
 import { useToast } from "../../hooks/useToast";
 import type { ParsedShoppingItem } from "../../llm/features/bulkImport";
 import { useAutoCategorize } from "../../llm/features/useAutoCategorize";
-import type { ShoppingListItemOptionalId } from "../../models/Store";
 import { normalizeItemName, toSentenceCase } from "../../utils/stringUtils";
 import { useShoppingListContext } from "./useShoppingListContext";
 
@@ -46,7 +46,7 @@ export function useBulkImport(storeId: string) {
                         // Find existing store item by normalized name (handles singular/plural)
                         const parsedNameNorm = normalizeItemName(parsed.name);
                         const existingItem = storeItems?.find(
-                            (item) => item.name_norm === parsedNameNorm
+                            (item) => item.nameNorm === parsedNameNorm
                         );
 
                         let itemId: string;
@@ -56,33 +56,27 @@ export function useBulkImport(storeId: string) {
                         if (existingItem) {
                             // Use existing item
                             itemId = existingItem.id;
-                            aisleId = existingItem.aisle_id;
-                            sectionId = existingItem.section_id;
+                            aisleId = existingItem.aisleId;
+                            sectionId = existingItem.sectionId;
                         } else {
                             // Try auto-categorization for new items
                             if (aisles && aisles.length > 0) {
                                 try {
-                                    const categorization = await autoCategorize(
-                                        {
-                                            itemName: parsed.name,
-                                            aisles:
-                                                aisles.map((aisle) => ({
-                                                    id: aisle.id,
-                                                    name: aisle.name,
-                                                    sections:
-                                                        sections
-                                                            ?.filter(
-                                                                (s) =>
-                                                                    s.aisle_id ===
-                                                                    aisle.id
-                                                            )
-                                                            .map((s) => ({
-                                                                id: s.id,
-                                                                name: s.name,
-                                                            })) || [],
-                                                })) || [],
-                                        }
-                                    );
+                                    const categorization = await autoCategorize({
+                                        itemName: parsed.name,
+                                        aisles:
+                                            aisles.map((aisle) => ({
+                                                id: aisle.id,
+                                                name: aisle.name,
+                                                sections:
+                                                    sections
+                                                        ?.filter((s) => s.aisleId === aisle.id)
+                                                        .map((s) => ({
+                                                            id: s.id,
+                                                            name: s.name,
+                                                        })) || [],
+                                            })) || [],
+                                    });
                                     aisleId = categorization.aisleId;
                                     sectionId = categorization.sectionId;
                                 } catch {
@@ -92,35 +86,29 @@ export function useBulkImport(storeId: string) {
 
                             // Create new store item with sentence-case formatting for LLM output
                             const displayName = toSentenceCase(parsed.name);
-                            const newItem =
-                                await getOrCreateStoreItem.mutateAsync({
-                                    storeId,
-                                    name: displayName,
-                                    aisleId,
-                                    sectionId,
-                                });
+                            const newItem = await getOrCreateStoreItem.mutateAsync({
+                                storeId,
+                                name: displayName,
+                                aisleId,
+                                sectionId,
+                            });
                             itemId = newItem.id;
                         }
 
                         // Create shopping list item
                         const shoppingListItem: ShoppingListItemOptionalId = {
-                            store_item_id: itemId,
-                            store_id: storeId,
+                            storeItemId: itemId,
+                            storeId: storeId,
                             qty: parsed.quantity ?? 1,
-                            unit_id: parsed.unit,
+                            unitId: parsed.unit,
                             notes: parsed.notes,
                         };
 
-                        const result = await upsertItem.mutateAsync(
-                            shoppingListItem
-                        );
+                        const result = await upsertItem.mutateAsync(shoppingListItem);
                         importedItemIds.push(result.id);
                         successCount++;
                     } catch (error) {
-                        console.error(
-                            `Failed to import item "${parsed.name}":`,
-                            error
-                        );
+                        console.error(`Failed to import item "${parsed.name}":`, error);
                         errorCount++;
                     }
                 }
@@ -137,25 +125,15 @@ export function useBulkImport(storeId: string) {
 
                 if (successCount > 0) {
                     showSuccess(
-                        `Added ${successCount} item${
-                            successCount > 1 ? "s" : ""
-                        } to your cart`
+                        `Added ${successCount} item${successCount > 1 ? "s" : ""} to your cart`
                     );
                 }
 
                 if (errorCount > 0) {
-                    showError(
-                        `Failed to import ${errorCount} item${
-                            errorCount > 1 ? "s" : ""
-                        }`
-                    );
+                    showError(`Failed to import ${errorCount} item${errorCount > 1 ? "s" : ""}`);
                 }
             } catch (error) {
-                showError(
-                    error instanceof Error
-                        ? error.message
-                        : "Failed to import items"
-                );
+                showError(error instanceof Error ? error.message : "Failed to import items");
             } finally {
                 setIsImporting(false);
             }
