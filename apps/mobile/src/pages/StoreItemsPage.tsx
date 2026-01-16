@@ -140,9 +140,6 @@ const StoreItemsPage: React.FC = () => {
                 await upsertShoppingListItem.mutateAsync({
                     storeId: storeId,
                     storeItemId: item.id,
-                    qty: null,
-                    unitId: null,
-                    notes: null,
                 });
                 showSuccess("Added to shopping list");
             } catch {

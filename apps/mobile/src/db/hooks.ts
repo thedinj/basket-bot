@@ -1,4 +1,4 @@
-import type { ShoppingListItem, ShoppingListItemOptionalId } from "@basket-bot/core";
+import type { ShoppingListItem, ShoppingListItemInput } from "@basket-bot/core";
 import {
     useQueryClient,
     useMutation as useTanstackMutation,
@@ -817,7 +817,7 @@ export function useUpsertShoppingListItem() {
     const queryClient = useQueryClient();
     const { showError } = useToast();
 
-    return useTanstackMutation<ShoppingListItem, Error, ShoppingListItemOptionalId>({
+    return useTanstackMutation<ShoppingListItem, Error, ShoppingListItemInput>({
         mutationFn: (params) =>
             database.upsertShoppingListItem(params) as Promise<ShoppingListItem>,
         onSuccess: (_, variables) => {
@@ -958,7 +958,6 @@ export function useMoveItemToStore() {
                     storeId: targetStoreId,
                     storeItemId: null,
                     qty: 1,
-                    unitId: null,
                     notes: item.notes,
                     isIdea: true,
                 });
@@ -979,7 +978,6 @@ export function useMoveItemToStore() {
                     qty: item.qty,
                     unitId: item.unitId,
                     notes: item.notes,
-                    isIdea: false,
                 });
             }
 

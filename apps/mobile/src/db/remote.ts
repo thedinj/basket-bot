@@ -2,7 +2,7 @@ import type {
     AppSetting,
     QuantityUnit,
     ShoppingListItem,
-    ShoppingListItemOptionalId,
+    ShoppingListItemInput,
     ShoppingListItemWithDetails,
     Store,
     StoreAisle,
@@ -180,7 +180,7 @@ export class RemoteDatabase extends BaseDatabase {
         throw new Error("RemoteDatabase not yet implemented");
     }
 
-    async upsertShoppingListItem(_params: ShoppingListItemOptionalId): Promise<ShoppingListItem> {
+    async upsertShoppingListItem(_params: ShoppingListItemInput): Promise<ShoppingListItem> {
         throw new Error("RemoteDatabase not yet implemented");
     }
 

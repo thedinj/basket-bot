@@ -1,4 +1,4 @@
-import type { ShoppingListItemOptionalId } from "@basket-bot/core";
+import type { ShoppingListItemInput } from "@basket-bot/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import {
@@ -96,7 +96,7 @@ export function useBulkImport(storeId: string) {
                         }
 
                         // Create shopping list item
-                        const shoppingListItem: ShoppingListItemOptionalId = {
+                        const shoppingListItem: ShoppingListItemInput = {
                             storeItemId: itemId,
                             storeId: storeId,
                             qty: parsed.quantity ?? 1,

@@ -1,4 +1,4 @@
-import type { ShoppingListItem, ShoppingListItemOptionalId } from "@basket-bot/core";
+import type { ShoppingListItem, ShoppingListItemInput } from "@basket-bot/core";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonAlert,
@@ -128,8 +128,6 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 id: editingItem?.id,
                 storeId: storeId,
                 storeItemId: null,
-                qty: null,
-                unitId: null,
                 notes: data.notes || null,
                 isIdea: true,
                 snoozedUntil: snoozedUntil,
@@ -167,7 +165,6 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 qty: data.qty ?? null,
                 unitId: data.unitId || null,
                 notes: data.notes || null,
-                isIdea: false,
                 snoozedUntil: snoozedUntil,
             });
         }
@@ -321,7 +318,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
 
 const SaveButton: React.FC<{
     isValid: boolean;
-    upsertItem: UseMutationResult<ShoppingListItem, Error, ShoppingListItemOptionalId>;
+    upsertItem: UseMutationResult<ShoppingListItem, Error, ShoppingListItemInput>;
     editingItem: ShoppingListItem | null;
     isIdea: boolean | undefined;
 }> = ({ isValid, upsertItem, editingItem, isIdea }) => {

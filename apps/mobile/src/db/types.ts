@@ -2,7 +2,7 @@ import type {
     AppSetting,
     QuantityUnit,
     ShoppingListItem,
-    ShoppingListItemOptionalId,
+    ShoppingListItemInput,
     ShoppingListItemWithDetails,
     Store,
     StoreAisle,
@@ -238,7 +238,7 @@ export interface EntityDatabase {
      * Auto-creates StoreItem if it doesn't exist (by nameNorm)
      * Updates StoreItem usage tracking
      */
-    upsertShoppingListItem(params: ShoppingListItemOptionalId): Promise<ShoppingListItem>;
+    upsertShoppingListItem(params: ShoppingListItemInput): Promise<ShoppingListItem>;
 
     /**
      * Toggle the checked status of a shopping list item

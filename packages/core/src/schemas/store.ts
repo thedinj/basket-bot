@@ -215,12 +215,100 @@ export const shoppingListItemWithDetailsSchema = shoppingListItemSchema.extend({
 
 export type ShoppingListItemWithDetails = z.infer<typeof shoppingListItemWithDetailsSchema>;
 
-// ShoppingListItem with optional ID (for creating new items)
-export type ShoppingListItemOptionalId = Omit<
-    ShoppingListItem,
+// ========== Client-Side Input Types (for mobile database operations) ==========
+// These types exclude server-controlled fields: createdById, updatedById, createdAt, updatedAt
+// The mobile client should never send these values; the backend calculates them based on JWT and server time
+
+export type StoreInput = Omit<
+    Store,
     "id" | "createdById" | "updatedById" | "createdAt" | "updatedAt"
 > & {
     id?: string;
+};
+
+export type StoreAisleInput = Omit<
+    StoreAisle,
+    "id" | "createdById" | "updatedById" | "createdAt" | "updatedAt"
+> & {
+    id?: string;
+};
+
+export type StoreSectionInput = Omit<
+    StoreSection,
+    "id" | "createdById" | "updatedById" | "createdAt" | "updatedAt"
+> & {
+    id?: string;
+};
+
+export type StoreItemInput = Omit<
+    StoreItem,
+    | "id"
+    | "createdById"
+    | "updatedById"
+    | "createdAt"
+    | "updatedAt"
+    | "nameNorm"
+    | "usageCount"
+    | "lastUsedAt"
+> & {
+    id?: string;
+};
+
+/**
+ * Input schema for upserting shopping list items.
+ * - Most fields are optional with sensible defaults applied by the implementation layer
+ * - checkedAt is excluded entirely; it's server-controlled and derived from isChecked state
+ * - For ideas: storeItemId should be null and name should be provided (validated via refine)
+ * - For regular items: storeItemId is required
+ */
+export const shoppingListItemInputSchema = z
+    .object({
+        id: z.string().uuid().optional(),
+        storeId: z.string().uuid(),
+        storeItemId: z.string().uuid().nullable().optional(),
+        qty: z.number().nullable().optional(),
+        unitId: z.string().nullable().optional(),
+        notes: z.string().nullable().optional(),
+        isChecked: z.boolean().optional().default(false),
+        isIdea: z.boolean().optional().default(false),
+        isSample: z.boolean().nullable().optional().default(null),
+        snoozedUntil: z.string().datetime().nullable().optional(),
+        // name is only used for ideas (when storeItemId is null)
+        name: z.string().optional(),
+    })
+    .refine(
+        (data) => {
+            // If it's an idea (storeItemId is null/undefined), name must be provided
+            if ((data.storeItemId === null || data.storeItemId === undefined) && data.isIdea) {
+                return data.name !== undefined && data.name.trim().length > 0;
+            }
+            // If it's not an idea, storeItemId must be provided
+            if (!data.isIdea) {
+                return data.storeItemId !== null && data.storeItemId !== undefined;
+            }
+            return true;
+        },
+        {
+            message: "Ideas require 'name' field; regular items require 'storeItemId'",
+        }
+    );
+
+/**
+ * TypeScript type for ShoppingListItemInput with optional fields.
+ * Only storeId is truly required; all other fields have defaults or are nullable.
+ */
+export type ShoppingListItemInput = {
+    id?: string;
+    storeId: string;
+    storeItemId?: string | null;
+    qty?: number | null;
+    unitId?: string | null;
+    notes?: string | null;
+    isChecked?: boolean;
+    isIdea?: boolean;
+    isSample?: boolean | null;
+    snoozedUntil?: string | null;
+    name?: string; // Only for ideas
 };
 
 export const createShoppingListItemRequestSchema = z.object({

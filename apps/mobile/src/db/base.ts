@@ -2,7 +2,7 @@ import type {
     AppSetting,
     QuantityUnit,
     ShoppingListItem,
-    ShoppingListItemOptionalId,
+    ShoppingListItemInput,
     ShoppingListItemWithDetails,
     Store,
     StoreAisle,
@@ -103,7 +103,7 @@ export abstract class BaseDatabase implements Database {
 
     // ========== Shopping List Operations (Abstract) ==========
     abstract getShoppingListItems(storeId: string): Promise<Array<ShoppingListItemWithDetails>>;
-    abstract upsertShoppingListItem(params: ShoppingListItemOptionalId): Promise<ShoppingListItem>;
+    abstract upsertShoppingListItem(params: ShoppingListItemInput): Promise<ShoppingListItem>;
     abstract toggleShoppingListItemChecked(id: string, isChecked: boolean): Promise<void>;
     abstract deleteShoppingListItem(id: string): Promise<void>;
     abstract removeShoppingListItem(id: string): Promise<void>;
@@ -164,7 +164,7 @@ export abstract class BaseDatabase implements Database {
         await this.insertAisle(storeId, "Wine, Beer, and Liquor");
 
         // Create sample items and collect shopping list entries
-        const shoppingListItems: ShoppingListItemOptionalId[] = [];
+        const shoppingListItems: ShoppingListItemInput[] = [];
 
         const bananas = await this.getOrCreateStoreItemByName(
             storeId,
@@ -189,9 +189,6 @@ export abstract class BaseDatabase implements Database {
         shoppingListItems.push({
             storeId: storeId,
             storeItemId: frenchBread.id,
-            qty: null,
-            unitId: null,
-            notes: null,
         });
 
         const pennePasta = await this.getOrCreateStoreItemByName(
@@ -203,9 +200,6 @@ export abstract class BaseDatabase implements Database {
         shoppingListItems.push({
             storeId: storeId,
             storeItemId: pennePasta.id,
-            qty: null,
-            unitId: null,
-            notes: null,
         });
 
         const milk = await this.getOrCreateStoreItemByName(storeId, "Milk", dairyAisle.id, null);
@@ -214,10 +208,9 @@ export abstract class BaseDatabase implements Database {
             storeItemId: milk.id,
             qty: 1,
             unitId: "gallon",
-            notes: null,
         });
 
-        // Upsert all shopping list items at the end (and ensure they are marked as samples)
+        // Upsert all shopping list items at the end
         for (const item of shoppingListItems) {
             await this.upsertShoppingListItem({ ...item, isSample: true });
         }

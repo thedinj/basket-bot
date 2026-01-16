@@ -2,7 +2,7 @@ import type {
     AppSetting,
     QuantityUnit,
     ShoppingListItem,
-    ShoppingListItemOptionalId,
+    ShoppingListItemInput,
     ShoppingListItemWithDetails,
     Store,
     StoreAisle,
@@ -14,6 +14,96 @@ import { QUANTITY_UNITS } from "@basket-bot/core";
 import { normalizeItemName } from "../utils/stringUtils";
 import { BaseDatabase } from "./base";
 import { DEFAULT_TABLES_TO_PERSIST } from "./types";
+
+// Mock user ID for FakeDatabase audit fields
+const MOCK_USER_ID = "00000000-0000-0000-0000-000000000000";
+
+/**
+ * Helper to create a Store with audit fields populated
+ */
+function getInitializedStore(
+    name: string,
+    householdId = "00000000-0000-0000-0000-000000000001"
+): Store {
+    const now = new Date().toISOString();
+    return {
+        id: crypto.randomUUID(),
+        householdId,
+        name,
+        createdById: MOCK_USER_ID,
+        updatedById: MOCK_USER_ID,
+        createdAt: now,
+        updatedAt: now,
+    };
+}
+
+/**
+ * Helper to create a StoreAisle with audit fields populated
+ */
+function getInitializedStoreAisle(storeId: string, name: string, sortOrder: number): StoreAisle {
+    const now = new Date().toISOString();
+    return {
+        id: crypto.randomUUID(),
+        storeId,
+        name,
+        sortOrder,
+        createdById: MOCK_USER_ID,
+        updatedById: MOCK_USER_ID,
+        createdAt: now,
+        updatedAt: now,
+    };
+}
+
+/**
+ * Helper to create a StoreSection with audit fields populated
+ */
+function getInitializedStoreSection(
+    storeId: string,
+    aisleId: string,
+    name: string,
+    sortOrder: number
+): StoreSection {
+    const now = new Date().toISOString();
+    return {
+        id: crypto.randomUUID(),
+        storeId,
+        aisleId,
+        name,
+        sortOrder,
+        createdById: MOCK_USER_ID,
+        updatedById: MOCK_USER_ID,
+        createdAt: now,
+        updatedAt: now,
+    };
+}
+
+/**
+ * Helper to create a StoreItem with audit fields populated
+ */
+function getInitializedStoreItem(
+    storeId: string,
+    name: string,
+    aisleId: string | null,
+    sectionId: string | null
+): StoreItem {
+    const now = new Date().toISOString();
+    return {
+        id: crypto.randomUUID(),
+        storeId,
+        name,
+        nameNorm: normalizeItemName(name),
+        aisleId,
+        sectionId,
+        usageCount: 0,
+        lastUsedAt: null,
+        isHidden: false,
+        isFavorite: false,
+        createdById: MOCK_USER_ID,
+        updatedById: MOCK_USER_ID,
+        createdAt: now,
+        updatedAt: now,
+    };
+}
 
 /**
  * In-memory fake database implementation for browser/development
@@ -164,22 +254,13 @@ export class FakeDatabase extends BaseDatabase {
 
     // ========== StoreAisle Operations ==========
     async insertAisle(storeId: string, name: string): Promise<StoreAisle> {
-        const id = crypto.randomUUID();
-        const now = new Date().toISOString();
         const existingAisles = Array.from(this.aisles.values()).filter(
             (a) => a.storeId === storeId
         );
         const sortOrder = existingAisles.length;
 
-        const aisle: StoreAisle = {
-            id,
-            storeId: storeId,
-            name,
-            sortOrder,
-            createdAt: now,
-            updatedAt: now,
-        };
-        this.aisles.set(id, aisle);
+        const aisle = getInitializedStoreAisle(storeId, name, sortOrder);
+        this.aisles.set(aisle.id, aisle);
         this.notifyChange();
         return aisle;
     }
@@ -236,23 +317,13 @@ export class FakeDatabase extends BaseDatabase {
 
     // ========== StoreSection Operations ==========
     async insertSection(storeId: string, name: string, aisleId: string): Promise<StoreSection> {
-        const id = crypto.randomUUID();
-        const now = new Date().toISOString();
         const existingSections = Array.from(this.sections.values()).filter(
             (s) => s.aisleId === aisleId
         );
         const sortOrder = existingSections.length;
 
-        const section: StoreSection = {
-            id,
-            storeId: storeId,
-            aisleId: aisleId,
-            name,
-            sortOrder,
-            createdAt: now,
-            updatedAt: now,
-        };
-        this.sections.set(id, section);
+        const section = getInitializedStoreSection(storeId, aisleId, name, sortOrder);
+        this.sections.set(section.id, section);
         this.notifyChange();
         return section;
     }
@@ -315,29 +386,12 @@ export class FakeDatabase extends BaseDatabase {
         aisleId?: string | null,
         sectionId?: string | null
     ): Promise<StoreItem> {
-        const id = crypto.randomUUID();
-        const now = new Date().toISOString();
-        const nameNorm = normalizeItemName(name);
-
         // Normalize: store only section when present (null aisle), else store aisle
         const normalizedAisleId = sectionId ? null : (aisleId ?? null);
         const normalizedSectionId = sectionId ?? null;
 
-        const item: StoreItem = {
-            id,
-            storeId: storeId,
-            name,
-            nameNorm,
-            aisleId: normalizedAisleId,
-            sectionId: normalizedSectionId,
-            usageCount: 0,
-            lastUsedAt: null,
-            isHidden: false,
-            isFavorite: false,
-            createdAt: now,
-            updatedAt: now,
-        };
-        this.items.set(id, item);
+        const item = getInitializedStoreItem(storeId, name, normalizedAisleId, normalizedSectionId);
+        this.items.set(item.id, item);
         this.notifyChange();
         return item;
     }
@@ -569,7 +623,7 @@ export class FakeDatabase extends BaseDatabase {
         }
     }
 
-    async upsertShoppingListItem(params: ShoppingListItemOptionalId): Promise<ShoppingListItem> {
+    async upsertShoppingListItem(params: ShoppingListItemInput): Promise<ShoppingListItem> {
         const now = new Date().toISOString();
 
         if (params.id) {
@@ -579,15 +633,29 @@ export class FakeDatabase extends BaseDatabase {
                 throw new Error(`Shopping list item ${params.id} not found`);
             }
 
+            // Apply defaults for optional fields
+            const isChecked = params.isChecked ?? existing.isChecked;
+            const isIdea = params.isIdea ?? existing.isIdea;
+            const isSample = params.isSample ?? existing.isSample;
+
+            // Compute checkedAt based on state change
+            let checkedAt = existing.checkedAt;
+            if (isChecked !== existing.isChecked) {
+                checkedAt = isChecked ? now : null;
+            }
+
             const updated: ShoppingListItem = {
                 ...existing,
-                storeItemId: params.storeItemId || null,
-                qty: params.qty ?? null,
-                unitId: params.unitId || null,
-                notes: params.notes,
-                isSample: params.isSample ?? null,
-                isIdea: params.isIdea,
-                snoozedUntil: params.snoozedUntil || null,
+                storeItemId: params.storeItemId ?? existing.storeItemId,
+                qty: params.qty ?? existing.qty,
+                unitId: params.unitId ?? existing.unitId,
+                notes: params.notes ?? existing.notes,
+                isChecked,
+                checkedAt,
+                isSample,
+                isIdea,
+                snoozedUntil: params.snoozedUntil ?? existing.snoozedUntil,
+                updatedById: MOCK_USER_ID,
                 updatedAt: now,
             };
             this.shoppingListItems.set(params.id, updated);
@@ -597,18 +665,25 @@ export class FakeDatabase extends BaseDatabase {
             // Create new shopping list item
             const id = crypto.randomUUID();
 
+            // Apply defaults for optional fields
+            const isChecked = params.isChecked ?? false;
+            const isIdea = params.isIdea ?? false;
+            const isSample = params.isSample ?? null;
+
             const newItem: ShoppingListItem = {
                 id,
                 storeId: params.storeId,
-                storeItemId: params.storeItemId || null,
+                storeItemId: params.storeItemId ?? null,
                 qty: params.qty ?? null,
-                unitId: params.unitId || null,
-                notes: params.notes,
-                isChecked: false,
-                checkedAt: null,
-                isSample: params.isSample ?? null,
-                isIdea: params.isIdea,
-                snoozedUntil: params.snoozedUntil || null,
+                unitId: params.unitId ?? null,
+                notes: params.notes ?? null,
+                isChecked,
+                checkedAt: isChecked ? now : null,
+                isSample,
+                isIdea,
+                snoozedUntil: params.snoozedUntil ?? null,
+                createdById: MOCK_USER_ID,
+                updatedById: MOCK_USER_ID,
                 createdAt: now,
                 updatedAt: now,
             };
