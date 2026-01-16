@@ -18,6 +18,8 @@ const STORAGE_PREFIX = "secure_";
 
 export const KEYS = {
     OPENAI_API_KEY: "openai_api_key",
+    ACCESS_TOKEN: "auth_access_token",
+    REFRESH_TOKEN: "auth_refresh_token",
 } as const;
 
 // Type for the secure storage plugin (loaded dynamically)
@@ -40,8 +42,7 @@ class SecureStorageService {
         if (this.isNative) {
             this.pluginPromise = import("capacitor-secure-storage-plugin")
                 .then((module) => {
-                    this.plugin =
-                        module.SecureStoragePlugin as unknown as SecureStoragePlugin;
+                    this.plugin = module.SecureStoragePlugin as unknown as SecureStoragePlugin;
                 })
                 .catch((error) => {
                     console.error("Failed to load SecureStoragePlugin:", error);

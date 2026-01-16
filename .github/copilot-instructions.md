@@ -221,6 +221,26 @@ Do not hardcode credentials. Fail clearly if env vars are missing when seeding.
 - Direct SQL queries via `db.prepare(...).run/get/all()`
 - Always use `datetime('now')` for timestamps in SQLite
 
+**Critical design principle: Section-Aisle normalization**
+
+When storing `StoreItem` location data:
+
+- If `sectionId` is provided, store ONLY the section (set `aisleId` to `NULL`)
+- If only `aisleId` is provided, store the aisle (section remains `NULL`)
+- This allows sections to be moved between aisles without updating all items
+
+When querying with joins:
+
+- Use `COALESCE(section.aisleId, item.aisleId)` to get the effective aisle
+- This resolves the aisle from the section's parent if the item has a section
+
+Example normalization logic:
+
+```typescript
+const normalizedAisleId = sectionId ? null : (aisleId ?? null);
+const normalizedSectionId = sectionId ?? null;
+```
+
 ### Suggested backend structure
 
 Inside `apps/backend/src`:

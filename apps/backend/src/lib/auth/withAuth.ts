@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { verifyAccessToken } from "./jwt.js";
 import { AuthenticationError, AuthorizationError, JwtPayload } from "@basket-bot/core";
+import { NextRequest, NextResponse } from "next/server";
+import { verifyAccessToken } from "./jwt";
 
 export type AuthenticatedRequest = NextRequest & {
     auth: JwtPayload;
