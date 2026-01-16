@@ -425,3 +425,9 @@ If something is ambiguous, pick the simplest approach consistent with:
 - Next.js API routes + admin portal.
 
 Be consistent across the repo.
+
+## Important Note: Core Package Rebuild
+
+**Whenever you make changes to types, schemas, or code in `packages/core`, you MUST rebuild the core package (`pnpm --filter @basket-bot/core build`) before errors or type problems in dependent packages (backend, mobile) can be resolved.**
+
+If you see errors that seem to persist after editing core types, rebuild the core package and try again.
