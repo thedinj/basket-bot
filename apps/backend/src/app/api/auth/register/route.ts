@@ -1,10 +1,17 @@
 import { hashPassword } from "@/lib/auth/password";
+import { checkRateLimit } from "@/lib/auth/rateLimiter";
 import { db } from "@/lib/db/db";
 import { createUserRequestSchema } from "@basket-bot/core";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
+    // Rate limit: 3 attempts per hour
+    const rateLimitResponse = await checkRateLimit(req, 3, 60 * 60 * 1000);
+    if (rateLimitResponse) {
+        return rateLimitResponse;
+    }
+
     try {
         const body = await req.json();
         const { email, name, password } = createUserRequestSchema.parse(body);

@@ -14,13 +14,13 @@ export async function POST(req: NextRequest) {
                 `SELECT rt.id, rt.userId, rt.expiresAt, u.id as userId, u.email, u.name, u.scopes
                  FROM RefreshToken rt
                  JOIN User u ON rt.userId = u.id
-                 WHERE rt.token = ? AND rt.revokedAt IS NULL`
+                 WHERE rt.token = ?`
             )
             .get(refreshToken) as any;
 
         if (!tokenRow) {
             return NextResponse.json(
-                { code: "INVALID_REFRESH_TOKEN", message: "Invalid or revoked refresh token" },
+                { code: "INVALID_REFRESH_TOKEN", message: "Invalid refresh token" },
                 { status: 401 }
             );
         }

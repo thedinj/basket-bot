@@ -1,29 +1,16 @@
-import {
-    IonApp,
-    IonIcon,
-    IonLabel,
-    IonRouterOutlet,
-    IonTabBar,
-    IonTabButton,
-    IonTabs,
-    setupIonicReact,
-} from "@ionic/react";
+import { IonApp, setupIonicReact } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
-import { cartOutline, storefrontOutline } from "ionicons/icons";
 import { Suspense } from "react";
 import { Redirect, Route } from "react-router-dom";
+import { AuthProvider } from "./auth/AuthProvider";
+import { useAuth } from "./auth/useAuth";
 import AppErrorBoundary from "./components/AppErrorBoundary";
 import LoadingFallback from "./components/LoadingFallback";
-import { AppHeaderProvider } from "./components/layout/AppHeaderProvider";
-import { AppMenu } from "./components/layout/AppMenu";
-import Settings from "./components/settings/Settings";
+import Main from "./components/Main";
 import { DatabaseProvider } from "./db/DatabaseContext";
 import { LLMModalProvider } from "./llm/shared/LLMModalContext";
-import ShoppingList from "./pages/ShoppingList";
-import StoreAislesPage from "./pages/StoreAislesPage";
-import StoreDetail from "./pages/StoreDetail";
-import StoreItemsPage from "./pages/StoreItemsPage";
-import StoresList from "./pages/StoresList";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 /* Core CSS required for Ionic components to work properly */
 import "@ionic/react/css/core.css";
@@ -57,44 +44,30 @@ import "./theme/variables.scss";
 
 setupIonicReact();
 
-const AppContent: React.FC = () => (
-    <>
-        <AppMenu />
-        <Settings />
-        <IonTabs>
-            <IonRouterOutlet id="main-content">
-                <Route exact path="/stores">
-                    <StoresList />
+/**
+ * App content that handles auth routing
+ */
+const AppContent: React.FC = () => {
+    const { isAuthenticated } = useAuth();
+
+    if (!isAuthenticated) {
+        return (
+            <>
+                <Route exact path="/login">
+                    <Login />
                 </Route>
-                <Route exact path="/stores/:id">
-                    <StoreDetail />
+                <Route exact path="/register">
+                    <Register />
                 </Route>
-                <Route exact path="/stores/:id/items">
-                    <StoreItemsPage />
+                <Route path="*">
+                    <Redirect to="/login" />
                 </Route>
-                <Route exact path="/stores/:id/aisles">
-                    <StoreAislesPage />
-                </Route>
-                <Route exact path="/shoppinglist">
-                    <ShoppingList />
-                </Route>
-                <Route exact path="/">
-                    <Redirect to="/shoppinglist" />
-                </Route>
-            </IonRouterOutlet>
-            <IonTabBar slot="bottom">
-                <IonTabButton tab="shoppinglist" href="/shoppinglist">
-                    <IonIcon aria-hidden="true" icon={cartOutline} />
-                    <IonLabel>Shopping List</IonLabel>
-                </IonTabButton>
-                <IonTabButton tab="stores" href="/stores">
-                    <IonIcon aria-hidden="true" icon={storefrontOutline} />
-                    <IonLabel>Stores</IonLabel>
-                </IonTabButton>
-            </IonTabBar>
-        </IonTabs>
-    </>
-);
+            </>
+        );
+    }
+
+    return <Main />;
+};
 
 const App: React.FC = () => {
     return (
@@ -103,11 +76,11 @@ const App: React.FC = () => {
                 <AppErrorBoundary>
                     <Suspense fallback={<LoadingFallback />}>
                         <DatabaseProvider>
-                            <LLMModalProvider>
-                                <AppHeaderProvider>
+                            <AuthProvider>
+                                <LLMModalProvider>
                                     <AppContent />
-                                </AppHeaderProvider>
-                            </LLMModalProvider>
+                                </LLMModalProvider>
+                            </AuthProvider>
                         </DatabaseProvider>
                     </Suspense>
                 </AppErrorBoundary>

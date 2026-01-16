@@ -51,6 +51,9 @@ importers:
       next:
         specifier: ^15.1.6
         version: 15.5.9(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(sass@1.97.2)
+      next-rate-limit:
+        specifier: ^0.0.3
+        version: 0.0.3(next@15.5.9(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(sass@1.97.2))
       react:
         specifier: ^19.0.0
         version: 19.2.3
@@ -3111,6 +3114,9 @@ packages:
   lower-case@1.1.4:
     resolution: {integrity: sha512-2Fgx1Ycm599x+WGpIYwJOvsjmXFzTSc34IwDWALRA/8AopUKAVPwfJ+h5+f85BCp0PWmmJcWzEpxOpoXycMpdA==}
 
+  lru-cache@10.4.3:
+    resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
+
   lru-cache@11.2.4:
     resolution: {integrity: sha512-B5Y16Jr9LB9dHVkh6ZevG+vAbOsNOYCX+sXvFWFu7B3Iz5mijW3zdbMyhsh8ANd2mSWBYdJgnqi+mL7/LrOPYg==}
     engines: {node: 20 || >=22}
@@ -3230,6 +3236,11 @@ packages:
   netmask@2.0.2:
     resolution: {integrity: sha512-dBpDMdxv9Irdq66304OLfEmQ9tbNRFnFTuZiLo+bD+r332bBmMJ8GBLXklIXXgxd3+v9+KUnZaUR5PJMa75Gsg==}
     engines: {node: '>= 0.4.0'}
+
+  next-rate-limit@0.0.3:
+    resolution: {integrity: sha512-2VYgvxs1Mh1u4JGaxGu+dyNHUlpGOniCagZoQcqcTlsQS4OVQ4Dh3SU0mFlG2P1X2VlDN1lrjPpnaybFaGesbQ==}
+    peerDependencies:
+      next: '>=13.0.0'
 
   next@15.5.9:
     resolution: {integrity: sha512-agNLK89seZEtC5zUHwtut0+tNrc0Xw4FT/Dg+B/VLEo9pAcS9rtTKpek3V6kVcVwsB2YlqMaHdfZL4eLEVYuCg==}
@@ -7295,6 +7306,8 @@ snapshots:
 
   lower-case@1.1.4: {}
 
+  lru-cache@10.4.3: {}
+
   lru-cache@11.2.4: {}
 
   lru-cache@5.1.1:
@@ -7394,6 +7407,11 @@ snapshots:
   neo-async@2.6.2: {}
 
   netmask@2.0.2: {}
+
+  next-rate-limit@0.0.3(next@15.5.9(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(sass@1.97.2)):
+    dependencies:
+      lru-cache: 10.4.3
+      next: 15.5.9(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(sass@1.97.2)
 
   next@15.5.9(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(sass@1.97.2):
     dependencies:

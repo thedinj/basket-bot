@@ -40,6 +40,7 @@ Copilot: prioritize correctness, consistency, and boring maintainable patterns o
 - Sharing: **households** own lists; users can be members of households.
 - Permissions: **owner/editor/viewer** (per list is sufficient; household-level membership is preferred initially).
 - Mobile: **always-online** (no offline-first sync engine).
+- **Data retention: This is a low-stakes shopping list app. Prefer hard-deleting unimportant data (like revoked tokens) rather than soft-deletes or keeping audit trails. No plans for cleanup batch jobs.**
 
 ---
 
@@ -148,6 +149,22 @@ For admin (Mantine):
 - Strict mode; no `any`.
 - Prefer Zod inference over handwritten interfaces.
 - Avoid ad-hoc inline interfaces; add shared types/schemas to `packages/core`.
+
+### Dependencies and packages
+
+- **Prefer widely-used and trusted packages over custom implementations when both options are similar.**
+- The best code is no code—leverage well-maintained libraries instead of reinventing the wheel.
+- Examples: Use `next-rate-limit` for rate limiting instead of building custom solutions.
+- Only implement custom solutions when:
+    - No suitable package exists
+    - Package adds significant complexity or dependencies
+    - Custom solution is trivially simple (e.g., < 50 lines)
+
+### Async Data Loading
+
+- **Avoid `isLoading` flags in contexts.** Use React's `use()` hook to suspend during async operations, relying on existing `<Suspense>` boundaries.
+- This keeps components cleaner and leverages React's built-in async handling.
+- Example: Instead of `const [isLoading, setIsLoading] = useState(true)`, use `const data = use(asyncOperation())`.
 
 ---
 

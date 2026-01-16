@@ -1,11 +1,18 @@
 import { generateAccessToken, generateRefreshToken, getRefreshTokenExpiry } from "@/lib/auth/jwt";
 import { verifyPassword } from "@/lib/auth/password";
+import { checkRateLimit } from "@/lib/auth/rateLimiter";
 import { db } from "@/lib/db/db";
 import { loginRequestSchema, LoginResponse } from "@basket-bot/core";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
+    // Rate limit: 5 attempts per 15 minutes
+    const rateLimitResponse = await checkRateLimit(req, 5, 15 * 60 * 1000);
+    if (rateLimitResponse) {
+        return rateLimitResponse;
+    }
+
     try {
         const body = await req.json();
         const { email, password } = loginRequestSchema.parse(body);
