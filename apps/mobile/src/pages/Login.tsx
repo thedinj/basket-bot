@@ -51,7 +51,9 @@ const Login: React.FC = () => {
                 const retryAfter = err.response.data?.details?.retryAfter;
                 if (retryAfter) {
                     const minutes = Math.ceil(retryAfter / 60);
-                    setError(`Too many login attempts. Please try again in ${minutes} minute${minutes !== 1 ? 's' : ''}.`);
+                    setError(
+                        `Too many login attempts. Please try again in ${minutes} minute${minutes !== 1 ? "s" : ""}.`
+                    );
                 } else {
                     setError("Too many login attempts. Please try again later.");
                 }

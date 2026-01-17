@@ -145,28 +145,13 @@
         },
         {
             "label": "Dev: Full Stack (Web Preview, Hot-reload)",
-            "type": "shell",
-            "command": "pnpm dev",
-            "isBackground": true,
+            "dependsOn": ["Dev: Backend (Hot-reload)", "Dev: Mobile (Hot-reload)"],
+            "dependsOrder": "parallel",
+            "group": "none",
             "presentation": {
-                "reveal": "always",
-                "panel": "dedicated"
+                "reveal": "always"
             },
-            "problemMatcher": {
-                "pattern": {
-                    "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
-                    "file": 1,
-                    "line": 2,
-                    "column": 3,
-                    "severity": 4,
-                    "message": 5
-                },
-                "background": {
-                    "activeOnStart": true,
-                    "beginsPattern": "^.*started server.*$",
-                    "endsPattern": "^.*Ready in.*$"
-                }
-            }
+            "problemMatcher": []
         },
         {
             "label": "Dev: Full Stack (Native Android, Hot-reload)",

@@ -1,11 +1,11 @@
-import type { LoginRequest, LoginResponse } from "@basket-bot/core";
-import React, { use, useState, type PropsWithChildren } from "react";
+import type { LoginRequest, LoginResponse, LoginUser } from "@basket-bot/core";
+import React, { useEffect, useState, type PropsWithChildren } from "react";
 import { apiClient } from "../lib/api/client";
 import { KEYS, secureStorage } from "../utils/secureStorage";
 import { AuthContext, type AuthContextValue } from "./AuthContext";
 
 interface MeResponse {
-    user: LoginResponse["user"];
+    user: LoginUser;
 }
 
 interface CreateUserRequest {
@@ -15,49 +15,52 @@ interface CreateUserRequest {
 }
 
 /**
- * Load tokens from secure storage and restore session
- * Suspends while loading (caught by Suspense boundary)
- */
-async function loadTokens(): Promise<LoginResponse["user"] | null> {
-    try {
-        const [accessToken, refreshToken] = await Promise.all([
-            secureStorage.get(KEYS.ACCESS_TOKEN),
-            secureStorage.get(KEYS.REFRESH_TOKEN),
-        ]);
-
-        if (accessToken && refreshToken) {
-            apiClient.setAccessToken(accessToken);
-            apiClient.setRefreshToken(refreshToken);
-
-            // Verify token by fetching current user
-            try {
-                const response = await apiClient.get<MeResponse>("/api/auth/me");
-                return response.user;
-            } catch (error) {
-                // Token is invalid, clear it
-                console.error("Failed to verify stored tokens:", error);
-                await Promise.all([
-                    secureStorage.remove(KEYS.ACCESS_TOKEN),
-                    secureStorage.remove(KEYS.REFRESH_TOKEN),
-                ]);
-                apiClient.setAccessToken(null);
-                apiClient.setRefreshToken(null);
-            }
-        }
-    } catch (error) {
-        console.error("Failed to load tokens:", error);
-    }
-    return null;
-}
-
-/**
  * Provider for authentication context
  * Manages user state, tokens, and authentication flow
  */
 export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
-    // Use React's use() hook to suspend during initial token load
-    const initialUser = use(loadTokens());
-    const [user, setUser] = useState<LoginResponse["user"] | null>(initialUser);
+    const [user, setUser] = useState<LoginUser | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    /**
+     * Load tokens from secure storage and restore session on mount
+     */
+    useEffect(() => {
+        const loadTokens = async () => {
+            try {
+                const [accessToken, refreshToken] = await Promise.all([
+                    secureStorage.get(KEYS.ACCESS_TOKEN),
+                    secureStorage.get(KEYS.REFRESH_TOKEN),
+                ]);
+
+                if (accessToken && refreshToken) {
+                    apiClient.setAccessToken(accessToken);
+                    apiClient.setRefreshToken(refreshToken);
+
+                    // Verify token by fetching current user
+                    try {
+                        const response = await apiClient.get<MeResponse>("/api/auth/me");
+                        setUser(response.user);
+                    } catch (error) {
+                        // Token is invalid, clear it
+                        console.error("Failed to verify stored tokens:", error);
+                        await Promise.all([
+                            secureStorage.remove(KEYS.ACCESS_TOKEN),
+                            secureStorage.remove(KEYS.REFRESH_TOKEN),
+                        ]);
+                        apiClient.setAccessToken(null);
+                        apiClient.setRefreshToken(null);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to load tokens:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadTokens();
+    }, []);
 
     /**
      * Clear tokens from storage and API client
@@ -147,6 +150,11 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
         register,
         logout,
     };
+
+    // Show loading state while checking for stored tokens
+    if (isLoading) {
+        return null; // Or return a loading component if preferred
+    }
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

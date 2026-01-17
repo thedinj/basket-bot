@@ -148,7 +148,11 @@ For admin (Mantine):
 
 - Strict mode; no `any`.
 - Prefer Zod inference over handwritten interfaces.
-- Avoid ad-hoc inline interfaces; add shared types/schemas to `packages/core`.
+- **Never create ad-hoc interface declarations inline.** Always check if a type exists in `packages/core/src/schemas` or existing model files before creating new types.
+- If you need a new type, add it to `packages/core/src/schemas` for domain entities or API DTOs.
+- Interfaces for object shapes, types for unions/utilities.
+- Use `as const` for literal types and constant objects.
+- Explicit return types for exported functions (improves intellisense and catches errors).
 
 ### Dependencies and packages
 
@@ -159,6 +163,45 @@ For admin (Mantine):
     - No suitable package exists
     - Package adds significant complexity or dependencies
     - Custom solution is trivially simple (e.g., < 50 lines)
+
+### React component conventions
+
+- **ALWAYS use `const` arrow functions**, never function declarations:
+
+    ```typescript
+    // ✅ Good
+    const MyComponent: React.FC<MyComponentProps> = ({ name }) => {
+      return <div>{name}</div>;
+    };
+
+    // ❌ Bad
+    function MyComponent(props: MyComponentProps) {
+      return <div>{props.name}</div>;
+    }
+    ```
+
+- **ALWAYS use `React.FC<Props>` for components with props** (required for type safety).
+
+- **Prefer `async/await` over promise chains:**
+
+    ```typescript
+    // ✅ Good
+    const loadData = async () => {
+        try {
+            const data = await fetchData();
+            return data;
+        } catch (error) {
+            handleError(error);
+        }
+    };
+
+    // ❌ Bad
+    const loadData = () => {
+        return fetchData()
+            .then((data) => data)
+            .catch((error) => handleError(error));
+    };
+    ```
 
 ### Async Data Loading
 
@@ -362,6 +405,8 @@ Token handling:
     - parse input using `RequestSchema.parse(...)`
     - ensure output matches `ResponseSchema`
 
+- Always validate external data (API responses, user input) with Zod before using it.
+
 ### Testing
 
 - Prefer unit tests for pure core logic.
@@ -462,6 +507,94 @@ If something is ambiguous, pick the simplest approach consistent with:
 - Next.js API routes + admin portal.
 
 Be consistent across the repo.
+
+---
+
+## Critical Anti-Patterns
+
+### ❌ Don't: Create Ad Hoc Interface Declarations
+
+```typescript
+// ❌ BAD - Creating inline interface when type exists elsewhere
+interface Store {
+    id: string;
+    name: string;
+}
+
+const StoreCard = ({ store }: { store: Store }) => { ... };
+
+// ✅ GOOD - Import existing type from core
+import type { Store } from '@basket-bot/core';
+
+const StoreCard: React.FC<{ store: Store }> = ({ store }) => { ... };
+```
+
+**Why:** Duplicate type definitions lead to inconsistencies and bypass the single source of truth principle.
+
+### ❌ Don't: Use Function Declarations
+
+```typescript
+// ❌ BAD - Function declaration
+function MyComponent(props: MyComponentProps) {
+    return <div>{props.name}</div>;
+}
+
+// ✅ GOOD - Const arrow function with React.FC
+const MyComponent: React.FC<MyComponentProps> = ({ name }) => {
+    return <div>{name}</div>;
+};
+```
+
+**Why:** Const arrow functions are the standard pattern. Consistent syntax improves readability.
+
+### ❌ Don't: Skip Zod Validation for External Data
+
+```typescript
+// ❌ BAD - No validation
+const data = await response.json();
+await db.createItems(data.items); // Could be malformed!
+
+// ✅ GOOD - Validate first
+const responseSchema = z.object({ items: z.array(itemSchema) });
+const data = responseSchema.parse(await response.json());
+await db.createItems(data.items);
+```
+
+**Why:** External data can be malformed. Validation prevents database corruption and crashes.
+
+### ❌ Don't: Ignore Loading and Error States
+
+```typescript
+// ❌ BAD - Accessing data before it's loaded
+const { data: stores } = useQuery(...);
+return <div>{stores.map(...)}</div>; // Crashes if still loading!
+
+// ✅ GOOD - Handle loading/error states (or use useSuspenseQuery)
+const { data: stores, isLoading, error } = useQuery(...);
+if (isLoading) return <Spinner />;
+if (error) return <ErrorMessage />;
+return <div>{stores.map(...)}</div>;
+```
+
+**Why:** App crashes when data is still loading. Always handle these states or use Suspense boundaries.
+
+### ❌ Don't: Create Large Infrastructure Without Consultation
+
+```typescript
+// ❌ BAD - Building custom state management library
+class GlobalStateManager {
+    // 500 lines of custom implementation...
+}
+
+// ✅ GOOD - Use existing libraries
+import { useQuery } from "@tanstack/react-query";
+```
+
+**Why:** Existing libraries are battle-tested. Custom infrastructure creates technical debt.
+
+**Rule of thumb:** If you're about to create something that could be a standalone library, STOP and ask first.
+
+---
 
 ## Important Note: Core Package Rebuild
 

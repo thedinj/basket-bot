@@ -1,12 +1,12 @@
+import { LoginUser } from "@basket-bot/core";
 import { createContext } from "react";
-import type { LoginResponse } from "@basket-bot/core";
 
 /**
  * Context value for authentication management
  */
 export interface AuthContextValue {
     /** Current authenticated user (or null if not authenticated) */
-    user: LoginResponse["user"] | null;
+    user: LoginUser | null;
     /** Whether the user is authenticated */
     isAuthenticated: boolean;
     /** Login with email and password */

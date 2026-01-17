@@ -1,16 +1,13 @@
 import { IonApp, setupIonicReact } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
 import { Suspense } from "react";
-import { Redirect, Route } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthProvider";
 import { useAuth } from "./auth/useAuth";
 import AppErrorBoundary from "./components/AppErrorBoundary";
+import Auth from "./components/Auth";
 import LoadingFallback from "./components/LoadingFallback";
 import Main from "./components/Main";
 import { DatabaseProvider } from "./db/DatabaseContext";
-import { LLMModalProvider } from "./llm/shared/LLMModalContext";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
 
 /* Core CSS required for Ionic components to work properly */
 import "@ionic/react/css/core.css";
@@ -50,23 +47,7 @@ setupIonicReact();
 const AppContent: React.FC = () => {
     const { isAuthenticated } = useAuth();
 
-    if (!isAuthenticated) {
-        return (
-            <>
-                <Route exact path="/login">
-                    <Login />
-                </Route>
-                <Route exact path="/register">
-                    <Register />
-                </Route>
-                <Route path="*">
-                    <Redirect to="/login" />
-                </Route>
-            </>
-        );
-    }
-
-    return <Main />;
+    return isAuthenticated ? <Main /> : <Auth />;
 };
 
 const App: React.FC = () => {
@@ -77,9 +58,7 @@ const App: React.FC = () => {
                     <Suspense fallback={<LoadingFallback />}>
                         <DatabaseProvider>
                             <AuthProvider>
-                                <LLMModalProvider>
-                                    <AppContent />
-                                </LLMModalProvider>
+                                <AppContent />
                             </AuthProvider>
                         </DatabaseProvider>
                     </Suspense>
