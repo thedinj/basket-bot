@@ -41,6 +41,20 @@ export function initializeDatabase() {
             UNIQUE ("householdId", "userId")
         );
 
+        -- HouseholdInvitation table
+        CREATE TABLE IF NOT EXISTS "HouseholdInvitation" (
+            "id" TEXT NOT NULL PRIMARY KEY,
+            "householdId" TEXT NOT NULL,
+            "invitedEmail" TEXT NOT NULL COLLATE NOCASE,
+            "invitedById" TEXT NOT NULL,
+            "role" TEXT NOT NULL,
+            "token" TEXT NOT NULL UNIQUE,
+            "status" TEXT NOT NULL DEFAULT 'pending',
+            "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY ("householdId") REFERENCES "Household" ("id") ON DELETE CASCADE,
+            FOREIGN KEY ("invitedById") REFERENCES "User" ("id") ON DELETE CASCADE
+        );
+
         -- AppSetting table
         CREATE TABLE IF NOT EXISTS "AppSetting" (
             "key" TEXT NOT NULL PRIMARY KEY,
@@ -164,6 +178,15 @@ export function initializeDatabase() {
         -- Indexes
         CREATE INDEX IF NOT EXISTS "ShoppingListItem_storeId_isChecked_updatedAt_idx"
             ON "ShoppingListItem"("storeId", "isChecked", "updatedAt");
+        
+        CREATE INDEX IF NOT EXISTS "HouseholdInvitation_token_idx"
+            ON "HouseholdInvitation"("token");
+        
+        CREATE INDEX IF NOT EXISTS "HouseholdInvitation_invitedEmail_status_idx"
+            ON "HouseholdInvitation"("invitedEmail", "status");
+        
+        CREATE INDEX IF NOT EXISTS "User_email_idx"
+            ON "User"("email" COLLATE NOCASE);
 
         -- Insert quantity units if not exists
         INSERT OR IGNORE INTO "QuantityUnit" ("id", "name", "abbreviation", "sortOrder", "category") VALUES

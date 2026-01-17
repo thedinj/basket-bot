@@ -44,3 +44,67 @@ export const addHouseholdMemberRequestSchema = z.object({
 });
 
 export type AddHouseholdMemberRequest = z.infer<typeof addHouseholdMemberRequestSchema>;
+
+// Invitation status (only pending - accepted/declined invitations are deleted)
+export const invitationStatusSchema = z.enum(["pending"]);
+export type InvitationStatus = z.infer<typeof invitationStatusSchema>;
+
+// Household invitation schemas
+export const householdInvitationSchema = z.object({
+    id: z.string().uuid(),
+    householdId: z.string().uuid(),
+    invitedEmail: z.string().email(),
+    invitedById: z.string().uuid(),
+    role: householdRoleSchema,
+    token: z.string().uuid(),
+    status: invitationStatusSchema,
+    createdAt: z.date(),
+});
+
+export type HouseholdInvitation = z.infer<typeof householdInvitationSchema>;
+
+export const createInvitationRequestSchema = z.object({
+    email: z.string().email(),
+    role: householdRoleSchema,
+});
+
+export type CreateInvitationRequest = z.infer<typeof createInvitationRequestSchema>;
+
+export const acceptInvitationRequestSchema = z.object({
+    token: z.string().uuid(),
+});
+
+export type AcceptInvitationRequest = z.infer<typeof acceptInvitationRequestSchema>;
+
+// Detailed household with members
+export const householdMemberDetailSchema = z.object({
+    id: z.string().uuid(),
+    userId: z.string().uuid(),
+    userName: z.string(),
+    userEmail: z.string().email(),
+    role: householdRoleSchema,
+    createdAt: z.date(),
+});
+
+export type HouseholdMemberDetail = z.infer<typeof householdMemberDetailSchema>;
+
+export const householdWithMembersSchema = householdSchema.extend({
+    members: z.array(householdMemberDetailSchema),
+});
+
+export type HouseholdWithMembers = z.infer<typeof householdWithMembersSchema>;
+
+// Update member role request
+export const updateMemberRoleRequestSchema = z.object({
+    role: householdRoleSchema,
+});
+
+export type UpdateMemberRoleRequest = z.infer<typeof updateMemberRoleRequestSchema>;
+
+// Invitation detail (with household name and inviter name)
+export const invitationDetailSchema = householdInvitationSchema.extend({
+    householdName: z.string(),
+    inviterName: z.string(),
+});
+
+export type InvitationDetail = z.infer<typeof invitationDetailSchema>;

@@ -1,4 +1,7 @@
-How to prevent DDOS?
+email case insensitive?
+review data model
+No inserts in seed file--use shared insert logic
+Household selection/sharing
 confirm we handle loading aisles from sections
 eslint.config.js for the monorepo?
 ionic.config.json?

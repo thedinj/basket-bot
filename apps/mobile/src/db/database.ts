@@ -1,4 +1,3 @@
-import { Capacitor } from "@capacitor/core";
 import { FakeDatabase } from "./fake";
 import { RemoteDatabase } from "./remote";
 import { Database } from "./types";
@@ -11,12 +10,7 @@ let databaseInstance: Database | null = null;
  * Get the configured database type from environment variables
  */
 function getDatabaseType(): DatabaseType {
-    // Default: use SQLite on native platforms, fake on web
-    if (Capacitor.isNativePlatform()) {
-        return "fake";
-    }
-
-    return "fake";
+    return "remote";
 }
 
 /**
