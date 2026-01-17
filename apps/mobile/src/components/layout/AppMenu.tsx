@@ -1,4 +1,5 @@
 import {
+    IonButton,
     IonContent,
     IonHeader,
     IonIcon,
@@ -10,11 +11,21 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { settings } from "ionicons/icons";
+import { logOut, settings } from "ionicons/icons";
+import { useAuth } from "../../auth/useAuth";
 import { useAppHeader } from "./useAppHeader";
 
 export const AppMenu: React.FC = () => {
     const { openSettings } = useAppHeader();
+    const { user, logout } = useAuth();
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+        } catch (error) {
+            console.error("Logout error:", error);
+        }
+    };
 
     return (
         <IonMenu contentId="main-content" type="overlay">
@@ -44,6 +55,21 @@ export const AppMenu: React.FC = () => {
                 </IonToolbar>
             </IonHeader>
             <IonContent>
+                {user && (
+                    <div
+                        style={{
+                            padding: "20px 16px",
+                            borderBottom: "1px solid var(--ion-color-light)",
+                        }}
+                    >
+                        <div style={{ fontSize: "18px", fontWeight: "600", marginBottom: "4px" }}>
+                            {user.name}
+                        </div>
+                        <div style={{ fontSize: "14px", color: "var(--ion-color-medium)" }}>
+                            {user.email}
+                        </div>
+                    </div>
+                )}
                 <IonList>
                     <IonMenuToggle autoHide={false}>
                         <IonItem button onClick={openSettings} lines="none">
@@ -52,6 +78,12 @@ export const AppMenu: React.FC = () => {
                         </IonItem>
                     </IonMenuToggle>
                 </IonList>
+                <div style={{ padding: "16px", marginTop: "auto" }}>
+                    <IonButton expand="block" color="danger" onClick={handleLogout}>
+                        <IonIcon icon={logOut} slot="start" />
+                        Log Out
+                    </IonButton>
+                </div>
             </IonContent>
         </IonMenu>
     );

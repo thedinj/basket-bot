@@ -1,7 +1,12 @@
-import * as bcrypt from "bcryptjs";
+import { hashPassword } from "@/lib/auth/password";
 import { randomUUID } from "crypto";
+import { config } from "dotenv";
+import { resolve } from "path";
 import { initializeDatabase } from "../src/db/init";
 import { db } from "../src/lib/db/db";
+
+// Load environment variables from .env file
+config({ path: resolve(__dirname, "../.env") });
 
 /**
  * Helper to normalize item names (lowercase, trim whitespace)
@@ -30,7 +35,7 @@ async function main() {
         console.log("Admin user already exists. Skipping user seed.");
     } else {
         // Create admin user
-        const hashedPassword = await bcrypt.hash(adminPassword, 10);
+        const hashedPassword = hashPassword(adminPassword);
         const adminId = randomUUID();
 
         db.prepare(

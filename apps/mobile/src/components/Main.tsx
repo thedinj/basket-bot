@@ -1,7 +1,7 @@
 import { LLMModalProvider } from "@/llm/shared";
 import { IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } from "@ionic/react";
 import { cartOutline, storefrontOutline } from "ionicons/icons";
-import { Redirect, Route } from "react-router-dom";
+import { Route } from "react-router-dom";
 import ShoppingList from "../pages/ShoppingList";
 import StoreAislesPage from "../pages/StoreAislesPage";
 import StoreDetail from "../pages/StoreDetail";
@@ -36,9 +36,6 @@ const Main: React.FC = () => (
                     </Route>
                     <Route exact path="/shoppinglist">
                         <ShoppingList />
-                    </Route>
-                    <Route exact path="/">
-                        <Redirect to="/shoppinglist" />
                     </Route>
                 </IonRouterOutlet>
                 <IonTabBar slot="bottom">

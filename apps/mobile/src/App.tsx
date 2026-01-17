@@ -1,6 +1,7 @@
 import { IonApp, setupIonicReact } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
+import { useHistory, useLocation } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthProvider";
 import { useAuth } from "./auth/useAuth";
 import AppErrorBoundary from "./components/AppErrorBoundary";
@@ -43,9 +44,42 @@ setupIonicReact();
 
 /**
  * App content that handles auth routing
+ * Centralizes navigation logic based on authentication state
  */
 const AppContent: React.FC = () => {
     const { isAuthenticated } = useAuth();
+    const history = useHistory();
+    const location = useLocation();
+
+    useEffect(() => {
+        // Guard against undefined location (router not ready)
+        if (!location?.pathname || location.pathname === "/") {
+            // Default to appropriate route based on auth state
+            history.replace(isAuthenticated ? "/shoppinglist" : "/login");
+            return;
+        }
+
+        // Auth routes that should redirect to shopping list when authenticated
+        const authRoutes = ["/login", "/register"];
+
+        // Protected routes that should redirect to login when not authenticated
+        const protectedRoutes = ["/shoppinglist", "/stores"];
+
+        if (isAuthenticated) {
+            // If authenticated and on an auth route, redirect to shopping list
+            if (authRoutes.includes(location.pathname)) {
+                history.replace("/shoppinglist");
+            }
+        } else {
+            // If not authenticated and on a protected route, redirect to login
+            const isOnProtectedRoute = protectedRoutes.some((route) =>
+                location.pathname.startsWith(route)
+            );
+            if (isOnProtectedRoute) {
+                history.replace("/login");
+            }
+        }
+    }, [isAuthenticated, location.pathname, history]);
 
     return isAuthenticated ? <Main /> : <Auth />;
 };

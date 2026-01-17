@@ -1,29 +1,33 @@
-import type { LoginRequest, LoginResponse, LoginUser } from "@basket-bot/core";
+import type { LoginUser } from "@basket-bot/core";
 import React, { useEffect, useState, type PropsWithChildren } from "react";
 import { apiClient } from "../lib/api/client";
 import { KEYS, secureStorage } from "../utils/secureStorage";
 import { AuthContext, type AuthContextValue } from "./AuthContext";
-
-interface MeResponse {
-    user: LoginUser;
-}
-
-interface CreateUserRequest {
-    email: string;
-    name: string;
-    password: string;
-}
+import {
+    useAuthUser,
+    useLoginMutation,
+    useLogoutMutation,
+    useRegisterMutation,
+} from "./useAuthMutations";
 
 /**
  * Provider for authentication context
- * Manages user state, tokens, and authentication flow
+ * Manages user state and authentication flow using React Query
  */
 export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const [user, setUser] = useState<LoginUser | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [hasTokens, setHasTokens] = useState(false);
+    const [isInitializing, setIsInitializing] = useState(true);
+
+    const loginMutation = useLoginMutation();
+    const registerMutation = useRegisterMutation();
+    const logoutMutation = useLogoutMutation();
+
+    // Use React Query to fetch user data when tokens are available
+    const { data: userData, error: userError } = useAuthUser(hasTokens);
 
     /**
-     * Load tokens from secure storage and restore session on mount
+     * Load tokens from secure storage on mount
      */
     useEffect(() => {
         const loadTokens = async () => {
@@ -36,26 +40,13 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
                 if (accessToken && refreshToken) {
                     apiClient.setAccessToken(accessToken);
                     apiClient.setRefreshToken(refreshToken);
-
-                    // Verify token by fetching current user
-                    try {
-                        const response = await apiClient.get<MeResponse>("/api/auth/me");
-                        setUser(response.user);
-                    } catch (error) {
-                        // Token is invalid, clear it
-                        console.error("Failed to verify stored tokens:", error);
-                        await Promise.all([
-                            secureStorage.remove(KEYS.ACCESS_TOKEN),
-                            secureStorage.remove(KEYS.REFRESH_TOKEN),
-                        ]);
-                        apiClient.setAccessToken(null);
-                        apiClient.setRefreshToken(null);
-                    }
+                    setHasTokens(true); // This will trigger useAuthUser query
+                } else {
+                    setIsInitializing(false);
                 }
             } catch (error) {
                 console.error("Failed to load tokens:", error);
-            } finally {
-                setIsLoading(false);
+                setIsInitializing(false);
             }
         };
 
@@ -63,39 +54,43 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     }, []);
 
     /**
-     * Clear tokens from storage and API client
+     * Update user state when query data changes
      */
-    const clearTokens = async () => {
-        await Promise.all([
-            secureStorage.remove(KEYS.ACCESS_TOKEN),
-            secureStorage.remove(KEYS.REFRESH_TOKEN),
-        ]);
-
-        apiClient.setAccessToken(null);
-        apiClient.setRefreshToken(null);
-    };
+    useEffect(() => {
+        if (userData) {
+            setUser(userData.user);
+            setIsInitializing(false);
+        }
+    }, [userData]);
 
     /**
-     * Login with email and password
+     * Handle user fetch errors (invalid token)
+     */
+    useEffect(() => {
+        if (userError) {
+            console.error("Failed to verify stored tokens:", userError);
+            const clearInvalidTokens = async () => {
+                await Promise.all([
+                    secureStorage.remove(KEYS.ACCESS_TOKEN),
+                    secureStorage.remove(KEYS.REFRESH_TOKEN),
+                ]);
+                apiClient.setAccessToken(null);
+                apiClient.setRefreshToken(null);
+                setHasTokens(false);
+                setIsInitializing(false);
+            };
+            clearInvalidTokens();
+        }
+    }, [userError]);
+
+    /**
+     * Login with email and password using React Query mutation
      */
     const login = async (email: string, password: string) => {
         try {
-            const credentials: LoginRequest = { email, password };
-
-            const response = await apiClient.post<LoginResponse>("/api/auth/login", credentials);
-
-            // Store tokens in secure storage
-            await Promise.all([
-                secureStorage.set(KEYS.ACCESS_TOKEN, response.accessToken),
-                secureStorage.set(KEYS.REFRESH_TOKEN, response.refreshToken),
-            ]);
-
-            // Set tokens in API client
-            apiClient.setAccessToken(response.accessToken);
-            apiClient.setRefreshToken(response.refreshToken);
-
-            // Update user state
+            const response = await loginMutation.mutateAsync({ email, password });
             setUser(response.user);
+            setHasTokens(true);
         } catch (error) {
             console.error("Login failed:", error);
             throw error;
@@ -103,14 +98,12 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     };
 
     /**
-     * Register a new user and auto-login
+     * Register a new user and auto-login using React Query mutations
      */
     const register = async (email: string, name: string, password: string) => {
         try {
-            const userData: CreateUserRequest = { email, name, password };
-
             // Create user account
-            await apiClient.post("/api/auth/register", userData);
+            await registerMutation.mutateAsync({ email, name, password });
 
             // Auto-login with same credentials
             await login(email, password);
@@ -121,25 +114,22 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     };
 
     /**
-     * Logout and clear all authentication data
+     * Logout and clear all authentication data using React Query mutation
      */
     const logout = async () => {
         try {
-            // Get refresh token to revoke it
             const refreshToken = await secureStorage.get(KEYS.REFRESH_TOKEN);
 
             if (refreshToken) {
-                // Call backend to revoke refresh token
-                await apiClient.post("/api/auth/logout", { refreshToken });
+                await logoutMutation.mutateAsync({ refreshToken });
             }
 
-            await clearTokens();
             setUser(null);
+            setHasTokens(false);
         } catch (error) {
             console.error("Logout failed:", error);
-            // Clear tokens even if backend call fails
-            await clearTokens();
             setUser(null);
+            setHasTokens(false);
         }
     };
 
@@ -151,8 +141,8 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
         logout,
     };
 
-    // Show loading state while checking for stored tokens
-    if (isLoading) {
+    // Show loading state while initializing
+    if (isInitializing) {
         return null; // Or return a loading component if preferred
     }
 

@@ -1,7 +1,7 @@
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import { IonRouterOutlet } from "@ionic/react";
-import { Redirect, Route } from "react-router-dom";
+import { Route } from "react-router-dom";
 
 /**
  * Auth component with unauthenticated routes
@@ -14,9 +14,6 @@ const Auth: React.FC = () => (
         </Route>
         <Route exact path="/register">
             <Register />
-        </Route>
-        <Route exact path="/">
-            <Redirect to="/login" />
         </Route>
     </IonRouterOutlet>
 );
