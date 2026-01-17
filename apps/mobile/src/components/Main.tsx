@@ -2,6 +2,7 @@ import { LLMModalProvider } from "@/llm/shared";
 import { IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } from "@ionic/react";
 import { cartOutline, storefrontOutline } from "ionicons/icons";
 import { Route } from "react-router-dom";
+import { HouseholdProvider } from "../households/HouseholdProvider";
 import ShoppingList from "../pages/ShoppingList";
 import StoreAislesPage from "../pages/StoreAislesPage";
 import StoreDetail from "../pages/StoreDetail";
@@ -16,41 +17,43 @@ import Settings from "./settings/Settings";
  * Only rendered when user is authenticated
  */
 const Main: React.FC = () => (
-    <LLMModalProvider>
-        <AppHeaderProvider>
-            <AppMenu />
-            <Settings />
-            <IonTabs>
-                <IonRouterOutlet id="main-content">
-                    <Route exact path="/stores">
-                        <StoresList />
-                    </Route>
-                    <Route exact path="/stores/:id">
-                        <StoreDetail />
-                    </Route>
-                    <Route exact path="/stores/:id/items">
-                        <StoreItemsPage />
-                    </Route>
-                    <Route exact path="/stores/:id/aisles">
-                        <StoreAislesPage />
-                    </Route>
-                    <Route exact path="/shoppinglist">
-                        <ShoppingList />
-                    </Route>
-                </IonRouterOutlet>
-                <IonTabBar slot="bottom">
-                    <IonTabButton tab="shoppinglist" href="/shoppinglist">
-                        <IonIcon aria-hidden="true" icon={cartOutline} />
-                        <IonLabel>Shopping List</IonLabel>
-                    </IonTabButton>
-                    <IonTabButton tab="stores" href="/stores">
-                        <IonIcon aria-hidden="true" icon={storefrontOutline} />
-                        <IonLabel>Stores</IonLabel>
-                    </IonTabButton>
-                </IonTabBar>
-            </IonTabs>
-        </AppHeaderProvider>
-    </LLMModalProvider>
+    <HouseholdProvider>
+        <LLMModalProvider>
+            <AppHeaderProvider>
+                <AppMenu />
+                <Settings />
+                <IonTabs>
+                    <IonRouterOutlet id="main-content">
+                        <Route exact path="/stores">
+                            <StoresList />
+                        </Route>
+                        <Route exact path="/stores/:id">
+                            <StoreDetail />
+                        </Route>
+                        <Route exact path="/stores/:id/items">
+                            <StoreItemsPage />
+                        </Route>
+                        <Route exact path="/stores/:id/aisles">
+                            <StoreAislesPage />
+                        </Route>
+                        <Route exact path="/shoppinglist">
+                            <ShoppingList />
+                        </Route>
+                    </IonRouterOutlet>
+                    <IonTabBar slot="bottom">
+                        <IonTabButton tab="shoppinglist" href="/shoppinglist">
+                            <IonIcon aria-hidden="true" icon={cartOutline} />
+                            <IonLabel>Shopping List</IonLabel>
+                        </IonTabButton>
+                        <IonTabButton tab="stores" href="/stores">
+                            <IonIcon aria-hidden="true" icon={storefrontOutline} />
+                            <IonLabel>Stores</IonLabel>
+                        </IonTabButton>
+                    </IonTabBar>
+                </IonTabs>
+            </AppHeaderProvider>
+        </LLMModalProvider>
+    </HouseholdProvider>
 );
 
 export default Main;

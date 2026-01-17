@@ -19,6 +19,7 @@ pnpm db:init
 ```
 
 This will:
+
 1. Drop existing tables
 2. Create new schema (including HouseholdInvitation table)
 3. Create indexes for case-insensitive email lookups
@@ -27,6 +28,7 @@ This will:
 ## Testing the API
 
 ### 1. Create a Household
+
 ```bash
 POST /api/households
 Authorization: Bearer <access_token>
@@ -38,6 +40,7 @@ Content-Type: application/json
 ```
 
 ### 2. Invite Someone
+
 ```bash
 POST /api/households/<household_id>/members
 Authorization: Bearer <access_token>
@@ -52,6 +55,7 @@ Content-Type: application/json
 ```
 
 ### 3. Check Pending Invitations (as invited user)
+
 ```bash
 GET /api/invitations
 Authorization: Bearer <invited_user_access_token>
@@ -60,18 +64,21 @@ Authorization: Bearer <invited_user_access_token>
 ```
 
 ### 4. Accept Invitation
+
 ```bash
 POST /api/invitations/<token>/accept
 Authorization: Bearer <invited_user_access_token>
 ```
 
 ### 5. View Household Members
+
 ```bash
 GET /api/households/<household_id>/members
 Authorization: Bearer <access_token>
 ```
 
 ### 6. Change Member Role (owner only)
+
 ```bash
 PUT /api/households/<household_id>/members/<user_id>
 Authorization: Bearer <owner_access_token>
@@ -83,6 +90,7 @@ Content-Type: application/json
 ```
 
 ### 7. Remove Member
+
 ```bash
 DELETE /api/households/<household_id>/members/<user_id>
 Authorization: Bearer <owner_access_token>
@@ -90,53 +98,66 @@ Authorization: Bearer <owner_access_token>
 
 ## What Still Needs to Be Built
 
-### Mobile App (`apps/mobile/`)
-The backend is complete, but the mobile UI is not implemented yet:
+### ✅ Completed: Mobile App Household Management
+
+The mobile app household management has been fully implemented in the settings slide-out menu:
+
+**Implemented Features:**
 
 1. **Household Context** (`src/households/`)
-   - HouseholdContext.tsx
-   - HouseholdProvider.tsx
-   - useHousehold.ts
-   - Wraps app to provide activeHouseholdId
+    - ✅ HouseholdContext.tsx
+    - ✅ HouseholdProvider.tsx
+    - ✅ useHousehold.ts
+    - ✅ Integrated into Main.tsx
 
-2. **Household Picker UI**
-   - Add to settings page or app header
-   - Dropdown/modal to switch between households
-   - Display current household name
+2. **Settings Page Integration** (`src/components/settings/Settings.tsx`)
+    - ✅ Displays current household name
+    - ✅ Manage Members button
+    - ✅ Invite Someone button
+    - ✅ My Invitations button with badge showing pending count
 
-3. **Household Settings Page** (`src/pages/HouseholdSettingsPage.tsx`)
-   - List members with roles
-   - Invite button
-   - Role change/remove buttons (owner only)
+3. **Modals**
+    - ✅ InviteMemberModal.tsx - Email + role picker form
+    - ✅ HouseholdMembersModal.tsx - Member list with role management and removal
+    - ✅ HouseholdInvitationsModal.tsx - Accept/decline pending invitations
 
-4. **Invitation Modals**
-   - InviteMemberModal.tsx (email + role picker)
-   - ChangeMemberRoleModal.tsx
-   - RemoveMemberConfirmModal.tsx
+4. **API Client** (`src/lib/api/household.ts`)
+    - ✅ All household and invitation API methods
+    - ✅ Integrated with TanStack Query patterns
 
-5. **Pending Invitations Display**
-   - Show on home page or settings
-   - Accept/decline buttons
-   - Notification badge
+**How It Works:**
 
-6. **API Client Methods** (`src/lib/api/`)
-   - Add methods for all household/invitation endpoints
-   - Integrate with TanStack Query
+- HouseholdProvider wraps the authenticated app and loads user's households on mount
+- Active household is stored in Capacitor Preferences and syncs with RemoteDatabase
+- Settings menu shows household section with current household name
+- Badge on "My Invitations" button shows count of pending invitations
+- Owners can manage members (change roles, remove members)
+- All members can invite others (owners/editors)
+- Users see pending invitations and can accept/decline
 
-### Admin Portal (`apps/backend/src/app/admin/`)
+### ⏭️ Still To Do (Future Work)
+
+#### Household Switching
+
+- Add household picker/switcher (not implemented yet)
+- Allow users to switch between multiple households
+- Could be added to settings or app header
+
+### ~Admin Portal~ (Skipped per user request)
+
 Read-only inspection pages:
 
 1. **Households List** (`admin/households/page.tsx`)
-   - Table: name, member count, created date
-   - Mantine Table component
+    - Table: name, member count, created date
+    - Mantine Table component
 
 2. **Household Detail** (`admin/households/[id]/page.tsx`)
-   - Household info
-   - Member list with emails/roles
+    - Household info
+    - Member list with emails/roles
 
 3. **Invitations** (`admin/invitations/page.tsx`)
-   - Pending invitations table
-   - Filter by household or status
+    - Pending invitations table
+    - Filter by household or status
 
 ## Verification Checklist
 
@@ -159,20 +180,19 @@ After building core and resetting database:
 
 ## Implementation Time Estimates
 
-### Mobile UI (High Priority)
-- Household context: 1-2 hours
-- Household picker: 1 hour
-- Settings page + member list: 2-3 hours
-- Invitation modals: 2-3 hours
-- Pending invitations UI: 1-2 hours
-- API client integration: 1-2 hours
-- **Total: ~10-15 hours**
+### ✅ Mobile UI (COMPLETED)
 
-### Admin UI (Lower Priority)
-- Households list: 2 hours
-- Household detail: 1-2 hours
-- Invitations page: 1-2 hours
-- **Total: ~4-6 hours**
+- Household context: ✅ Done
+- API client integration: ✅ Done
+- Settings page integration: ✅ Done
+- Invitation modals: ✅ Done
+- Pending invitations UI with badge: ✅ Done
+- Member management modal: ✅ Done
+
+### Future Enhancements
+
+- Household switching UI: 1-2 hours
+- Create new household flow: 1-2 hours
 
 ## Known Limitations
 
