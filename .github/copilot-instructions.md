@@ -37,10 +37,11 @@ Copilot: prioritize correctness, consistency, and boring maintainable patterns o
 - Validation: **Zod** at boundaries; infer TS types from schemas.
 - DB: **SQLite + better-sqlite3**.
 - Auth: backend-issued **JWT access token + refresh token**.
-- Sharing: **households** own lists; users can be members of households.
-- Permissions: **owner/editor/viewer** (per list is sufficient; household-level membership is preferred initially).
+- **Stores**: Users own stores directly. Stores can have collaborators (owner + invited editors). Owner can delete store; if owner leaves, store is deleted with cascade to all store entities.
+- **Households**: Reserved for future meal planning features only. Not used for stores/shopping lists.
 - Mobile: **always-online** (no offline-first sync engine).
 - **Data retention: This is a low-stakes shopping list app. Prefer hard-deleting unimportant data (like revoked tokens) rather than soft-deletes or keeping audit trails. No plans for cleanup batch jobs.**
+- **Breaking changes: This app is unreleased. Breaking database schema changes are acceptable without migration. Just reseed the database after schema changes.**
 
 ---
 

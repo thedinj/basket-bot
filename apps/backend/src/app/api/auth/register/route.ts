@@ -1,6 +1,7 @@
 import { hashPassword } from "@/lib/auth/password";
 import { checkRateLimit } from "@/lib/auth/rateLimiter";
 import { db } from "@/lib/db/db";
+import * as storeService from "@/lib/services/storeService";
 import { createUserRequestSchema } from "@basket-bot/core";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
@@ -36,6 +37,9 @@ export async function POST(req: NextRequest) {
             VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
         `
         ).run(userId, email, name, hashedPassword, "");
+
+        // Create default example store for new user
+        storeService.createDefaultStoreForNewUser(userId);
 
         return NextResponse.json(
             {

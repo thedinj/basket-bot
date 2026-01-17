@@ -23,7 +23,6 @@ export type QuantityUnit = z.infer<typeof quantityUnitSchema>;
 // ========== Store ==========
 export const storeSchema = z.object({
     id: z.string().uuid(),
-    householdId: z.string().uuid(),
     name: z.string().min(1),
     createdById: z.string().uuid(),
     updatedById: z.string().uuid(),
@@ -34,7 +33,6 @@ export const storeSchema = z.object({
 export type Store = z.infer<typeof storeSchema>;
 
 export const createStoreRequestSchema = z.object({
-    householdId: z.string().uuid(),
     name: z.string().min(1).max(100),
 });
 
@@ -45,6 +43,41 @@ export const updateStoreRequestSchema = z.object({
 });
 
 export type UpdateStoreRequest = z.infer<typeof updateStoreRequestSchema>;
+
+// ========== StoreCollaborator ==========
+export const storeCollaboratorRoleSchema = z.enum(["owner", "editor"]);
+
+export type StoreCollaboratorRole = z.infer<typeof storeCollaboratorRoleSchema>;
+
+export const storeCollaboratorSchema = z.object({
+    id: z.string().uuid(),
+    storeId: z.string().uuid(),
+    userId: z.string().uuid(),
+    role: storeCollaboratorRoleSchema,
+    createdAt: z.string().datetime(),
+});
+
+export type StoreCollaborator = z.infer<typeof storeCollaboratorSchema>;
+
+export const storeCollaboratorDetailSchema = storeCollaboratorSchema.extend({
+    userEmail: z.string().email(),
+    userName: z.string(),
+});
+
+export type StoreCollaboratorDetail = z.infer<typeof storeCollaboratorDetailSchema>;
+
+export const createStoreCollaboratorRequestSchema = z.object({
+    email: z.string().email(),
+    role: storeCollaboratorRoleSchema,
+});
+
+export type CreateStoreCollaboratorRequest = z.infer<typeof createStoreCollaboratorRequestSchema>;
+
+export const updateStoreCollaboratorRequestSchema = z.object({
+    role: storeCollaboratorRoleSchema,
+});
+
+export type UpdateStoreCollaboratorRequest = z.infer<typeof updateStoreCollaboratorRequestSchema>;
 
 // ========== StoreAisle ==========
 export const storeAisleSchema = z.object({

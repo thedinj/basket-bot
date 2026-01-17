@@ -74,15 +74,25 @@ export function initializeDatabase() {
         -- Store table
         CREATE TABLE IF NOT EXISTS "Store" (
             "id" TEXT NOT NULL PRIMARY KEY,
-            "householdId" TEXT NOT NULL,
             "name" TEXT NOT NULL,
             "createdById" TEXT NOT NULL,
             "updatedById" TEXT NOT NULL,
             "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "updatedAt" DATETIME NOT NULL,
-            FOREIGN KEY ("householdId") REFERENCES "Household" ("id") ON DELETE CASCADE,
             FOREIGN KEY ("createdById") REFERENCES "User" ("id") ON DELETE RESTRICT,
             FOREIGN KEY ("updatedById") REFERENCES "User" ("id") ON DELETE RESTRICT
+        );
+
+        -- StoreCollaborator table
+        CREATE TABLE IF NOT EXISTS "StoreCollaborator" (
+            "id" TEXT NOT NULL PRIMARY KEY,
+            "storeId" TEXT NOT NULL,
+            "userId" TEXT NOT NULL,
+            "role" TEXT NOT NULL,
+            "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY ("storeId") REFERENCES "Store" ("id") ON DELETE CASCADE,
+            FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE,
+            UNIQUE ("storeId", "userId")
         );
 
         -- StoreAisle table
@@ -178,13 +188,13 @@ export function initializeDatabase() {
         -- Indexes
         CREATE INDEX IF NOT EXISTS "ShoppingListItem_storeId_isChecked_updatedAt_idx"
             ON "ShoppingListItem"("storeId", "isChecked", "updatedAt");
-        
+
         CREATE INDEX IF NOT EXISTS "HouseholdInvitation_token_idx"
             ON "HouseholdInvitation"("token");
-        
+
         CREATE INDEX IF NOT EXISTS "HouseholdInvitation_invitedEmail_status_idx"
             ON "HouseholdInvitation"("invitedEmail", "status");
-        
+
         CREATE INDEX IF NOT EXISTS "User_email_idx"
             ON "User"("email" COLLATE NOCASE);
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MIN_PASSWORD_LENGTH } from "../constants/index.js";
 
 // User schemas
 export const userSchema = z.object({
@@ -15,7 +16,7 @@ export type User = z.infer<typeof userSchema>;
 export const createUserRequestSchema = z.object({
     email: z.string().email(),
     name: z.string().min(1),
-    password: z.string().min(8),
+    password: z.string().min(MIN_PASSWORD_LENGTH),
 });
 
 export type CreateUserRequest = z.infer<typeof createUserRequestSchema>;

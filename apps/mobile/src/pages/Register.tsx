@@ -1,3 +1,4 @@
+import { MIN_PASSWORD_LENGTH } from "@basket-bot/core";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonButton,
@@ -21,7 +22,12 @@ const registerSchema = z
     .object({
         name: z.string().min(1, "Name is required"),
         email: z.string().email("Please enter a valid email"),
-        password: z.string().min(8, "Password must be at least 8 characters"),
+        password: z
+            .string()
+            .min(
+                MIN_PASSWORD_LENGTH,
+                `Password must be at least ${MIN_PASSWORD_LENGTH} characters`
+            ),
         confirmPassword: z.string(),
     })
     .refine((data) => data.password === data.confirmPassword, {
@@ -115,8 +121,8 @@ const Register: React.FC = () => {
                                     name="password"
                                     control={control}
                                     label="Password"
-                                    placeholder="At least 8 characters"
-                                    helperText="Must be at least 8 characters"
+                                    placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
+                                    helperText={`Must be at least ${MIN_PASSWORD_LENGTH} characters`}
                                     disabled={isSubmitting}
                                 />
 

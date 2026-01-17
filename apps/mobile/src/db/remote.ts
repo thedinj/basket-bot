@@ -18,13 +18,6 @@ import { BaseDatabase } from "./base";
  * Maps all Database interface methods to API calls.
  */
 export class RemoteDatabase extends BaseDatabase {
-    // For remote DB, we need to track the active household
-    private activeHouseholdId: string | null = null;
-
-    setActiveHouseholdId(householdId: string) {
-        this.activeHouseholdId = householdId;
-    }
-
     protected async initializeStorage(): Promise<void> {
         // No local storage initialization needed - API is always ready
         // Just notify that we're ready
@@ -47,26 +40,15 @@ export class RemoteDatabase extends BaseDatabase {
 
     // ========== Store Operations ==========
     async insertStore(name: string): Promise<Store> {
-        if (!this.activeHouseholdId) {
-            throw new Error("No active household - cannot create store");
-        }
-
         const response = await apiClient.post<{ store: Store }>("/api/stores", {
             name,
-            householdId: this.activeHouseholdId,
         });
         this.notifyChange();
         return response.store;
     }
 
     async loadAllStores(): Promise<Store[]> {
-        if (!this.activeHouseholdId) {
-            return [];
-        }
-
-        const response = await apiClient.get<{ stores: Store[] }>(
-            `/api/stores?householdId=${this.activeHouseholdId}`
-        );
+        const response = await apiClient.get<{ stores: Store[] }>("/api/stores");
         return response.stores;
     }
 

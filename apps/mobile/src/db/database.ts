@@ -1,8 +1,7 @@
-import { FakeDatabase } from "./fake";
 import { RemoteDatabase } from "./remote";
 import { Database } from "./types";
 
-export type DatabaseType = "fake" | "remote";
+export type DatabaseType = "remote";
 
 let databaseInstance: Database | null = null;
 
@@ -26,9 +25,6 @@ export async function getDatabase(): Promise<Database> {
 
     let db: Database;
     switch (dbType) {
-        case "fake":
-            db = new FakeDatabase();
-            break;
         case "remote":
             db = new RemoteDatabase();
             break;
@@ -53,7 +49,6 @@ export async function resetDatabaseInstance(): Promise<void> {
 
 // Re-export types for convenience
 export { BaseDatabase } from "./base";
-export { FakeDatabase } from "./fake";
 export { RemoteDatabase } from "./remote";
 export type {
     CoreDatabase,

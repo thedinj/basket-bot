@@ -4,22 +4,12 @@ import { createStoreRequestSchema } from "@basket-bot/core";
 import { NextResponse } from "next/server";
 
 /**
- * GET /api/stores?householdId=xxx
- * List all stores for a household
+ * GET /api/stores
+ * List all stores for the authenticated user
  */
 async function handleGet(req: AuthenticatedRequest) {
     try {
-        const { searchParams } = new URL(req.url);
-        const householdId = searchParams.get("householdId");
-
-        if (!householdId) {
-            return NextResponse.json(
-                { code: "MISSING_PARAMETER", message: "householdId is required" },
-                { status: 400 }
-            );
-        }
-
-        const stores = storeService.getStoresByHousehold(householdId, req.auth.sub);
+        const stores = storeService.getStoresByUser(req.auth.sub);
 
         return NextResponse.json({ stores });
     } catch (error: any) {
@@ -33,7 +23,7 @@ async function handleGet(req: AuthenticatedRequest) {
 
 /**
  * POST /api/stores
- * Create a new store
+ * Create a new store (user becomes owner)
  */
 async function handlePost(req: AuthenticatedRequest) {
     try {
@@ -41,7 +31,6 @@ async function handlePost(req: AuthenticatedRequest) {
         const data = createStoreRequestSchema.parse(body);
 
         const store = storeService.createStore({
-            householdId: data.householdId,
             name: data.name,
             userId: req.auth.sub,
         });

@@ -1,4 +1,7 @@
+for debugging, pick the right IP based on mobile v live-update
 email case insensitive?
+hard to select items at the bottom of pages/lists
+insists on quantity of 1 for some reason, at least for imported stuff
 review data model
 No inserts in seed file--use shared insert logic
 Household selection/sharing
