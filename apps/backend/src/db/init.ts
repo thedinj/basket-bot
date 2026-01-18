@@ -176,6 +176,7 @@ export function initializeDatabase() {
             "isChecked" BOOLEAN,
             "checkedAt" DATETIME,
             "isSample" BOOLEAN,
+            "isUnsure" BOOLEAN,
             "isIdea" BOOLEAN,
             "snoozedUntil" DATETIME,
             "createdById" TEXT NOT NULL,

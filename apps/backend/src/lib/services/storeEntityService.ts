@@ -249,6 +249,7 @@ export function upsertShoppingListItem(
         isChecked: params.isChecked,
         isIdea: params.isIdea,
         isSample: params.isSample,
+        isUnsure: params.isUnsure,
         snoozedUntil: params.snoozedUntil,
         userId: params.userId,
     });

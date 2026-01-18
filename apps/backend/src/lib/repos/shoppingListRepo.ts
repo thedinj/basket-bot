@@ -10,7 +10,7 @@ export function getShoppingListItems(storeId: string): ShoppingListItemWithDetai
         .prepare(
             `SELECT
                 sli.id, sli.storeId, sli.storeItemId, sli.qty, sli.unitId, sli.notes,
-                sli.isChecked, sli.checkedAt, sli.isSample, sli.isIdea, sli.snoozedUntil,
+                sli.isChecked, sli.checkedAt, sli.isSample, sli.isUnsure, sli.isIdea, sli.snoozedUntil,
                 sli.createdById, sli.updatedById, sli.createdAt, sli.updatedAt,
                 si.name as itemName,
                 qu.abbreviation as unitAbbreviation,
@@ -44,6 +44,7 @@ export function upsertShoppingListItem(params: {
     isChecked?: boolean;
     isIdea?: boolean;
     isSample?: boolean | null;
+    isUnsure?: boolean | null;
     snoozedUntil?: string | null;
     userId: string;
 }): ShoppingListItem {
@@ -53,12 +54,13 @@ export function upsertShoppingListItem(params: {
     const isChecked = params.isChecked ?? false;
     const isIdea = params.isIdea ?? false;
     const isSample = params.isSample ?? null;
+    const isUnsure = params.isUnsure ?? null;
 
     if (params.id) {
         // Update existing
         const existing = db
             .prepare(
-                `SELECT id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, isSample, isIdea, snoozedUntil, createdById, updatedById, createdAt, updatedAt
+                `SELECT id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, isSample, isUnsure, isIdea, snoozedUntil, createdById, updatedById, createdAt, updatedAt
                  FROM ShoppingListItem
                  WHERE id = ?`
             )
@@ -77,7 +79,7 @@ export function upsertShoppingListItem(params: {
         db.prepare(
             `UPDATE ShoppingListItem
              SET storeItemId = ?, qty = ?, unitId = ?, notes = ?, isChecked = ?, checkedAt = ?,
-                 isSample = ?, isIdea = ?, snoozedUntil = ?, updatedById = ?, updatedAt = ?
+                 isSample = ?, isUnsure = ?, isIdea = ?, snoozedUntil = ?, updatedById = ?, updatedAt = ?
              WHERE id = ?`
         ).run(
             params.storeItemId ?? existing.storeItemId,
@@ -87,6 +89,7 @@ export function upsertShoppingListItem(params: {
             isChecked != null ? (isChecked ? 1 : 0) : null,
             checkedAt,
             isSample != null ? (isSample ? 1 : 0) : null,
+            isUnsure != null ? (isUnsure ? 1 : 0) : null,
             isIdea != null ? (isIdea ? 1 : 0) : null,
             params.snoozedUntil ?? existing.snoozedUntil,
             params.userId,
@@ -101,8 +104,8 @@ export function upsertShoppingListItem(params: {
         const checkedAt = isChecked ? now : null;
 
         db.prepare(
-            `INSERT INTO ShoppingListItem (id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, isSample, isIdea, snoozedUntil, createdById, updatedById, createdAt, updatedAt)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            `INSERT INTO ShoppingListItem (id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, isSample, isUnsure, isIdea, snoozedUntil, createdById, updatedById, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).run(
             id,
             params.storeId,
@@ -113,6 +116,7 @@ export function upsertShoppingListItem(params: {
             isChecked != null ? (isChecked ? 1 : 0) : null,
             checkedAt,
             isSample != null ? (isSample ? 1 : 0) : null,
+            isUnsure != null ? (isUnsure ? 1 : 0) : null,
             isIdea != null ? (isIdea ? 1 : 0) : null,
             params.snoozedUntil ?? null,
             params.userId,
@@ -128,7 +132,7 @@ export function upsertShoppingListItem(params: {
 export function getShoppingListItemById(id: string): ShoppingListItem | null {
     const row = db
         .prepare(
-            `SELECT id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, isSample, isIdea, snoozedUntil, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, isSample, isUnsure, isIdea, snoozedUntil, createdById, updatedById, createdAt, updatedAt
              FROM ShoppingListItem
              WHERE id = ?`
         )

@@ -258,6 +258,7 @@ export const shoppingListItemSchema = z.object({
     isChecked: z.boolean(),
     checkedAt: z.string().datetime().nullable(),
     isSample: z.boolean().nullable(),
+    isUnsure: z.boolean().nullable(),
     isIdea: z.boolean(),
     snoozedUntil: z.string().datetime().nullable(),
     createdById: z.string().uuid(),
@@ -338,6 +339,7 @@ export const shoppingListItemInputSchema = z
         isChecked: z.boolean().optional().default(false),
         isIdea: z.boolean().optional().default(false),
         isSample: z.boolean().nullable().optional().default(null),
+        isUnsure: z.boolean().nullable().optional().default(null),
         snoozedUntil: z.string().datetime().nullable().optional(),
         // name is only used for ideas (when storeItemId is null)
         name: z.string().optional(),
@@ -373,6 +375,7 @@ export type ShoppingListItemInput = {
     isChecked?: boolean;
     isIdea?: boolean;
     isSample?: boolean | null;
+    isUnsure?: boolean | null;
     snoozedUntil?: string | null;
     name?: string; // Only for ideas
 };
