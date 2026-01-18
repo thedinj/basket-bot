@@ -30,7 +30,7 @@
             "problemMatcher": ["$tsc"]
         },
         {
-            "label": "Build: Core Package Only",
+            "label": "Build: Core Package",
             "type": "shell",
             "command": "pnpm --filter @basket-bot/core build",
             "group": "build",
@@ -94,7 +94,7 @@
             },
             "isBackground": true,
             "runOptions": {
-                "runOn": "folderOpen"
+                //"runOn": "folderOpen"
             },
             "presentation": {
                 "reveal": "always",
@@ -145,100 +145,6 @@
                     "endsPattern": "ready in"
                 }
             }
-        },
-        {
-            "label": "Dev: Full Stack (Web Preview, Hot-reload)",
-            "dependsOn": ["Dev: Backend (Hot-reload)", "Dev: Mobile (Hot-reload)"],
-            "dependsOrder": "parallel",
-            "group": "none",
-            "presentation": {
-                "reveal": "always"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Dev: Full Stack (Native Android, Hot-reload)",
-            "dependsOn": [
-                "Dev: Backend (Hot-reload)",
-                "Dev: Mobile (Hot-reload)",
-                "Dev: Run Android (Debug)"
-            ],
-            "dependsOrder": "parallel",
-            "group": "none",
-            "presentation": {
-                "reveal": "always"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Dev: Run Android (Debug)",
-            "type": "shell",
-            "command": "pnpm android:dev",
-            "options": {
-                "cwd": "${workspaceFolder}/apps/mobile"
-            },
-            "group": "none",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated"
-            },
-            "problemMatcher": []
-        },
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Testing & Validation Tasks
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        {
-            "label": "Test: Lint All",
-            "type": "shell",
-            "command": "pnpm lint",
-            "group": "test",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            },
-            "problemMatcher": ["$eslint-stylish"]
-        },
-        {
-            "label": "Test: Type Check All",
-            "type": "shell",
-            "command": "pnpm type-check",
-            "group": "test",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            },
-            "problemMatcher": ["$tsc"]
-        },
-        {
-            "label": "Test: Run Android (Production Build)",
-            "type": "shell",
-            "command": "pnpm android",
-            "options": {
-                "cwd": "${workspaceFolder}/apps/mobile"
-            },
-            "group": "none",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated"
-            },
-            "problemMatcher": []
-        },
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Utility Tasks
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        {
-            "label": "Util: Open Android Studio",
-            "type": "shell",
-            "command": "pnpm cap:open:android",
-            "options": {
-                "cwd": "${workspaceFolder}/apps/mobile"
-            },
-            "group": "none",
-            "presentation": {
-                "reveal": "always",
-                "panel": "new"
-            },
-            "problemMatcher": []
         }
     ]
 }

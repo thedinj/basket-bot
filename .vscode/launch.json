@@ -18,16 +18,6 @@
                 "NODE_ENV": "development"
             }
         },
-        {
-            "name": "Debug: Backend (Attach to Running)",
-            "type": "node",
-            "request": "attach",
-            "port": 9229,
-            "skipFiles": ["<node_internals>/**"],
-            "restart": true,
-            "localRoot": "${workspaceFolder}/apps/backend",
-            "remoteRoot": "${workspaceFolder}/apps/backend"
-        },
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Mobile Debugging (Hot-reload)
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -46,37 +36,6 @@
                 "group": "development",
                 "order": 1
             }
-        },
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Note: For Android debugging, use Chrome DevTools directly:
-        // 1. Run: Dev: Full Stack (Native Android, Hot-reload) task
-        // 2. Open Chrome and navigate to: chrome://inspect
-        // 3. Click "inspect" on your device/emulator
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // Testing
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        {
-            "name": "Debug: Backend Tests (Watch)",
-            "type": "node",
-            "request": "launch",
-            "cwd": "${workspaceFolder}/apps/backend",
-            "runtimeExecutable": "pnpm",
-            "runtimeArgs": ["test", "--watch"],
-            "skipFiles": ["<node_internals>/**"],
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
-        }
-    ],
-    "compounds": [
-        {
-            "name": "Debug: Full Stack (Web Preview, Hot-reload)",
-            "configurations": ["Debug: Mobile Web Preview (Hot-reload)"],
-            "presentation": {
-                "hidden": false,
-                "group": "development",
-                "order": 2
-            },
-            "stopAll": true
         }
     ]
 }
