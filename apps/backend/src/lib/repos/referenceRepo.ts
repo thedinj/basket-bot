@@ -8,9 +8,9 @@ import { db } from "../db/db";
 export function getAllQuantityUnits(): QuantityUnit[] {
     return db
         .prepare(
-            `SELECT id, name, abbreviation, pluralName
+            `SELECT id, name, abbreviation, sortOrder, category
              FROM QuantityUnit
-             ORDER BY name ASC`
+             ORDER BY sortOrder ASC`
         )
         .all() as QuantityUnit[];
 }

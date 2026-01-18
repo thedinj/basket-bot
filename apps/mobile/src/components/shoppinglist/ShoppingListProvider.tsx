@@ -1,5 +1,5 @@
 import type { ShoppingListItemWithDetails } from "@basket-bot/core";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useMemo, useState } from "react";
 import { useDeleteShoppingListItem, useStores } from "../../db/hooks";
 import { useLastShoppingListStore } from "../../hooks/useLastShoppingListStore";
 import { ShoppingListContext, ShoppingListContextValue } from "./ShoppingListContext";
@@ -9,7 +9,7 @@ interface ShoppingListProviderProps {
 }
 
 export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) => {
-    const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
+    const [userSelectedStoreId, setUserSelectedStoreId] = useState<string | null>(null);
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<ShoppingListItemWithDetails | null>(null);
     const [deleteAlert, setDeleteAlert] = useState<{
@@ -22,25 +22,34 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
     const { data: stores } = useStores();
     const { lastShoppingListStoreId, saveLastShoppingListStore } = useLastShoppingListStore();
 
-    // Restore last selected store on mount
-    useEffect(() => {
-        if (lastShoppingListStoreId && stores) {
+    // Compute selected store ID from stores data - React will re-render when stores change
+    const selectedStoreId = useMemo(() => {
+        // User explicitly selected a store
+        if (userSelectedStoreId) {
+            return userSelectedStoreId;
+        }
+
+        // No stores loaded yet
+        if (!stores) {
+            return null;
+        }
+
+        // Restore last selected store if it still exists
+        if (lastShoppingListStoreId) {
             const exists = stores.some((s) => s.id === lastShoppingListStoreId);
             if (exists) {
-                setSelectedStoreId(lastShoppingListStoreId);
-            } else {
-                // Last store was deleted, clear preference
-                saveLastShoppingListStore(null);
+                return lastShoppingListStoreId;
             }
         }
-    }, [lastShoppingListStoreId, stores, saveLastShoppingListStore]);
 
-    // Auto-select store if exactly one exists
-    useEffect(() => {
-        if (!selectedStoreId && stores && stores.length === 1) {
-            setSelectedStoreId(stores[0].id);
+        // Auto-select if exactly one store
+        if (stores.length === 1) {
+            return stores[0].id;
         }
-    }, [stores, selectedStoreId]);
+
+        // No store to select
+        return null;
+    }, [stores, userSelectedStoreId, lastShoppingListStoreId]);
 
     const openCreateModal = () => {
         setEditingItem(null);
@@ -85,7 +94,7 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
 
     // Wrap setSelectedStoreId to also save preference
     const handleSetSelectedStoreId = (storeId: string | null) => {
-        setSelectedStoreId(storeId);
+        setUserSelectedStoreId(storeId);
         saveLastShoppingListStore(storeId);
     };
 

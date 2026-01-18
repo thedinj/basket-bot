@@ -45,6 +45,7 @@ async function handlePost(
         });
         return NextResponse.json({ item }, { status: body.id ? 200 : 201 });
     } catch (error: any) {
+        console.error("POST shopping-list error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },

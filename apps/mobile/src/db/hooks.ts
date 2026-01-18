@@ -3,6 +3,7 @@ import {
     useQueryClient,
     useMutation as useTanstackMutation,
     useQuery as useTanstackQuery,
+    useSuspenseQuery as useTanstackSuspenseQuery,
 } from "@tanstack/react-query";
 import { use } from "react";
 import { useToast } from "../hooks/useToast";
@@ -30,7 +31,7 @@ export function useDatabase(): Database {
  */
 export function useStores() {
     const database = useDatabase();
-    return useTanstackQuery({
+    return useTanstackSuspenseQuery({
         queryKey: ["stores"],
         queryFn: () => database.loadAllStores(),
     });
@@ -789,10 +790,12 @@ export function useToggleFavorite() {
 export function useShoppingListItems(storeId: string) {
     const database = useDatabase();
 
-    return useTanstackQuery({
+    return useTanstackSuspenseQuery({
         queryKey: ["shopping-list-items", storeId],
-        queryFn: () => database.getShoppingListItems(storeId),
-        enabled: !!storeId,
+        queryFn: async () => {
+            const items = await database.getShoppingListItems(storeId);
+            return items;
+        },
     });
 }
 

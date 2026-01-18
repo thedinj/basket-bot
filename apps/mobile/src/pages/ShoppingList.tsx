@@ -4,18 +4,16 @@ import {
     IonFab,
     IonFabButton,
     IonIcon,
-    IonItem,
-    IonList,
     IonPage,
-    IonSkeletonText,
     IonText,
     IonToolbar,
 } from "@ionic/react";
 import { add, eyeOffOutline, eyeOutline } from "ionicons/icons";
-import { useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useMemo, useState } from "react";
 import { ANIMATION_EFFECTS } from "../animations/effects";
 import { AppHeader } from "../components/layout/AppHeader";
 import { PageMenuItemConfig } from "../components/layout/AppHeaderContext";
+import LoadingFallback from "../components/LoadingFallback";
 import { FabSpacer } from "../components/shared/FabSpacer";
 import { OverlayAnimation } from "../components/shared/OverlayAnimation";
 import { useBulkImportModal } from "../components/shoppinglist/BulkImportModal";
@@ -30,12 +28,12 @@ import { useOverlayAnimation } from "../hooks/useOverlayAnimation";
 import { useShowSnoozedItems } from "../hooks/useShowSnoozedItems";
 import { LLMFabButton } from "../llm/shared";
 
-const ShoppingListContent: React.FC = () => {
-    const { selectedStoreId, openCreateModal } = useShoppingListContext();
-
+const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
+    const { openCreateModal } = useShoppingListContext();
     const { showSnoozed, toggleShowSnoozed } = useShowSnoozedItems();
 
-    const { data: items, isLoading: isLoadingItems } = useShoppingListItems(selectedStoreId || "");
+    // Use Suspense pattern - component suspends until data loads
+    const { data: items } = useShoppingListItems(storeId);
 
     const clearChecked = useClearCheckedItems();
 
@@ -46,7 +44,7 @@ const ShoppingListContent: React.FC = () => {
         cssClass,
     } = useOverlayAnimation(ANIMATION_EFFECTS.LASER_OBLITERATION);
 
-    const { openBulkImport, isImporting } = useBulkImportModal(selectedStoreId || "");
+    const { openBulkImport, isImporting } = useBulkImportModal(storeId);
 
     const snoozedItemCount = useMemo(() => {
         if (!items) return 0;
@@ -89,13 +87,9 @@ const ShoppingListContent: React.FC = () => {
 
         // Wait for animation to complete, then clear items
         setTimeout(() => {
-            if (selectedStoreId) {
-                clearChecked.mutate({ storeId: selectedStoreId });
-            }
+            clearChecked.mutate({ storeId });
         }, ANIMATION_EFFECTS.LASER_OBLITERATION.duration);
-    }, [clearChecked, selectedStoreId, triggerLaser]);
-
-    const isLoading = isLoadingItems;
+    }, [clearChecked, storeId, triggerLaser]);
 
     const menuItems: PageMenuItemConfig[] = [
         {
@@ -114,35 +108,8 @@ const ShoppingListContent: React.FC = () => {
     return (
         <>
             <AppHeader title="Shopping List" menuItems={menuItems} />
-            <IonToolbar>
-                <StoreSelector />
-            </IonToolbar>
             <IonContent fullscreen>
-                {!selectedStoreId && (
-                    <div
-                        style={{
-                            textAlign: "center",
-                            marginTop: "40px",
-                            padding: "20px",
-                        }}
-                    >
-                        <IonText color="medium">
-                            <p>Select a store, human. I cannot assist without data.</p>
-                        </IonText>
-                    </div>
-                )}
-
-                {selectedStoreId && isLoading && (
-                    <IonList>
-                        {[1, 2, 3].map((i) => (
-                            <IonItem key={i}>
-                                <IonSkeletonText animated style={{ width: "100%" }} />
-                            </IonItem>
-                        ))}
-                    </IonList>
-                )}
-
-                {selectedStoreId && !isLoading && activeItems && activeItems.length === 0 && (
+                {activeItems.length === 0 && (
                     <div
                         style={{
                             textAlign: "center",
@@ -165,7 +132,7 @@ const ShoppingListContent: React.FC = () => {
                     </div>
                 )}
 
-                {selectedStoreId && !isLoading && activeItems && (
+                {activeItems.length > 0 && (
                     <>
                         <UncheckedItems items={uncheckedItems} />
                         <CheckedItems
@@ -180,30 +147,26 @@ const ShoppingListContent: React.FC = () => {
                 {/* Overlay animation */}
                 <OverlayAnimation cssClass={cssClass} />
 
-                {selectedStoreId && activeItems && (
-                    <>
-                        <FabSpacer />
+                <FabSpacer />
 
-                        {/* Add Item FAB */}
-                        <IonFab vertical="bottom" horizontal="end" slot="fixed">
-                            <IonFabButton color="primary" onClick={openCreateModal}>
-                                <IonIcon icon={add} />
-                            </IonFabButton>
-                        </IonFab>
+                {/* Add Item FAB */}
+                <IonFab vertical="bottom" horizontal="end" slot="fixed">
+                    <IonFabButton color="primary" onClick={openCreateModal}>
+                        <IonIcon icon={add} />
+                    </IonFabButton>
+                </IonFab>
 
-                        {/* Bulk Import FAB */}
-                        <IonFab
-                            vertical="bottom"
-                            horizontal="end"
-                            slot="fixed"
-                            style={{ marginRight: "70px" }}
-                        >
-                            <LLMFabButton onClick={openBulkImport} disabled={isImporting} />
-                        </IonFab>
+                {/* Bulk Import FAB */}
+                <IonFab
+                    vertical="bottom"
+                    horizontal="end"
+                    slot="fixed"
+                    style={{ marginRight: "70px" }}
+                >
+                    <LLMFabButton onClick={openBulkImport} disabled={isImporting} />
+                </IonFab>
 
-                        <ItemEditorModal storeId={selectedStoreId} />
-                    </>
-                )}
+                <ItemEditorModal storeId={storeId} />
             </IonContent>
 
             <IonAlert
@@ -227,12 +190,51 @@ const ShoppingListContent: React.FC = () => {
     );
 };
 
+const ShoppingListContent: React.FC = () => {
+    const { selectedStoreId } = useShoppingListContext();
+
+    if (!selectedStoreId) {
+        return (
+            <>
+                <AppHeader title="Shopping List" menuItems={[]} />
+                <IonToolbar>
+                    <StoreSelector />
+                </IonToolbar>
+                <IonContent fullscreen>
+                    <div
+                        style={{
+                            textAlign: "center",
+                            marginTop: "40px",
+                            padding: "20px",
+                        }}
+                    >
+                        <IonText color="medium">
+                            <p>Select a store, human. I cannot assist without data.</p>
+                        </IonText>
+                    </div>
+                </IonContent>
+            </>
+        );
+    }
+
+    return (
+        <>
+            <IonToolbar>
+                <StoreSelector />
+            </IonToolbar>
+            <ShoppingListWithItems storeId={selectedStoreId} />
+        </>
+    );
+};
+
 const ShoppingList: React.FC = () => {
     return (
         <IonPage>
-            <ShoppingListProvider>
-                <ShoppingListContent />
-            </ShoppingListProvider>
+            <Suspense fallback={<LoadingFallback />}>
+                <ShoppingListProvider>
+                    <ShoppingListContent />
+                </ShoppingListProvider>
+            </Suspense>
         </IonPage>
     );
 };

@@ -81,7 +81,12 @@ const AuthRoute: React.FC<{ component: React.ComponentType; path: string; exact?
  * App routing structure
  */
 const AppRoutes: React.FC = () => {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, isInitializing } = useAuth();
+
+    // Wait for auth state to be determined before rendering routes
+    if (isInitializing) {
+        return <LoadingFallback />;
+    }
 
     return (
         <IonRouterOutlet>

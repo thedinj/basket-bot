@@ -92,7 +92,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
             setUser(response.user);
             setHasTokens(true);
         } catch (error) {
-            console.error("Login failed:", error);
+            console.error("[AuthProvider] Login failed:", error);
             throw error;
         }
     };
@@ -136,15 +136,11 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const value: AuthContextValue = {
         user,
         isAuthenticated: !!user,
+        isInitializing,
         login,
         register,
         logout,
     };
-
-    // Show loading state while initializing
-    if (isInitializing) {
-        return null; // Or return a loading component if preferred
-    }
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

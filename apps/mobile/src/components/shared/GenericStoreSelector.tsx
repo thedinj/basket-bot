@@ -30,7 +30,7 @@ export const GenericStoreSelector: React.FC<GenericStoreSelectorProps> = ({
     inputStyle,
     showChevron = false,
 }) => {
-    const { data: stores, isLoading } = useStores();
+    const { data: stores } = useStores();
 
     const filteredStores = useMemo(() => {
         if (!stores) return [];
@@ -46,17 +46,13 @@ export const GenericStoreSelector: React.FC<GenericStoreSelectorProps> = ({
 
     const selectedStore = stores?.find((s) => s.id === selectedStoreId);
 
-    if (isLoading) {
-        return null;
-    }
-
     const displayText = triggerText
         ? triggerText
         : selectedStore
-        ? selectedStore?.name
-        : !stores?.length
-        ? "No stores available"
-        : placeholderText;
+          ? selectedStore?.name
+          : !stores?.length
+            ? "No stores available"
+            : placeholderText;
 
     return (
         <ClickableSelectionField

@@ -65,6 +65,8 @@ export class ApiClient {
 
         if (this.accessToken) {
             headers["Authorization"] = `Bearer ${this.accessToken}`;
+        } else {
+            console.warn("[ApiClient] No access token available for request");
         }
 
         let response = await fetch(`${API_BASE_URL}${endpoint}`, {

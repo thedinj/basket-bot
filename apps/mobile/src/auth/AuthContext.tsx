@@ -9,6 +9,8 @@ export interface AuthContextValue {
     user: LoginUser | null;
     /** Whether the user is authenticated */
     isAuthenticated: boolean;
+    /** Whether the auth provider is still loading initial state */
+    isInitializing: boolean;
     /** Login with email and password */
     login: (email: string, password: string) => Promise<void>;
     /** Register a new user and auto-login */

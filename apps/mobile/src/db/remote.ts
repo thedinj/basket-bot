@@ -339,10 +339,15 @@ export class RemoteDatabase extends BaseDatabase {
 
     // ========== ShoppingList Operations ==========
     async getShoppingListItems(storeId: string): Promise<ShoppingListItemWithDetails[]> {
-        const response = await apiClient.get<{ items: ShoppingListItemWithDetails[] }>(
-            `/api/stores/${storeId}/shopping-list`
-        );
-        return response.items;
+        try {
+            const response = await apiClient.get<{ items: ShoppingListItemWithDetails[] }>(
+                `/api/stores/${storeId}/shopping-list`
+            );
+            return response.items;
+        } catch (error) {
+            console.error("[RemoteDatabase] getShoppingListItems error:", error);
+            throw error;
+        }
     }
 
     async upsertShoppingListItem(params: ShoppingListItemInput): Promise<ShoppingListItem> {
