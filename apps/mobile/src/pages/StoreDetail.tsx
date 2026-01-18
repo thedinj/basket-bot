@@ -16,23 +16,28 @@ import {
     IonText,
     IonTitle,
     IonToolbar,
+    useIonRouter,
 } from "@ionic/react";
 import {
     closeOutline,
     create,
     gridOutline,
     listOutline,
+    peopleOutline,
     trash,
 } from "ionicons/icons";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useHistory, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { z } from "zod";
+import { useAuth } from "../auth/useAuth";
 import { AppHeader } from "../components/layout/AppHeader";
+import { StoreCollaboratorsModal } from "../components/store/StoreCollaboratorsModal";
 import {
     useBulkReplaceAislesAndSections,
     useDeleteStore,
     useStore,
+    useStoreCollaborators,
     useUpdateStore,
 } from "../db/hooks";
 import {
@@ -54,14 +59,20 @@ type StoreFormData = z.infer<typeof storeFormSchema>;
 
 const StoreDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const history = useHistory();
+    const router = useIonRouter();
+    const { user } = useAuth();
     const { data: store, isLoading } = useStore(id);
+    const { data: collaborators } = useStoreCollaborators(id);
     const updateStore = useUpdateStore();
     const deleteStore = useDeleteStore();
     const bulkReplace = useBulkReplaceAislesAndSections();
     const { openModal } = useLLMModal();
     const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+    const [showCollaboratorsModal, setShowCollaboratorsModal] = useState(false);
+
+    // Determine current user's role
+    const currentUserRole = collaborators?.find((c) => c.userId === user?.id)?.role;
 
     const {
         control,
@@ -93,7 +104,7 @@ const StoreDetail: React.FC = () => {
     const handleDelete = async () => {
         await deleteStore.mutateAsync(id);
         setShowDeleteAlert(false);
-        history.replace("/stores");
+        router.push("/stores", "back", "replace");
     };
 
     const handleAutoScan = () => {
@@ -139,9 +150,7 @@ const StoreDetail: React.FC = () => {
                                                 className="ion-text-wrap"
                                                 style={{ paddingLeft: "16px" }}
                                             >
-                                                <p>
-                                                    {aisle.sections.join(", ")}
-                                                </p>
+                                                <p>{aisle.sections.join(", ")}</p>
                                             </IonLabel>
                                         </IonItem>
                                     )}
@@ -187,25 +196,23 @@ const StoreDetail: React.FC = () => {
             </AppHeader>
             <IonContent fullscreen>
                 <IonList>
-                    <LLMItem
-                        button
-                        detail={true}
-                        onClick={handleAutoScan}
-                        requireApiKey={false}
-                    >
+                    <LLMItem button detail={true} onClick={handleAutoScan} requireApiKey={false}>
                         <IonLabel>
                             <h2>Auto-Scan Aisles/Sections</h2>
                             <p>Import from store directory photo</p>
                         </IonLabel>
                     </LLMItem>
+                    <IonItem button detail={true} onClick={() => setShowCollaboratorsModal(true)}>
+                        <IonIcon icon={peopleOutline} slot="start" />
+                        <IonLabel>
+                            <h2>Share Store</h2>
+                            <p>Manage collaborators and invitations</p>
+                        </IonLabel>
+                    </IonItem>
                     <IonItem
                         button
                         detail={true}
-                        onClick={() =>
-                            history.push(
-                                `/stores/${encodeURIComponent(id)}/aisles`
-                            )
-                        }
+                        routerLink={`/stores/${encodeURIComponent(id)}/aisles`}
                     >
                         <IonIcon icon={gridOutline} slot="start" />
                         <IonLabel>
@@ -216,11 +223,7 @@ const StoreDetail: React.FC = () => {
                     <IonItem
                         button
                         detail={true}
-                        onClick={() =>
-                            history.push(
-                                `/stores/${encodeURIComponent(id)}/items`
-                            )
-                        }
+                        routerLink={`/stores/${encodeURIComponent(id)}/items`}
                     >
                         <IonIcon icon={listOutline} slot="start" />
                         <IonLabel>
@@ -244,10 +247,7 @@ const StoreDetail: React.FC = () => {
                 </div>
 
                 {/* Rename Store Modal */}
-                <IonModal
-                    isOpen={isRenameModalOpen}
-                    onDidDismiss={closeRenameModal}
-                >
+                <IonModal isOpen={isRenameModalOpen} onDidDismiss={closeRenameModal}>
                     <IonHeader>
                         <IonToolbar>
                             <IonTitle>Rename Store</IonTitle>
@@ -265,15 +265,11 @@ const StoreDetail: React.FC = () => {
                                 control={control}
                                 render={({ field }) => (
                                     <IonItem>
-                                        <IonLabel position="stacked">
-                                            Store Name
-                                        </IonLabel>
+                                        <IonLabel position="stacked">Store Name</IonLabel>
                                         <IonInput
                                             value={field.value}
                                             placeholder="Enter store name"
-                                            onIonInput={(e) =>
-                                                field.onChange(e.detail.value)
-                                            }
+                                            onIonInput={(e) => field.onChange(e.detail.value)}
                                             autocapitalize="sentences"
                                         />
                                     </IonItem>
@@ -322,6 +318,16 @@ const StoreDetail: React.FC = () => {
                         },
                     ]}
                 />
+
+                {/* Store Collaborators Modal */}
+                {currentUserRole && (
+                    <StoreCollaboratorsModal
+                        isOpen={showCollaboratorsModal}
+                        onDismiss={() => setShowCollaboratorsModal(false)}
+                        storeId={id}
+                        userRole={currentUserRole}
+                    />
+                )}
             </IonContent>
         </IonPage>
     );

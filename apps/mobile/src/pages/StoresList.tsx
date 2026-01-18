@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+    IonBadge,
     IonButton,
     IonButtons,
     IonContent,
@@ -18,13 +19,13 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { add, closeOutline, storefrontOutline } from "ionicons/icons";
+import { add, closeOutline, mailOutline, storefrontOutline } from "ionicons/icons";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { AppHeader } from "../components/layout/AppHeader";
 import { FabSpacer } from "../components/shared/FabSpacer";
-import { useCreateStore, useStores, useUpdateStore } from "../db/hooks";
+import { useCreateStore, useNotificationCounts, useStores, useUpdateStore } from "../db/hooks";
 
 const storeFormSchema = z.object({
     name: z
@@ -37,6 +38,7 @@ type StoreFormData = z.infer<typeof storeFormSchema>;
 
 const StoresList: React.FC = () => {
     const { data: stores, isLoading } = useStores();
+    const { data: notificationCounts } = useNotificationCounts();
     const createStore = useCreateStore();
     const updateStore = useUpdateStore();
 
@@ -82,17 +84,28 @@ const StoresList: React.FC = () => {
 
     return (
         <IonPage>
-            <AppHeader title="Stores" />
+            <AppHeader title="Stores">
+                <IonButtons slot="end">
+                    <IonButton routerLink="/invitations">
+                        <IonIcon slot="icon-only" icon={mailOutline} />
+                        {notificationCounts && notificationCounts.storeInvitations > 0 && (
+                            <IonBadge
+                                color="danger"
+                                style={{ position: "absolute", top: "4px", right: "4px" }}
+                            >
+                                {notificationCounts.storeInvitations}
+                            </IonBadge>
+                        )}
+                    </IonButton>
+                </IonButtons>
+            </AppHeader>
             <IonContent fullscreen>
                 {isLoading ? (
                     <IonList>
                         {[1, 2, 3].map((i) => (
                             <IonItem key={i}>
                                 <IonLabel>
-                                    <IonSkeletonText
-                                        animated
-                                        style={{ width: "60%" }}
-                                    />
+                                    <IonSkeletonText animated style={{ width: "60%" }} />
                                 </IonLabel>
                             </IonItem>
                         ))}
@@ -106,10 +119,7 @@ const StoresList: React.FC = () => {
                         }}
                     >
                         <IonText color="medium">
-                            <p>
-                                No stores configured. Add one to begin
-                                optimizing your shopping.
-                            </p>
+                            <p>No stores configured. Add one to begin optimizing your shopping.</p>
                         </IonText>
                     </div>
                 ) : (
@@ -121,10 +131,7 @@ const StoresList: React.FC = () => {
                                 button
                                 detail
                             >
-                                <IonIcon
-                                    icon={storefrontOutline}
-                                    slot="start"
-                                />
+                                <IonIcon icon={storefrontOutline} slot="start" />
                                 <IonLabel>
                                     <h2>{store.name}</h2>
                                 </IonLabel>
@@ -145,9 +152,7 @@ const StoresList: React.FC = () => {
                 <IonModal isOpen={isModalOpen} onDidDismiss={closeModal}>
                     <IonHeader>
                         <IonToolbar>
-                            <IonTitle>
-                                {editingStore ? "Edit Store" : "New Store"}
-                            </IonTitle>
+                            <IonTitle>{editingStore ? "Edit Store" : "New Store"}</IonTitle>
                             <IonButtons slot="end">
                                 <IonButton onClick={closeModal}>
                                     <IonIcon icon={closeOutline} />
@@ -162,16 +167,12 @@ const StoresList: React.FC = () => {
                                 control={control}
                                 render={({ field }) => (
                                     <IonItem>
-                                        <IonLabel position="stacked">
-                                            Store Name
-                                        </IonLabel>
+                                        <IonLabel position="stacked">Store Name</IonLabel>
                                         <IonInput
                                             {...field}
                                             placeholder="Enter store name"
                                             autocapitalize="sentences"
-                                            onIonInput={(e) =>
-                                                field.onChange(e.detail.value)
-                                            }
+                                            onIonInput={(e) => field.onChange(e.detail.value)}
                                         />
                                     </IonItem>
                                 )}
@@ -193,9 +194,7 @@ const StoresList: React.FC = () => {
                                 expand="block"
                                 type="submit"
                                 disabled={
-                                    !isValid ||
-                                    createStore.isPending ||
-                                    updateStore.isPending
+                                    !isValid || createStore.isPending || updateStore.isPending
                                 }
                                 style={{ marginTop: "20px" }}
                             >

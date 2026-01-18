@@ -79,6 +79,39 @@ export const updateStoreCollaboratorRequestSchema = z.object({
 
 export type UpdateStoreCollaboratorRequest = z.infer<typeof updateStoreCollaboratorRequestSchema>;
 
+// ========== StoreInvitation ==========
+export const storeInvitationStatusSchema = z.enum(["pending", "accepted"]);
+
+export type StoreInvitationStatus = z.infer<typeof storeInvitationStatusSchema>;
+
+export const storeInvitationSchema = z.object({
+    id: z.string().uuid(),
+    storeId: z.string().uuid(),
+    invitedEmail: z.string().email(),
+    invitedById: z.string().uuid(),
+    role: storeCollaboratorRoleSchema,
+    token: z.string().uuid(),
+    status: storeInvitationStatusSchema,
+    createdAt: z.string().datetime(),
+});
+
+export type StoreInvitation = z.infer<typeof storeInvitationSchema>;
+
+export const storeInvitationDetailSchema = storeInvitationSchema.extend({
+    inviterName: z.string(),
+    inviterEmail: z.string().email(),
+    storeName: z.string(),
+});
+
+export type StoreInvitationDetail = z.infer<typeof storeInvitationDetailSchema>;
+
+export const createStoreInvitationRequestSchema = z.object({
+    email: z.string().email(),
+    role: storeCollaboratorRoleSchema,
+});
+
+export type CreateStoreInvitationRequest = z.infer<typeof createStoreInvitationRequestSchema>;
+
 // ========== StoreAisle ==========
 export const storeAisleSchema = z.object({
     id: z.string().uuid(),

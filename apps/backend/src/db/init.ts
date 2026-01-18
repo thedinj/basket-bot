@@ -95,6 +95,20 @@ export function initializeDatabase() {
             UNIQUE ("storeId", "userId")
         );
 
+        -- StoreInvitation table
+        CREATE TABLE IF NOT EXISTS "StoreInvitation" (
+            "id" TEXT NOT NULL PRIMARY KEY,
+            "storeId" TEXT NOT NULL,
+            "invitedEmail" TEXT NOT NULL COLLATE NOCASE,
+            "invitedById" TEXT NOT NULL,
+            "role" TEXT NOT NULL,
+            "token" TEXT NOT NULL UNIQUE,
+            "status" TEXT NOT NULL DEFAULT 'pending',
+            "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY ("storeId") REFERENCES "Store" ("id") ON DELETE CASCADE,
+            FOREIGN KEY ("invitedById") REFERENCES "User" ("id") ON DELETE CASCADE
+        );
+
         -- StoreAisle table
         CREATE TABLE IF NOT EXISTS "StoreAisle" (
             "id" TEXT NOT NULL PRIMARY KEY,
@@ -194,6 +208,12 @@ export function initializeDatabase() {
 
         CREATE INDEX IF NOT EXISTS "HouseholdInvitation_invitedEmail_status_idx"
             ON "HouseholdInvitation"("invitedEmail", "status");
+
+        CREATE INDEX IF NOT EXISTS "StoreInvitation_token_idx"
+            ON "StoreInvitation"("token");
+
+        CREATE INDEX IF NOT EXISTS "StoreInvitation_invitedEmail_status_idx"
+            ON "StoreInvitation"("invitedEmail", "status");
 
         CREATE INDEX IF NOT EXISTS "User_email_idx"
             ON "User"("email" COLLATE NOCASE);

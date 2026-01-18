@@ -1,7 +1,7 @@
-import { IonApp, setupIonicReact } from "@ionic/react";
+import { IonApp, IonRouterOutlet, setupIonicReact } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
-import { Suspense, useEffect } from "react";
-import { useHistory, useLocation } from "react-router-dom";
+import { Suspense } from "react";
+import { Redirect, Route } from "react-router-dom";
 import { AuthProvider } from "./auth/AuthProvider";
 import { useAuth } from "./auth/useAuth";
 import AppErrorBoundary from "./components/AppErrorBoundary";
@@ -43,45 +43,68 @@ import "./theme/variables.scss";
 setupIonicReact();
 
 /**
- * App content that handles auth routing
- * Centralizes navigation logic based on authentication state
+ * Protected route wrapper - redirects to login if not authenticated
  */
-const AppContent: React.FC = () => {
+const ProtectedRoute: React.FC<{
+    component: React.ComponentType;
+    path: string;
+    exact?: boolean;
+}> = ({ component: Component, ...rest }) => {
     const { isAuthenticated } = useAuth();
-    const history = useHistory();
-    const location = useLocation();
 
-    useEffect(() => {
-        // Guard against undefined location (router not ready)
-        if (!location?.pathname || location.pathname === "/") {
-            // Default to appropriate route based on auth state
-            history.replace(isAuthenticated ? "/shoppinglist" : "/login");
-            return;
-        }
+    return (
+        <Route
+            {...rest}
+            render={() => (isAuthenticated ? <Component /> : <Redirect to="/login" />)}
+        />
+    );
+};
 
-        // Auth routes that should redirect to shopping list when authenticated
-        const authRoutes = ["/login", "/register"];
+/**
+ * Auth route wrapper - redirects to shopping list if already authenticated
+ */
+const AuthRoute: React.FC<{ component: React.ComponentType; path: string; exact?: boolean }> = ({
+    component: Component,
+    ...rest
+}) => {
+    const { isAuthenticated } = useAuth();
 
-        // Protected routes that should redirect to login when not authenticated
-        const protectedRoutes = ["/shoppinglist", "/stores"];
+    return (
+        <Route
+            {...rest}
+            render={() => (isAuthenticated ? <Redirect to="/shoppinglist" /> : <Component />)}
+        />
+    );
+};
 
-        if (isAuthenticated) {
-            // If authenticated and on an auth route, redirect to shopping list
-            if (authRoutes.includes(location.pathname)) {
-                history.replace("/shoppinglist");
-            }
-        } else {
-            // If not authenticated and on a protected route, redirect to login
-            const isOnProtectedRoute = protectedRoutes.some((route) =>
-                location.pathname.startsWith(route)
-            );
-            if (isOnProtectedRoute) {
-                history.replace("/login");
-            }
-        }
-    }, [isAuthenticated, location.pathname, history]);
+/**
+ * App routing structure
+ */
+const AppRoutes: React.FC = () => {
+    const { isAuthenticated } = useAuth();
 
-    return isAuthenticated ? <Main /> : <Auth />;
+    return (
+        <IonRouterOutlet>
+            {/* Default redirect */}
+            <Route
+                exact
+                path="/"
+                render={() => <Redirect to={isAuthenticated ? "/shoppinglist" : "/login"} />}
+            />
+
+            {/* Auth routes - redirect to /shoppinglist if authenticated */}
+            <AuthRoute path="/login" component={Auth} />
+            <AuthRoute path="/register" component={Auth} />
+
+            {/* Protected routes - redirect to /login if not authenticated */}
+            <ProtectedRoute path="/shoppinglist" component={Main} />
+            <ProtectedRoute path="/stores" component={Main} />
+            <ProtectedRoute path="/invitations" component={Main} />
+
+            {/* Catch-all - redirect unknown routes */}
+            <Route render={() => <Redirect to={isAuthenticated ? "/shoppinglist" : "/login"} />} />
+        </IonRouterOutlet>
+    );
 };
 
 const App: React.FC = () => {
@@ -92,7 +115,7 @@ const App: React.FC = () => {
                     <Suspense fallback={<LoadingFallback />}>
                         <DatabaseProvider>
                             <AuthProvider>
-                                <AppContent />
+                                <AppRoutes />
                             </AuthProvider>
                         </DatabaseProvider>
                     </Suspense>

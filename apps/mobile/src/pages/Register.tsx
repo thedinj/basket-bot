@@ -12,7 +12,6 @@ import {
 } from "@ionic/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useHistory } from "react-router-dom";
 import { z } from "zod";
 import { useAuth } from "../auth/useAuth";
 import { FormPasswordInput } from "../components/form/FormPasswordInput";
@@ -38,7 +37,6 @@ const registerSchema = z
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 const Register: React.FC = () => {
-    const history = useHistory();
     const { register: registerUser } = useAuth();
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -152,7 +150,7 @@ const Register: React.FC = () => {
                                 <IonButton
                                     expand="block"
                                     fill="clear"
-                                    onClick={() => history.push("/login")}
+                                    routerLink="/login"
                                     disabled={isSubmitting}
                                 >
                                     Already have an account? Sign in

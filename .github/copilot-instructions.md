@@ -341,6 +341,15 @@ State/data rules:
 - Use TanStack Query for server state; avoid storing server data in component state.
 - Keep complex UI state in feature contexts (three-file context pattern).
 
+Routing rules:
+
+- **Use declarative Ionic React Router patterns with `<Route>` and `<Redirect>` components.**
+- **Never use `useHistory` or `useLocation` with `useEffect` for navigation logic.**
+- Use `<IonRouterOutlet>` for proper Ionic page transitions.
+- For protected routes, create wrapper components (`ProtectedRoute`, `AuthRoute`) that render `<Route>` with conditional `<Redirect>`.
+- For programmatic navigation (e.g., after delete), use `useIonRouter` instead of `useHistory`.
+- For simple navigation (buttons/links), use `routerLink` prop on Ionic components instead of `onClick` with `history.push`.
+
 Token handling:
 
 - Access token: in-memory + persisted if needed (prefer short persistence).
@@ -354,20 +363,7 @@ API client rules:
     - retry once after refresh.
 
 - Validate server responses (Zod) for critical flows.
-
 - Do not embed backend-only code in mobile.
-
-- Use a small API client wrapper:
-    - attach access token automatically,
-    - refresh on 401 using refresh token,
-    - retry once after refresh.
-
-- Validate server responses (Zod) for critical flows.
-
-Token handling:
-
-- Access token: in-memory + persisted if needed (prefer short persistence).
-- Refresh token: secure storage (keychain/keystore) if available.
 
 ---
 

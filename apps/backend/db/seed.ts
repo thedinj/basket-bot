@@ -1,4 +1,5 @@
 import { hashPassword } from "@/lib/auth/password";
+import * as storeService from "@/lib/services/storeService";
 import { randomUUID } from "crypto";
 import { config } from "dotenv";
 import { resolve } from "path";
@@ -7,6 +8,40 @@ import { db } from "../src/lib/db/db";
 
 // Load environment variables from .env file
 config({ path: resolve(__dirname, "../.env") });
+
+/**
+ * Creates a user if they don't already exist
+ * @returns true if user was created, false if already exists
+ */
+async function createUserIfNotExists(
+    email: string,
+    password: string,
+    name: string,
+    scopes: string
+): Promise<boolean> {
+    const existingUser = db.prepare("SELECT * FROM User WHERE email = ?").get(email);
+
+    if (existingUser) {
+        console.log(`User ${email} already exists. Skipping.`);
+        return false;
+    }
+
+    const hashedPassword = await hashPassword(password);
+    const userId = randomUUID();
+
+    db.prepare(
+        `
+        INSERT INTO User (id, email, name, password, scopes, createdAt, updatedAt)
+        VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    `
+    ).run(userId, email, name, hashedPassword, scopes);
+
+    console.log(`Created user: ${email} (ID: ${userId})`);
+
+    storeService.createDefaultStoreForNewUser(userId);
+
+    return true;
+}
 
 async function main() {
     const adminEmail = process.env.ADMIN_EMAIL;
@@ -21,25 +56,18 @@ async function main() {
     // Initialize database schema
     initializeDatabase();
 
-    // Check if admin user already exists
-    const existingAdmin = db.prepare("SELECT * FROM User WHERE email = ?").get(adminEmail);
+    // Create admin user
+    await createUserIfNotExists(adminEmail, adminPassword, "Admin", "admin");
 
-    if (existingAdmin) {
-        console.log("Admin user already exists. Skipping user seed.");
+    // Create optional second test user for collaboration testing
+    const secondUserEmail = process.env.SECOND_USER_EMAIL;
+    const secondUserPassword = process.env.SECOND_USER_PASSWORD;
+    if (secondUserEmail && secondUserPassword) {
+        await createUserIfNotExists(secondUserEmail, secondUserPassword, "Test User", "");
     } else {
-        // Create admin user (no store/data - this is an administrative account)
-        const hashedPassword = await hashPassword(adminPassword);
-        const adminId = randomUUID();
-
-        db.prepare(
-            `
-            INSERT INTO User (id, email, name, password, scopes, createdAt, updatedAt)
-            VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-        `
-        ).run(adminId, adminEmail, "Admin", hashedPassword, "admin");
-
-        console.log(`Created admin user: ${adminEmail} (ID: ${adminId})`);
-        console.log("Admin account has no stores or data (administrative purposes only)");
+        console.log(
+            "SECOND_USER_EMAIL or SECOND_USER_PASSWORD not set. Skipping second test user."
+        );
     }
 }
 

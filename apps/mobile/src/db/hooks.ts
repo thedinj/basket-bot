@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { use } from "react";
 import { useToast } from "../hooks/useToast";
+import * as storeSharingApi from "../lib/api/storeSharing";
 import { DatabaseContext } from "./context";
 import { type Database } from "./types";
 
@@ -994,6 +995,150 @@ export function useMoveItemToStore() {
             queryClient.invalidateQueries({
                 queryKey: ["shopping-list-items", variables.targetStoreId],
             });
+        },
+    });
+}
+
+// ============================================================================
+// Store Invitations and Collaborators
+// ============================================================================
+
+/**
+ * Hook to fetch notification counts
+ */
+export function useNotificationCounts() {
+    return useTanstackQuery({
+        queryKey: ["notifications", "counts"],
+        queryFn: storeSharingApi.getNotificationCounts,
+        staleTime: 30000, // 30 seconds
+        refetchInterval: 60000, // Refetch every 60 seconds
+    });
+}
+
+/**
+ * Hook to fetch store invitations for the current user
+ */
+export function useStoreInvitations() {
+    return useTanstackQuery({
+        queryKey: ["storeInvitations"],
+        queryFn: storeSharingApi.getStoreInvitations,
+    });
+}
+
+/**
+ * Hook to fetch collaborators for a store
+ */
+export function useStoreCollaborators(storeId: string) {
+    return useTanstackQuery({
+        queryKey: ["storeCollaborators", storeId],
+        queryFn: () => storeSharingApi.getStoreCollaborators(storeId),
+        enabled: !!storeId,
+    });
+}
+
+/**
+ * Hook to accept a store invitation
+ */
+export function useAcceptStoreInvitation() {
+    const queryClient = useQueryClient();
+    const { showSuccess, showError } = useToast();
+
+    return useTanstackMutation({
+        mutationFn: (token: string) => storeSharingApi.acceptStoreInvitation(token),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["storeInvitations"] });
+            queryClient.invalidateQueries({ queryKey: ["stores"] });
+            queryClient.invalidateQueries({ queryKey: ["notifications", "counts"] });
+            showSuccess("Invitation accepted!");
+        },
+        onError: (error: Error) => {
+            showError(`Failed to accept invitation: ${error.message}`);
+        },
+    });
+}
+
+/**
+ * Hook to decline a store invitation
+ */
+export function useDeclineStoreInvitation() {
+    const queryClient = useQueryClient();
+    const { showSuccess, showError } = useToast();
+
+    return useTanstackMutation({
+        mutationFn: (token: string) => storeSharingApi.declineStoreInvitation(token),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["storeInvitations"] });
+            queryClient.invalidateQueries({ queryKey: ["notifications", "counts"] });
+            showSuccess("Invitation declined");
+        },
+        onError: (error: Error) => {
+            showError(`Failed to decline invitation: ${error.message}`);
+        },
+    });
+}
+
+/**
+ * Hook to invite a collaborator to a store
+ */
+export function useInviteStoreCollaborator() {
+    const { showSuccess, showError } = useToast();
+
+    return useTanstackMutation({
+        mutationFn: (params: { storeId: string; email: string; role: "owner" | "editor" }) =>
+            storeSharingApi.inviteStoreCollaborator(params.storeId, params.email, params.role),
+        onSuccess: () => {
+            showSuccess("Invitation sent!");
+        },
+        onError: (error: Error) => {
+            showError(`Failed to send invitation: ${error.message}`);
+        },
+    });
+}
+
+/**
+ * Hook to update a store collaborator's role
+ */
+export function useUpdateStoreCollaboratorRole() {
+    const queryClient = useQueryClient();
+    const { showSuccess, showError } = useToast();
+
+    return useTanstackMutation({
+        mutationFn: (params: {
+            storeId: string;
+            collaboratorUserId: string;
+            role: "owner" | "editor";
+        }) =>
+            storeSharingApi.updateStoreCollaboratorRole(
+                params.storeId,
+                params.collaboratorUserId,
+                params.role
+            ),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["storeCollaborators", variables.storeId] });
+            showSuccess("Role updated successfully");
+        },
+        onError: (error: Error) => {
+            showError(`Failed to update role: ${error.message}`);
+        },
+    });
+}
+
+/**
+ * Hook to remove a collaborator from a store
+ */
+export function useRemoveStoreCollaborator() {
+    const queryClient = useQueryClient();
+    const { showSuccess, showError } = useToast();
+
+    return useTanstackMutation({
+        mutationFn: (params: { storeId: string; collaboratorUserId: string }) =>
+            storeSharingApi.removeStoreCollaborator(params.storeId, params.collaboratorUserId),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["storeCollaborators", variables.storeId] });
+            showSuccess("Collaborator removed");
+        },
+        onError: (error: Error) => {
+            showError(`Failed to remove collaborator: ${error.message}`);
         },
     });
 }

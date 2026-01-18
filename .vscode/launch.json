@@ -16,8 +16,7 @@
             "internalConsoleOptions": "neverOpen",
             "env": {
                 "NODE_ENV": "development"
-            },
-            "preLaunchTask": "Build: Core Package Only"
+            }
         },
         {
             "name": "Debug: Backend (Attach to Running)",
@@ -41,7 +40,12 @@
             "sourceMapPathOverrides": {
                 "webpack:///./src/*": "${webRoot}/src/*"
             },
-            "preLaunchTask": "Dev: Mobile (Hot-reload)"
+            "preLaunchTask": "Dev: Mobile (Hot-reload)",
+            "presentation": {
+                "hidden": false,
+                "group": "development",
+                "order": 1
+            }
         },
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Note: For Android debugging, use Chrome DevTools directly:
@@ -66,14 +70,11 @@
     "compounds": [
         {
             "name": "Debug: Full Stack (Web Preview, Hot-reload)",
-            "configurations": [
-                "Debug: Backend (Hot-reload)",
-                "Debug: Mobile Web Preview (Hot-reload)"
-            ],
+            "configurations": ["Debug: Mobile Web Preview (Hot-reload)"],
             "presentation": {
                 "hidden": false,
                 "group": "development",
-                "order": 1
+                "order": 2
             },
             "stopAll": true
         }

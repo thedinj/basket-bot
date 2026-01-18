@@ -93,6 +93,9 @@
                 "cwd": "${workspaceFolder}/apps/backend"
             },
             "isBackground": true,
+            "runOptions": {
+                "runOn": "folderOpen"
+            },
             "presentation": {
                 "reveal": "always",
                 "panel": "dedicated",
