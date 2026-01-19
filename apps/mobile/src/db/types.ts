@@ -14,11 +14,6 @@ import type {
 // Re-export types for convenience
 export type { ShoppingListItem, StoreAisle, StoreItem, StoreItemWithDetails, StoreSection };
 
-/**
- * Default tables to preserve during database reset
- */
-export const DEFAULT_TABLES_TO_PERSIST = ["app_setting"];
-
 export type DatabaseChangeListener = () => void;
 
 /**
@@ -34,12 +29,6 @@ export interface CoreDatabase {
      * Close the database connection
      */
     close(): Promise<void>;
-
-    /**
-     * Reset the database by clearing data from specified tables
-     * @param tablesToPersist - Array of table names to preserve during reset
-     */
-    reset(tablesToPersist?: string[]): Promise<void>;
 }
 
 export interface DatabaseEvents {

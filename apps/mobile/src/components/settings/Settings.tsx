@@ -11,17 +11,13 @@ import {
     IonToolbar,
 } from "@ionic/react";
 import { closeOutline } from "ionicons/icons";
-import { useCallback, useEffect } from "react";
-import { useResetDatabase } from "../../db/hooks";
-import { useToast } from "../../hooks/useToast";
+import { useEffect } from "react";
 import { LLM_COLOR, LLM_ICON_SRC } from "../../llm/shared";
 import { useSettingsForm } from "../../settings/useSettingsForm";
 import { FormPasswordInput } from "../form/FormPasswordInput";
 import { useAppHeader } from "../layout/useAppHeader";
 
 const Settings: React.FC = () => {
-    const { showSuccess } = useToast();
-    const { mutateAsync: resetDatabase } = useResetDatabase();
     const { form, onSubmit, isSubmitting } = useSettingsForm();
     const { isSettingsOpen, closeSettings } = useAppHeader();
 
@@ -31,16 +27,6 @@ const Settings: React.FC = () => {
             form.reset();
         }
     }, [isSettingsOpen, form]);
-
-    const resetOnClick = useCallback(async () => {
-        try {
-            await resetDatabase(undefined);
-            showSuccess("Database reset successfully");
-        } catch (error) {
-            // Error toast is automatically shown by mutation hook
-            console.error("Database reset error:", error);
-        }
-    }, [resetDatabase, showSuccess]);
 
     const handleSubmit = form.handleSubmit(async () => {
         await onSubmit();
@@ -93,20 +79,6 @@ const Settings: React.FC = () => {
                             </IonButton>
                         </div>
                     </IonList>
-
-                    {/* Database Section */}
-                    {import.meta.env.VITE_SHOW_DATABASE_RESET === "true" && (
-                        <IonList>
-                            <IonListHeader>
-                                <h2>Database</h2>
-                            </IonListHeader>
-                            <div className="ion-padding">
-                                <IonButton expand="block" color="danger" onClick={resetOnClick}>
-                                    Reset Database
-                                </IonButton>
-                            </div>
-                        </IonList>
-                    )}
                 </form>
             </IonContent>
         </IonModal>

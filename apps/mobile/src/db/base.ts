@@ -39,7 +39,6 @@ export abstract class BaseDatabase implements Database {
     protected abstract initializeStorage(): Promise<void>;
 
     abstract close(): Promise<void>;
-    abstract reset(tablesToPersist?: string[]): Promise<void>;
 
     // ========== Store Operations (Abstract) ==========
     abstract insertStore(name: string): Promise<Store>;

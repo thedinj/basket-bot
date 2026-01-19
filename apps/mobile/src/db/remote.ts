@@ -28,11 +28,6 @@ export class RemoteDatabase extends BaseDatabase {
         // Nothing to close for remote database
     }
 
-    async reset(): Promise<void> {
-        // Reset not supported for remote - backend manages data
-        throw new Error("Reset not supported for remote database");
-    }
-
     protected async hasStores(): Promise<boolean> {
         // Not used for remote - backend manages seed data
         return true;

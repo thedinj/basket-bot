@@ -164,26 +164,6 @@ export function useSaveAppSetting() {
     });
 }
 
-/**
- * Hook to reset the database
- */
-export function useResetDatabase() {
-    const database = useDatabase();
-    const queryClient = useQueryClient();
-    const { showError } = useToast();
-
-    return useTanstackMutation({
-        mutationFn: (tablesToPersist?: string[]) => database.reset(tablesToPersist),
-        onSuccess: () => {
-            // Invalidate all queries after reset
-            queryClient.invalidateQueries();
-        },
-        onError: (error: Error) => {
-            showError(`Failed to reset database: ${error.message}`);
-        },
-    });
-}
-
 // ============================================================================
 // StoreAisle Query & Mutation Hooks
 // ============================================================================
