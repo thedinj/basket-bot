@@ -13,14 +13,14 @@ function normalizeItemName(name: string): string {
  * Used during user registration to provide an example store with realistic data.
  *
  * @param userId - The ID of the user who will own the store
- * @param storeName - Optional custom store name (defaults to "Example Store")
+ * @param userName - The name of the user (used to generate store name)
  * @returns The ID of the created store
  */
-export function createDefaultStoreForUser(
-    userId: string,
-    storeName: string = "Example Store"
-): string {
+export function createDefaultStoreForUser(userId: string, userName: string): string {
     const storeId = randomUUID();
+
+    // Determine the new store's name
+    const storeName = `${userName}'s Store`;
 
     // Create the store
     db.prepare(

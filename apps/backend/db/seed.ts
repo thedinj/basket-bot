@@ -38,7 +38,9 @@ async function createUserIfNotExists(
 
     console.log(`Created user: ${email} (ID: ${userId})`);
 
-    storeService.createDefaultStoreForNewUser(userId);
+    const storeId = storeService.createDefaultStoreForNewUser(userId, name);
+
+    console.log(`Created default store (ID: ${storeId}) for user: ${email}`);
 
     return true;
 }
@@ -46,6 +48,7 @@ async function createUserIfNotExists(
 async function main() {
     const adminEmail = process.env.ADMIN_EMAIL;
     const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminName = process.env.ADMIN_NAME || "Admin";
 
     if (!adminEmail || !adminPassword) {
         throw new Error(
@@ -57,13 +60,14 @@ async function main() {
     initializeDatabase();
 
     // Create admin user
-    await createUserIfNotExists(adminEmail, adminPassword, "Admin", "admin");
+    await createUserIfNotExists(adminEmail, adminPassword, adminName, "admin");
 
     // Create optional second test user for collaboration testing
     const secondUserEmail = process.env.SECOND_USER_EMAIL;
     const secondUserPassword = process.env.SECOND_USER_PASSWORD;
+    const secondUserName = process.env.SECOND_USER_NAME || "Test User";
     if (secondUserEmail && secondUserPassword) {
-        await createUserIfNotExists(secondUserEmail, secondUserPassword, "Test User", "");
+        await createUserIfNotExists(secondUserEmail, secondUserPassword, secondUserName, "");
     } else {
         console.log(
             "SECOND_USER_EMAIL or SECOND_USER_PASSWORD not set. Skipping second test user."

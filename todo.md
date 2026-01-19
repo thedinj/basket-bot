@@ -1,19 +1,20 @@
+Test all workflows
+More forgiving refresh token/whatever? Seems to log out a lot.
+Refresh button on list/stores/whatever
 Invitation code for making a new account
-Initial real account
-Offline mode: remember delta, preload store aisles/sections
-for debugging, pick the right IP based on mobile v live-update
-sharing stores UI
+Preload store aisles/sections/QUANTITIES
+For debugging, pick the right IP based on mobile v live-update
 edit account details: email, name etc.
-email case insensitive?
 hard to select items at the bottom of pages/lists
 insists on quantity of 1 for some reason, at least for imported stuff
 review data model
 confirm we handle loading aisles from sections
-"unsure" section, below ideas? or mixed in with the rest?
 refresh @ midnight so we show snoozed items on time
 Shield while loading AI data or doing other slow stuff
 Hard to click store items at the bottom of the screen
 =====
+"Unsure" section, below ideas? or mixed in with the rest?
+Offline mode: remember delta
 No inserts in seed file--use shared insert logic
 eslint.config.js for the monorepo?
 ionic.config.json?

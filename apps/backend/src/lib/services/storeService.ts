@@ -29,8 +29,8 @@ export function createStore(params: { name: string; userId: string }): Store {
 /**
  * Create a default example store for a new user (used during registration)
  */
-export function createDefaultStoreForNewUser(userId: string): string {
-    return createDefaultStoreForUser(userId);
+export function createDefaultStoreForNewUser(userId: string, storeName: string): string {
+    return createDefaultStoreForUser(userId, storeName);
 }
 
 /**
