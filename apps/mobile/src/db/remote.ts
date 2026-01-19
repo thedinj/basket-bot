@@ -359,33 +359,7 @@ export class RemoteDatabase extends BaseDatabase {
         return response.item;
     }
 
-    async toggleShoppingListItemChecked(_id: string, _isChecked: boolean): Promise<void> {
-        // Need storeId - this is a design issue
-        throw new Error(
-            "toggleShoppingListItemChecked requires storeId - use toggleShoppingListItemCheckedForStore instead"
-        );
-    }
-
-    async deleteShoppingListItem(_id: string): Promise<void> {
-        throw new Error(
-            "deleteShoppingListItem requires storeId - use deleteShoppingListItemForStore instead"
-        );
-    }
-
-    async removeShoppingListItem(_id: string): Promise<void> {
-        // Same as deleteShoppingListItem for remote DB
-        throw new Error(
-            "removeShoppingListItem requires storeId - use deleteShoppingListItemForStore instead"
-        );
-    }
-
-    async clearCheckedShoppingListItems(storeId: string): Promise<void> {
-        await apiClient.post(`/api/stores/${storeId}/shopping-list/clear-checked`, {});
-        this.notifyChange();
-    }
-
-    // Helper methods with storeId
-    async toggleShoppingListItemCheckedForStore(
+    async toggleShoppingListItemChecked(
         storeId: string,
         id: string,
         isChecked: boolean
@@ -394,8 +368,24 @@ export class RemoteDatabase extends BaseDatabase {
         this.notifyChange();
     }
 
-    async deleteShoppingListItemForStore(storeId: string, id: string): Promise<void> {
+    /**
+     * Delete shopping list item AND the associated store item
+     */
+    async deleteShoppingListItem(storeId: string, id: string): Promise<void> {
+        await apiClient.delete(`/api/stores/${storeId}/shopping-list/${id}/delete-with-item`);
+        this.notifyChange();
+    }
+
+    /**
+     * Remove shopping list item only (keeps the store item)
+     */
+    async removeShoppingListItem(storeId: string, id: string): Promise<void> {
         await apiClient.delete(`/api/stores/${storeId}/shopping-list/${id}`);
+        this.notifyChange();
+    }
+
+    async clearCheckedShoppingListItems(storeId: string): Promise<void> {
+        await apiClient.post(`/api/stores/${storeId}/shopping-list/clear-checked`, {});
         this.notifyChange();
     }
 }

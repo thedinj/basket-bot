@@ -265,6 +265,17 @@ export function toggleShoppingListItemChecked(
     shoppingListRepo.toggleShoppingListItemChecked(id, isChecked, userId);
 }
 
+/**
+ * Remove a shopping list item (does NOT delete the store item)
+ */
+export function removeShoppingListItem(id: string, storeId: string, userId: string): boolean {
+    verifyStoreAccess(storeId, userId);
+    return shoppingListRepo.removeShoppingListItem(id);
+}
+
+/**
+ * Delete a shopping list item AND its associated store item
+ */
 export function deleteShoppingListItem(id: string, storeId: string, userId: string): boolean {
     verifyStoreAccess(storeId, userId);
     return shoppingListRepo.deleteShoppingListItem(id);

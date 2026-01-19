@@ -852,7 +852,7 @@ export function useToggleItemChecked() {
 
     return useTanstackMutation({
         mutationFn: (params: { id: string; isChecked: boolean; storeId: string }) =>
-            database.toggleShoppingListItemChecked(params.id, params.isChecked),
+            database.toggleShoppingListItemChecked(params.storeId, params.id, params.isChecked),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["shopping-list-items", variables.storeId],
@@ -874,7 +874,7 @@ export function useDeleteShoppingListItem() {
 
     return useTanstackMutation({
         mutationFn: (params: { id: string; storeId: string }) =>
-            database.deleteShoppingListItem(params.id),
+            database.deleteShoppingListItem(params.storeId, params.id),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["shopping-list-items", variables.storeId],
@@ -897,7 +897,7 @@ export function useRemoveShoppingListItem() {
 
     return useTanstackMutation({
         mutationFn: (params: { id: string; storeId: string }) =>
-            database.removeShoppingListItem(params.id),
+            database.removeShoppingListItem(params.storeId, params.id),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["shopping-list-items", variables.storeId],
@@ -986,7 +986,7 @@ export function useMoveItemToStore() {
             }
 
             // Remove from current store (without removing the store item)
-            await database.removeShoppingListItem(item.id);
+            await database.removeShoppingListItem(params.sourceStoreId, item.id);
 
             return { itemName, targetStoreName };
         },

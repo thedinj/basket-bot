@@ -152,11 +152,38 @@ export function toggleShoppingListItemChecked(
         `UPDATE ShoppingListItem
          SET isChecked = ?, checkedAt = ?, updatedById = ?, updatedAt = ?
          WHERE id = ?`
-    ).run(isChecked, isChecked ? now : null, userId, now, id);
+    ).run(isChecked ? 1 : null, isChecked ? now : null, userId, now, id);
 }
 
-export function deleteShoppingListItem(id: string): boolean {
+/**
+ * Remove a shopping list item (does NOT delete the store item)
+ */
+export function removeShoppingListItem(id: string): boolean {
     const result = db.prepare(`DELETE FROM ShoppingListItem WHERE id = ?`).run(id);
+    return result.changes > 0;
+}
+
+/**
+ * Delete a shopping list item AND its associated store item
+ */
+export function deleteShoppingListItem(id: string): boolean {
+    // Get the store item ID before deleting the shopping list item
+    const shoppingListItem = db
+        .prepare(`SELECT storeItemId FROM ShoppingListItem WHERE id = ?`)
+        .get(id) as { storeItemId: string | null } | undefined;
+
+    if (!shoppingListItem) {
+        return false;
+    }
+
+    // Delete the shopping list item
+    const result = db.prepare(`DELETE FROM ShoppingListItem WHERE id = ?`).run(id);
+
+    // Delete the store item if it exists
+    if (shoppingListItem.storeItemId) {
+        db.prepare(`DELETE FROM StoreItem WHERE id = ?`).run(shoppingListItem.storeItemId);
+    }
+
     return result.changes > 0;
 }
 

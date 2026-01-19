@@ -243,18 +243,18 @@ export interface EntityDatabase {
     /**
      * Toggle the checked status of a shopping list item
      */
-    toggleShoppingListItemChecked(id: string, isChecked: boolean): Promise<void>;
+    toggleShoppingListItemChecked(storeId: string, id: string, isChecked: boolean): Promise<void>;
 
     /**
      * Delete a shopping list item
      */
-    deleteShoppingListItem(id: string): Promise<void>;
+    deleteShoppingListItem(storeId: string, id: string): Promise<void>;
 
     /**
      * Remove a shopping list item without deleting the associated store item
      * Used when moving items between stores
      */
-    removeShoppingListItem(id: string): Promise<void>;
+    removeShoppingListItem(storeId: string, id: string): Promise<void>;
 
     /**
      * Clear all checked items from a shopping list for a store

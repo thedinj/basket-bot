@@ -104,9 +104,13 @@ export abstract class BaseDatabase implements Database {
     // ========== Shopping List Operations (Abstract) ==========
     abstract getShoppingListItems(storeId: string): Promise<Array<ShoppingListItemWithDetails>>;
     abstract upsertShoppingListItem(params: ShoppingListItemInput): Promise<ShoppingListItem>;
-    abstract toggleShoppingListItemChecked(id: string, isChecked: boolean): Promise<void>;
-    abstract deleteShoppingListItem(id: string): Promise<void>;
-    abstract removeShoppingListItem(id: string): Promise<void>;
+    abstract toggleShoppingListItemChecked(
+        storeId: string,
+        id: string,
+        isChecked: boolean
+    ): Promise<void>;
+    abstract deleteShoppingListItem(storeId: string, id: string): Promise<void>;
+    abstract removeShoppingListItem(storeId: string, id: string): Promise<void>;
     abstract clearCheckedShoppingListItems(storeId: string): Promise<void>;
 
     // ========== Helper for Store Checking (Abstract) ==========
