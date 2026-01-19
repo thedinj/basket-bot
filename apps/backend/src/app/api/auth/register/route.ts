@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
         ).run(userId, email, name, hashedPassword, "");
 
         // Create default example store for new user
-        storeService.createDefaultStoreForNewUser(userId);
+        storeService.createDefaultStoreForNewUser(userId, name);
 
         return NextResponse.json(
             {

@@ -102,24 +102,22 @@ export interface EntityDatabase {
     getAislesByStore(storeId: string): Promise<StoreAisle[]>;
 
     /**
-     * Get a single aisle by ID
-     */
-    getAisleById(id: string): Promise<StoreAisle | null>;
-
-    /**
      * Update an aisle's name
      */
-    updateAisle(id: string, name: string): Promise<StoreAisle>;
+    updateAisle(storeId: string, id: string, name: string): Promise<StoreAisle>;
 
     /**
      * Soft delete an aisle
      */
-    deleteAisle(id: string): Promise<void>;
+    deleteAisle(storeId: string, id: string): Promise<void>;
 
     /**
      * Update sort order for multiple aisles
      */
-    reorderAisles(updates: Array<{ id: string; sortOrder: number }>): Promise<void>;
+    reorderAisles(
+        storeId: string,
+        updates: Array<{ id: string; sortOrder: number }>
+    ): Promise<void>;
 
     // ========== StoreSection Operations ==========
     /**
@@ -140,17 +138,25 @@ export interface EntityDatabase {
     /**
      * Update a section's name and/or aisle assignment
      */
-    updateSection(id: string, name: string, aisleId: string): Promise<StoreSection>;
+    updateSection(
+        storeId: string,
+        id: string,
+        name: string,
+        aisleId: string
+    ): Promise<StoreSection>;
 
     /**
      * Soft delete a section
      */
-    deleteSection(id: string): Promise<void>;
+    deleteSection(storeId: string, id: string): Promise<void>;
 
     /**
      * Update sort order for multiple sections
      */
-    reorderSections(updates: Array<{ id: string; sortOrder: number }>): Promise<void>;
+    reorderSections(
+        storeId: string,
+        updates: Array<{ id: string; sortOrder: number }>
+    ): Promise<void>;
 
     // ========== StoreItem Operations ==========
     /**
@@ -182,6 +188,7 @@ export interface EntityDatabase {
      * Update an item
      */
     updateItem(
+        storeId: string,
         id: string,
         name: string,
         aisleId?: string | null,

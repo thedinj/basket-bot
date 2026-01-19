@@ -10,7 +10,7 @@ export const itemFormSchema = z
         aisleId: z.string().nullable().optional(),
         sectionId: z.string().nullable().optional(),
         isSample: z.boolean().nullable().optional(),
-        isIdea: z.boolean().optional(),
+        isIdea: z.boolean().nullable().optional(),
         snoozedUntil: z.string().nullable().optional(),
     })
     .superRefine((data, ctx) => {

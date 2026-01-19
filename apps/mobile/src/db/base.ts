@@ -57,18 +57,28 @@ export abstract class BaseDatabase implements Database {
     // ========== StoreAisle Operations (Abstract) ==========
     abstract insertAisle(storeId: string, name: string): Promise<StoreAisle>;
     abstract getAislesByStore(storeId: string): Promise<StoreAisle[]>;
-    abstract getAisleById(id: string): Promise<StoreAisle | null>;
-    abstract updateAisle(id: string, name: string): Promise<StoreAisle>;
-    abstract deleteAisle(id: string): Promise<void>;
-    abstract reorderAisles(updates: Array<{ id: string; sortOrder: number }>): Promise<void>;
+    abstract updateAisle(storeId: string, id: string, name: string): Promise<StoreAisle>;
+    abstract deleteAisle(storeId: string, id: string): Promise<void>;
+    abstract reorderAisles(
+        storeId: string,
+        updates: Array<{ id: string; sortOrder: number }>
+    ): Promise<void>;
 
     // ========== StoreSection Operations (Abstract) ==========
     abstract insertSection(storeId: string, name: string, aisleId: string): Promise<StoreSection>;
     abstract getSectionsByStore(storeId: string): Promise<StoreSection[]>;
     abstract getSectionById(id: string): Promise<StoreSection | null>;
-    abstract updateSection(id: string, name: string, aisleId: string): Promise<StoreSection>;
-    abstract deleteSection(id: string): Promise<void>;
-    abstract reorderSections(updates: Array<{ id: string; sortOrder: number }>): Promise<void>;
+    abstract updateSection(
+        storeId: string,
+        id: string,
+        name: string,
+        aisleId: string
+    ): Promise<StoreSection>;
+    abstract deleteSection(storeId: string, id: string): Promise<void>;
+    abstract reorderSections(
+        storeId: string,
+        updates: Array<{ id: string; sortOrder: number }>
+    ): Promise<void>;
 
     // ========== StoreItem Operations (Abstract) ==========
     abstract insertItem(
@@ -81,6 +91,7 @@ export abstract class BaseDatabase implements Database {
     abstract getItemsByStoreWithDetails(storeId: string): Promise<StoreItemWithDetails[]>;
     abstract getItemById(id: string): Promise<StoreItem | null>;
     abstract updateItem(
+        storeId: string,
         id: string,
         name: string,
         aisleId?: string | null,

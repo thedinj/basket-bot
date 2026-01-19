@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+// ========== Shared Fields ==========
+// Audit fields used across multiple schemas
+const auditFields = {
+    createdById: z.string().uuid(),
+    updatedById: z.string().uuid(),
+    createdAt: z.string().datetime(),
+    updatedAt: z.string().datetime(),
+};
+
 // ========== AppSetting ==========
 export const appSettingSchema = z.object({
     key: z.string(),
@@ -24,10 +33,7 @@ export type QuantityUnit = z.infer<typeof quantityUnitSchema>;
 export const storeSchema = z.object({
     id: z.string().uuid(),
     name: z.string().min(1),
-    createdById: z.string().uuid(),
-    updatedById: z.string().uuid(),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime(),
+    ...auditFields,
 });
 
 export type Store = z.infer<typeof storeSchema>;
@@ -118,10 +124,7 @@ export const storeAisleSchema = z.object({
     storeId: z.string().uuid(),
     name: z.string().min(1),
     sortOrder: z.number().int().min(0),
-    createdById: z.string().uuid(),
-    updatedById: z.string().uuid(),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime(),
+    ...auditFields,
 });
 
 export type StoreAisle = z.infer<typeof storeAisleSchema>;
@@ -157,10 +160,7 @@ export const storeSectionSchema = z.object({
     aisleId: z.string().uuid(),
     name: z.string().min(1),
     sortOrder: z.number().int().min(0),
-    createdById: z.string().uuid(),
-    updatedById: z.string().uuid(),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime(),
+    ...auditFields,
 });
 
 export type StoreSection = z.infer<typeof storeSectionSchema>;
@@ -203,17 +203,12 @@ export const storeItemSchema = z.object({
     lastUsedAt: z.string().datetime().nullable(),
     isHidden: z.boolean(),
     isFavorite: z.boolean(),
-    createdById: z.string().uuid(),
-    updatedById: z.string().uuid(),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime(),
+    ...auditFields,
 });
 
 export type StoreItem = z.infer<typeof storeItemSchema>;
 
 export const storeItemWithDetailsSchema = storeItemSchema.extend({
-    aisleId: z.string().uuid().nullable(),
-    sectionId: z.string().uuid().nullable(),
     sectionName: z.string().nullable(),
     sectionSortOrder: z.number().int().nullable(),
     aisleName: z.string().nullable(),
@@ -248,9 +243,10 @@ export const searchStoreItemsRequestSchema = z.object({
 export type SearchStoreItemsRequest = z.infer<typeof searchStoreItemsRequestSchema>;
 
 // ========== ShoppingListItem ==========
-export const shoppingListItemSchema = z.object({
-    id: z.string().uuid(),
-    storeId: z.string().uuid(),
+// Shopping list item is a superset of store item with additional shopping-specific fields
+
+// Base shopping list item fields (used for composition)
+const shoppingListItemBaseFields = {
     storeItemId: z.string().uuid().nullable(),
     qty: z.number().nullable(),
     unitId: z.string().nullable(),
@@ -261,14 +257,18 @@ export const shoppingListItemSchema = z.object({
     isUnsure: z.boolean().nullable(),
     isIdea: z.boolean(),
     snoozedUntil: z.string().datetime().nullable(),
-    createdById: z.string().uuid(),
-    updatedById: z.string().uuid(),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime(),
+};
+
+export const shoppingListItemSchema = z.object({
+    id: z.string().uuid(),
+    storeId: z.string().uuid(),
+    ...shoppingListItemBaseFields,
+    ...auditFields,
 });
 
 export type ShoppingListItem = z.infer<typeof shoppingListItemSchema>;
 
+// Shopping list item with details extends storeItemWithDetails structure
 export const shoppingListItemWithDetailsSchema = shoppingListItemSchema.extend({
     itemName: z.string().nullable(),
     unitAbbreviation: z.string().nullable(),
@@ -286,61 +286,43 @@ export type ShoppingListItemWithDetails = z.infer<typeof shoppingListItemWithDet
 // These types exclude server-controlled fields: createdById, updatedById, createdAt, updatedAt
 // The mobile client should never send these values; the backend calculates them based on JWT and server time
 
-export type StoreInput = Omit<
-    Store,
-    "id" | "createdById" | "updatedById" | "createdAt" | "updatedAt"
-> & {
+const serverControlledFields = ["createdById", "updatedById", "createdAt", "updatedAt"] as const;
+
+export type StoreInput = Omit<Store, "id" | (typeof serverControlledFields)[number]> & {
     id?: string;
 };
 
-export type StoreAisleInput = Omit<
-    StoreAisle,
-    "id" | "createdById" | "updatedById" | "createdAt" | "updatedAt"
-> & {
+export type StoreAisleInput = Omit<StoreAisle, "id" | (typeof serverControlledFields)[number]> & {
     id?: string;
 };
 
 export type StoreSectionInput = Omit<
     StoreSection,
-    "id" | "createdById" | "updatedById" | "createdAt" | "updatedAt"
+    "id" | (typeof serverControlledFields)[number]
 > & {
     id?: string;
 };
 
 export type StoreItemInput = Omit<
     StoreItem,
-    | "id"
-    | "createdById"
-    | "updatedById"
-    | "createdAt"
-    | "updatedAt"
-    | "nameNorm"
-    | "usageCount"
-    | "lastUsedAt"
+    "id" | (typeof serverControlledFields)[number] | "nameNorm" | "usageCount" | "lastUsedAt"
 > & {
     id?: string;
 };
 
-/**
- * Input schema for upserting shopping list items.
- * - Most fields are optional with sensible defaults applied by the implementation layer
- * - checkedAt is excluded entirely; it's server-controlled and derived from isChecked state
- * - For ideas: storeItemId should be null and name should be provided (validated via refine)
- * - For regular items: storeItemId is required
- */
 export const shoppingListItemInputSchema = z
     .object({
         id: z.string().uuid().optional(),
         storeId: z.string().uuid(),
-        storeItemId: z.string().uuid().nullable().optional(),
-        qty: z.number().nullable().optional(),
-        unitId: z.string().nullable().optional(),
-        notes: z.string().nullable().optional(),
-        isChecked: z.boolean().optional().default(false),
-        isIdea: z.boolean().optional().default(false),
-        isSample: z.boolean().nullable().optional().default(null),
-        isUnsure: z.boolean().nullable().optional().default(null),
-        snoozedUntil: z.string().datetime().nullable().optional(),
+        storeItemId: shoppingListItemBaseFields.storeItemId.optional(),
+        qty: shoppingListItemBaseFields.qty.optional(),
+        unitId: shoppingListItemBaseFields.unitId.optional(),
+        notes: shoppingListItemBaseFields.notes.optional(),
+        isChecked: shoppingListItemBaseFields.isChecked.optional().default(false),
+        isIdea: shoppingListItemBaseFields.isIdea.optional().default(false),
+        isSample: shoppingListItemBaseFields.isSample.optional().default(null),
+        isUnsure: shoppingListItemBaseFields.isUnsure.optional().default(null),
+        snoozedUntil: shoppingListItemBaseFields.snoozedUntil.optional(),
         // name is only used for ideas (when storeItemId is null)
         name: z.string().optional(),
     })
@@ -361,10 +343,6 @@ export const shoppingListItemInputSchema = z
         }
     );
 
-/**
- * TypeScript type for ShoppingListItemInput with optional fields.
- * Only storeId is truly required; all other fields have defaults or are nullable.
- */
 export type ShoppingListItemInput = {
     id?: string;
     storeId: string;
@@ -380,25 +358,26 @@ export type ShoppingListItemInput = {
     name?: string; // Only for ideas
 };
 
+// Request schemas derive from base fields
 export const createShoppingListItemRequestSchema = z.object({
     storeId: z.string().uuid(),
-    storeItemId: z.string().uuid().optional().nullable(),
-    qty: z.number().optional().nullable(),
-    unitId: z.string().optional().nullable(),
-    notes: z.string().max(500).optional().nullable(),
-    isIdea: z.boolean().optional().default(false),
-    snoozedUntil: z.string().datetime().optional().nullable(),
+    storeItemId: shoppingListItemBaseFields.storeItemId.optional(),
+    qty: shoppingListItemBaseFields.qty.optional(),
+    unitId: shoppingListItemBaseFields.unitId.optional(),
+    notes: z.string().max(500).nullable().optional(),
+    isIdea: shoppingListItemBaseFields.isIdea.optional().default(false),
+    snoozedUntil: shoppingListItemBaseFields.snoozedUntil.optional(),
 });
 
 export type CreateShoppingListItemRequest = z.infer<typeof createShoppingListItemRequestSchema>;
 
 export const updateShoppingListItemRequestSchema = z.object({
-    storeItemId: z.string().uuid().optional().nullable(),
-    qty: z.number().optional().nullable(),
-    unitId: z.string().optional().nullable(),
-    notes: z.string().max(500).optional().nullable(),
-    isIdea: z.boolean().optional(),
-    snoozedUntil: z.string().datetime().optional().nullable(),
+    storeItemId: shoppingListItemBaseFields.storeItemId.optional(),
+    qty: shoppingListItemBaseFields.qty.optional(),
+    unitId: shoppingListItemBaseFields.unitId.optional(),
+    notes: z.string().max(500).nullable().optional(),
+    isIdea: shoppingListItemBaseFields.isIdea.optional(),
+    snoozedUntil: shoppingListItemBaseFields.snoozedUntil.optional(),
 });
 
 export type UpdateShoppingListItemRequest = z.infer<typeof updateShoppingListItemRequestSchema>;

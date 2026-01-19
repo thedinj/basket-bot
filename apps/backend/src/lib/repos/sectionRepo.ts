@@ -60,7 +60,6 @@ export function updateSection(params: {
     id: string;
     name: string;
     aisleId: string;
-    sortOrder: number;
     updatedById: string;
 }): StoreSection | null {
     const now = new Date().toISOString();
@@ -68,10 +67,10 @@ export function updateSection(params: {
     const result = db
         .prepare(
             `UPDATE StoreSection
-             SET name = ?, aisleId = ?, sortOrder = ?, updatedById = ?, updatedAt = ?
+             SET name = ?, aisleId = ?, updatedById = ?, updatedAt = ?
              WHERE id = ?`
         )
-        .run(params.name, params.aisleId, params.sortOrder, params.updatedById, now, params.id);
+        .run(params.name, params.aisleId, params.updatedById, now, params.id);
 
     if (result.changes === 0) {
         return null;

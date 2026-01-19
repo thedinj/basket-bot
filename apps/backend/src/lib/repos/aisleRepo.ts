@@ -57,7 +57,6 @@ export function getAislesByStore(storeId: string): StoreAisle[] {
 export function updateAisle(params: {
     id: string;
     name: string;
-    sortOrder: number;
     updatedById: string;
 }): StoreAisle | null {
     const now = new Date().toISOString();
@@ -65,10 +64,10 @@ export function updateAisle(params: {
     const result = db
         .prepare(
             `UPDATE StoreAisle
-             SET name = ?, sortOrder = ?, updatedById = ?, updatedAt = ?
+             SET name = ?, updatedById = ?, updatedAt = ?
              WHERE id = ?`
         )
-        .run(params.name, params.sortOrder, params.updatedById, now, params.id);
+        .run(params.name, params.updatedById, now, params.id);
 
     if (result.changes === 0) {
         return null;

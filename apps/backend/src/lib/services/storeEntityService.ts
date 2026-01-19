@@ -48,7 +48,6 @@ export function updateAisle(params: {
     id: string;
     storeId: string;
     name: string;
-    sortOrder: number;
     userId: string;
 }): StoreAisle | null {
     verifyStoreAccess(params.storeId, params.userId);
@@ -56,7 +55,6 @@ export function updateAisle(params: {
     return aisleRepo.updateAisle({
         id: params.id,
         name: params.name,
-        sortOrder: params.sortOrder,
         updatedById: params.userId,
     });
 }
@@ -106,7 +104,6 @@ export function updateSection(params: {
     storeId: string;
     name: string;
     aisleId: string;
-    sortOrder: number;
     userId: string;
 }): StoreSection | null {
     verifyStoreAccess(params.storeId, params.userId);
@@ -115,7 +112,6 @@ export function updateSection(params: {
         id: params.id,
         name: params.name,
         aisleId: params.aisleId,
-        sortOrder: params.sortOrder,
         updatedById: params.userId,
     });
 }

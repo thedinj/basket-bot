@@ -14,8 +14,31 @@ import { use } from "react";
 import { useToast } from "../hooks/useToast";
 import * as storeSharingApi from "../lib/api/storeSharing";
 import { DatabaseContext } from "./context";
+import { checkAndInvalidateCoreDataCache } from "./coreDataVersion";
 import { useOptimisticMutation, type QueryData } from "./optimisticUpdates";
 import { type Database } from "./types";
+
+// ============================================================================
+// Core Data Caching Configuration
+// ============================================================================
+
+/**
+ * Cache times for static/shared tables that rarely or never change
+ * - QuantityUnit: Static reference data seeded at app initialization
+ * - AppSetting: Infrequently modified application settings
+ */
+const CORE_DATA_CACHE = {
+    /** Static reference data - never changes, cache indefinitely */
+    STATIC: {
+        staleTime: Infinity,
+        gcTime: Infinity,
+    },
+    /** Infrequently modified settings - cache for 5 minutes */
+    SETTINGS: {
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        gcTime: 10 * 60 * 1000, // 10 minutes
+    },
+} as const;
 
 /**
  * Hook to get database instance directly
@@ -27,6 +50,32 @@ export function useDatabase(): Database {
     }
     return context.database;
 }
+
+/**
+ * Hook to preload static/core data tables on app initialization
+ * Call this hook early in the app lifecycle to populate the cache
+ * with static reference data (quantity units) and settings
+ *
+ * Also checks for app version changes and invalidates cache if needed
+ */
+export const usePreloadCoreData = () => {
+    const database = useDatabase();
+    const queryClient = useQueryClient();
+
+    const prefetchCoreData = async () => {
+        // Check if app version changed and invalidate cache if needed
+        await checkAndInvalidateCoreDataCache(queryClient);
+
+        // Prefetch quantity units (static reference data)
+        await queryClient.prefetchQuery({
+            queryKey: ["quantityUnits"],
+            queryFn: () => database.loadAllQuantityUnits(),
+            staleTime: CORE_DATA_CACHE.STATIC.staleTime,
+        });
+    };
+
+    return { prefetchCoreData };
+};
 
 // ============================================================================
 // Entity-specific Query Hooks
@@ -45,12 +94,15 @@ export function useStores() {
 
 /**
  * Hook to fetch all quantity units
+ * Static reference data cached indefinitely - never changes after app initialization
  */
 export function useQuantityUnits() {
     const database = useDatabase();
     return useTanstackQuery({
         queryKey: ["quantityUnits"],
         queryFn: () => database.loadAllQuantityUnits(),
+        staleTime: CORE_DATA_CACHE.STATIC.staleTime,
+        gcTime: CORE_DATA_CACHE.STATIC.gcTime,
     });
 }
 
@@ -68,6 +120,7 @@ export function useStore(id: string) {
 
 /**
  * Hook to fetch a single app setting by key
+ * Infrequently modified settings cached for 5 minutes
  */
 export function useAppSetting(key: string) {
     const database = useDatabase();
@@ -75,6 +128,8 @@ export function useAppSetting(key: string) {
         queryKey: ["appSettings", key],
         queryFn: () => database.getAppSetting(key),
         enabled: !!key,
+        staleTime: CORE_DATA_CACHE.SETTINGS.staleTime,
+        gcTime: CORE_DATA_CACHE.SETTINGS.gcTime,
     });
 }
 
@@ -181,18 +236,6 @@ export function useStoreAisles(storeId: string) {
 }
 
 /**
- * Hook to fetch a single aisle by ID
- */
-export function useAisle(id: string) {
-    const database = useDatabase();
-    return useTanstackQuery({
-        queryKey: ["aisles", "detail", id],
-        queryFn: () => database.getAisleById(id),
-        enabled: !!id,
-    });
-}
-
-/**
  * Hook to create a new aisle
  */
 export function useCreateAisle() {
@@ -223,8 +266,8 @@ export function useUpdateAisle() {
     const { showError } = useToast();
 
     return useTanstackMutation({
-        mutationFn: ({ id, name }: { id: string; name: string; storeId: string }) =>
-            database.updateAisle(id, name),
+        mutationFn: ({ storeId, id, name }: { id: string; name: string; storeId: string }) =>
+            database.updateAisle(storeId, id, name),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["aisles", variables.storeId],
@@ -248,7 +291,8 @@ export function useDeleteAisle() {
     const { showError } = useToast();
 
     return useTanstackMutation({
-        mutationFn: ({ id }: { id: string; storeId: string }) => database.deleteAisle(id),
+        mutationFn: ({ storeId, id }: { id: string; storeId: string }) =>
+            database.deleteAisle(storeId, id),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["aisles", variables.storeId],
@@ -270,11 +314,12 @@ export function useReorderAisles() {
 
     return useTanstackMutation({
         mutationFn: ({
+            storeId,
             updates,
         }: {
-            updates: Array<{ id: string; sortOrder: number }>;
             storeId: string;
-        }) => database.reorderAisles(updates),
+            updates: Array<{ id: string; sortOrder: number }>;
+        }) => database.reorderAisles(storeId, updates),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["aisles", variables.storeId],
@@ -353,15 +398,16 @@ export function useUpdateSection() {
 
     return useTanstackMutation({
         mutationFn: ({
+            storeId,
             id,
             name,
             aisleId,
         }: {
+            storeId: string;
             id: string;
             name: string;
             aisleId: string;
-            storeId: string;
-        }) => database.updateSection(id, name, aisleId),
+        }) => database.updateSection(storeId, id, name, aisleId),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["sections", variables.storeId],
@@ -385,7 +431,8 @@ export function useDeleteSection() {
     const { showError } = useToast();
 
     return useTanstackMutation({
-        mutationFn: ({ id }: { id: string; storeId: string }) => database.deleteSection(id),
+        mutationFn: ({ storeId, id }: { id: string; storeId: string }) =>
+            database.deleteSection(storeId, id),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["sections", variables.storeId],
@@ -407,31 +454,32 @@ export function useMoveSection() {
 
     return useTanstackMutation({
         mutationFn: async ({
+            storeId,
             sectionId,
             newAisleId,
             sourceSections,
             destSections,
             sectionName,
         }: {
+            storeId: string;
             sectionId: string;
             newAisleId: string;
             newSortOrder: number;
             sourceSections: Array<{ id: string; sortOrder: number }>;
             destSections: Array<{ id: string; sortOrder: number }>;
-            storeId: string;
             sectionName: string;
         }) => {
             // Update section's aisle (sortOrder will be set by reorderSections)
-            await database.updateSection(sectionId, sectionName, newAisleId);
+            await database.updateSection(storeId, sectionId, sectionName, newAisleId);
 
             // Reorder sections in source aisle (close the gap)
             if (sourceSections.length > 0) {
-                await database.reorderSections(sourceSections);
+                await database.reorderSections(storeId, sourceSections);
             }
 
             // Reorder sections in destination aisle (make room and set moved section's sortOrder)
             if (destSections.length > 0) {
-                await database.reorderSections(destSections);
+                await database.reorderSections(storeId, destSections);
             }
         },
         onSuccess: (_, variables) => {
@@ -455,11 +503,12 @@ export function useReorderSections() {
 
     return useTanstackMutation({
         mutationFn: ({
+            storeId,
             updates,
         }: {
-            updates: Array<{ id: string; sortOrder: number }>;
             storeId: string;
-        }) => database.reorderSections(updates),
+            updates: Array<{ id: string; sortOrder: number }>;
+        }) => database.reorderSections(storeId, updates),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["sections", variables.storeId],
@@ -499,7 +548,7 @@ export function useBulkReplaceAislesAndSections() {
 
             // Step 2: Delete all existing aisles (CASCADE will delete sections)
             for (const aisle of existingAisles) {
-                await database.deleteAisle(aisle.id);
+                await database.deleteAisle(storeId, aisle.id);
             }
 
             // Step 3: Create new aisles and build a map of name -> id
@@ -511,7 +560,7 @@ export function useBulkReplaceAislesAndSections() {
 
                 // Update sort order if needed (insertAisle assigns automatically)
                 if (createdAisle.sortOrder !== aisleData.sortOrder) {
-                    await database.reorderAisles([
+                    await database.reorderAisles(storeId, [
                         {
                             id: createdAisle.id,
                             sortOrder: aisleData.sortOrder,
@@ -538,7 +587,7 @@ export function useBulkReplaceAislesAndSections() {
 
                 // Update sort order if needed
                 if (createdSection.sortOrder !== sectionData.sortOrder) {
-                    await database.reorderSections([
+                    await database.reorderSections(storeId, [
                         {
                             id: createdSection.id,
                             sortOrder: sectionData.sortOrder,
@@ -650,17 +699,18 @@ export function useUpdateItem() {
 
     return useTanstackMutation({
         mutationFn: ({
+            storeId,
             id,
             name,
             aisleId,
             sectionId,
         }: {
+            storeId: string;
             id: string;
             name: string;
             aisleId?: string | null;
             sectionId?: string | null;
-            storeId: string;
-        }) => database.updateItem(id, name, aisleId, sectionId),
+        }) => database.updateItem(storeId, id, name, aisleId, sectionId),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["items", variables.storeId],

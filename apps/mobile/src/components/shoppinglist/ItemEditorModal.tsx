@@ -61,10 +61,19 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
             notes: null,
             aisleId: null,
             sectionId: null,
-            isIdea: false,
+            isIdea: null,
             snoozedUntil: null,
         },
     });
+
+    /*     const formValues = watch();
+    console.log("Form values:", formValues);
+    try {
+        itemFormSchema.parse(formValues);
+        console.log("Zod parse: valid");
+    } catch (e) {
+        console.log("Zod parse error:", e.errors);
+    } */
 
     // Watch form values
     const currentNotes = watch("notes");
@@ -274,7 +283,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                             isValid={isValid}
                             upsertItem={upsertItem}
                             editingItem={editingItem}
-                            isIdea={isIdea}
+                            isIdea={!!isIdea}
                         />
 
                         {editingItem && (

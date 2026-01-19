@@ -9,8 +9,9 @@ import {
     IonTabs,
 } from "@ionic/react";
 import { cartOutline, storefrontOutline } from "ionicons/icons";
+import { useEffect } from "react";
 import { Route } from "react-router-dom";
-import { useNotificationCounts } from "../db/hooks";
+import { useNotificationCounts, usePreloadCoreData } from "../db/hooks";
 import ShoppingList from "../pages/ShoppingList";
 import StoreAislesPage from "../pages/StoreAislesPage";
 import StoreDetail from "../pages/StoreDetail";
@@ -27,6 +28,12 @@ import Settings from "./settings/Settings";
  */
 const Main: React.FC = () => {
     const { data: notificationCounts } = useNotificationCounts();
+    const { prefetchCoreData } = usePreloadCoreData();
+
+    // Preload static/core data on app initialization
+    useEffect(() => {
+        prefetchCoreData();
+    }, [prefetchCoreData]);
 
     return (
         <LLMModalProvider>

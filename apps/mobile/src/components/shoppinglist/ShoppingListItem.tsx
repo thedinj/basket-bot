@@ -178,16 +178,6 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                 </IonButton>
             )}
 
-            {/* <IonButton
-                slot="end"
-                fill="clear"
-                onClick={() =>
-                    openEditModal(item as ShoppingListItemWithDetails)
-                }
-            >
-                <IonIcon icon={create} color="medium" />
-            </IonButton> */}
-
             <IonAlert
                 isOpen={!!pendingMove}
                 onDidDismiss={() => setPendingMove(null)}

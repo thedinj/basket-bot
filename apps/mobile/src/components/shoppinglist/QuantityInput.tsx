@@ -21,7 +21,7 @@ export const QuantityInput = () => {
                             placeholder="Enter quantity"
                             onIonInput={(e) => {
                                 const val = e.detail.value;
-                                field.onChange(val ? parseFloat(val) : 1);
+                                field.onChange(val ? parseFloat(val) : null);
                             }}
                         />
                     </IonItem>

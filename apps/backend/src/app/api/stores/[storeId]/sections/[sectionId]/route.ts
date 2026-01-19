@@ -40,7 +40,7 @@ async function handlePut(
     try {
         const { storeId, sectionId } = await params;
         const body = await req.json();
-        const { name, aisleId, sortOrder } = body;
+        const { name, aisleId } = body;
 
         if (!name || typeof name !== "string") {
             return NextResponse.json(
@@ -61,7 +61,6 @@ async function handlePut(
             storeId,
             name,
             aisleId,
-            sortOrder: sortOrder ?? 0,
             userId: req.auth.sub,
         });
 
