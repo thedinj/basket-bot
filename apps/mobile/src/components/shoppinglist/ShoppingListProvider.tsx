@@ -17,8 +17,7 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
         name: string;
     } | null>(null);
 
-    // Use ref for Set - doesn't need to trigger re-renders, consumers read it directly
-    const newlyImportedItemIds = useRef<Set<string>>(new Set());
+    const [newlyImportedItemIds, setNewlyImportedItemIds] = useState<Set<string>>(new Set());
 
     const deleteItemMutation = useDeleteShoppingListItem();
 
@@ -92,10 +91,10 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
     }, [deleteAlert, deleteItemMutation, selectedStoreId]);
 
     const markAsNewlyImported = useCallback((itemIds: string[]) => {
-        newlyImportedItemIds.current = new Set(itemIds);
+        setNewlyImportedItemIds(new Set(itemIds));
         // Clear the set after animation completes (2 seconds)
         setTimeout(() => {
-            newlyImportedItemIds.current = new Set();
+            setNewlyImportedItemIds(new Set());
         }, 2000);
     }, []);
 
@@ -131,6 +130,7 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
         handleSetSelectedStoreId,
         isItemModalOpen,
         markAsNewlyImported,
+        newlyImportedItemIds,
         openCreateModal,
         openEditModal,
         selectedStoreId,
