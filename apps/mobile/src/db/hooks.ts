@@ -1,4 +1,9 @@
-import type { ShoppingListItem, ShoppingListItemInput } from "@basket-bot/core";
+import type {
+    ShoppingListItem,
+    ShoppingListItemInput,
+    ShoppingListItemWithDetails,
+    StoreItemWithDetails,
+} from "@basket-bot/core";
 import {
     useQueryClient,
     useMutation as useTanstackMutation,
@@ -9,6 +14,7 @@ import { use } from "react";
 import { useToast } from "../hooks/useToast";
 import * as storeSharingApi from "../lib/api/storeSharing";
 import { DatabaseContext } from "./context";
+import { useOptimisticMutation, type QueryData } from "./optimisticUpdates";
 import { type Database } from "./types";
 
 /**
@@ -757,28 +763,48 @@ export function useDeleteItem() {
 
 /**
  * Hook to toggle the favorite status of a store item
+ * Uses optimistic updates for instant UI feedback
  */
 export function useToggleFavorite() {
     const database = useDatabase();
-    const queryClient = useQueryClient();
     const { showError } = useToast();
 
-    return useTanstackMutation({
+    return useOptimisticMutation({
         mutationFn: ({ id }: { id: string; storeId: string }) => database.toggleItemFavorite(id),
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({
-                queryKey: ["items", variables.storeId],
-            });
-            queryClient.invalidateQueries({
-                queryKey: ["items", "with-details", variables.storeId],
-            });
-            queryClient.invalidateQueries({
-                queryKey: ["items", "detail", variables.id],
-            });
-        },
-        onError: (error: Error) => {
-            showError(`Failed to update favorite: ${error.message}`);
-        },
+        queryKeys: (vars) => [
+            ["items", vars.storeId],
+            ["items", "with-details", vars.storeId],
+            ["items", "detail", vars.id],
+        ],
+        updateCache: (vars) => [
+            {
+                queryKey: ["items", "with-details", vars.storeId],
+                updateFn: (old: unknown) => {
+                    const data = old as QueryData<StoreItemWithDetails> | undefined;
+                    if (!data?.data) return data;
+                    return {
+                        ...data,
+                        data: data.data.map((item) =>
+                            item.id === vars.id ? { ...item, isFavorite: !item.isFavorite } : item
+                        ),
+                    };
+                },
+            },
+            {
+                queryKey: ["items", vars.storeId],
+                updateFn: (old: unknown) => {
+                    const data = old as QueryData<StoreItemWithDetails> | undefined;
+                    if (!data?.data) return data;
+                    return {
+                        ...data,
+                        data: data.data.map((item) =>
+                            item.id === vars.id ? { ...item, isFavorite: !item.isFavorite } : item
+                        ),
+                    };
+                },
+            },
+        ],
+        onError: (error) => showError(`Failed to update favorite: ${error.message}`),
     });
 }
 
@@ -844,23 +870,36 @@ export function useUpsertShoppingListItem() {
 
 /**
  * Hook to toggle shopping list item checked status
+ * Uses optimistic updates for instant UI feedback
  */
 export function useToggleItemChecked() {
     const database = useDatabase();
-    const queryClient = useQueryClient();
     const { showError } = useToast();
 
-    return useTanstackMutation({
+    return useOptimisticMutation({
         mutationFn: (params: { id: string; isChecked: boolean; storeId: string }) =>
             database.toggleShoppingListItemChecked(params.storeId, params.id, params.isChecked),
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.storeId],
-            });
-        },
-        onError: (error: Error) => {
-            showError(`Failed to update item: ${error.message}`);
-        },
+        queryKeys: (vars) => [["shopping-list-items", vars.storeId]],
+        updateCache: (vars) => ({
+            queryKey: ["shopping-list-items", vars.storeId],
+            updateFn: (old: unknown) => {
+                const data = old as QueryData<ShoppingListItemWithDetails> | undefined;
+                if (!data?.data) return data;
+                return {
+                    ...data,
+                    data: data.data.map((item) =>
+                        item.id === vars.id
+                            ? {
+                                  ...item,
+                                  isChecked: vars.isChecked,
+                                  checkedAt: vars.isChecked ? new Date().toISOString() : null,
+                              }
+                            : item
+                    ),
+                };
+            },
+        }),
+        onError: (error) => showError(`Failed to update item: ${error.message}`),
     });
 }
 
