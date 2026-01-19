@@ -5,8 +5,29 @@ import { db } from "../db/db";
  * Repository for ShoppingListItem entity operations.
  */
 
+// ========== Boolean Conversion Helpers ==========
+// SQLite stores booleans as integers (1) or null
+// We use null for false to save space and make intent clearer
+// These helpers ensure type safety between database and application layers
+
+/**
+ * Convert a boolean to SQLite value (1 for true, null for false)
+ */
+function boolToInt(value: boolean | null | undefined): number | null {
+    if (value == null || !value) return null;
+    return 1;
+}
+
+/**
+ * Convert SQLite value to boolean (1 → true, null/0 → false)
+ */
+function intToBool(value: number | null | undefined): boolean {
+    if (value == null) return false;
+    return value !== 0;
+}
+
 export function getShoppingListItems(storeId: string): ShoppingListItemWithDetails[] {
-    return db
+    const rows = db
         .prepare(
             `SELECT
                 sli.id, sli.storeId, sli.storeItemId, sli.qty, sli.unitId, sli.notes,
@@ -31,7 +52,16 @@ export function getShoppingListItems(storeId: string): ShoppingListItemWithDetai
                 COALESCE(s.sortOrder, 999999) ASC,
                 sli.createdAt ASC`
         )
-        .all(storeId) as ShoppingListItemWithDetails[];
+        .all(storeId) as any[];
+
+    // Convert SQLite integers to booleans
+    return rows.map((row) => ({
+        ...row,
+        isChecked: intToBool(row.isChecked),
+        isSample: row.isSample != null ? intToBool(row.isSample) : null,
+        isUnsure: row.isUnsure != null ? intToBool(row.isUnsure) : null,
+        isIdea: intToBool(row.isIdea),
+    }));
 }
 
 export function upsertShoppingListItem(params: {
@@ -86,11 +116,11 @@ export function upsertShoppingListItem(params: {
             params.qty ?? existing.qty,
             params.unitId ?? existing.unitId,
             params.notes ?? existing.notes,
-            isChecked != null ? (isChecked ? 1 : 0) : null,
+            boolToInt(isChecked),
             checkedAt,
-            isSample != null ? (isSample ? 1 : 0) : null,
-            isUnsure != null ? (isUnsure ? 1 : 0) : null,
-            isIdea != null ? (isIdea ? 1 : 0) : null,
+            boolToInt(isSample),
+            boolToInt(isUnsure),
+            boolToInt(isIdea),
             params.snoozedUntil ?? existing.snoozedUntil,
             params.userId,
             now,
@@ -113,11 +143,11 @@ export function upsertShoppingListItem(params: {
             params.qty ?? null,
             params.unitId ?? null,
             params.notes ?? null,
-            isChecked != null ? (isChecked ? 1 : 0) : null,
+            boolToInt(isChecked),
             checkedAt,
-            isSample != null ? (isSample ? 1 : 0) : null,
-            isUnsure != null ? (isUnsure ? 1 : 0) : null,
-            isIdea != null ? (isIdea ? 1 : 0) : null,
+            boolToInt(isSample),
+            boolToInt(isUnsure),
+            boolToInt(isIdea),
             params.snoozedUntil ?? null,
             params.userId,
             params.userId,
@@ -136,9 +166,18 @@ export function getShoppingListItemById(id: string): ShoppingListItem | null {
              FROM ShoppingListItem
              WHERE id = ?`
         )
-        .get(id) as ShoppingListItem | undefined;
+        .get(id) as any | undefined;
 
-    return row ?? null;
+    if (!row) return null;
+
+    // Convert SQLite integers to booleans
+    return {
+        ...row,
+        isChecked: intToBool(row.isChecked),
+        isSample: row.isSample != null ? intToBool(row.isSample) : null,
+        isUnsure: row.isUnsure != null ? intToBool(row.isUnsure) : null,
+        isIdea: intToBool(row.isIdea),
+    };
 }
 
 export function toggleShoppingListItemChecked(
@@ -152,7 +191,7 @@ export function toggleShoppingListItemChecked(
         `UPDATE ShoppingListItem
          SET isChecked = ?, checkedAt = ?, updatedById = ?, updatedAt = ?
          WHERE id = ?`
-    ).run(isChecked ? 1 : null, isChecked ? now : null, userId, now, id);
+    ).run(boolToInt(isChecked), isChecked ? now : null, userId, now, id);
 }
 
 /**

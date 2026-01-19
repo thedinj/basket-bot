@@ -66,15 +66,6 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
         },
     });
 
-    /*     const formValues = watch();
-    console.log("Form values:", formValues);
-    try {
-        itemFormSchema.parse(formValues);
-        console.log("Zod parse: valid");
-    } catch (e) {
-        console.log("Zod parse error:", e.errors);
-    } */
-
     // Watch form values
     const currentNotes = watch("notes");
     const currentName = watch("name");

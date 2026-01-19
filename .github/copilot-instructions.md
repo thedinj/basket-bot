@@ -300,6 +300,18 @@ Do not hardcode credentials. Fail clearly if env vars are missing when seeding.
 - Direct SQL queries via `db.prepare(...).run/get/all()`
 - Always use `datetime('now')` for timestamps in SQLite
 
+**Boolean storage convention:**
+
+SQLite doesn't have a native boolean type. We store booleans as:
+- `1` for `true`
+- `NULL` for `false`
+
+Repositories must convert between TypeScript booleans and SQLite integers/nulls:
+- Use `boolToInt()` helper when writing: `true` → `1`, `false`/`null` → `NULL`
+- Use `intToBool()` helper when reading: `1` → `true`, `NULL`/`0` → `false`
+
+This convention saves space and makes intent clearer than storing `0` for false.
+
 **Critical design principle: Section-Aisle normalization**
 
 When storing `StoreItem` location data:

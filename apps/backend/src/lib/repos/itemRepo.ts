@@ -5,6 +5,19 @@ import { db } from "../db/db";
  * Repository for StoreItem entity operations.
  */
 
+// ========== Boolean Conversion Helpers ==========
+// SQLite stores booleans as integers (1) or null
+// We use null for false to save space and make intent clearer
+// These helpers ensure type safety between database and application layers
+
+/**
+ * Convert SQLite value to boolean (1 → true, null/0 → false)
+ */
+function intToBool(value: number | null | undefined): boolean {
+    if (value == null) return false;
+    return value !== 0;
+}
+
 function normalizeItemName(name: string): string {
     return name.toLowerCase().trim();
 }
@@ -50,24 +63,38 @@ export function getItemById(id: string): StoreItem | null {
              FROM StoreItem
              WHERE id = ?`
         )
-        .get(id) as StoreItem | undefined;
+        .get(id) as any | undefined;
 
-    return row ?? null;
+    if (!row) return null;
+
+    // Convert SQLite integers to booleans
+    return {
+        ...row,
+        isHidden: intToBool(row.isHidden),
+        isFavorite: intToBool(row.isFavorite),
+    };
 }
 
 export function getItemsByStore(storeId: string): StoreItem[] {
-    return db
+    const rows = db
         .prepare(
             `SELECT id, storeId, name, nameNorm, aisleId, sectionId, usageCount, lastUsedAt, isHidden, isFavorite, createdById, updatedById, createdAt, updatedAt
              FROM StoreItem
              WHERE storeId = ?
              ORDER BY name ASC`
         )
-        .all(storeId) as StoreItem[];
+        .all(storeId) as any[];
+
+    // Convert SQLite integers to booleans
+    return rows.map((row) => ({
+        ...row,
+        isHidden: intToBool(row.isHidden),
+        isFavorite: intToBool(row.isFavorite),
+    }));
 }
 
 export function getItemsByStoreWithDetails(storeId: string): StoreItemWithDetails[] {
-    return db
+    const rows = db
         .prepare(
             `SELECT
                 si.id, si.storeId, si.name, si.nameNorm,
@@ -85,7 +112,14 @@ export function getItemsByStoreWithDetails(storeId: string): StoreItemWithDetail
                 COALESCE(s.sortOrder, 999999) ASC,
                 si.nameNorm ASC`
         )
-        .all(storeId) as StoreItemWithDetails[];
+        .all(storeId) as any[];
+
+    // Convert SQLite integers to booleans
+    return rows.map((row) => ({
+        ...row,
+        isHidden: intToBool(row.isHidden),
+        isFavorite: intToBool(row.isFavorite),
+    }));
 }
 
 export function updateItem(params: {
@@ -153,7 +187,7 @@ export function searchStoreItems(storeId: string, searchTerm: string, limit = 20
     const searchPattern = `%${normalizedSearch}%`;
     const startsWithPattern = `${normalizedSearch}%`;
 
-    return db
+    const rows = db
         .prepare(
             `SELECT id, storeId, name, nameNorm, aisleId, sectionId, usageCount, lastUsedAt, isHidden, isFavorite, createdById, updatedById, createdAt, updatedAt
              FROM StoreItem
@@ -165,7 +199,14 @@ export function searchStoreItems(storeId: string, searchTerm: string, limit = 20
                 nameNorm ASC
              LIMIT ?`
         )
-        .all(storeId, searchPattern, startsWithPattern, limit) as StoreItem[];
+        .all(storeId, searchPattern, startsWithPattern, limit) as any[];
+
+    // Convert SQLite integers to booleans
+    return rows.map((row) => ({
+        ...row,
+        isHidden: intToBool(row.isHidden),
+        isFavorite: intToBool(row.isFavorite),
+    }));
 }
 
 export function getOrCreateStoreItemByName(params: {
@@ -179,13 +220,21 @@ export function getOrCreateStoreItemByName(params: {
     const now = new Date().toISOString();
 
     // Try to find existing item
-    const existing = db
+    const row = db
         .prepare(
             `SELECT id, storeId, name, nameNorm, aisleId, sectionId, usageCount, lastUsedAt, isHidden, isFavorite, createdById, updatedById, createdAt, updatedAt
              FROM StoreItem
              WHERE storeId = ? AND nameNorm = ?`
         )
-        .get(params.storeId, nameNorm) as StoreItem | undefined;
+        .get(params.storeId, nameNorm) as any | undefined;
+
+    const existing = row
+        ? {
+              ...row,
+              isHidden: intToBool(row.isHidden),
+              isFavorite: intToBool(row.isFavorite),
+          }
+        : undefined;
 
     if (existing) {
         // Update usage count, last_used_at, and location if provided

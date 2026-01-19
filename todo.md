@@ -1,4 +1,6 @@
-Test all workflows
+Reordering aisles doesn't work
+Clearing units doesn't save
+Test all workflows, reviewing the API calls
 More forgiving refresh token/whatever? Seems to log out a lot.
 Refresh button on list/stores/whatever
 Invitation code for making a new account
