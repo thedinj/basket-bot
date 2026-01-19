@@ -8,6 +8,8 @@ This repository is a TypeScript monorepo for **Basket Bot**, a shopping-list sys
 
 Copilot: prioritize correctness, consistency, and boring maintainable patterns over cleverness.
 
+**CRITICAL: When investigating tricky issues, CONFIRM SPECULATIONS BEFORE IMPLEMENTING FIXES by introducing debug code (logging, tracking reference changes, etc.). NEVER implement a fix based on speculation alone. Add logging → test → analyze logs → confirm root cause → then implement fix. Remove debug code on an ongoing basis as soon as it is no longer needed.**
+
 **CRITICAL: After making ANY changes, ALWAYS check for errors using get_errors tool before considering work complete. Do not stop until all errors are resolved.**
 
 ---
@@ -166,6 +168,22 @@ For admin (Mantine):
     - Custom solution is trivially simple (e.g., < 50 lines)
 
 ### React component conventions
+### Hooks returning complex objects
+
+**When writing custom hooks that return a complex object (such as multiple values or functions), always return a memoized object using `useMemo`.**
+
+This prevents unnecessary re-renders and ensures referential stability for consumers. Example:
+
+```typescript
+const value = useMemo(() => ({
+    foo,
+    bar,
+    baz,
+}), [foo, bar, baz]);
+return value;
+```
+
+Never return a new object literal directly from a hook unless it is memoized. This is critical for context providers and hooks consumed by dependency arrays.
 
 - **ALWAYS use `const` arrow functions**, never function declarations:
 

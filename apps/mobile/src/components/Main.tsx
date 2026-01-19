@@ -35,9 +35,7 @@ const Main: React.FC = () => {
                 <Settings />
                 <IonTabs>
                     <IonRouterOutlet id="main-content">
-                        <Route exact path="/shoppinglist">
-                            <ShoppingList />
-                        </Route>
+                        <Route exact path="/shoppinglist" component={ShoppingList} />
                         <Route exact path="/stores" component={StoresList} />
                         <Route exact path="/invitations" component={StoreInvitations} />
                         <Route exact path="/stores/:id/items" component={StoreItemsPage} />

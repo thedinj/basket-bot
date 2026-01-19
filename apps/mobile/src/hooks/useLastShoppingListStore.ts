@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { usePreference } from "./usePreference";
 
 const LAST_SHOPPING_LIST_STORE_KEY = "lastShoppingListStoreId";
@@ -7,8 +8,11 @@ export const useLastShoppingListStore = () => {
         LAST_SHOPPING_LIST_STORE_KEY
     );
 
-    return {
-        lastShoppingListStoreId,
-        saveLastShoppingListStore: savePreference,
-    };
+    return useMemo(
+        () => ({
+            lastShoppingListStoreId,
+            saveLastShoppingListStore: savePreference,
+        }),
+        [lastShoppingListStoreId, savePreference]
+    );
 };

@@ -121,13 +121,14 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
             const refreshToken = await secureStorage.get(KEYS.REFRESH_TOKEN);
 
             if (refreshToken) {
+                // This will trigger token cleanup and query invalidation in onSettled
                 await logoutMutation.mutateAsync({ refreshToken });
             }
-
-            setUser(null);
-            setHasTokens(false);
         } catch (error) {
             console.error("Logout failed:", error);
+            // Continue with cleanup even if server logout fails
+        } finally {
+            // Update local state after mutation completes (success or failure)
             setUser(null);
             setHasTokens(false);
         }

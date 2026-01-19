@@ -1013,8 +1013,7 @@ export function useNotificationCounts() {
     return useTanstackQuery({
         queryKey: ["notifications", "counts"],
         queryFn: storeSharingApi.getNotificationCounts,
-        staleTime: 30000, // 30 seconds
-        refetchInterval: 60000, // Refetch every 60 seconds
+        staleTime: 5 * 60 * 1000, // 5 minutes - data is considered fresh
     });
 }
 

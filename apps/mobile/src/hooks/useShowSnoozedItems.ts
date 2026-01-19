@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { usePreference } from "./usePreference";
 
 const SHOW_SNOOZED_KEY = "showSnoozedItems";
@@ -13,8 +13,12 @@ export const useShowSnoozedItems = () => {
         await savePreference(showSnoozed ? "false" : "true");
     }, [showSnoozed, savePreference]);
 
-    return {
-        showSnoozed,
-        toggleShowSnoozed,
-    };
+    // Memoize return object to prevent unnecessary re-renders
+    return useMemo(
+        () => ({
+            showSnoozed,
+            toggleShowSnoozed,
+        }),
+        [showSnoozed, toggleShowSnoozed]
+    );
 };

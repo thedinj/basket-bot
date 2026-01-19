@@ -1,5 +1,5 @@
 import type { ShoppingListItemWithDetails } from "@basket-bot/core";
-import { ReactNode, useMemo, useState } from "react";
+import { ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import { useDeleteShoppingListItem, useStores } from "../../db/hooks";
 import { useLastShoppingListStore } from "../../hooks/useLastShoppingListStore";
 import { ShoppingListContext, ShoppingListContextValue } from "./ShoppingListContext";
@@ -16,11 +16,18 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
         id: string;
         name: string;
     } | null>(null);
-    const [newlyImportedItemIds, setNewlyImportedItemIds] = useState<Set<string>>(new Set());
+
+    // Use ref for Set - doesn't need to trigger re-renders, consumers read it directly
+    const newlyImportedItemIds = useRef<Set<string>>(new Set());
 
     const deleteItemMutation = useDeleteShoppingListItem();
+
     const { data: stores } = useStores();
     const { lastShoppingListStoreId, saveLastShoppingListStore } = useLastShoppingListStore();
+
+    // Store in ref so it doesn't cause callbacks to change
+    const saveLastShoppingListStoreRef = useRef(saveLastShoppingListStore);
+    saveLastShoppingListStoreRef.current = saveLastShoppingListStore;
 
     // Compute selected store ID from stores data - React will re-render when stores change
     const selectedStoreId = useMemo(() => {
@@ -51,30 +58,30 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
         return null;
     }, [stores, userSelectedStoreId, lastShoppingListStoreId]);
 
-    const openCreateModal = () => {
+    const openCreateModal = useCallback(() => {
         setEditingItem(null);
         setIsItemModalOpen(true);
-    };
+    }, []);
 
-    const openEditModal = (item: ShoppingListItemWithDetails) => {
+    const openEditModal = useCallback((item: ShoppingListItemWithDetails) => {
         setEditingItem(item);
         setIsItemModalOpen(true);
-    };
+    }, []);
 
-    const closeItemModal = () => {
+    const closeItemModal = useCallback(() => {
         setIsItemModalOpen(false);
         setEditingItem(null);
-    };
+    }, []);
 
-    const confirmDelete = (id: string, name: string) => {
+    const confirmDelete = useCallback((id: string, name: string) => {
         setDeleteAlert({ id, name });
-    };
+    }, []);
 
-    const cancelDelete = () => {
+    const cancelDelete = useCallback(() => {
         setDeleteAlert(null);
-    };
+    }, []);
 
-    const executeDelete = async () => {
+    const executeDelete = useCallback(async () => {
         if (deleteAlert && selectedStoreId) {
             await deleteItemMutation.mutateAsync({
                 id: deleteAlert.id,
@@ -82,37 +89,52 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
             });
             setDeleteAlert(null);
         }
-    };
+    }, [deleteAlert, deleteItemMutation, selectedStoreId]);
 
-    const markAsNewlyImported = (itemIds: string[]) => {
-        setNewlyImportedItemIds(new Set(itemIds));
+    const markAsNewlyImported = useCallback((itemIds: string[]) => {
+        newlyImportedItemIds.current = new Set(itemIds);
         // Clear the set after animation completes (2 seconds)
         setTimeout(() => {
-            setNewlyImportedItemIds(new Set());
+            newlyImportedItemIds.current = new Set();
         }, 2000);
-    };
+    }, []);
 
     // Wrap setSelectedStoreId to also save preference
-    const handleSetSelectedStoreId = (storeId: string | null) => {
+    const handleSetSelectedStoreId = useCallback((storeId: string | null) => {
         setUserSelectedStoreId(storeId);
-        saveLastShoppingListStore(storeId);
-    };
+        saveLastShoppingListStoreRef.current(storeId);
+    }, []);
 
-    const value: ShoppingListContextValue = {
-        selectedStoreId,
-        setSelectedStoreId: handleSetSelectedStoreId,
-        isItemModalOpen,
+    const value: ShoppingListContextValue = useMemo(() => {
+        return {
+            selectedStoreId,
+            setSelectedStoreId: handleSetSelectedStoreId,
+            isItemModalOpen,
+            editingItem,
+            openCreateModal,
+            openEditModal,
+            closeItemModal,
+            deleteAlert,
+            confirmDelete,
+            cancelDelete,
+            executeDelete,
+            newlyImportedItemIds,
+            markAsNewlyImported,
+        };
+    }, [
+        cancelDelete,
+        closeItemModal,
+        confirmDelete,
+        deleteAlert,
         editingItem,
+        executeDelete,
+        handleSetSelectedStoreId,
+        isItemModalOpen,
+        markAsNewlyImported,
         openCreateModal,
         openEditModal,
-        closeItemModal,
-        deleteAlert,
-        confirmDelete,
-        cancelDelete,
-        executeDelete,
-        newlyImportedItemIds,
-        markAsNewlyImported,
-    };
+        selectedStoreId,
+    ]);
 
     return <ShoppingListContext.Provider value={value}>{children}</ShoppingListContext.Provider>;
 };

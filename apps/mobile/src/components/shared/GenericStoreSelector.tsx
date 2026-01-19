@@ -26,7 +26,7 @@ export const GenericStoreSelector: React.FC<GenericStoreSelectorProps> = ({
     showSearch = false,
     allowClear = true,
     disabled = false,
-    excludeStoreIds = [],
+    excludeStoreIds,
     inputStyle,
     showChevron = false,
 }) => {
@@ -34,7 +34,7 @@ export const GenericStoreSelector: React.FC<GenericStoreSelectorProps> = ({
 
     const filteredStores = useMemo(() => {
         if (!stores) return [];
-        return stores.filter((store) => !excludeStoreIds.includes(store.id));
+        return stores.filter((store) => !excludeStoreIds?.includes(store.id));
     }, [stores, excludeStoreIds]);
 
     const storeItems: SelectableItem[] = useMemo(() => {

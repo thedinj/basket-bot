@@ -1,5 +1,5 @@
 import type { ShoppingListItemWithDetails } from "@basket-bot/core";
-import { createContext } from "react";
+import { createContext, RefObject } from "react";
 
 export interface ShoppingListContextValue {
     // Selected store
@@ -20,7 +20,7 @@ export interface ShoppingListContextValue {
     executeDelete: () => void;
 
     // Newly imported items (for shimmer animation)
-    newlyImportedItemIds: Set<string>;
+    newlyImportedItemIds: RefObject<Set<string>>; // TODO: Unsure if we legitimately need a refobject here--were trying to prevent infinite reloads
     markAsNewlyImported: (itemIds: string[]) => void;
 }
 

@@ -1,11 +1,7 @@
-import type { CreateUserRequest, LoginRequest, LoginResponse, LoginUser } from "@basket-bot/core";
+import type { CreateUserRequest, LoginRequest, LoginResponse } from "@basket-bot/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../lib/api/client";
 import { KEYS, secureStorage } from "../utils/secureStorage";
-
-interface MeResponse {
-    user: LoginUser;
-}
 
 interface LogoutRequest {
     refreshToken: string;
@@ -19,7 +15,7 @@ export const useAuthUser = (enabled: boolean) => {
     return useQuery({
         queryKey: ["auth", "me"],
         queryFn: async () => {
-            const response = await apiClient.get<MeResponse>("/api/auth/me");
+            const response = await apiClient.get<LoginResponse>("/api/auth/me");
             return response;
         },
         enabled,
@@ -82,17 +78,21 @@ export const useLogoutMutation = () => {
             await apiClient.post("/api/auth/logout", request);
         },
         onSettled: async () => {
-            // Clear tokens regardless of success/failure
+            // Invalidate all queries first (triggers refetch/cleanup)
+            await queryClient.invalidateQueries();
+
+            // Clear all cached query data
+            queryClient.clear();
+
+            // Clear tokens from secure storage
             await Promise.all([
                 secureStorage.remove(KEYS.ACCESS_TOKEN),
                 secureStorage.remove(KEYS.REFRESH_TOKEN),
             ]);
 
+            // Clear tokens from API client
             apiClient.setAccessToken(null);
             apiClient.setRefreshToken(null);
-
-            // Clear all cached queries
-            queryClient.clear();
         },
     });
 };

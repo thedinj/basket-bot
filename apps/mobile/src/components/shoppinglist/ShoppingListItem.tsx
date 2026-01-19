@@ -37,7 +37,7 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
     const moveItemToStore = useMoveItemToStore();
     const { data: stores } = useStores();
 
-    const isNewlyImported = newlyImportedItemIds.has(item.id);
+    const isNewlyImported = newlyImportedItemIds.current?.has(item.id) ?? false;
 
     const handleStoreSelected = (storeId: string | null) => {
         if (storeId && stores) {

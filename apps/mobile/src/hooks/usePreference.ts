@@ -1,10 +1,11 @@
 import { Preferences } from "@capacitor/preferences";
-import { useMutation, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 /**
  * Generic hook for managing Capacitor Preferences.
  * Uses useSuspenseQuery to avoid isLoading pattern.
- * 
+ *
  * @param key - The preference key to store/retrieve
  * @returns Object with current value and setter function
  */
@@ -36,5 +37,5 @@ export const usePreference = (key: string) => {
         },
     });
 
-    return { value, savePreference };
+    return useMemo(() => ({ value, savePreference }), [value, savePreference]);
 };

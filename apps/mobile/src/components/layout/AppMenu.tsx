@@ -22,6 +22,11 @@ export const AppMenu: React.FC = () => {
     const handleLogout = async () => {
         try {
             await logout();
+            // router.push("/login", "root", "replace");
+            // Force full page reload to completely clear navigation stack
+            // THIS IS IMPORTANT to prevent Ionic from displaying a blank page after logout
+            // RIP 2 hours on this.
+            window.location.href = "/login";
         } catch (error) {
             console.error("Logout error:", error);
         }

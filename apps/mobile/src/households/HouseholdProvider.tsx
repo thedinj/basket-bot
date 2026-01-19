@@ -1,18 +1,14 @@
 import type { Household } from "@basket-bot/core";
-import { useCallback, useEffect, useState } from "react";
+import { PropsWithChildren, useCallback, useEffect, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import { useDatabase } from "../db/hooks";
 import { usePreference } from "../hooks/usePreference";
 import { householdApi, invitationApi } from "../lib/api/household";
 import { HouseholdContext } from "./HouseholdContext";
 
-interface HouseholdProviderProps {
-    children: React.ReactNode;
-}
-
 const ACTIVE_HOUSEHOLD_KEY = "activeHouseholdId";
 
-export const HouseholdProvider: React.FC<HouseholdProviderProps> = ({ children }) => {
+export const HouseholdProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const { isAuthenticated } = useAuth();
     const database = useDatabase();
     const [households, setHouseholds] = useState<Household[]>([]);
@@ -83,7 +79,7 @@ export const HouseholdProvider: React.FC<HouseholdProviderProps> = ({ children }
     const value = {
         households,
         activeHousehold,
-        activeHouseholdId,
+        activeHouseholdId: activeHouseholdId ?? null,
         isLoading,
         setActiveHouseholdId,
         refreshHouseholds,

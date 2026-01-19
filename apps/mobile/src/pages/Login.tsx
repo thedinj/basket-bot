@@ -42,7 +42,7 @@ const Login: React.FC = () => {
 
         try {
             await login(data.email, data.password);
-            // App.tsx will handle navigation based on auth state
+            // Navigation will be handled by AuthRoute in App.tsx
         } catch (err: any) {
             // Handle rate limit (429)
             if (err?.response?.status === 429) {
