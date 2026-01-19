@@ -1,4 +1,4 @@
-import { IonItem, IonLabel, IonInput, IonText } from "@ionic/react";
+import { IonInput, IonItem, IonLabel, IonText } from "@ionic/react";
 import { Controller } from "react-hook-form";
 import { useItemEditorContext } from "./useItemEditorContext";
 
@@ -17,11 +17,11 @@ export const QuantityInput = () => {
                             value={field.value}
                             type="number"
                             min="0"
-                            step="1"
+                            step="any"
                             placeholder="Enter quantity"
                             onIonInput={(e) => {
                                 const val = e.detail.value;
-                                field.onChange(val ? Number(val) : 1);
+                                field.onChange(val ? parseFloat(val) : 1);
                             }}
                         />
                     </IonItem>
