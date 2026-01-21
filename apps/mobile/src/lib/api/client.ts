@@ -92,7 +92,7 @@ export class ApiClient {
                     ...options,
                     headers,
                 });
-            } catch (refreshError) {
+            } catch {
                 // Refresh failed, clear tokens and throw
                 this.accessToken = null;
                 this.refreshToken = null;

@@ -8,7 +8,7 @@ import {
     useStoreAisles,
     useStoreSections,
 } from "../../db/hooks";
-import type { StoreAisle, StoreSection } from "../../db/types";
+import type { StoreSection } from "../../db/types";
 import { AisleItem } from "./AisleItem";
 import { DeleteConfirmationAlert } from "./DeleteConfirmationAlert";
 import { EmptyState } from "./EmptyState";
@@ -49,134 +49,99 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
         event.detail.complete();
     };
 
-    const handleSectionReorder = async (
-        event: CustomEvent<ItemReorderEventDetail>,
-        aisleId: string
-    ) => {
-        event.stopPropagation();
-
-        if (!sections) return;
-
-        const aisleSections = sections.filter((s) => s.aisleId === aisleId);
-        const from = event.detail.from;
-        const to = event.detail.to;
-
-        const reordered = [...aisleSections];
-        const [movedItem] = reordered.splice(from, 1);
-        reordered.splice(to, 0, movedItem);
-
-        const updates = reordered.map((section, index) => ({
-            id: section.id,
-            sortOrder: index,
-        }));
-
-        await reorderSections.mutateAsync({ updates, storeId });
-
-        event.detail.complete();
-    };
-
     const handleFlatSectionReorder = async (event: CustomEvent<ItemReorderEventDetail>) => {
         if (!sections || !aisles) return;
 
         const from = event.detail.from;
         const to = event.detail.to;
 
-        // Build flat list matching the DOM structure (aisle header, then sections)
-        const flatList: Array<{
-            type: "aisle" | "section";
-            item: StoreAisle | StoreSection;
-        }> = [];
-        aisles.forEach((aisle: StoreAisle) => {
-            flatList.push({ type: "aisle", item: aisle });
-            const aisleSections = sections.filter((s: StoreSection) => s.aisleId === aisle.id);
-            aisleSections.forEach((section: StoreSection) => {
-                flatList.push({ type: "section", item: section });
-            });
+        // Build flat list of sections in display order
+        const flatSections: StoreSection[] = [];
+        aisles.forEach((aisle) => {
+            const aisleSections = sections
+                .filter((s) => s.aisleId === aisle.id)
+                .sort((a, b) => a.sortOrder - b.sortOrder);
+            flatSections.push(...aisleSections);
         });
 
-        // Get section-only list for index mapping
-        const sectionOnlyList = flatList.filter((item) => item.type === "section") as Array<{
-            type: "section";
-            item: StoreSection;
-        }>;
+        // Map DOM indices (which include aisle headers) to section-only indices
+        // For each aisle before the position, subtract 1
+        const mapDomIndexToSectionIndex = (domIndex: number): number => {
+            let sectionIndex = domIndex;
+            let elementsBeforeIndex = 0;
 
-        if (from >= sectionOnlyList.length || to >= sectionOnlyList.length) {
+            for (const aisle of aisles) {
+                const aisleHeaderPosition = elementsBeforeIndex;
+                if (domIndex <= aisleHeaderPosition) break;
+
+                sectionIndex--; // Account for aisle header
+                const aisleSectionCount = sections.filter((s) => s.aisleId === aisle.id).length;
+                elementsBeforeIndex += 1 + aisleSectionCount; // 1 header + sections
+            }
+
+            return sectionIndex;
+        };
+
+        const fromSectionIndex = mapDomIndexToSectionIndex(from);
+        const toSectionIndex = mapDomIndexToSectionIndex(to);
+
+        if (fromSectionIndex >= flatSections.length || toSectionIndex >= flatSections.length) {
             event.detail.complete();
             return;
         }
 
-        const movedSection: StoreSection = sectionOnlyList[from].item;
-        const sourceAisleId = movedSection.aisleId;
+        // Reorder the flat list
+        const reordered = [...flatSections];
+        const [movedSection] = reordered.splice(fromSectionIndex, 1);
+        reordered.splice(toSectionIndex, 0, movedSection);
 
-        // Find destination aisle by looking at flat list position
-        // Map "to" index (in section-only list) back to flat list
-        let sectionCount = 0;
-        let destAisleId = aisles[0].id; // Default to first aisle
+        // Determine destination aisle by finding which aisle this position falls into
+        let destAisleId = aisles[0].id;
+        let positionInAisle = toSectionIndex;
 
-        for (let i = 0; i < flatList.length; i++) {
-            if (flatList[i].type === "aisle") {
-                destAisleId = (flatList[i].item as StoreAisle).id;
-            } else if (flatList[i].type === "section") {
-                if (sectionCount === to) {
-                    break;
-                }
-                sectionCount++;
+        for (const aisle of aisles) {
+            const aisleSize = sections.filter((s) => s.aisleId === aisle.id).length;
+            if (positionInAisle < aisleSize) {
+                destAisleId = aisle.id;
+                break;
             }
+            positionInAisle -= aisleSize;
         }
+
+        const sourceAisleId = movedSection.aisleId;
 
         // Same aisle - simple reorder
         if (sourceAisleId === destAisleId) {
-            const aisleSections = sections.filter((s: StoreSection) => s.aisleId === sourceAisleId);
-            const reordered = [...aisleSections];
-            const sourceIndex = reordered.findIndex((s) => s.id === movedSection.id);
-            const [moved] = reordered.splice(sourceIndex, 1);
-
-            // Calculate destination index within this aisle
-            const destIndex = to > from ? to - 1 : to;
-            const destIndexInAisle = Math.min(destIndex, reordered.length);
-            reordered.splice(destIndexInAisle, 0, moved);
-
-            const updates = reordered.map((section, index) => ({
+            const aisleSections = reordered.filter((s) => s.aisleId === destAisleId);
+            const updates = aisleSections.map((section, index) => ({
                 id: section.id,
                 sortOrder: index,
             }));
 
             await reorderSections.mutateAsync({ updates, storeId });
         } else {
-            // Cross-aisle move
+            // Cross-aisle move - update source aisle sections and move section to dest
             const sourceSections = sections
-                .filter(
-                    (s: StoreSection) => s.aisleId === sourceAisleId && s.id !== movedSection.id
-                )
-                .map((s: StoreSection, index: number) => ({
+                .filter((s) => s.aisleId === sourceAisleId && s.id !== movedSection.id)
+                .sort((a, b) => a.sortOrder - b.sortOrder)
+                .map((s, index) => ({
                     id: s.id,
                     sortOrder: index,
                 }));
 
-            const destSections = sections.filter((s: StoreSection) => s.aisleId === destAisleId);
-
-            // Calculate position within destination aisle
-            const destAisleSectionList = sectionOnlyList.filter(
-                (item) => item.item.aisleId === destAisleId
-            );
-            const destSectionIndexInAisle = destAisleSectionList.findIndex(
-                (item) => sectionOnlyList.indexOf(item) >= to
-            );
-            const newSortOrder =
-                destSectionIndexInAisle === -1 ? destSections.length : destSectionIndexInAisle;
-
-            // Make room in destination
-            const updatedDestSections = destSections.map((s: StoreSection, index: number) => ({
-                id: s.id,
-                sortOrder: index >= newSortOrder ? index + 1 : index,
-            }));
+            const destSections = reordered
+                .filter((s) => s.aisleId === destAisleId && s.id !== movedSection.id)
+                .map((s, index) => ({
+                    id: s.id,
+                    sortOrder: index < positionInAisle ? index : index + 1,
+                }));
 
             await moveSection.mutateAsync({
                 sectionId: movedSection.id,
                 newAisleId: destAisleId,
-                newSortOrder,
+                newSortOrder: positionInAisle,
                 sourceSections,
-                destSections: updatedDestSections,
+                destSections,
                 storeId,
                 sectionName: movedSection.name,
             });
@@ -225,31 +190,18 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
 
             <IonList>
                 {mode === "aisles" ? (
-                    <IonReorderGroup disabled={false} onIonItemReorder={handleAisleReorder}>
+                    <IonReorderGroup disabled={false} onIonReorderEnd={handleAisleReorder}>
                         {aisles.map((aisle) => (
-                            <AisleItem
-                                key={aisle.id}
-                                aisle={aisle}
-                                sections={[] /* sections omitted intentionally */}
-                                onSectionReorder={handleSectionReorder}
-                                showReorderHandle={true}
-                                showSectionReorderHandles={false}
-                            />
+                            <AisleItem key={aisle.id} aisle={aisle} showReorderHandle={true} />
                         ))}
                     </IonReorderGroup>
                 ) : (
-                    <IonReorderGroup disabled={false} onIonItemReorder={handleFlatSectionReorder}>
+                    <IonReorderGroup disabled={false} onIonReorderEnd={handleFlatSectionReorder}>
                         {aisles.map((aisle) => {
                             const aisleSections = sections.filter((s) => s.aisleId === aisle.id);
                             return (
                                 <React.Fragment key={aisle.id}>
-                                    <AisleItem
-                                        aisle={aisle}
-                                        sections={[]}
-                                        onSectionReorder={handleSectionReorder}
-                                        showReorderHandle={false}
-                                        showSectionReorderHandles={false}
-                                    />
+                                    <AisleItem aisle={aisle} showReorderHandle={false} />
                                     {aisleSections.map((section) => (
                                         <SectionItem
                                             key={section.id}

@@ -1,10 +1,8 @@
-Reordering aisles doesn't work
-Clearing units doesn't save
 Test all workflows, reviewing the API calls
 More forgiving refresh token/whatever? Seems to log out a lot.
 Refresh button on list/stores/whatever
 Invitation code for making a new account
-Preload store aisles/sections/QUANTITIES
+Preload store aisles/sections
 For debugging, pick the right IP based on mobile v live-update
 edit account details: email, name etc.
 hard to select items at the bottom of pages/lists

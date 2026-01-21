@@ -1,11 +1,4 @@
-import {
-    IonButton,
-    IonDatetime,
-    IonInput,
-    IonItem,
-    IonLabel,
-    IonModal,
-} from "@ionic/react";
+import { IonButton, IonDatetime, IonInput, IonItem, IonLabel, IonModal } from "@ionic/react";
 import { useState } from "react";
 import { Controller } from "react-hook-form";
 import { formatShortDate } from "../../utils/dateUtils";
@@ -44,18 +37,10 @@ export const SnoozeDateSelector: React.FC = () => {
                             readonly
                             style={{ flex: 1 }}
                         />
-                        <IonButton
-                            size="small"
-                            fill="clear"
-                            onClick={() => setShowModal(true)}
-                        >
+                        <IonButton size="small" fill="clear" onClick={() => setShowModal(true)}>
                             Update
                         </IonButton>
-                        <IonButton
-                            size="small"
-                            fill="clear"
-                            onClick={clearSnooze}
-                        >
+                        <IonButton size="small" fill="clear" onClick={clearSnooze}>
                             Clear
                         </IonButton>
                     </div>
@@ -87,7 +72,9 @@ export const SnoozeDateSelector: React.FC = () => {
                             onIonChange={(e) => {
                                 const value = e.detail.value;
                                 if (typeof value === "string") {
-                                    field.onChange(value);
+                                    // Convert to proper ISO datetime format with timezone
+                                    const date = new Date(value);
+                                    field.onChange(date.toISOString());
                                     setShowModal(false);
                                 }
                             }}

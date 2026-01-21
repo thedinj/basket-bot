@@ -112,16 +112,16 @@ export function upsertShoppingListItem(params: {
                  isSample = ?, isUnsure = ?, isIdea = ?, snoozedUntil = ?, updatedById = ?, updatedAt = ?
              WHERE id = ?`
         ).run(
-            params.storeItemId ?? existing.storeItemId,
-            params.qty ?? existing.qty,
-            params.unitId ?? existing.unitId,
-            params.notes ?? existing.notes,
+            params.storeItemId,
+            params.qty,
+            params.unitId,
+            params.notes,
             boolToInt(isChecked),
             checkedAt,
             boolToInt(isSample),
             boolToInt(isUnsure),
             boolToInt(isIdea),
-            params.snoozedUntil ?? existing.snoozedUntil,
+            params.snoozedUntil,
             params.userId,
             now,
             params.id
