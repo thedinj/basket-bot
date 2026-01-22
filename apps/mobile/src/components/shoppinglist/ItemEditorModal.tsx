@@ -130,7 +130,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 storeItemId: null,
                 notes: data.notes || null,
                 isIdea: true,
-                snoozedUntil: snoozedUntil,
+                snoozedUntil,
             });
         } else {
             // Regular item - need store item
@@ -165,7 +165,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 qty: data.qty ?? null,
                 unitId: data.unitId || null,
                 notes: data.notes || null,
-                snoozedUntil: snoozedUntil,
+                snoozedUntil,
             });
         }
         closeItemModal();

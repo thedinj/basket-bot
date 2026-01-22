@@ -323,14 +323,14 @@ export const shoppingListItemInputSchema = z
         isSample: shoppingListItemBaseFields.isSample.optional().default(null),
         isUnsure: shoppingListItemBaseFields.isUnsure.optional().default(null),
         snoozedUntil: shoppingListItemBaseFields.snoozedUntil.optional(),
-        // name is only used for ideas (when storeItemId is null)
-        name: z.string().optional(),
     })
     .refine(
         (data) => {
-            // If it's an idea (storeItemId is null/undefined), name must be provided
+            // If it's an idea (storeItemId is null/undefined), notes must be provided
             if ((data.storeItemId === null || data.storeItemId === undefined) && data.isIdea) {
-                return data.name !== undefined && data.name.trim().length > 0;
+                return (
+                    data.notes !== undefined && data.notes !== null && data.notes.trim().length > 0
+                );
             }
             // If it's not an idea, storeItemId must be provided
             if (!data.isIdea) {
@@ -339,7 +339,7 @@ export const shoppingListItemInputSchema = z
             return true;
         },
         {
-            message: "Ideas require 'name' field; regular items require 'storeItemId'",
+            message: "Ideas require 'notes' field; regular items require 'storeItemId'",
         }
     );
 
@@ -355,7 +355,6 @@ export type ShoppingListItemInput = {
     isSample?: boolean | null;
     isUnsure?: boolean | null;
     snoozedUntil?: string | null;
-    name?: string; // Only for ideas
 };
 
 // Request schemas derive from base fields

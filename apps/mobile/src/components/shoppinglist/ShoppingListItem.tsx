@@ -17,7 +17,7 @@ import { closeOutline, swapHorizontalOutline } from "ionicons/icons";
 import { useState } from "react";
 import { useMoveItemToStore, useStores, useToggleItemChecked } from "../../db/hooks";
 import { useToast } from "../../hooks/useToast";
-import { formatShortDate } from "../../utils/dateUtils";
+import { formatSnoozeDate, isCurrentlySnoozed } from "../../utils/dateUtils";
 import { GenericStoreSelector } from "../shared/GenericStoreSelector";
 import { useShoppingListContext } from "./useShoppingListContext";
 
@@ -101,9 +101,9 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
     const titleToUse = item.isIdea ? item.notes : item.itemName;
     const notesToUse = item.isIdea ? "" : item.notes;
 
-    // Check if item is snoozed
-    const isSnoozed = item.snoozedUntil && new Date(item.snoozedUntil) > new Date();
-    const formattedSnoozeDate = isSnoozed ? formatShortDate(item.snoozedUntil!) : null;
+    // Check if item is snoozed (date-only comparison)
+    const isSnoozed = isCurrentlySnoozed(item.snoozedUntil);
+    const formattedSnoozeDate = isSnoozed ? formatSnoozeDate(item.snoozedUntil!) : null;
 
     return (
         <IonItem style={itemStyle} button={false}>

@@ -27,6 +27,7 @@ import { useClearCheckedItems, useShoppingListItems } from "../db/hooks";
 import { useOverlayAnimation } from "../hooks/useOverlayAnimation";
 import { useShowSnoozedItems } from "../hooks/useShowSnoozedItems";
 import { LLMFabButton } from "../llm/shared";
+import { isCurrentlySnoozed } from "../utils/dateUtils";
 
 const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     const { openCreateModal } = useShoppingListContext();
@@ -48,24 +49,15 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
 
     const snoozedItemCount = useMemo(() => {
         if (!items) return 0;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return items.filter((item) => {
-            if (!item.snoozedUntil) return false;
-            const snoozeDate = new Date(item.snoozedUntil);
-            return snoozeDate >= today;
-        }).length;
+        return items.filter((item) => isCurrentlySnoozed(item.snoozedUntil)).length;
     }, [items]);
 
     const activeItems = useMemo(() => {
         if (showSnoozed) return items;
 
         return items?.filter((item) => {
-            if (!item.snoozedUntil) return true;
-            const snoozeDate = new Date(item.snoozedUntil);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            return snoozeDate < today;
+            // Show items that are not snoozed or whose snooze has expired
+            return !isCurrentlySnoozed(item.snoozedUntil);
         });
     }, [items, showSnoozed]);
 

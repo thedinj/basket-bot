@@ -1,7 +1,7 @@
 import { IonButton, IonDatetime, IonInput, IonItem, IonLabel, IonModal } from "@ionic/react";
 import { useState } from "react";
 import { Controller } from "react-hook-form";
-import { formatShortDate } from "../../utils/dateUtils";
+import { formatSnoozeDate, formatSnoozeDateForStorage } from "../../utils/dateUtils";
 import { useItemEditorContext } from "./useItemEditorContext";
 
 export const SnoozeDateSelector: React.FC = () => {
@@ -13,7 +13,7 @@ export const SnoozeDateSelector: React.FC = () => {
     const tomorrow = new Date();
     tomorrow.setHours(0, 0, 0, 0); // Set to start of today
     tomorrow.setDate(tomorrow.getDate() + 1); // Move to start of tomorrow
-    const minDate = tomorrow.toISOString().split("T")[0];
+    const minDate = undefined; // tomorrow.toISOString().split("T")[0];
 
     const clearSnooze = () => {
         setValue("snoozedUntil", null);
@@ -33,7 +33,7 @@ export const SnoozeDateSelector: React.FC = () => {
                         }}
                     >
                         <IonInput
-                            value={formatShortDate(snoozedUntil)}
+                            value={formatSnoozeDate(snoozedUntil)}
                             readonly
                             style={{ flex: 1 }}
                         />
@@ -72,9 +72,8 @@ export const SnoozeDateSelector: React.FC = () => {
                             onIonChange={(e) => {
                                 const value = e.detail.value;
                                 if (typeof value === "string") {
-                                    // Convert to proper ISO datetime format with timezone
-                                    const date = new Date(value);
-                                    field.onChange(date.toISOString());
+                                    // Normalize to midnight UTC for consistent date-only storage
+                                    field.onChange(formatSnoozeDateForStorage(value));
                                     setShowModal(false);
                                 }
                             }}
