@@ -1,16 +1,8 @@
+import type { ItemFormData } from "@basket-bot/core";
 import React, { PropsWithChildren, ReactNode } from "react";
-import {
-    Control,
-    FieldErrors,
-    UseFormSetValue,
-    UseFormWatch,
-} from "react-hook-form";
+import { Control, FieldErrors, UseFormSetValue, UseFormWatch } from "react-hook-form";
 import { useStoreAisles, useStoreSections } from "../../db/hooks";
-import {
-    ItemEditorContext,
-    ItemEditorContextType,
-} from "./itemEditorContextDef";
-import type { ItemFormData } from "./itemEditorSchema";
+import { ItemEditorContext, ItemEditorContextType } from "./itemEditorContextDef";
 
 interface ItemEditorProviderProps {
     storeId: string;
@@ -21,9 +13,14 @@ interface ItemEditorProviderProps {
     children: ReactNode;
 }
 
-export const ItemEditorProvider: React.FC<
-    PropsWithChildren<ItemEditorProviderProps>
-> = ({ storeId, control, errors, setValue, watch, children }) => {
+export const ItemEditorProvider: React.FC<PropsWithChildren<ItemEditorProviderProps>> = ({
+    storeId,
+    control,
+    errors,
+    setValue,
+    watch,
+    children,
+}) => {
     const { data: aisles } = useStoreAisles(storeId);
     const { data: sections } = useStoreSections(storeId);
 
@@ -37,9 +34,5 @@ export const ItemEditorProvider: React.FC<
         sections,
     };
 
-    return (
-        <ItemEditorContext.Provider value={value}>
-            {children}
-        </ItemEditorContext.Provider>
-    );
+    return <ItemEditorContext.Provider value={value}>{children}</ItemEditorContext.Provider>;
 };

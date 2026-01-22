@@ -73,9 +73,9 @@ Failure to keep these in sync will cause runtime validation errors, type mismatc
 
 ### Shared types and validation
 
-- **All domain entities and API DTOs must have Zod schemas in `packages/core/src/schemas`.**
+- **All domain entities, API DTOs, and ALL Zod schemas must live in `packages/core/src/schemas`.**
 - Export inferred types from those schemas and reuse them in backend + mobile.
-- Do not duplicate request/response types in apps.
+- Do not duplicate request/response types or schemas in apps. Never define a Zod schema outside of core.
 
 ### Domain vs IO separation
 
@@ -168,6 +168,7 @@ For admin (Mantine):
     - Custom solution is trivially simple (e.g., < 50 lines)
 
 ### React component conventions
+
 ### Hooks returning complex objects
 
 **When writing custom hooks that return a complex object (such as multiple values or functions), always return a memoized object using `useMemo`.**
@@ -175,11 +176,14 @@ For admin (Mantine):
 This prevents unnecessary re-renders and ensures referential stability for consumers. Example:
 
 ```typescript
-const value = useMemo(() => ({
-    foo,
-    bar,
-    baz,
-}), [foo, bar, baz]);
+const value = useMemo(
+    () => ({
+        foo,
+        bar,
+        baz,
+    }),
+    [foo, bar, baz]
+);
 return value;
 ```
 
@@ -303,10 +307,12 @@ Do not hardcode credentials. Fail clearly if env vars are missing when seeding.
 **Boolean storage convention:**
 
 SQLite doesn't have a native boolean type. We store booleans as:
+
 - `1` for `true`
 - `NULL` for `false`
 
 Repositories must convert between TypeScript booleans and SQLite integers/nulls:
+
 - Use `boolToInt()` helper when writing: `true` → `1`, `false`/`null` → `NULL`
 - Use `intToBool()` helper when reading: `1` → `true`, `NULL`/`0` → `false`
 

@@ -118,6 +118,16 @@ export const createStoreInvitationRequestSchema = z.object({
 
 export type CreateStoreInvitationRequest = z.infer<typeof createStoreInvitationRequestSchema>;
 
+// ========== StoreAisle / StoreSection reordering ==========
+const reorderItemsSchema = z.object({
+    updates: z.array(
+        z.object({
+            id: z.string().uuid(),
+            sortOrder: z.number().int().min(0),
+        })
+    ),
+});
+
 // ========== StoreAisle ==========
 export const storeAisleSchema = z.object({
     id: z.string().uuid(),
@@ -142,15 +152,7 @@ export const updateStoreAisleRequestSchema = z.object({
 
 export type UpdateStoreAisleRequest = z.infer<typeof updateStoreAisleRequestSchema>;
 
-export const reorderStoreAislesRequestSchema = z.object({
-    updates: z.array(
-        z.object({
-            id: z.string().uuid(),
-            sortOrder: z.number().int().min(0),
-        })
-    ),
-});
-
+export const reorderStoreAislesRequestSchema = reorderItemsSchema;
 export type ReorderStoreAislesRequest = z.infer<typeof reorderStoreAislesRequestSchema>;
 
 // ========== StoreSection ==========
@@ -180,15 +182,7 @@ export const updateStoreSectionRequestSchema = z.object({
 
 export type UpdateStoreSectionRequest = z.infer<typeof updateStoreSectionRequestSchema>;
 
-export const reorderStoreSectionsRequestSchema = z.object({
-    updates: z.array(
-        z.object({
-            id: z.string().uuid(),
-            sortOrder: z.number().int().min(0),
-        })
-    ),
-});
-
+export const reorderStoreSectionsRequestSchema = reorderItemsSchema;
 export type ReorderStoreSectionsRequest = z.infer<typeof reorderStoreSectionsRequestSchema>;
 
 // ========== StoreItem ==========
@@ -207,7 +201,6 @@ export const storeItemSchema = z.object({
 });
 
 export type StoreItem = z.infer<typeof storeItemSchema>;
-
 export const storeItemWithDetailsSchema = storeItemSchema.extend({
     sectionName: z.string().nullable(),
     sectionSortOrder: z.number().int().nullable(),
@@ -216,23 +209,6 @@ export const storeItemWithDetailsSchema = storeItemSchema.extend({
 });
 
 export type StoreItemWithDetails = z.infer<typeof storeItemWithDetailsSchema>;
-
-export const createStoreItemRequestSchema = z.object({
-    storeId: z.string().uuid(),
-    name: z.string().min(1).max(200),
-    aisleId: z.string().uuid().optional().nullable(),
-    sectionId: z.string().uuid().optional().nullable(),
-});
-
-export type CreateStoreItemRequest = z.infer<typeof createStoreItemRequestSchema>;
-
-export const updateStoreItemRequestSchema = z.object({
-    name: z.string().min(1).max(200),
-    aisleId: z.string().uuid().optional().nullable(),
-    sectionId: z.string().uuid().optional().nullable(),
-});
-
-export type UpdateStoreItemRequest = z.infer<typeof updateStoreItemRequestSchema>;
 
 export const searchStoreItemsRequestSchema = z.object({
     storeId: z.string().uuid(),
@@ -245,8 +221,8 @@ export type SearchStoreItemsRequest = z.infer<typeof searchStoreItemsRequestSche
 // ========== ShoppingListItem ==========
 // Shopping list item is a superset of store item with additional shopping-specific fields
 
-// Base shopping list item fields (used for composition)
-const shoppingListItemBaseFields = {
+// Shopping context fields that extend the base catalog item
+const shoppingContextFields = {
     storeItemId: z.string().uuid().nullable(),
     qty: z.number().nullable(),
     unitId: z.string().nullable(),
@@ -262,13 +238,13 @@ const shoppingListItemBaseFields = {
 export const shoppingListItemSchema = z.object({
     id: z.string().uuid(),
     storeId: z.string().uuid(),
-    ...shoppingListItemBaseFields,
+    ...shoppingContextFields,
     ...auditFields,
 });
 
 export type ShoppingListItem = z.infer<typeof shoppingListItemSchema>;
 
-// Shopping list item with details extends storeItemWithDetails structure
+// Shopping list item with details (includes store item and location details)
 export const shoppingListItemWithDetailsSchema = shoppingListItemSchema.extend({
     itemName: z.string().nullable(),
     unitAbbreviation: z.string().nullable(),
@@ -282,12 +258,125 @@ export const shoppingListItemWithDetailsSchema = shoppingListItemSchema.extend({
 
 export type ShoppingListItemWithDetails = z.infer<typeof shoppingListItemWithDetailsSchema>;
 
-// ========== Client-Side Input Types (for mobile database operations) ==========
-// These types exclude server-controlled fields: createdById, updatedById, createdAt, updatedAt
-// The mobile client should never send these values; the backend calculates them based on JWT and server time
+// ========== Client-Side Input Schemas ==========
+// These schemas are used by the mobile app for local database operations
+// Server-controlled fields (createdById, updatedById, createdAt, updatedAt) are excluded
 
 const serverControlledFields = ["createdById", "updatedById", "createdAt", "updatedAt"] as const;
 
+// ========== Store Item Input Schemas ==========
+
+// Base schema (no transforms/refines) - used for API request schemas
+const storeItemInputBaseSchema = z.object({
+    id: z.string().uuid().optional(),
+    storeId: z.string().uuid(),
+    name: z.string().optional(),
+    aisleId: z.string().uuid().nullable().optional(),
+    sectionId: z.string().uuid().nullable().optional(),
+});
+
+// Form schema with validation and transforms
+export const storeItemInputSchema = z
+    .object({
+        id: z.string().uuid().optional(),
+        storeId: z.string().uuid(),
+        name: z
+            .string()
+            .transform((val) => val.trim())
+            .optional(),
+        aisleId: z.string().uuid().nullable().optional(),
+        sectionId: z.string().uuid().nullable().optional(),
+    })
+    .refine((data) => !data.name || data.name.trim().length > 0, {
+        message: "Name cannot be empty.",
+        path: ["name"],
+    });
+
+export type StoreItemInput = z.infer<typeof storeItemInputSchema>;
+
+// ========== Shopping List Item Input Schemas ==========
+
+// Base schema (no transforms/refines) - used for API request schemas
+const shoppingListItemInputBaseSchema = z.object({
+    id: z.string().uuid().optional(),
+    storeId: z.string().uuid(),
+    name: z.string().optional(),
+    aisleId: z.string().uuid().nullable().optional(),
+    sectionId: z.string().uuid().nullable().optional(),
+    storeItemId: z.string().uuid().nullable().optional(),
+    qty: z.number().min(0.01).nullable().optional(),
+    unitId: z.string().nullable().optional(),
+    isChecked: z.boolean().optional(),
+    isIdea: z.boolean().nullable().optional(),
+    isSample: z.boolean().nullable().optional(),
+    isUnsure: z.boolean().nullable().optional(),
+    snoozedUntil: z.string().datetime().nullable().optional(),
+});
+
+// Form schema with validation and transforms
+export const shoppingListItemInputSchema = z
+    .object({
+        id: z.string().uuid().optional(),
+        storeId: z.string().uuid(),
+        name: z
+            .string()
+            .transform((val) => val.trim())
+            .optional(),
+        aisleId: z.string().uuid().nullable().optional(),
+        sectionId: z.string().uuid().nullable().optional(),
+        storeItemId: z.string().uuid().nullable().optional(),
+        qty: z.number().min(0.01).nullable().optional(),
+        unitId: z.string().nullable().optional(),
+        notes: z.string().nullable().optional(),
+        isChecked: z.boolean().optional(),
+        isIdea: z.boolean().nullable().optional(),
+        isSample: z.boolean().nullable().optional(),
+        isUnsure: z.boolean().nullable().optional(),
+        snoozedUntil: z.string().datetime().nullable().optional(),
+    })
+    .superRefine((data, ctx) => {
+        if (data.isIdea) {
+            // Ideas require notes
+            if (!data.notes || data.notes.trim().length === 0) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Note is required for an Idea.",
+                    path: ["notes"],
+                });
+            }
+        } else {
+            // Regular items require either name OR storeItemId
+            const hasName = data.name && data.name.trim().length > 0;
+            const hasStoreItemId = data.storeItemId;
+
+            if (!hasName && !hasStoreItemId) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Name or store item reference is required.",
+                    path: ["name"],
+                });
+            }
+        }
+
+        // Quantity validation
+        if (data.qty !== null && data.qty !== undefined) {
+            if (data.qty <= 0) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Quantity must be greater than 0.",
+                    path: ["qty"],
+                });
+            }
+        }
+    });
+
+export type ShoppingListItemInput = z.infer<typeof shoppingListItemInputSchema>;
+
+// Form data type aliases (for UI components)
+export type ItemFormData = ShoppingListItemInput;
+export type StoreItemFormData = StoreItemInput;
+
+// Legacy type exports (for backward compatibility)
 export type StoreInput = Omit<Store, "id" | (typeof serverControlledFields)[number]> & {
     id?: string;
 };
@@ -303,81 +392,30 @@ export type StoreSectionInput = Omit<
     id?: string;
 };
 
-export type StoreItemInput = Omit<
-    StoreItem,
-    "id" | (typeof serverControlledFields)[number] | "nameNorm" | "usageCount" | "lastUsedAt"
-> & {
-    id?: string;
-};
+// ========== Request Schemas (for API endpoints) ==========
+// Request schemas use base schemas without refinements to allow omit/partial operations
 
-export const shoppingListItemInputSchema = z
-    .object({
-        id: z.string().uuid().optional(),
-        storeId: z.string().uuid(),
-        storeItemId: shoppingListItemBaseFields.storeItemId.optional(),
-        qty: shoppingListItemBaseFields.qty.optional(),
-        unitId: shoppingListItemBaseFields.unitId.optional(),
-        notes: shoppingListItemBaseFields.notes.optional(),
-        isChecked: shoppingListItemBaseFields.isChecked.optional().default(false),
-        isIdea: shoppingListItemBaseFields.isIdea.optional().default(false),
-        isSample: shoppingListItemBaseFields.isSample.optional().default(null),
-        isUnsure: shoppingListItemBaseFields.isUnsure.optional().default(null),
-        snoozedUntil: shoppingListItemBaseFields.snoozedUntil.optional(),
-    })
-    .refine(
-        (data) => {
-            // If it's an idea (storeItemId is null/undefined), notes must be provided
-            if ((data.storeItemId === null || data.storeItemId === undefined) && data.isIdea) {
-                return (
-                    data.notes !== undefined && data.notes !== null && data.notes.trim().length > 0
-                );
-            }
-            // If it's not an idea, storeItemId must be provided
-            if (!data.isIdea) {
-                return data.storeItemId !== null && data.storeItemId !== undefined;
-            }
-            return true;
-        },
-        {
-            message: "Ideas require 'notes' field; regular items require 'storeItemId'",
-        }
-    );
+// Store Item requests
+export const createStoreItemRequestSchema = storeItemInputBaseSchema.omit({ id: true });
 
-export type ShoppingListItemInput = {
-    id?: string;
-    storeId: string;
-    storeItemId?: string | null;
-    qty?: number | null;
-    unitId?: string | null;
-    notes?: string | null;
-    isChecked?: boolean;
-    isIdea?: boolean;
-    isSample?: boolean | null;
-    isUnsure?: boolean | null;
-    snoozedUntil?: string | null;
-};
+export type CreateStoreItemRequest = z.infer<typeof createStoreItemRequestSchema>;
 
-// Request schemas derive from base fields
-export const createShoppingListItemRequestSchema = z.object({
-    storeId: z.string().uuid(),
-    storeItemId: shoppingListItemBaseFields.storeItemId.optional(),
-    qty: shoppingListItemBaseFields.qty.optional(),
-    unitId: shoppingListItemBaseFields.unitId.optional(),
-    notes: z.string().max(500).nullable().optional(),
-    isIdea: shoppingListItemBaseFields.isIdea.optional().default(false),
-    snoozedUntil: shoppingListItemBaseFields.snoozedUntil.optional(),
+export const updateStoreItemRequestSchema = storeItemInputBaseSchema
+    .partial()
+    .omit({ id: true, storeId: true });
+
+export type UpdateStoreItemRequest = z.infer<typeof updateStoreItemRequestSchema>;
+
+// Shopping List Item requests
+export const createShoppingListItemRequestSchema = shoppingListItemInputBaseSchema.omit({
+    id: true,
 });
 
 export type CreateShoppingListItemRequest = z.infer<typeof createShoppingListItemRequestSchema>;
 
-export const updateShoppingListItemRequestSchema = z.object({
-    storeItemId: shoppingListItemBaseFields.storeItemId.optional(),
-    qty: shoppingListItemBaseFields.qty.optional(),
-    unitId: shoppingListItemBaseFields.unitId.optional(),
-    notes: z.string().max(500).nullable().optional(),
-    isIdea: shoppingListItemBaseFields.isIdea.optional(),
-    snoozedUntil: shoppingListItemBaseFields.snoozedUntil.optional(),
-});
+export const updateShoppingListItemRequestSchema = shoppingListItemInputBaseSchema
+    .partial()
+    .omit({ id: true, storeId: true });
 
 export type UpdateShoppingListItemRequest = z.infer<typeof updateShoppingListItemRequestSchema>;
 

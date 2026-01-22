@@ -1,11 +1,6 @@
+import type { StoreItemFormData } from "@basket-bot/core";
 import { createContext } from "react";
-import {
-    Control,
-    FieldErrors,
-    UseFormSetValue,
-    UseFormWatch,
-} from "react-hook-form";
-import type { StoreItemFormData } from "./storeItemEditorSchema";
+import { Control, FieldErrors, UseFormSetValue, UseFormWatch } from "react-hook-form";
 
 export interface StoreItemEditorContextType {
     // Form control
@@ -18,6 +13,6 @@ export interface StoreItemEditorContextType {
     storeId: string;
 }
 
-export const StoreItemEditorContext = createContext<
-    StoreItemEditorContextType | undefined
->(undefined);
+export const StoreItemEditorContext = createContext<StoreItemEditorContextType | undefined>(
+    undefined
+);

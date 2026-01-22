@@ -1,3 +1,4 @@
+import { storeItemInputSchema, type StoreItemFormData } from "@basket-bot/core";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonAlert,
@@ -19,7 +20,6 @@ import { useCreateItem, useDeleteItem, useUpdateItem } from "../../db/hooks";
 import { StoreItem } from "../../db/types";
 import { ItemNameAndLocationFields } from "../shared/ItemNameAndLocationFields";
 import { StoreItemEditorProvider } from "./StoreItemEditorProvider";
-import { storeItemEditorSchema, StoreItemFormData } from "./storeItemEditorSchema";
 
 interface StoreItemEditorModalProps {
     isOpen: boolean;
@@ -40,9 +40,10 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 
     const form = useForm<StoreItemFormData>({
-        resolver: zodResolver(storeItemEditorSchema),
+        resolver: zodResolver(storeItemInputSchema),
         mode: "onChange",
         defaultValues: {
+            storeId,
             name: "",
             aisleId: null,
             sectionId: null,
@@ -61,26 +62,28 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
         if (isOpen) {
             if (editingItem) {
                 reset({
+                    storeId,
                     name: editingItem.name,
                     aisleId: editingItem.aisleId,
                     sectionId: editingItem.sectionId,
                 });
             } else {
                 reset({
+                    storeId,
                     name: "",
                     aisleId: null,
                     sectionId: null,
                 });
             }
         }
-    }, [isOpen, editingItem, reset]);
+    }, [isOpen, editingItem, reset, storeId]);
 
     const onSubmit = async (data: StoreItemFormData) => {
         try {
             if (editingItem) {
                 await updateItem.mutateAsync({
                     id: editingItem.id,
-                    name: data.name,
+                    name: data.name || "",
                     aisleId: data.aisleId ?? null,
                     sectionId: data.sectionId ?? null,
                     storeId: storeId,
@@ -88,7 +91,7 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
             } else {
                 await createItem.mutateAsync({
                     storeId,
-                    name: data.name,
+                    name: data.name || "",
                     aisleId: data.aisleId ?? null,
                     sectionId: data.sectionId ?? null,
                 });

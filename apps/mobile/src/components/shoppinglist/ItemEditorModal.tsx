@@ -1,4 +1,5 @@
-import type { ShoppingListItem, ShoppingListItemInput } from "@basket-bot/core";
+import type { ItemFormData, ShoppingListItem } from "@basket-bot/core";
+import { shoppingListItemInputSchema } from "@basket-bot/core";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonAlert,
@@ -24,7 +25,7 @@ import {
     useUpsertShoppingListItem,
 } from "../../db/hooks";
 import { ItemEditorProvider } from "./ItemEditorContext";
-import { ItemFormData, itemFormSchema } from "./itemEditorSchema";
+
 import { LocationSelectors } from "./LocationSelectors";
 import { NameAutocomplete } from "./NameAutocomplete";
 import { NotesInput } from "./NotesInput";
@@ -53,15 +54,16 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
         watch,
         formState: { errors, isValid },
     } = useForm<ItemFormData>({
-        resolver: zodResolver(itemFormSchema),
+        resolver: zodResolver(shoppingListItemInputSchema),
         mode: "onChange",
         defaultValues: {
+            storeId: storeId,
             name: "",
             qty: null,
             notes: null,
             aisleId: null,
             sectionId: null,
-            isIdea: null,
+            isIdea: false,
             snoozedUntil: null,
         },
     });
@@ -75,6 +77,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
     useEffect(() => {
         if (isItemModalOpen && editingItem) {
             reset({
+                storeId,
                 name: editingItem.itemName || "",
                 qty: editingItem.qty,
                 unitId: editingItem.unitId,
@@ -87,6 +90,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
             });
         } else if (isItemModalOpen) {
             reset({
+                storeId,
                 name: "",
                 qty: null,
                 unitId: null,
@@ -97,7 +101,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 snoozedUntil: null,
             });
         }
-    }, [isItemModalOpen, editingItem, reset]);
+    }, [isItemModalOpen, editingItem, reset, storeId]);
 
     // Handle mode toggle - transfer notes between modes
     const handleModeToggle = (newMode: boolean) => {
@@ -126,7 +130,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
             // Idea - no store item needed
             await upsertItem.mutateAsync({
                 id: editingItem?.id,
-                storeId: storeId,
+                storeId,
                 storeItemId: null,
                 notes: data.notes || null,
                 isIdea: true,
@@ -140,7 +144,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 // Update existing store item
                 await updateItem.mutateAsync({
                     id: editingItem.storeItemId!,
-                    name: data.name,
+                    name: data.name || "",
                     aisleId: data.aisleId || null,
                     sectionId: data.sectionId || null,
                     storeId,
@@ -150,7 +154,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 // Get or create store item
                 const storeItem = await getOrCreateStoreItem.mutateAsync({
                     storeId,
-                    name: data.name,
+                    name: data.name || "",
                     aisleId: data.aisleId || null,
                     sectionId: data.sectionId || null,
                 });
@@ -318,7 +322,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
 
 const SaveButton: React.FC<{
     isValid: boolean;
-    upsertItem: UseMutationResult<ShoppingListItem, Error, ShoppingListItemInput>;
+    upsertItem: UseMutationResult<ShoppingListItem, Error, ItemFormData>;
     editingItem: ShoppingListItem | null;
     isIdea: boolean | undefined;
 }> = ({ isValid, upsertItem, editingItem, isIdea }) => {

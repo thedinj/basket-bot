@@ -1,11 +1,6 @@
+import type { ItemFormData, StoreAisle, StoreSection } from "@basket-bot/core";
 import { createContext } from "react";
-import {
-    Control,
-    FieldErrors,
-    UseFormSetValue,
-    UseFormWatch,
-} from "react-hook-form";
-import type { Aisle, ItemFormData, Section } from "./itemEditorSchema";
+import { Control, FieldErrors, UseFormSetValue, UseFormWatch } from "react-hook-form";
 
 export interface ItemEditorContextType {
     // Form control
@@ -16,10 +11,8 @@ export interface ItemEditorContextType {
 
     // Store data
     storeId: string;
-    aisles: Aisle[] | undefined;
-    sections: Section[] | undefined;
+    aisles: StoreAisle[] | undefined;
+    sections: StoreSection[] | undefined;
 }
 
-export const ItemEditorContext = createContext<
-    ItemEditorContextType | undefined
->(undefined);
+export const ItemEditorContext = createContext<ItemEditorContextType | undefined>(undefined);

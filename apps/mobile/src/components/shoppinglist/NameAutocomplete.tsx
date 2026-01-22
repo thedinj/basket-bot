@@ -1,9 +1,9 @@
+import type { StoreItem } from "@basket-bot/core";
 import { IonInput, IonItem, IonLabel, IonList, IonText } from "@ionic/react";
 import { useCallback, useEffect, useState } from "react";
 import { Controller } from "react-hook-form";
 import { useDebounce } from "use-debounce";
 import { useStoreItemAutocomplete } from "../../db/hooks";
-import type { AutocompleteItem } from "./itemEditorSchema";
 import { useItemEditorContext } from "./useItemEditorContext";
 
 export const NameAutocomplete: React.FC = () => {
@@ -32,7 +32,7 @@ export const NameAutocomplete: React.FC = () => {
     );
 
     const handleAutocompleteSelect = useCallback(
-        (item: AutocompleteItem) => {
+        (item: StoreItem) => {
             setValue("name", item.name, { shouldValidate: true });
             setValue("sectionId", item.sectionId, { shouldValidate: true });
 

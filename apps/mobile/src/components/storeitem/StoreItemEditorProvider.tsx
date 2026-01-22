@@ -1,7 +1,7 @@
+import type { StoreItemFormData } from "@basket-bot/core";
 import React, { ReactNode } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { StoreItemEditorContext } from "./StoreItemEditorContext";
-import type { StoreItemFormData } from "./storeItemEditorSchema";
 
 interface StoreItemEditorProviderProps {
     form: UseFormReturn<StoreItemFormData>;
@@ -9,9 +9,11 @@ interface StoreItemEditorProviderProps {
     children: ReactNode;
 }
 
-export const StoreItemEditorProvider: React.FC<
-    StoreItemEditorProviderProps
-> = ({ form, storeId, children }) => {
+export const StoreItemEditorProvider: React.FC<StoreItemEditorProviderProps> = ({
+    form,
+    storeId,
+    children,
+}) => {
     const { control, formState, setValue, watch } = form;
 
     return (
