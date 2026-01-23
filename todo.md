@@ -1,3 +1,4 @@
+If I add an existing store item to the shopping list but move it to another aisle/section, the new aisle/section is disregarded.
 Preload store aisles/sections, and cache them much longer. Add a Refresh button.
 Test all workflows, reviewing the API calls
 More forgiving refresh token/whatever? Seems to log out a lot.

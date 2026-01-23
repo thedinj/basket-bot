@@ -1,6 +1,6 @@
 import type { LoginUser } from "@basket-bot/core";
 import React, { useEffect, useState, type PropsWithChildren } from "react";
-import { apiClient } from "../lib/api/client";
+import { apiClient, ApiError } from "../lib/api/client";
 import { KEYS, secureStorage } from "../utils/secureStorage";
 import { AuthContext, type AuthContextValue } from "./AuthContext";
 import {
@@ -65,21 +65,33 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
     /**
      * Handle user fetch errors (invalid token)
+     * Only clear tokens if the error has tokenStatus=invalid
+     * (which means refresh token is also invalid/expired)
      */
     useEffect(() => {
         if (userError) {
             console.error("Failed to verify stored tokens:", userError);
-            const clearInvalidTokens = async () => {
-                await Promise.all([
-                    secureStorage.remove(KEYS.ACCESS_TOKEN),
-                    secureStorage.remove(KEYS.REFRESH_TOKEN),
-                ]);
-                apiClient.setAccessToken(null);
-                apiClient.setRefreshToken(null);
-                setHasTokens(false);
+
+            // Check if this is an ApiError with invalid token status
+            const shouldClearTokens =
+                userError instanceof ApiError && userError.tokenStatus === "invalid";
+
+            if (shouldClearTokens) {
+                const clearInvalidTokens = async () => {
+                    await Promise.all([
+                        secureStorage.remove(KEYS.ACCESS_TOKEN),
+                        secureStorage.remove(KEYS.REFRESH_TOKEN),
+                    ]);
+                    apiClient.setAccessToken(null);
+                    apiClient.setRefreshToken(null);
+                    setHasTokens(false);
+                    setIsInitializing(false);
+                };
+                clearInvalidTokens();
+            } else {
+                // For other errors, just finish initializing
                 setIsInitializing(false);
-            };
-            clearInvalidTokens();
+            }
         }
     }, [userError]);
 

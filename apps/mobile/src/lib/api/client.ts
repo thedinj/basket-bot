@@ -3,6 +3,20 @@ const API_BASE_URL =
         (import.meta as ImportMeta & { env: Record<string, string> }).env.VITE_API_URL) ||
     "http://localhost:3000";
 
+/**
+ * Custom error class that includes response metadata like token status
+ */
+export class ApiError extends Error {
+    constructor(
+        message: string,
+        public code?: string,
+        public tokenStatus?: string | null
+    ) {
+        super(message);
+        this.name = "ApiError";
+    }
+}
+
 export class ApiClient {
     private accessToken: string | null = null;
     private refreshToken: string | null = null;
@@ -41,7 +55,20 @@ export class ApiClient {
                 });
 
                 if (!response.ok) {
-                    throw new Error("Refresh token expired or invalid");
+                    const tokenStatus = response.headers.get("X-Token-Status");
+                    if (tokenStatus === "invalid") {
+                        // Refresh token is invalid/expired - clear it
+                        this.refreshToken = null;
+                    }
+                    const errorData = await response.json().catch(() => ({
+                        code: "REFRESH_FAILED",
+                        message: "Refresh token expired or invalid",
+                    }));
+                    throw new ApiError(
+                        errorData.message || "Refresh token expired or invalid",
+                        errorData.code,
+                        tokenStatus
+                    );
                 }
 
                 const data = await response.json();
@@ -74,29 +101,50 @@ export class ApiClient {
             headers,
         });
 
-        // If 401 and we have a refresh token, try to refresh and retry once
+        // If 401 with invalid token header, access token is definitely invalid - clear it immediately
         const requestHeaders = options.headers as Record<string, string> | undefined;
+        const tokenStatus = response.headers.get("X-Token-Status");
+
         if (
             response.status === 401 &&
-            this.refreshToken &&
+            tokenStatus === "invalid" &&
             !requestHeaders?.["X-Retry-After-Refresh"]
         ) {
-            try {
-                await this.refreshAccessToken();
+            // Clear the invalid access token immediately
+            this.accessToken = null;
 
-                // Retry the original request with new token
-                headers["Authorization"] = `Bearer ${this.accessToken}`;
-                headers["X-Retry-After-Refresh"] = "true";
+            // Try to refresh if we have a refresh token
+            if (this.refreshToken) {
+                try {
+                    const newAccessToken = await this.refreshAccessToken();
 
-                response = await fetch(`${API_BASE_URL}${endpoint}`, {
-                    ...options,
-                    headers,
-                });
-            } catch {
-                // Refresh failed, clear tokens and throw
-                this.accessToken = null;
-                this.refreshToken = null;
-                throw new Error("Session expired, please log in again");
+                    // Retry the original request with new token
+                    headers["Authorization"] = `Bearer ${newAccessToken}`;
+                    headers["X-Retry-After-Refresh"] = "true";
+
+                    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                        ...options,
+                        headers,
+                    });
+                } catch (refreshError) {
+                    // Refresh token was already cleared in refreshAccessToken if needed
+                    // Re-throw with token status if it's an ApiError, otherwise create new one
+                    if (refreshError instanceof ApiError) {
+                        throw refreshError;
+                    }
+                    throw new ApiError(
+                        "Session expired, please log in again",
+                        "SESSION_EXPIRED",
+                        "invalid"
+                    );
+                }
+            } else {
+                // No refresh token available
+                throw new ApiError(
+                    "Session expired, please log in again",
+                    "SESSION_EXPIRED",
+                    "invalid"
+                );
             }
         }
 

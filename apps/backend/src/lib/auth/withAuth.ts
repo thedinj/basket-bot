@@ -39,10 +39,17 @@ export function withAuth(handler: RouteHandler, options?: { requireScopes?: stri
             return handler(authenticatedReq, context);
         } catch (error) {
             if (error instanceof AuthenticationError || error instanceof AuthorizationError) {
-                return NextResponse.json(
+                const response = NextResponse.json(
                     { code: error.code, message: error.message },
                     { status: error instanceof AuthenticationError ? 401 : 403 }
                 );
+
+                // Add header to help client distinguish token failures
+                if (error instanceof AuthenticationError) {
+                    response.headers.set("X-Token-Status", "invalid");
+                }
+
+                return response;
             }
             return NextResponse.json(
                 { code: "INTERNAL_ERROR", message: "Internal server error" },

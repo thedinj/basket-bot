@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { JwtPayload } from "@basket-bot/core";
+import { AuthenticationError, JwtPayload } from "@basket-bot/core";
 import {
     DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
     DEFAULT_REFRESH_TOKEN_TTL_SECONDS,
@@ -48,7 +48,7 @@ export function verifyAccessToken(token: string): JwtPayload {
         });
         return decoded as JwtPayload;
     } catch (error) {
-        throw new Error("Invalid or expired token");
+        throw new AuthenticationError("Invalid or expired token");
     }
 }
 

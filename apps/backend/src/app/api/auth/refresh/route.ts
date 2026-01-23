@@ -19,19 +19,23 @@ export async function POST(req: NextRequest) {
             .get(refreshToken) as any;
 
         if (!tokenRow) {
-            return NextResponse.json(
+            const response = NextResponse.json(
                 { code: "INVALID_REFRESH_TOKEN", message: "Invalid refresh token" },
                 { status: 401 }
             );
+            response.headers.set("X-Token-Status", "invalid");
+            return response;
         }
 
         // Check expiry
         const expiresAt = new Date(tokenRow.expiresAt);
         if (expiresAt < new Date()) {
-            return NextResponse.json(
+            const response = NextResponse.json(
                 { code: "REFRESH_TOKEN_EXPIRED", message: "Refresh token has expired" },
                 { status: 401 }
             );
+            response.headers.set("X-Token-Status", "invalid");
+            return response;
         }
 
         // Parse scopes

@@ -10,6 +10,7 @@ interface LogoutRequest {
 /**
  * Hook to fetch current authenticated user
  * Only enabled when explicitly requested
+ * Allows one retry to enable refresh token flow
  */
 export const useAuthUser = (enabled: boolean) => {
     return useQuery({
@@ -20,7 +21,7 @@ export const useAuthUser = (enabled: boolean) => {
         },
         enabled,
         staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-        retry: false, // Don't retry if token is invalid
+        retry: 1, // Allow one retry to enable refresh token flow in API client
     });
 };
 
