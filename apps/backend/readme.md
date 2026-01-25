@@ -174,6 +174,24 @@ See [.env.example](.env.example) for all available options.
 - `REFRESH_TOKEN_TTL_SECONDS` - Refresh token lifetime (default: 2592000 = 30 days)
 - `PORT` - Server port (default: 3000)
 - `NODE_ENV` - Environment (`development` or `production`)
+- `REGISTRATION_INVITATION_CODE` - Require invitation code for new registrations (leave empty for open registration)
+
+### Registration Restriction
+
+To restrict signups during initial rollout:
+
+1. Set `REGISTRATION_INVITATION_CODE` in `.env` to your chosen code (e.g., `"beta2026"`)
+2. Share this code with invited users
+3. Users will see an invitation code field during registration
+4. Registration will fail if the code is missing or incorrect
+
+To allow open registration:
+
+- Leave `REGISTRATION_INVITATION_CODE` empty or unset in `.env`
+- The invitation code field will not appear in the registration form
+- Anyone can register without a code
+
+**Note:** The invitation code is case-insensitive and whitespace is trimmed.
 
 ## Database Management
 

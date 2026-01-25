@@ -15,7 +15,34 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json();
-        const { email, name, password } = createUserRequestSchema.parse(body);
+        const { email, name, password, invitationCode } = createUserRequestSchema.parse(body);
+
+        // Check invitation code if required
+        const requiredInvitationCode = process.env.REGISTRATION_INVITATION_CODE;
+        if (requiredInvitationCode && requiredInvitationCode.trim().length > 0) {
+            if (!invitationCode) {
+                return NextResponse.json(
+                    {
+                        code: "INVITATION_CODE_REQUIRED",
+                        message: "Registration requires an invitation code",
+                    },
+                    { status: 400 }
+                );
+            }
+
+            const providedCode = invitationCode.trim().toLowerCase();
+            const expectedCode = requiredInvitationCode.trim().toLowerCase();
+
+            if (providedCode !== expectedCode) {
+                return NextResponse.json(
+                    {
+                        code: "INVALID_INVITATION_CODE",
+                        message: "Invalid invitation code",
+                    },
+                    { status: 400 }
+                );
+            }
+        }
 
         // Check if user exists
         const existingUser = db.prepare("SELECT * FROM User WHERE email = ?").get(email) as any;

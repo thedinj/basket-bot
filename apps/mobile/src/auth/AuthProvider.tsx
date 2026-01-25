@@ -135,10 +135,15 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     /**
      * Register a new user and auto-login using React Query mutations
      */
-    const register = async (email: string, name: string, password: string) => {
+    const register = async (
+        email: string,
+        name: string,
+        password: string,
+        invitationCode?: string
+    ) => {
         try {
             // Create user account
-            await registerMutation.mutateAsync({ email, name, password });
+            await registerMutation.mutateAsync({ email, name, password, invitationCode });
 
             // Auto-login with same credentials
             await login(email, password);

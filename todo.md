@@ -1,7 +1,5 @@
 If I add an existing store item to the shopping list but move it to another aisle/section, the new aisle/section is disregarded.
-insists on quantity of 1 for some reason, at least for imported stuff
 Test all workflows, reviewing the API calls
-Invitation code for making a new account
 hard to select items at the bottom of pages/lists
 review data model
 Shield while loading AI data or doing other slow stuff

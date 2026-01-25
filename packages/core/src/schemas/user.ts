@@ -17,6 +17,7 @@ export const createUserRequestSchema = z.object({
     email: z.string().email(),
     name: z.string().min(1),
     password: z.string().min(MIN_PASSWORD_LENGTH),
+    invitationCode: z.string().optional(),
 });
 
 export type CreateUserRequest = z.infer<typeof createUserRequestSchema>;

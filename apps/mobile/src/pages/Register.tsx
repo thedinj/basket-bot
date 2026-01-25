@@ -10,12 +10,14 @@ import {
     IonPage,
     IonText,
 } from "@ionic/react";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useAuth } from "../auth/useAuth";
 import { FormPasswordInput } from "../components/form/FormPasswordInput";
 import { FormTextInput } from "../components/form/FormTextInput";
+import { apiClient } from "../lib/api/client";
 
 const registerSchema = z
     .object({
@@ -28,6 +30,7 @@ const registerSchema = z
                 `Password must be at least ${MIN_PASSWORD_LENGTH} characters`
             ),
         confirmPassword: z.string(),
+        invitationCode: z.string().optional(),
     })
     .refine((data) => data.password === data.confirmPassword, {
         message: "Passwords don't match",
@@ -41,6 +44,18 @@ const Register: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Check if invitation code is required
+    const { data: invitationRequired } = useQuery({
+        queryKey: ["auth", "invitation-required"],
+        queryFn: async () => {
+            const response = await apiClient.get<{ required: boolean }>(
+                "/api/auth/invitation-required"
+            );
+            return response.required;
+        },
+        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    });
+
     const { control, handleSubmit } = useForm<RegisterFormData>({
         resolver: zodResolver(registerSchema),
         defaultValues: {
@@ -48,6 +63,7 @@ const Register: React.FC = () => {
             email: "",
             password: "",
             confirmPassword: "",
+            invitationCode: "",
         },
     });
 
@@ -56,8 +72,14 @@ const Register: React.FC = () => {
         setIsSubmitting(true);
 
         try {
-            await registerUser(data.email, data.name, data.password);
+            await registerUser(
+                data.email,
+                data.name,
+                data.password,
+                data.invitationCode || undefined
+            );
             // Auto-login happens in registerUser, App.tsx will handle navigation
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             // Handle rate limit (429)
             if (err?.response?.status === 429) {
@@ -72,6 +94,15 @@ const Register: React.FC = () => {
                 }
             } else if (err?.response?.status === 409) {
                 setError("An account with this email already exists");
+            } else if (err?.response?.status === 400) {
+                const code = err?.response?.data?.code;
+                if (code === "INVITATION_CODE_REQUIRED") {
+                    setError("Registration requires an invitation code");
+                } else if (code === "INVALID_INVITATION_CODE") {
+                    setError("Invalid invitation code");
+                } else {
+                    setError("Registration failed. Please try again.");
+                }
             } else {
                 setError("Registration failed. Please try again.");
             }
@@ -131,6 +162,16 @@ const Register: React.FC = () => {
                                     placeholder="Re-enter your password"
                                     disabled={isSubmitting}
                                 />
+
+                                {invitationRequired && (
+                                    <FormTextInput
+                                        name="invitationCode"
+                                        control={control}
+                                        label="Invitation Code"
+                                        placeholder="Enter your invitation code"
+                                        disabled={isSubmitting}
+                                    />
+                                )}
 
                                 {error && (
                                     <IonText color="danger">

@@ -16,7 +16,12 @@ export interface AuthContextValue {
     /** Login with email and password */
     login: (email: string, password: string) => Promise<void>;
     /** Register a new user and auto-login */
-    register: (email: string, name: string, password: string) => Promise<void>;
+    register: (
+        email: string,
+        name: string,
+        password: string,
+        invitationCode?: string
+    ) => Promise<void>;
     /** Logout and clear tokens */
     logout: () => Promise<void>;
 }
