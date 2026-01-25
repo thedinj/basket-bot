@@ -22,7 +22,7 @@
         // Mobile Debugging (Hot-reload)
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         {
-            "name": "Debug: Mobile Web Preview (Hot-reload)",
+            "name": "Debug: Mobile (Hot-reload)",
             "type": "chrome",
             "request": "launch",
             "url": "http://localhost:8100",
@@ -31,11 +31,11 @@
                 "webpack:///./src/*": "${webRoot}/src/*"
             },
             "preLaunchTask": "Dev: Mobile (Hot-reload)",
-            "presentation": {
-                "hidden": false,
-                "group": "development",
-                "order": 1
-            }
+            "runtimeArgs": [
+                "--new-window",
+                "--disable-features=IsolateOrigins,site-per-process"
+            ],
+            "postDebugTask": "Terminate All Tasks"
         }
     ]
 }

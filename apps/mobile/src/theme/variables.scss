@@ -4,6 +4,9 @@ http://ionicframework.com/docs/theming/ */
 /* Basket Bot Theme - Royal Purple with Dark/Light Modes */
 
 :root {
+  /* Safe area for Android navigation buttons and iOS notches */
+  --app-safe-bottom: max(env(safe-area-inset-bottom), 16px);
+
   /* Royal Purple Primary Color */
   --ion-color-primary: #6b46c1;
   --ion-color-primary-rgb: 107, 70, 193;
@@ -136,4 +139,9 @@ http://ionicframework.com/docs/theming/ */
     /* Toolbar background */
     --ion-toolbar-background: #1a1a2e;
   }
+}
+
+/* Global safe area bottom spacing for all scrollable content */
+ion-content::part(scroll) {
+  padding-bottom: var(--app-safe-bottom) !important;
 }
