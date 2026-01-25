@@ -1,4 +1,5 @@
 import type { LoginUser } from "@basket-bot/core";
+import { Preferences } from "@capacitor/preferences";
 import React, { useEffect, useState, type PropsWithChildren } from "react";
 import { apiClient, ApiError } from "../lib/api/client";
 import { KEYS, secureStorage } from "../utils/secureStorage";
@@ -32,6 +33,17 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     useEffect(() => {
         const loadTokens = async () => {
             try {
+                // Load remote API URL preference first
+                const { value: remoteApiUrl } = await Preferences.get({
+                    key: "remote_api_url",
+                });
+
+                // Apply custom API URL if configured
+                if (remoteApiUrl?.trim()) {
+                    apiClient.setBaseUrl(remoteApiUrl.trim());
+                    console.log("[AuthProvider] Using custom API URL:", remoteApiUrl.trim());
+                }
+
                 const [accessToken, refreshToken] = await Promise.all([
                     secureStorage.get(KEYS.ACCESS_TOKEN),
                     secureStorage.get(KEYS.REFRESH_TOKEN),

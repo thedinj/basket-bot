@@ -1,4 +1,4 @@
-const API_BASE_URL =
+const DEFAULT_API_BASE_URL =
     (typeof import.meta !== "undefined" &&
         (import.meta as ImportMeta & { env: Record<string, string> }).env.VITE_API_URL) ||
     "http://localhost:3000";
@@ -18,10 +18,15 @@ export class ApiError extends Error {
 }
 
 export class ApiClient {
+    private baseUrl: string = DEFAULT_API_BASE_URL;
     private accessToken: string | null = null;
     private refreshToken: string | null = null;
     private isRefreshing = false;
     private refreshPromise: Promise<string> | null = null;
+
+    setBaseUrl(url: string) {
+        this.baseUrl = url;
+    }
 
     setAccessToken(token: string | null) {
         this.accessToken = token;
@@ -48,7 +53,7 @@ export class ApiClient {
         this.isRefreshing = true;
         this.refreshPromise = (async () => {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+                const response = await fetch(`${this.baseUrl}/api/auth/refresh`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ refreshToken: this.refreshToken }),
@@ -96,7 +101,7 @@ export class ApiClient {
             console.warn("[ApiClient] No access token available for request");
         }
 
-        let response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        let response = await fetch(`${this.baseUrl}${endpoint}`, {
             ...options,
             headers,
         });
@@ -122,7 +127,7 @@ export class ApiClient {
                     headers["Authorization"] = `Bearer ${newAccessToken}`;
                     headers["X-Retry-After-Refresh"] = "true";
 
-                    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    response = await fetch(`${this.baseUrl}${endpoint}`, {
                         ...options,
                         headers,
                     });
