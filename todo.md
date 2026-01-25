@@ -1,5 +1,4 @@
 If I add an existing store item to the shopping list but move it to another aisle/section, the new aisle/section is disregarded.
-Preload store aisles/sections, and cache them much longer. Add a Refresh button.
 Test all workflows, reviewing the API calls
 Invitation code for making a new account
 For debugging, pick the right IP based on mobile v live-update
@@ -10,7 +9,7 @@ review data model
 confirm we handle loading aisles from sections
 refresh @ midnight so we show snoozed items on time
 Shield while loading AI data or doing other slow stuff
-Hard to click store items at the bottom of the screen
+Add potential future item columns
 =====
 Offline mode: remember delta
 eslint.config.js for the monorepo?

@@ -9,8 +9,9 @@ import {
     IonTabs,
 } from "@ionic/react";
 import { cartOutline, storefrontOutline } from "ionicons/icons";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Route } from "react-router-dom";
+import { useAuth } from "../auth/useAuth";
 import { useNotificationCounts, usePreloadCoreData } from "../db/hooks";
 import ShoppingList from "../pages/ShoppingList";
 import StoreAislesPage from "../pages/StoreAislesPage";
@@ -28,13 +29,22 @@ import NetworkStatusBanner from "./shared/NetworkStatusBanner";
  * Only rendered when user is authenticated
  */
 const Main: React.FC = () => {
+    const { isAuthReady } = useAuth();
     const { data: notificationCounts } = useNotificationCounts();
     const { prefetchCoreData } = usePreloadCoreData();
+    const hasPrefetched = useRef(false);
 
     // Preload static/core data on app initialization
+    // Wait for auth to be fully ready (tokens validated and refreshed if needed)
     useEffect(() => {
-        prefetchCoreData();
-    }, [prefetchCoreData]);
+        if (isAuthReady && !hasPrefetched.current) {
+            hasPrefetched.current = true;
+            prefetchCoreData().catch((error) => {
+                // Prefetch errors are non-critical - data will be fetched when actually needed
+                console.warn("[Main] Prefetch failed, will fetch on demand:", error);
+            });
+        }
+    }, [isAuthReady, prefetchCoreData]);
 
     return (
         <LLMModalProvider>

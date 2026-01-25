@@ -105,7 +105,7 @@ export class ApiClient {
         if (this.accessToken) {
             headers["Authorization"] = `Bearer ${this.accessToken}`;
         } else {
-            console.warn("[ApiClient] No access token available for request");
+            console.warn("[ApiClient] No access token available for request:", endpoint);
         }
 
         // Set up timeout using AbortController
