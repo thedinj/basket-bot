@@ -1,10 +1,9 @@
 If I add an existing store item to the shopping list but move it to another aisle/section, the new aisle/section is disregarded.
+insists on quantity of 1 for some reason, at least for imported stuff
 Test all workflows, reviewing the API calls
 Invitation code for making a new account
 hard to select items at the bottom of pages/lists
-insists on quantity of 1 for some reason, at least for imported stuff
 review data model
-confirm we handle loading aisles from sections
 Shield while loading AI data or doing other slow stuff
 Add potential future item columns
 =====

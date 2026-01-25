@@ -14,8 +14,8 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { closeOutline } from "ionicons/icons";
 import { onlineManager } from "@tanstack/react-query";
+import { closeOutline } from "ionicons/icons";
 import { useEffect, useState } from "react";
 import { LLM_COLOR, LLM_ICON_SRC } from "../../llm/shared";
 import { useSettingsForm } from "../../settings/useSettingsForm";
