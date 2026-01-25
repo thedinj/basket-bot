@@ -3,6 +3,7 @@
  */
 
 import { useCallback } from "react";
+import { useShield } from "../../components/shield/useShield";
 import { useSecureApiKey } from "../../hooks/useSecureStorage";
 import { callLLMDirect } from "../shared/directCall";
 import {
@@ -30,63 +31,72 @@ export interface UseAutoCategorizeResult {
  */
 export function useAutoCategorize() {
     const apiKeyValue = useSecureApiKey();
+    const { raiseShield, lowerShield } = useShield();
 
     const autoCategorize = useCallback(
         async ({
             itemName,
             aisles,
         }: UseAutoCategorizeOptions): Promise<UseAutoCategorizeResult> => {
-            if (!apiKeyValue) {
-                throw new Error("API key is not configured");
-            }
+            const shieldId = "auto-categorize";
 
-            if (!itemName?.trim()) {
-                throw new Error("Item name is required");
-            }
+            try {
+                raiseShield(shieldId);
 
-            if (!aisles || aisles.length === 0) {
-                throw new Error("No aisles available");
-            }
+                if (!apiKeyValue) {
+                    throw new Error("API key is not configured");
+                }
 
-            const input: AutoCategorizeInput = {
-                itemName: itemName,
-                aisles,
-            };
+                if (!itemName?.trim()) {
+                    throw new Error("Item name is required");
+                }
 
-            const response = await callLLMDirect({
-                apiKey: apiKeyValue,
-                prompt: AUTO_CATEGORIZE_PROMPT,
-                userText: JSON.stringify(input),
-                model: "gpt-4o",
-            });
+                if (!aisles || aisles.length === 0) {
+                    throw new Error("No aisles available");
+                }
 
-            if (!validateAutoCategorizeResult(response.data)) {
-                throw new Error(
-                    "Invalid response from AI: expected aisleName, sectionName, confidence, and reasoning fields"
+                const input: AutoCategorizeInput = {
+                    itemName: itemName,
+                    aisles,
+                };
+
+                const response = await callLLMDirect({
+                    apiKey: apiKeyValue,
+                    prompt: AUTO_CATEGORIZE_PROMPT,
+                    userText: JSON.stringify(input),
+                    model: "gpt-4o",
+                });
+
+                if (!validateAutoCategorizeResult(response.data)) {
+                    throw new Error(
+                        "Invalid response from AI: expected aisleName, sectionName, confidence, and reasoning fields"
+                    );
+                }
+
+                const { aisleId, sectionId } = transformAutoCategorizeResult(
+                    response.data,
+                    input.aisles
                 );
+
+                if (!aisleId) {
+                    throw new Error("Could not determine a matching aisle/section");
+                }
+
+                // Find names for the result
+                const aisle = aisles.find((a) => a.id === aisleId);
+                const section = aisle?.sections.find((s) => s.id === sectionId);
+
+                return {
+                    aisleId,
+                    sectionId,
+                    aisleName: aisle?.name,
+                    sectionName: section?.name,
+                };
+            } finally {
+                lowerShield(shieldId);
             }
-
-            const { aisleId, sectionId } = transformAutoCategorizeResult(
-                response.data,
-                input.aisles
-            );
-
-            if (!aisleId) {
-                throw new Error("Could not determine a matching aisle/section");
-            }
-
-            // Find names for the result
-            const aisle = aisles.find((a) => a.id === aisleId);
-            const section = aisle?.sections.find((s) => s.id === sectionId);
-
-            return {
-                aisleId,
-                sectionId,
-                aisleName: aisle?.name,
-                sectionName: section?.name,
-            };
         },
-        [apiKeyValue]
+        [apiKeyValue, raiseShield, lowerShield]
     );
 
     return autoCategorize;

@@ -46,7 +46,7 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
         cssClass,
     } = useOverlayAnimation(ANIMATION_EFFECTS.LASER_OBLITERATION);
 
-    const { openBulkImport, isImporting } = useBulkImportModal(storeId);
+    const { openBulkImport } = useBulkImportModal(storeId);
 
     const snoozedItemCount = useMemo(() => {
         if (!items) return 0;
@@ -158,7 +158,7 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
                     slot="fixed"
                     style={{ marginRight: "70px" }}
                 >
-                    <LLMFabButton onClick={openBulkImport} disabled={isImporting} />
+                    <LLMFabButton onClick={openBulkImport} />
                 </IonFab>
 
                 <ItemEditorModal storeId={storeId} />

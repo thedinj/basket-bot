@@ -23,6 +23,7 @@ import { AppHeaderProvider } from "./layout/AppHeaderProvider";
 import { AppMenu } from "./layout/AppMenu";
 import Settings from "./settings/Settings";
 import NetworkStatusBanner from "./shared/NetworkStatusBanner";
+import ShieldProvider from "./shield/ShieldProvider";
 
 /**
  * Main app component with authenticated routes and tabs
@@ -47,38 +48,40 @@ const Main: React.FC = () => {
     }, [isAuthReady, prefetchCoreData]);
 
     return (
-        <LLMModalProvider>
-            <AppHeaderProvider>
-                <AppMenu />
-                <Settings />
-                <NetworkStatusBanner />
-                <IonTabs>
-                    <IonRouterOutlet id="main-content">
-                        <Route exact path="/shoppinglist" component={ShoppingList} />
-                        <Route exact path="/stores" component={StoresList} />
-                        <Route exact path="/invitations" component={StoreInvitations} />
-                        <Route exact path="/stores/:id/items" component={StoreItemsPage} />
-                        <Route exact path="/stores/:id/aisles" component={StoreAislesPage} />
-                        <Route exact path="/stores/:id" component={StoreDetail} />
-                    </IonRouterOutlet>
-                    <IonTabBar slot="bottom">
-                        <IonTabButton tab="shoppinglist" href="/shoppinglist">
-                            <IonIcon aria-hidden="true" icon={cartOutline} />
-                            <IonLabel>Shopping List</IonLabel>
-                        </IonTabButton>
-                        <IonTabButton tab="stores" href="/stores">
-                            <IonIcon aria-hidden="true" icon={storefrontOutline} />
-                            <IonLabel>Stores</IonLabel>
-                            {notificationCounts && notificationCounts.storeInvitations > 0 && (
-                                <IonBadge color="danger">
-                                    {notificationCounts.storeInvitations}
-                                </IonBadge>
-                            )}
-                        </IonTabButton>
-                    </IonTabBar>
-                </IonTabs>
-            </AppHeaderProvider>
-        </LLMModalProvider>
+        <ShieldProvider>
+            <LLMModalProvider>
+                <AppHeaderProvider>
+                    <AppMenu />
+                    <Settings />
+                    <NetworkStatusBanner />
+                    <IonTabs>
+                        <IonRouterOutlet id="main-content">
+                            <Route exact path="/shoppinglist" component={ShoppingList} />
+                            <Route exact path="/stores" component={StoresList} />
+                            <Route exact path="/invitations" component={StoreInvitations} />
+                            <Route exact path="/stores/:id/items" component={StoreItemsPage} />
+                            <Route exact path="/stores/:id/aisles" component={StoreAislesPage} />
+                            <Route exact path="/stores/:id" component={StoreDetail} />
+                        </IonRouterOutlet>
+                        <IonTabBar slot="bottom">
+                            <IonTabButton tab="shoppinglist" href="/shoppinglist">
+                                <IonIcon aria-hidden="true" icon={cartOutline} />
+                                <IonLabel>Shopping List</IonLabel>
+                            </IonTabButton>
+                            <IonTabButton tab="stores" href="/stores">
+                                <IonIcon aria-hidden="true" icon={storefrontOutline} />
+                                <IonLabel>Stores</IonLabel>
+                                {notificationCounts && notificationCounts.storeInvitations > 0 && (
+                                    <IonBadge color="danger">
+                                        {notificationCounts.storeInvitations}
+                                    </IonBadge>
+                                )}
+                            </IonTabButton>
+                        </IonTabBar>
+                    </IonTabs>
+                </AppHeaderProvider>
+            </LLMModalProvider>
+        </ShieldProvider>
     );
 };
 

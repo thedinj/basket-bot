@@ -400,6 +400,113 @@ Then restart:
 sudo systemctl restart basket-bot-backend
 ```
 
+## Testing from Remote Machines
+
+To test the backend API from another device on your local network:
+
+### 1. Find Your Server's IP Address
+
+On the Raspberry Pi (or server), run:
+
+```bash
+hostname -I
+```
+
+Or:
+
+```bash
+ip addr show | grep inet
+```
+
+Example output: `192.168.1.100`
+
+### 2. Ensure the Server is Listening on All Interfaces
+
+By default, Next.js binds to `0.0.0.0` in production, which allows external connections. Verify in your `.env`:
+
+```env
+# No need to set HOSTNAME - defaults to 0.0.0.0 in production
+PORT=3000
+```
+
+### 3. Test with curl from Remote Machine
+
+Replace `192.168.1.100` with your server's actual IP address.
+
+**Health Check:**
+
+```bash
+curl http://192.168.1.100:3000/api/health
+```
+
+**Register a User:**
+
+```bash
+curl -X POST http://192.168.1.100:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "name": "Test User",
+    "password": "SecurePassword123!"
+  }'
+```
+
+**Login:**
+
+```bash
+curl -X POST http://192.168.1.100:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "SecurePassword123!"
+  }'
+```
+
+Save the returned `accessToken` for authenticated requests.
+
+**Authenticated Request (Get Current User):**
+
+```bash
+curl http://192.168.1.100:3000/api/auth/me \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN_HERE"
+```
+
+**List Stores:**
+
+```bash
+curl http://192.168.1.100:3000/api/stores \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN_HERE"
+```
+
+### 4. Firewall Configuration (if needed)
+
+If you can't reach the server from another device, you may need to allow incoming connections on port 3000:
+
+**On Raspberry Pi (using ufw):**
+
+```bash
+sudo ufw allow 3000/tcp
+sudo ufw status
+```
+
+**On Raspberry Pi (using iptables):**
+
+```bash
+sudo iptables -A INPUT -p tcp --dport 3000 -j ACCEPT
+sudo iptables-save
+```
+
+### 5. Mobile App Configuration
+
+To connect the mobile app to your Raspberry Pi backend:
+
+1. Find your server's local IP address (e.g., `192.168.1.100`)
+2. Update the API base URL in the mobile app configuration
+3. Ensure both devices are on the same local network
+4. Test connectivity with curl first (as shown above)
+
+**Note:** For production deployments outside your local network, use a proper domain name, HTTPS, and consider security implications (firewall rules, rate limiting, etc.).
+
 ## Architecture Notes
 
 - **Auth**: JWT access tokens (15 min) + refresh tokens (30 days, stored server-side)

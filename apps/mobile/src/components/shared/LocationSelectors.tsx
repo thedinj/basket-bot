@@ -38,7 +38,6 @@ export function LocationSelectors<T extends FieldValues = FieldValues>({
     const { data: aisles } = useStoreAisles(storeId);
     const { data: sections } = useStoreSections(storeId);
 
-    const [isAutoCategorizing, setIsAutoCategorizing] = useState(false);
     const [showOverrideAlert, setShowOverrideAlert] = useState(false);
 
     const { showError, showSuccess } = useToast();
@@ -94,8 +93,6 @@ export function LocationSelectors<T extends FieldValues = FieldValues>({
             return;
         }
 
-        setIsAutoCategorizing(true);
-
         try {
             const result = await autoCategorize({
                 itemName,
@@ -120,8 +117,6 @@ export function LocationSelectors<T extends FieldValues = FieldValues>({
             );
         } catch (error) {
             showError(error instanceof Error ? error.message : "Auto-categorize failed");
-        } finally {
-            setIsAutoCategorizing(false);
         }
     };
 
@@ -234,11 +229,7 @@ export function LocationSelectors<T extends FieldValues = FieldValues>({
                         iconOnly
                         onClick={() => handleAutoCategorize()}
                         disabled={
-                            disabled ||
-                            isAutoCategorizing ||
-                            !itemName ||
-                            !sortedAisles ||
-                            sortedAisles.length === 0
+                            disabled || !itemName || !sortedAisles || sortedAisles.length === 0
                         }
                         title="Auto-Locate"
                     />

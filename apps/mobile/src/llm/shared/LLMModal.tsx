@@ -10,9 +10,7 @@ import {
     IonIcon,
     IonItem,
     IonLabel,
-    IonList,
     IonModal,
-    IonSkeletonText,
     IonText,
     IonTextarea,
     IonTitle,
@@ -20,6 +18,7 @@ import {
 } from "@ionic/react";
 import { attach, camera, close } from "ionicons/icons";
 import React, { use, useRef, useState } from "react";
+import { useShield } from "../../components/shield/useShield";
 import { useSecureApiKey } from "../../hooks/useSecureStorage";
 import { useToast } from "../../hooks/useToast";
 import { OpenAIClient } from "./openaiClient";
@@ -34,20 +33,16 @@ const checkCameraAllowedAsync = Capacitor.isNativePlatform()
  * Modal for running LLM API calls with file attachments
  */
 export const LLMModal: React.FC = () => {
-    const { isOpen, config, closeModal, response, setResponse } =
-        useLLMModalContext();
+    const { isOpen, config, closeModal, response, setResponse } = useLLMModalContext();
     const { showError } = useToast();
     const apiKeyValue = useSecureApiKey();
-
-    const [isLoading, setIsLoading] = useState(false);
+    const { raiseShield, lowerShield } = useShield();
     const [attachments, setAttachments] = useState<LLMAttachment[]>([]);
     const [userText, setUserText] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
     const isAllowCamera = use(checkCameraAllowedAsync);
 
     const handleClose = () => {
-        if (isLoading) return; // Prevent closing during API call
-
         if (config?.onCancel) {
             config.onCancel();
         }
@@ -92,10 +87,7 @@ export const LLMModal: React.FC = () => {
                 // The user might have just cancelled the photo taking, so don't show an error in that case
             }
         } catch (error: unknown) {
-            if (
-                error instanceof Error &&
-                error.message !== "User cancelled photos app"
-            ) {
+            if (error instanceof Error && error.message !== "User cancelled photos app") {
                 showError(`Failed to add attachment: ${error.message}`);
             }
         }
@@ -106,9 +98,7 @@ export const LLMModal: React.FC = () => {
         fileInputRef.current?.click();
     };
 
-    const handleFileInputChange = async (
-        event: React.ChangeEvent<HTMLInputElement>
-    ) => {
+    const handleFileInputChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (!files || files.length === 0) return;
 
@@ -159,9 +149,7 @@ export const LLMModal: React.FC = () => {
         if (!config) return;
 
         if (!apiKeyValue) {
-            showError(
-                "OpenAI API key not configured. Please add it in Settings."
-            );
+            showError("OpenAI API key not configured. Please add it in Settings.");
             return;
         }
 
@@ -172,7 +160,8 @@ export const LLMModal: React.FC = () => {
             return;
         }
 
-        setIsLoading(true);
+        const shieldId = `llm-modal-${config.title || "default"}`;
+        raiseShield(shieldId, config.shieldMessage || "Processing with AI...");
         setResponse(null);
 
         try {
@@ -218,7 +207,7 @@ export const LLMModal: React.FC = () => {
             if (Capacitor.isNativePlatform()) {
                 await KeepAwake.allowSleep();
             }
-            setIsLoading(false);
+            lowerShield(shieldId);
         }
     };
 
@@ -231,10 +220,7 @@ export const LLMModal: React.FC = () => {
                     <IonToolbar>
                         <IonTitle>{config.title || "LLM Assistant"}</IonTitle>
                         <IonButtons slot="end">
-                            <IonButton
-                                onClick={handleClose}
-                                disabled={isLoading}
-                            >
+                            <IonButton onClick={handleClose}>
                                 <IonIcon icon={close} />
                             </IonButton>
                         </IonButtons>
@@ -254,8 +240,8 @@ export const LLMModal: React.FC = () => {
                         >
                             <IonText color="danger">
                                 <p style={{ margin: 0, fontWeight: 500 }}>
-                                    ⚠️ OpenAI API key not configured. Please add
-                                    it in Settings to use this feature.
+                                    ⚠️ OpenAI API key not configured. Please add it in Settings to
+                                    use this feature.
                                 </p>
                             </IonText>
                         </div>
@@ -280,12 +266,9 @@ export const LLMModal: React.FC = () => {
                             </IonLabel>
                             <IonTextarea
                                 value={userText}
-                                onIonInput={(e) =>
-                                    setUserText(e.detail.value || "")
-                                }
+                                onIonInput={(e) => setUserText(e.detail.value || "")}
                                 placeholder="Enter your text here..."
                                 rows={4}
-                                disabled={isLoading}
                             />
                         </IonItem>
                     </div>
@@ -302,7 +285,6 @@ export const LLMModal: React.FC = () => {
                                     fill="outline"
                                     size="small"
                                     onClick={handleCapture}
-                                    disabled={isLoading}
                                 >
                                     <IonIcon icon={camera} slot="start" />
                                     Capture
@@ -314,7 +296,6 @@ export const LLMModal: React.FC = () => {
                                     fill="outline"
                                     size="small"
                                     onClick={handleAddAttachment}
-                                    disabled={isLoading}
                                 >
                                     <IonIcon icon={attach} slot="start" />
                                     Add
@@ -334,9 +315,7 @@ export const LLMModal: React.FC = () => {
                                 {attachments.map((attachment, index) => (
                                     <IonChip
                                         key={index}
-                                        onClick={() =>
-                                            handleRemoveAttachment(index)
-                                        }
+                                        onClick={() => handleRemoveAttachment(index)}
                                     >
                                         <IonLabel>{attachment.name}</IonLabel>
                                         <IonIcon icon={close} />
@@ -361,51 +340,11 @@ export const LLMModal: React.FC = () => {
                         <IonButton
                             expand="block"
                             onClick={handleRunLLM}
-                            disabled={isLoading || !apiKeyValue}
+                            disabled={!apiKeyValue}
                             style={{ marginTop: "20px" }}
                         >
-                            {isLoading
-                                ? "Running..."
-                                : config.buttonText || "Run LLM"}
+                            {config.buttonText || "Run LLM"}
                         </IonButton>
-                    )}
-
-                    {/* Loading State */}
-                    {isLoading && (
-                        <>
-                            {config.showPatienceMessage && (
-                                <IonText color="primary">
-                                    <p
-                                        style={{
-                                            margin: 0,
-                                            fontWeight: 500,
-                                        }}
-                                    >
-                                        ⏳ This might take a while. Patience.
-                                    </p>
-                                </IonText>
-                            )}
-                            <IonList style={{ marginTop: "20px" }}>
-                                <IonItem>
-                                    <IonSkeletonText
-                                        animated
-                                        style={{ width: "100%" }}
-                                    />
-                                </IonItem>
-                                <IonItem>
-                                    <IonSkeletonText
-                                        animated
-                                        style={{ width: "80%" }}
-                                    />
-                                </IonItem>
-                                <IonItem>
-                                    <IonSkeletonText
-                                        animated
-                                        style={{ width: "90%" }}
-                                    />
-                                </IonItem>
-                            </IonList>
-                        </>
                     )}
 
                     {/* Output Display */}
@@ -416,9 +355,7 @@ export const LLMModal: React.FC = () => {
                                     <h3>Result</h3>
                                 </IonLabel>
                             </IonItem>
-                            <div style={{ padding: "0 16px" }}>
-                                {config.renderOutput(response)}
-                            </div>
+                            <div style={{ padding: "0 16px" }}>{config.renderOutput(response)}</div>
 
                             {/* Accept/Cancel Buttons */}
                             <div

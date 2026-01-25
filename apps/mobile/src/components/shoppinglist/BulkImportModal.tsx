@@ -1,12 +1,9 @@
-import React from "react";
 import { IonText } from "@ionic/react";
-import { useLLMModal } from "../../llm/shared/useLLMModal";
+import React from "react";
+import { validateBulkImportResult, type BulkImportResponse } from "../../llm/features/bulkImport";
 import { BULK_IMPORT_PROMPT } from "../../llm/features/bulkImportPrompt";
-import {
-    validateBulkImportResult,
-    type BulkImportResponse,
-} from "../../llm/features/bulkImport";
 import type { LLMResponse } from "../../llm/shared/types";
+import { useLLMModal } from "../../llm/shared/useLLMModal";
 import { useBulkImport } from "./useBulkImport";
 
 /**
@@ -15,7 +12,7 @@ import { useBulkImport } from "./useBulkImport";
  */
 export function useBulkImportModal(storeId: string) {
     const { openModal } = useLLMModal();
-    const { importItems, isImporting } = useBulkImport(storeId);
+    const { importItems } = useBulkImport(storeId);
 
     const openBulkImport = React.useCallback(() => {
         openModal({
@@ -25,6 +22,7 @@ export function useBulkImportModal(storeId: string) {
             userInstructions:
                 "Paste your shopping list as text or upload a photo of a handwritten/printed list.",
             buttonText: "Scan List",
+            shieldMessage: "Scanning list with AI...",
             validateResponse: (response: LLMResponse) => {
                 if (!validateBulkImportResult(response.data)) {
                     throw new Error(
@@ -47,8 +45,8 @@ export function useBulkImportModal(storeId: string) {
                                     {item.quantity && item.unit
                                         ? `${item.quantity} ${item.unit} `
                                         : item.quantity
-                                        ? `${item.quantity} `
-                                        : ""}
+                                          ? `${item.quantity} `
+                                          : ""}
                                     {item.name}
                                     {item.notes ? ` (${item.notes})` : ""}
                                 </li>
@@ -67,5 +65,5 @@ export function useBulkImportModal(storeId: string) {
         });
     }, [openModal, importItems]);
 
-    return { openBulkImport, isImporting };
+    return { openBulkImport };
 }

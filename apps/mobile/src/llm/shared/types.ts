@@ -63,6 +63,6 @@ export interface LLMModalConfig<T = unknown> {
     title?: string;
     /** Text for the Run button (default: "Run LLM") */
     buttonText?: string;
-    /** Show "This might take a while" patience message during processing */
-    showPatienceMessage?: boolean;
+    /** Message to display on Shield during processing (default: "Processing with AI...") */
+    shieldMessage?: string;
 }

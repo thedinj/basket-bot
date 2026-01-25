@@ -110,7 +110,7 @@ The mobile app will be available at `http://localhost:8100`
 
 ## Testing the Setup
 
-### 1. Test the Backend API
+### 1. Test the Backend API (Local)
 
 Test user registration:
 
@@ -221,6 +221,76 @@ pnpm start
 # Database commands
 pnpm db:init        # Initialize database schema and seed with test data
 ```
+
+## Testing Backend from Mobile Device
+
+To test the backend from a physical mobile device on your network:
+
+### 1. Find Your Development Machine's IP
+
+**Windows:**
+
+```bash
+ipconfig
+# Look for "IPv4 Address" under your active network adapter
+```
+
+**Linux/Mac:**
+
+```bash
+hostname -I
+# or
+ip addr show | grep inet
+```
+
+Example: `192.168.1.50`
+
+### 2. Configure Mobile App API URL
+
+Edit `apps/mobile/.env`:
+
+```env
+VITE_API_URL=http://192.168.1.50:3000
+```
+
+Replace `192.168.1.50` with your machine's actual IP.
+
+### 3. Open Firewall Port (if needed)
+
+**Windows:**
+
+```powershell
+# Run as Administrator
+netsh advfirewall firewall add rule name="Node.js Dev Server" dir=in action=allow protocol=TCP localport=3000
+```
+
+**Linux (ufw):**
+
+```bash
+sudo ufw allow 3000/tcp
+```
+
+**macOS:**
+
+Go to System Preferences → Security & Privacy → Firewall → Firewall Options → Add Node.js
+
+### 4. Test Connection
+
+From your mobile device's browser, visit:
+
+```
+http://192.168.1.50:3000/api/health
+```
+
+If you see a response, the backend is accessible. Now rebuild and sync the mobile app:
+
+```bash
+cd apps/mobile
+pnpm build
+pnpm cap:sync
+```
+
+Then open in Android Studio and run on your device.
 
 ### Mobile Commands
 

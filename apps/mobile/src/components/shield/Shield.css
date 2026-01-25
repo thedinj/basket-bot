@@ -1,0 +1,74 @@
+.shield-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 15000;
+    pointer-events: auto; /* Block all interactions */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    transition:
+        background 300ms ease-in-out,
+        backdrop-filter 300ms ease-in-out;
+}
+
+.shield-overlay.show-content {
+    background: rgba(var(--ion-background-color-rgb), 0.95);
+    backdrop-filter: blur(10px);
+}
+
+.shield-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    opacity: 0;
+    transition: opacity 300ms ease-in-out;
+}
+
+.shield-overlay.show-content .shield-content {
+    opacity: 1;
+}
+
+.shield-icon {
+    animation:
+        float 3s ease-in-out infinite,
+        pulse 2s ease-in-out infinite;
+}
+
+.shield-message {
+    text-align: center;
+    font-size: 16px;
+    margin: 0;
+}
+
+.shield-message p {
+    margin: 0;
+}
+
+/* Reuse floating animation from LoadingFallback */
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Pulsing glow effect */
+@keyframes pulse {
+    0%,
+    100% {
+        filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.5));
+    }
+    50% {
+        filter: drop-shadow(0 0 20px rgba(124, 58, 237, 0.8));
+    }
+}

@@ -205,6 +205,30 @@ Never return a new object literal directly from a hook unless it is memoized. Th
 
 - **ALWAYS use `React.FC<Props>` for components with props** (required for type safety).
 
+- **ALWAYS use `export default` for the main component in a file:**
+
+    ```typescript
+    // ✅ Good
+    const MyComponent: React.FC<MyComponentProps> = ({ name }) => {
+      return <div>{name}</div>;
+    };
+
+    export default MyComponent;
+
+    // Import without curly braces
+    import MyComponent from "./MyComponent";
+
+    // ❌ Bad
+    export const MyComponent: React.FC<MyComponentProps> = ({ name }) => {
+      return <div>{name}</div>;
+    };
+
+    // Import with curly braces
+    import { MyComponent } from "./MyComponent";
+    ```
+
+    **Exception:** Context providers, hooks, and utility components that are exported alongside the main component can use named exports.
+
 - **Prefer `async/await` over promise chains:**
 
     ```typescript
@@ -492,12 +516,12 @@ Use `formatErrorMessage(error)` from `utils/errorUtils.ts` for consistent user-f
 
 ```typescript
 try {
-  await operation();
+    await operation();
 } catch (error: unknown) {
-  if (error instanceof ApiError && error.isNetworkError) {
-    // Handle network error
-  }
-  throw error;
+    if (error instanceof ApiError && error.isNetworkError) {
+        // Handle network error
+    }
+    throw error;
 }
 ```
 
@@ -505,6 +529,85 @@ try {
 
 - See `NETWORK_RESILIENCE.md` for full technical details
 - See `NETWORK_QUICK_START.md` for developer quick reference
+
+### Shield infrastructure (blocking UI overlay)
+
+The mobile app has a **Shield** system for blocking user input during long-running background operations (e.g., LLM calls).
+
+**Architecture:**
+
+- Three-file context pattern in `components/shield/`:
+    - `ShieldContext.tsx` - Context definition
+    - `ShieldProvider.tsx` - Provider with Set-based ID tracking
+    - `useShield.ts` - Consumer hook
+- `Shield.tsx` - Full-screen blocking overlay component
+- Placed in app hierarchy at top level (wraps all other providers)
+
+**Shield behavior:**
+
+- Transparent for first 500ms, then fades to translucent backdrop with blur effect
+- Centers throbbing robot icon (floating + pulsing glow animations)
+- Displays optional message below icon
+- Completely blocks all user input (`pointer-events: auto`)
+- Stays active until all raised shield IDs are lowered
+
+**API:**
+
+```typescript
+const { raiseShield, lowerShield } = useShield();
+
+// Raise shield with unique ID and optional message
+raiseShield("my-operation", "Processing with AI...");
+
+// Always lower in finally block
+try {
+    await longRunningOperation();
+} finally {
+    lowerShield("my-operation");
+}
+```
+
+**When to use Shield:**
+
+- ✅ All LLM operations (auto-categorize, bulk import, store scanning) - both modal-based and background
+- ✅ Long-running operations (> 1-2 seconds) where user should not interact with UI
+- ✅ Operations that continue after modal dismissal (e.g., bulk import processing continues after modal closes)
+- ❌ Quick operations (< 500ms)
+- ❌ Operations with their own full-screen blocking UI (rare)
+
+**Remove other loading indicators:** When Shield is active, remove redundant loading states like disabled buttons, spinners in modals, or `isLoading` flags. Shield provides the primary feedback.
+
+**Bulk import pattern:** Raise shield when starting import, keep it raised while processing all items (even after modal closes), lower it only after the last item completes. Use a single shield ID for the entire batch operation.
+
+**Multiple shields:**
+
+Shield uses Set-based ID tracking, so multiple callers can raise shields with different IDs. The shield overlay stays visible until all IDs are lowered. This prevents premature dismissal when multiple operations are running.
+
+### Z-index conventions
+
+**Standard z-index layers for mobile app:**
+
+| Layer              | Z-Index | Usage                           | Example                          |
+| ------------------ | ------- | ------------------------------- | -------------------------------- |
+| Content            | 0-999   | Normal page content             | Regular components               |
+| Overlay animations | 10000   | Non-blocking visual effects     | `OverlayAnimation` (laser sweep) |
+| Modals             | 10000+  | Ionic modals (auto-managed)     | `IonModal`, `IonAlert`           |
+| Shield             | 15000   | Blocking overlay for operations | `<Shield />` component           |
+
+**Rules:**
+
+- Do not use z-index values between 1000-9999 (reserved gap)
+- Overlay animations use `pointer-events: none` (non-blocking)
+- Shield uses `pointer-events: auto` (blocks all input)
+- Ionic modals manage their own z-index (typically 10000+)
+- Shield must be above modals to block input during modal-triggered operations
+
+**When adding new overlay layers:**
+
+1. Determine if it should block input (use `pointer-events: auto`) or not
+2. Choose z-index based on stacking requirements
+3. Document the layer in this table
+4. Consider interaction with existing layers (Shield, modals, animations)
 
 ---
 

@@ -162,12 +162,38 @@ echo ""
 # Get port from .env file
 PORT=$(grep -E '^PORT=' "$BACKEND_DIR/.env" | cut -d '=' -f 2 | tr -d '"' || echo "3000")
 
+# Configure firewall to allow access from network
+echo "Configuring firewall for port $PORT..."
+if command -v ufw &> /dev/null; then
+    echo "Detected ufw firewall"
+    sudo ufw allow $PORT/tcp
+    echo "✓ Firewall rule added (ufw allow $PORT/tcp)"
+elif command -v iptables &> /dev/null; then
+    echo "Detected iptables firewall"
+    # Check if rule already exists
+    if ! sudo iptables -C INPUT -p tcp --dport $PORT -j ACCEPT 2>/dev/null; then
+        sudo iptables -A INPUT -p tcp --dport $PORT -j ACCEPT
+        # Save iptables rules (method varies by distro)
+        if command -v iptables-save &> /dev/null; then
+            sudo sh -c "iptables-save > /etc/iptables/rules.v4" 2>/dev/null || true
+        fi
+        echo "✓ Firewall rule added (iptables -A INPUT -p tcp --dport $PORT -j ACCEPT)"
+    else
+        echo "✓ Firewall rule already exists"
+    fi
+else
+    echo "⚠️  No supported firewall detected (ufw/iptables)"
+    echo "   If you need network access, manually allow port $PORT"
+fi
+echo ""
+
 # Display useful commands
 echo "================================================"
 echo "Installation Complete!"
 echo "================================================"
 echo ""
 echo "The backend service is now running and will start automatically on boot."
+echo "Firewall configured to allow network access on port $PORT."
 echo ""
 echo "Useful commands:"
 echo "  sudo systemctl status $SERVICE_NAME    # Check service status"
@@ -176,8 +202,12 @@ echo "  sudo systemctl stop $SERVICE_NAME      # Stop service"
 echo "  sudo journalctl -u $SERVICE_NAME -f   # View live logs"
 echo "  sudo journalctl -u $SERVICE_NAME -n 100  # View last 100 log lines"
 echo ""
-echo "Backend should be accessible at: http://localhost:$PORT"
-echo "Admin portal: http://localhost:$PORT/admin"
+echo "Backend should be accessible at:"
+echo "  Local:   http://localhost:$PORT"
+echo "  Network: http://$(hostname -I | awk '{print $1}'):$PORT"
+echo ""
+echo "Admin portal:"
+echo "  http://localhost:$PORT/admin"
 echo ""
 echo "Environment file location: $BACKEND_DIR/.env"
 echo "Database location: $BACKEND_DIR/production.db"

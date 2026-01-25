@@ -1,8 +1,10 @@
+Test with prd backend build--is it faster?
+Test it in offline mode
+Test on phone
 If I add an existing store item to the shopping list but move it to another aisle/section, the new aisle/section is disregarded.
 Test all workflows, reviewing the API calls
 hard to select items at the bottom of pages/lists
 review data model
-Shield while loading AI data or doing other slow stuff
 Add potential future item columns
 =====
 edit account details: email, name etc.

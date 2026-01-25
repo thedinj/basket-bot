@@ -115,7 +115,7 @@ const StoreDetail: React.FC = () => {
                 "Take a photo of the store directory showing aisle numbers and their sections/categories.",
             model: "gpt-5.2",
             buttonText: "Scan Aisles & Sections",
-            showPatienceMessage: true,
+            shieldMessage: "Scanning store directory...",
             validateResponse: (response) => {
                 if (!validateStoreScanResult(response.data)) {
                     throw new Error(

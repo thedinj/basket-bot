@@ -1,6 +1,7 @@
 import type { ShoppingListItemInput } from "@basket-bot/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import pluralize from "pluralize";
+import { useCallback } from "react";
 import {
     useGetOrCreateStoreItem,
     useStoreAisles,
@@ -12,6 +13,7 @@ import { useToast } from "../../hooks/useToast";
 import type { ParsedShoppingItem } from "../../llm/features/bulkImport";
 import { useAutoCategorize } from "../../llm/features/useAutoCategorize";
 import { normalizeItemName, toSentenceCase } from "../../utils/stringUtils";
+import { useShield } from "../shield/useShield";
 import { useShoppingListContext } from "./useShoppingListContext";
 
 /**
@@ -21,7 +23,6 @@ import { useShoppingListContext } from "./useShoppingListContext";
  * - Creates or updates items in the shopping list
  */
 export function useBulkImport(storeId: string) {
-    const [isImporting, setIsImporting] = useState(false);
     const upsertItem = useUpsertShoppingListItem();
     const getOrCreateStoreItem = useGetOrCreateStoreItem();
     const { data: storeItems } = useStoreItems(storeId);
@@ -31,10 +32,11 @@ export function useBulkImport(storeId: string) {
     const { showError, showSuccess } = useToast();
     const { markAsNewlyImported } = useShoppingListContext();
     const queryClient = useQueryClient();
+    const { raiseShield, lowerShield } = useShield();
 
     const importItems = useCallback(
         async (parsedItems: ParsedShoppingItem[]) => {
-            setIsImporting(true);
+            const shieldId = "bulk-import";
             let successCount = 0;
             let errorCount = 0;
             const importedItemIds: string[] = [];
@@ -42,6 +44,13 @@ export function useBulkImport(storeId: string) {
             try {
                 for (let i = 0; i < parsedItems.length; i++) {
                     const parsed = parsedItems[i];
+
+                    // Update progress
+                    raiseShield(
+                        shieldId,
+                        `Importing ${i + 1} of ${parsedItems.length} ${pluralize("item", parsedItems.length)}...`
+                    );
+
                     try {
                         // Find existing store item by normalized name (handles singular/plural)
                         const parsedNameNorm = normalizeItemName(parsed.name);
@@ -135,7 +144,7 @@ export function useBulkImport(storeId: string) {
             } catch (error) {
                 showError(error instanceof Error ? error.message : "Failed to import items");
             } finally {
-                setIsImporting(false);
+                lowerShield(shieldId);
             }
         },
         [
@@ -144,6 +153,8 @@ export function useBulkImport(storeId: string) {
             getOrCreateStoreItem,
             markAsNewlyImported,
             queryClient,
+            raiseShield,
+            lowerShield,
             sections,
             showError,
             showSuccess,
@@ -153,5 +164,5 @@ export function useBulkImport(storeId: string) {
         ]
     );
 
-    return { importItems, isImporting };
+    return { importItems };
 }
