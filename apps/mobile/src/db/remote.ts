@@ -372,6 +372,25 @@ export class RemoteDatabase extends BaseDatabase {
         );
 
         if (exactMatch) {
+            // Apply section-aisle normalization: prefer section over aisle
+            const normalizedSectionId = sectionId ?? null;
+            const normalizedAisleId = sectionId ? null : (aisleId ?? null);
+
+            // Update the item if location information differs
+            const needsUpdate = 
+                normalizedSectionId !== (exactMatch.sectionId ?? null) ||
+                normalizedAisleId !== (exactMatch.aisleId ?? null);
+
+            if (needsUpdate) {
+                return this.updateItem(
+                    storeId,
+                    exactMatch.id,
+                    exactMatch.name,
+                    normalizedAisleId,
+                    normalizedSectionId
+                );
+            }
+
             return exactMatch;
         }
 
