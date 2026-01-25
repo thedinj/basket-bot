@@ -99,7 +99,7 @@ export function useBulkImport(storeId: string) {
                         const shoppingListItem: ShoppingListItemInput = {
                             storeItemId: itemId,
                             storeId: storeId,
-                            qty: parsed.quantity ?? 1,
+                            qty: parsed.quantity,
                             unitId: parsed.unit,
                             notes: parsed.notes,
                         };
