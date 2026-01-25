@@ -10,14 +10,45 @@ import type {
     StoreItemWithDetails,
     StoreSection,
 } from "@basket-bot/core";
-import { apiClient } from "../lib/api/client";
+import { apiClient, ApiError } from "../lib/api/client";
+import { mutationQueue } from "../lib/mutationQueue";
 import { BaseDatabase } from "./base";
 
 /**
  * Remote database implementation that connects to backend API.
  * Maps all Database interface methods to API calls.
+ * Automatically queues failed mutations for retry on network errors.
  */
 export class RemoteDatabase extends BaseDatabase {
+    /**
+     * Helper to execute a mutation with automatic queueing on network failure
+     */
+    private async executeMutation<T>(
+        operation: string,
+        endpoint: string,
+        method: string,
+        apiCall: () => Promise<T>,
+        data?: unknown
+    ): Promise<T> {
+        try {
+            const result = await apiCall();
+            this.notifyChange();
+            return result;
+        } catch (error) {
+            // Queue the mutation if it's a network error
+            if (error instanceof ApiError && error.isNetworkError) {
+                await mutationQueue.enqueue({
+                    operation,
+                    endpoint,
+                    method,
+                    data,
+                });
+                console.log(`[RemoteDatabase] Queued ${operation} for later retry`);
+            }
+            // Re-throw the error so calling code can handle it
+            throw error;
+        }
+    }
     protected async initializeStorage(): Promise<void> {
         // No local storage initialization needed - API is always ready
         // Just notify that we're ready
@@ -35,11 +66,16 @@ export class RemoteDatabase extends BaseDatabase {
 
     // ========== Store Operations ==========
     async insertStore(name: string): Promise<Store> {
-        const response = await apiClient.post<{ store: Store }>("/api/stores", {
-            name,
-        });
-        this.notifyChange();
-        return response.store;
+        return this.executeMutation(
+            "insertStore",
+            "/api/stores",
+            "POST",
+            async () => {
+                const response = await apiClient.post<{ store: Store }>("/api/stores", { name });
+                return response.store;
+            },
+            { name }
+        );
     }
 
     async loadAllStores(): Promise<Store[]> {
@@ -57,14 +93,24 @@ export class RemoteDatabase extends BaseDatabase {
     }
 
     async updateStore(id: string, name: string): Promise<Store> {
-        const response = await apiClient.put<{ store: Store }>(`/api/stores/${id}`, { name });
-        this.notifyChange();
-        return response.store;
+        return this.executeMutation(
+            "updateStore",
+            `/api/stores/${id}`,
+            "PUT",
+            async () => {
+                const response = await apiClient.put<{ store: Store }>(`/api/stores/${id}`, {
+                    name,
+                });
+                return response.store;
+            },
+            { name }
+        );
     }
 
     async deleteStore(id: string): Promise<void> {
-        await apiClient.delete(`/api/stores/${id}`);
-        this.notifyChange();
+        return this.executeMutation("deleteStore", `/api/stores/${id}`, "DELETE", async () => {
+            await apiClient.delete(`/api/stores/${id}`);
+        });
     }
 
     // ========== App Settings Operations ==========
@@ -87,12 +133,19 @@ export class RemoteDatabase extends BaseDatabase {
 
     // ========== StoreAisle Operations ==========
     async insertAisle(storeId: string, name: string): Promise<StoreAisle> {
-        const response = await apiClient.post<{ aisle: StoreAisle }>(
+        return this.executeMutation(
+            "insertAisle",
             `/api/stores/${storeId}/aisles`,
+            "POST",
+            async () => {
+                const response = await apiClient.post<{ aisle: StoreAisle }>(
+                    `/api/stores/${storeId}/aisles`,
+                    { name }
+                );
+                return response.aisle;
+            },
             { name }
         );
-        this.notifyChange();
-        return response.aisle;
     }
 
     async getAislesByStore(storeId: string): Promise<StoreAisle[]> {
@@ -103,35 +156,62 @@ export class RemoteDatabase extends BaseDatabase {
     }
 
     async updateAisle(storeId: string, id: string, name: string): Promise<StoreAisle> {
-        const response = await apiClient.put<{ aisle: StoreAisle }>(
+        return this.executeMutation(
+            "updateAisle",
             `/api/stores/${storeId}/aisles/${id}`,
+            "PUT",
+            async () => {
+                const response = await apiClient.put<{ aisle: StoreAisle }>(
+                    `/api/stores/${storeId}/aisles/${id}`,
+                    { name }
+                );
+                return response.aisle;
+            },
             { name }
         );
-        this.notifyChange();
-        return response.aisle;
     }
 
     async deleteAisle(storeId: string, id: string): Promise<void> {
-        await apiClient.delete(`/api/stores/${storeId}/aisles/${id}`);
-        this.notifyChange();
+        return this.executeMutation(
+            "deleteAisle",
+            `/api/stores/${storeId}/aisles/${id}`,
+            "DELETE",
+            async () => {
+                await apiClient.delete(`/api/stores/${storeId}/aisles/${id}`);
+            }
+        );
     }
 
     async reorderAisles(
         storeId: string,
         updates: Array<{ id: string; sortOrder: number }>
     ): Promise<void> {
-        await apiClient.post(`/api/stores/${storeId}/aisles/reorder`, { updates });
-        this.notifyChange();
+        return this.executeMutation(
+            "reorderAisles",
+            `/api/stores/${storeId}/aisles/reorder`,
+            "POST",
+            async () => {
+                await apiClient.post(`/api/stores/${storeId}/aisles/reorder`, { updates });
+            },
+            { updates }
+        );
     }
 
     // ========== StoreSection Operations ==========
     async insertSection(storeId: string, name: string, aisleId: string): Promise<StoreSection> {
-        const response = await apiClient.post<{ section: StoreSection }>(
+        return this.executeMutation(
+            "insertSection",
             `/api/stores/${storeId}/sections`,
+            "POST",
+            async () => {
+                const response = await apiClient.post<{ section: StoreSection }>(
+                    `/api/stores/${storeId}/sections`,
+                    { name, aisleId }
+                );
+                return response.section;
+            },
             { name, aisleId }
         );
-        this.notifyChange();
-        return response.section;
     }
 
     async getSectionsByStore(storeId: string): Promise<StoreSection[]> {
@@ -152,25 +232,45 @@ export class RemoteDatabase extends BaseDatabase {
         name: string,
         aisleId: string
     ): Promise<StoreSection> {
-        const response = await apiClient.put<{ section: StoreSection }>(
+        return this.executeMutation(
+            "updateSection",
             `/api/stores/${storeId}/sections/${id}`,
+            "PUT",
+            async () => {
+                const response = await apiClient.put<{ section: StoreSection }>(
+                    `/api/stores/${storeId}/sections/${id}`,
+                    { name, aisleId }
+                );
+                return response.section;
+            },
             { name, aisleId }
         );
-        this.notifyChange();
-        return response.section;
     }
 
     async deleteSection(storeId: string, id: string): Promise<void> {
-        await apiClient.delete(`/api/stores/${storeId}/sections/${id}`);
-        this.notifyChange();
+        return this.executeMutation(
+            "deleteSection",
+            `/api/stores/${storeId}/sections/${id}`,
+            "DELETE",
+            async () => {
+                await apiClient.delete(`/api/stores/${storeId}/sections/${id}`);
+            }
+        );
     }
 
     async reorderSections(
         storeId: string,
         updates: Array<{ id: string; sortOrder: number }>
     ): Promise<void> {
-        await apiClient.post(`/api/stores/${storeId}/sections/reorder`, { updates });
-        this.notifyChange();
+        return this.executeMutation(
+            "reorderSections",
+            `/api/stores/${storeId}/sections/reorder`,
+            "POST",
+            async () => {
+                await apiClient.post(`/api/stores/${storeId}/sections/reorder`, { updates });
+            },
+            { updates }
+        );
     }
 
     // ========== StoreItem Operations ==========
@@ -180,13 +280,19 @@ export class RemoteDatabase extends BaseDatabase {
         aisleId?: string | null,
         sectionId?: string | null
     ): Promise<StoreItem> {
-        const response = await apiClient.post<{ item: StoreItem }>(`/api/stores/${storeId}/items`, {
-            name,
-            aisleId,
-            sectionId,
-        });
-        this.notifyChange();
-        return response.item;
+        return this.executeMutation(
+            "insertItem",
+            `/api/stores/${storeId}/items`,
+            "POST",
+            async () => {
+                const response = await apiClient.post<{ item: StoreItem }>(
+                    `/api/stores/${storeId}/items`,
+                    { name, aisleId, sectionId }
+                );
+                return response.item;
+            },
+            { name, aisleId, sectionId }
+        );
     }
 
     async getItemsByStore(storeId: string): Promise<StoreItem[]> {
@@ -215,12 +321,19 @@ export class RemoteDatabase extends BaseDatabase {
         aisleId?: string | null,
         sectionId?: string | null
     ): Promise<StoreItem> {
-        const response = await apiClient.put<{ item: StoreItem }>(
+        return this.executeMutation(
+            "updateItem",
             `/api/stores/${storeId}/items/${id}`,
+            "PUT",
+            async () => {
+                const response = await apiClient.put<{ item: StoreItem }>(
+                    `/api/stores/${storeId}/items/${id}`,
+                    { name, aisleId, sectionId }
+                );
+                return response.item;
+            },
             { name, aisleId, sectionId }
         );
-        this.notifyChange();
-        return response.item;
     }
 
     async toggleItemFavorite(_id: string): Promise<StoreItem> {
@@ -266,17 +379,30 @@ export class RemoteDatabase extends BaseDatabase {
     }
 
     async toggleItemFavoriteForStore(storeId: string, id: string): Promise<StoreItem> {
-        const response = await apiClient.post<{ item: StoreItem }>(
+        return this.executeMutation(
+            "toggleItemFavoriteForStore",
             `/api/stores/${storeId}/items/${id}/favorite`,
+            "POST",
+            async () => {
+                const response = await apiClient.post<{ item: StoreItem }>(
+                    `/api/stores/${storeId}/items/${id}/favorite`,
+                    {}
+                );
+                return response.item;
+            },
             {}
         );
-        this.notifyChange();
-        return response.item;
     }
 
     async deleteItemForStore(storeId: string, id: string): Promise<void> {
-        await apiClient.delete(`/api/stores/${storeId}/items/${id}`);
-        this.notifyChange();
+        return this.executeMutation(
+            "deleteItemForStore",
+            `/api/stores/${storeId}/items/${id}`,
+            "DELETE",
+            async () => {
+                await apiClient.delete(`/api/stores/${storeId}/items/${id}`);
+            }
+        );
     }
 
     // ========== ShoppingList Operations ==========
@@ -293,12 +419,19 @@ export class RemoteDatabase extends BaseDatabase {
     }
 
     async upsertShoppingListItem(params: ShoppingListItemInput): Promise<ShoppingListItem> {
-        const response = await apiClient.post<{ item: ShoppingListItem }>(
+        return this.executeMutation(
+            "upsertShoppingListItem",
             `/api/stores/${params.storeId}/shopping-list`,
+            "POST",
+            async () => {
+                const response = await apiClient.post<{ item: ShoppingListItem }>(
+                    `/api/stores/${params.storeId}/shopping-list`,
+                    params
+                );
+                return response.item;
+            },
             params
         );
-        this.notifyChange();
-        return response.item;
     }
 
     async toggleShoppingListItemChecked(
@@ -306,28 +439,58 @@ export class RemoteDatabase extends BaseDatabase {
         id: string,
         isChecked: boolean
     ): Promise<void> {
-        await apiClient.post(`/api/stores/${storeId}/shopping-list/${id}/toggle`, { isChecked });
-        this.notifyChange();
+        return this.executeMutation(
+            "toggleShoppingListItemChecked",
+            `/api/stores/${storeId}/shopping-list/${id}/toggle`,
+            "POST",
+            async () => {
+                await apiClient.post(`/api/stores/${storeId}/shopping-list/${id}/toggle`, {
+                    isChecked,
+                });
+            },
+            { isChecked }
+        );
     }
 
     /**
      * Delete shopping list item AND the associated store item
      */
     async deleteShoppingListItem(storeId: string, id: string): Promise<void> {
-        await apiClient.delete(`/api/stores/${storeId}/shopping-list/${id}/delete-with-item`);
-        this.notifyChange();
+        return this.executeMutation(
+            "deleteShoppingListItem",
+            `/api/stores/${storeId}/shopping-list/${id}/delete-with-item`,
+            "DELETE",
+            async () => {
+                await apiClient.delete(
+                    `/api/stores/${storeId}/shopping-list/${id}/delete-with-item`
+                );
+            }
+        );
     }
 
     /**
      * Remove shopping list item only (keeps the store item)
      */
     async removeShoppingListItem(storeId: string, id: string): Promise<void> {
-        await apiClient.delete(`/api/stores/${storeId}/shopping-list/${id}`);
-        this.notifyChange();
+        return this.executeMutation(
+            "removeShoppingListItem",
+            `/api/stores/${storeId}/shopping-list/${id}`,
+            "DELETE",
+            async () => {
+                await apiClient.delete(`/api/stores/${storeId}/shopping-list/${id}`);
+            }
+        );
     }
 
     async clearCheckedShoppingListItems(storeId: string): Promise<void> {
-        await apiClient.post(`/api/stores/${storeId}/shopping-list/clear-checked`, {});
-        this.notifyChange();
+        return this.executeMutation(
+            "clearCheckedShoppingListItems",
+            `/api/stores/${storeId}/shopping-list/clear-checked`,
+            "POST",
+            async () => {
+                await apiClient.post(`/api/stores/${storeId}/shopping-list/clear-checked`, {});
+            },
+            {}
+        );
     }
 }

@@ -401,6 +401,111 @@ API client rules:
 - Validate server responses (Zod) for critical flows.
 - Do not embed backend-only code in mobile.
 
+### Network resilience and offline handling
+
+The mobile app implements robust network error handling with mutation queuing for offline support.
+
+**Architecture:**
+
+- **TanStack Query** for server state with intelligent retry logic
+- **Mutation Queue** for persisting failed mutations (via Capacitor Preferences)
+- **Network Status Monitoring** via TanStack Query's `onlineManager`
+- **API Timeout** of 15 seconds with proper error classification
+
+**Query configuration (DatabaseContext.tsx):**
+
+```typescript
+staleTime: 2 * 60 * 1000,  // 2 minutes - data stays fresh
+gcTime: 10 * 60 * 1000,    // 10 minutes - cache retention
+retry: (failureCount, error: unknown) => {
+  // Smart retry: skip 4xx except timeout/rate-limit, max 3 attempts
+  if (error instanceof ApiError && error.status) {
+    if (error.status >= 400 && error.status < 500) {
+      return error.status === 408 || error.status === 429;
+    }
+  }
+  return failureCount < 3;
+},
+retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+```
+
+**Error classification (ApiClient):**
+
+- Network errors (timeout, no connection) have `isNetworkError: true` flag on `ApiError`
+- Timeout after 15 seconds using `AbortController`
+- Distinguish network failures from auth/validation/server errors
+
+**Mutation queuing pattern:**
+
+All mutations in `RemoteDatabase` are wrapped with `executeMutation()`:
+
+```typescript
+private async executeMutation<T>(
+  operation: () => Promise<T>,
+  mutationName: string
+): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof ApiError && error.isNetworkError) {
+      await mutationQueue.enqueue(mutationName, operation);
+      throw error; // Still throw so UI can show feedback
+    }
+    throw error;
+  }
+}
+```
+
+**Queue persistence:**
+
+- Stored in Capacitor Preferences as JSON under key `"mutation_queue"`
+- Survives app restarts
+- FIFO processing order
+- Permanent failures (4xx except 408/429) are discarded from queue
+- Server state wins on conflict (no optimistic retry)
+
+**User-facing features:**
+
+- `<NetworkStatusBanner />` shows offline status and pending change count
+- Refresh button in AppHeader (via `<GlobalActions />`) to manually refetch data
+- Sync button appears when queue has pending mutations
+- Toast notifications on sync completion with success/failure counts
+
+**Key hooks:**
+
+- `useNetworkStatus()` - monitor online/offline state
+- `useMutationQueue()` - subscribe to queue size and processing state
+- `useRefreshAndSync()` - manual refresh and sync operations
+- `usePreloadCoreData()` - prefetch stores/aisles/sections (30min cache)
+
+**Error message formatting:**
+
+Use `formatErrorMessage(error)` from `utils/errorUtils.ts` for consistent user-facing error text:
+
+- Network errors: "Network error. Please check your connection."
+- Timeout errors: "Request timed out. Please check your connection."
+- Auth errors: "Please log in again" (clears tokens)
+- Validation errors: Shows field-specific messages
+- Server errors: Generic message without exposing internals
+
+**Critical pattern: Always use `unknown` in catch blocks, never `any`:**
+
+```typescript
+try {
+  await operation();
+} catch (error: unknown) {
+  if (error instanceof ApiError && error.isNetworkError) {
+    // Handle network error
+  }
+  throw error;
+}
+```
+
+**Documentation:**
+
+- See `NETWORK_RESILIENCE.md` for full technical details
+- See `NETWORK_QUICK_START.md` for developer quick reference
+
 ---
 
 ## “How to write code here”

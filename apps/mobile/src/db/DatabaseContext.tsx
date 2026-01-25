@@ -1,7 +1,7 @@
-import React, { PropsWithChildren, use, useEffect, useRef } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { getDatabase, Database } from "./database";
+import React, { PropsWithChildren, use, useEffect, useRef } from "react";
 import { DatabaseContext, type DatabaseContextValue } from "./context";
+import { Database, getDatabase } from "./database";
 
 /**
  * Initialize database and return promise that resolves to it
@@ -12,13 +12,30 @@ function initializeDatabase(): Promise<Database> {
 
 /**
  * Create QueryClient instance with default options
+ * Optimized for mobile with longer cache times and better retry logic
+ * Exported for external access (e.g., mutation queue processing)
  */
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            staleTime: 0, // Always refetch when component mounts
-            gcTime: 5 * 60 * 1000, // Keep unused data in cache for 5 minutes
-            retry: 1,
+            staleTime: 2 * 60 * 1000, // 2 minutes - reduce unnecessary refetches
+            gcTime: 10 * 60 * 1000, // 10 minutes - keep cached data longer
+            retry: (failureCount, error: unknown) => {
+                // Don't retry on 4xx errors except 408 (timeout) and 429 (rate limit)
+                const err = error as { status?: number };
+                if (err?.status && err.status >= 400 && err.status < 500) {
+                    if (err.status === 408 || err.status === 429) {
+                        return failureCount < 3;
+                    }
+                    return false;
+                }
+                // Retry network errors and 5xx errors up to 3 times
+                return failureCount < 3;
+            },
+            retryDelay: (attemptIndex) => {
+                // Exponential backoff: 1s, 2s, 4s (capped at 30s)
+                return Math.min(1000 * 2 ** attemptIndex, 30000);
+            },
             refetchOnWindowFocus: false,
         },
     },
@@ -51,9 +68,7 @@ export const DatabaseProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
     return (
         <QueryClientProvider client={queryClient}>
-            <DatabaseContext.Provider value={contextValue}>
-                {children}
-            </DatabaseContext.Provider>
+            <DatabaseContext.Provider value={contextValue}>{children}</DatabaseContext.Provider>
         </QueryClientProvider>
     );
 };

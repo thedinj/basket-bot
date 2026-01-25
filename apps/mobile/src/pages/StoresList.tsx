@@ -24,6 +24,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { AppHeader } from "../components/layout/AppHeader";
+import GlobalActions from "../components/layout/GlobalActions";
 import { FabSpacer } from "../components/shared/FabSpacer";
 import { useCreateStore, useNotificationCounts, useStores, useUpdateStore } from "../db/hooks";
 
@@ -85,6 +86,7 @@ const StoresList: React.FC = () => {
     return (
         <IonPage>
             <AppHeader title="Stores">
+                <GlobalActions refreshQueryKeys={[["stores"]]} />
                 <IonButtons slot="end">
                     <IonButton routerLink="/invitations">
                         <IonIcon slot="icon-only" icon={mailOutline} />

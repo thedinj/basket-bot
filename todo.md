@@ -12,9 +12,7 @@ refresh @ midnight so we show snoozed items on time
 Shield while loading AI data or doing other slow stuff
 Hard to click store items at the bottom of the screen
 =====
-"Unsure" section, below ideas? or mixed in with the rest?
 Offline mode: remember delta
-No inserts in seed file--use shared insert logic
 eslint.config.js for the monorepo?
 ionic.config.json?
 wider page menu, no wrapping on show snoozed

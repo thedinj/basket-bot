@@ -21,6 +21,7 @@ import StoresList from "../pages/StoresList";
 import { AppHeaderProvider } from "./layout/AppHeaderProvider";
 import { AppMenu } from "./layout/AppMenu";
 import Settings from "./settings/Settings";
+import NetworkStatusBanner from "./shared/NetworkStatusBanner";
 
 /**
  * Main app component with authenticated routes and tabs
@@ -40,6 +41,7 @@ const Main: React.FC = () => {
             <AppHeaderProvider>
                 <AppMenu />
                 <Settings />
+                <NetworkStatusBanner />
                 <IonTabs>
                     <IonRouterOutlet id="main-content">
                         <Route exact path="/shoppinglist" component={ShoppingList} />

@@ -13,6 +13,7 @@ import {
 import { use } from "react";
 import { useToast } from "../hooks/useToast";
 import * as storeSharingApi from "../lib/api/storeSharing";
+import { formatErrorMessage } from "../utils/errorUtils";
 import { DatabaseContext } from "./context";
 import { checkAndInvalidateCoreDataCache } from "./coreDataVersion";
 import { useOptimisticMutation, type QueryData } from "./optimisticUpdates";
@@ -54,7 +55,7 @@ export function useDatabase(): Database {
 /**
  * Hook to preload static/core data tables on app initialization
  * Call this hook early in the app lifecycle to populate the cache
- * with static reference data (quantity units) and settings
+ * with static reference data (quantity units), settings, stores, and store structure
  *
  * Also checks for app version changes and invalidates cache if needed
  */
@@ -72,6 +73,36 @@ export const usePreloadCoreData = () => {
             queryFn: () => database.loadAllQuantityUnits(),
             staleTime: CORE_DATA_CACHE.STATIC.staleTime,
         });
+
+        // Prefetch user's stores (30 minute cache)
+        try {
+            const stores = await queryClient.fetchQuery({
+                queryKey: ["stores"],
+                queryFn: () => database.loadAllStores(),
+                staleTime: 30 * 60 * 1000, // 30 minutes
+            });
+
+            // Prefetch aisles and sections for each store (30 minute cache)
+            if (stores && stores.length > 0) {
+                await Promise.all(
+                    stores.flatMap((store) => [
+                        queryClient.prefetchQuery({
+                            queryKey: ["aisles", store.id],
+                            queryFn: () => database.getAislesByStore(store.id),
+                            staleTime: 30 * 60 * 1000, // 30 minutes
+                        }),
+                        queryClient.prefetchQuery({
+                            queryKey: ["sections", store.id],
+                            queryFn: () => database.getSectionsByStore(store.id),
+                            staleTime: 30 * 60 * 1000, // 30 minutes
+                        }),
+                    ])
+                );
+            }
+        } catch (error) {
+            console.error("[usePreloadCoreData] Failed to prefetch stores:", error);
+            // Don't block app initialization on preload failures
+        }
     };
 
     return { prefetchCoreData };
@@ -893,7 +924,7 @@ export function useUpsertShoppingListItem() {
             });
         },
         onError: (error: Error) => {
-            showError(`Failed to save item: ${error.message}`);
+            showError(formatErrorMessage(error, "save item"));
         },
     });
 }
@@ -929,7 +960,7 @@ export function useToggleItemChecked() {
                 };
             },
         }),
-        onError: (error) => showError(`Failed to update item: ${error.message}`),
+        onError: (error) => showError(formatErrorMessage(error, "update item")),
     });
 }
 
@@ -950,7 +981,7 @@ export function useDeleteShoppingListItem() {
             });
         },
         onError: (error: Error) => {
-            showError(`Failed to delete item: ${error.message}`);
+            showError(formatErrorMessage(error, "delete item"));
         },
     });
 }

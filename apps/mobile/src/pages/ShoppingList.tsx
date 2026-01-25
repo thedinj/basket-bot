@@ -13,6 +13,7 @@ import { Suspense, useCallback, useMemo, useState } from "react";
 import { ANIMATION_EFFECTS } from "../animations/effects";
 import { AppHeader } from "../components/layout/AppHeader";
 import { PageMenuItemConfig } from "../components/layout/AppHeaderContext";
+import { GlobalActions } from "../components/layout/GlobalActions";
 import LoadingFallback from "../components/LoadingFallback";
 import { FabSpacer } from "../components/shared/FabSpacer";
 import { OverlayAnimation } from "../components/shared/OverlayAnimation";
@@ -99,7 +100,9 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
 
     return (
         <>
-            <AppHeader title="Shopping List" menuItems={menuItems} />
+            <AppHeader title="Shopping List" menuItems={menuItems}>
+                <GlobalActions refreshQueryKeys={[["shopping-list-items", storeId]]} />
+            </AppHeader>
             <IonContent fullscreen>
                 {activeItems.length === 0 && (
                     <div

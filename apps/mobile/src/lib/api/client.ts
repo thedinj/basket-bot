@@ -10,12 +10,19 @@ export class ApiError extends Error {
     constructor(
         message: string,
         public code?: string,
-        public tokenStatus?: string | null
+        public tokenStatus?: string | null,
+        public status?: number,
+        public isNetworkError: boolean = false
     ) {
         super(message);
         this.name = "ApiError";
     }
 }
+
+/**
+ * Timeout duration for API requests (15 seconds)
+ */
+const REQUEST_TIMEOUT_MS = 15000;
 
 export class ApiClient {
     private baseUrl: string = DEFAULT_API_BASE_URL;
@@ -101,17 +108,59 @@ export class ApiClient {
             console.warn("[ApiClient] No access token available for request");
         }
 
-        let response = await fetch(`${this.baseUrl}${endpoint}`, {
-            ...options,
-            headers,
-        });
+        // Set up timeout using AbortController
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+        try {
+            const response = await fetch(`${this.baseUrl}${endpoint}`, {
+                ...options,
+                headers,
+                signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+
+            return await this.handleResponse<T>(response, endpoint, options, headers);
+        } catch (error: unknown) {
+            clearTimeout(timeoutId);
+
+            // Handle network errors (timeout, no connection, etc.)
+            if (error instanceof Error && error.name === "AbortError") {
+                throw new ApiError(
+                    "Request timed out. Please check your connection.",
+                    "TIMEOUT",
+                    null,
+                    408,
+                    true
+                );
+            }
+            if (error instanceof TypeError && error.message.includes("fetch")) {
+                throw new ApiError(
+                    "Network error. Please check your connection.",
+                    "NETWORK_ERROR",
+                    null,
+                    undefined,
+                    true
+                );
+            }
+            throw error;
+        }
+    }
+
+    private async handleResponse<T>(
+        response: Response,
+        endpoint: string,
+        options: RequestInit,
+        headers: Record<string, string>
+    ): Promise<T> {
+        let responseToUse = response;
 
         // If 401 with invalid token header, access token is definitely invalid - clear it immediately
         const requestHeaders = options.headers as Record<string, string> | undefined;
-        const tokenStatus = response.headers.get("X-Token-Status");
+        const tokenStatus = responseToUse.headers.get("X-Token-Status");
 
         if (
-            response.status === 401 &&
+            responseToUse.status === 401 &&
             tokenStatus === "invalid" &&
             !requestHeaders?.["X-Retry-After-Refresh"]
         ) {
@@ -127,10 +176,30 @@ export class ApiClient {
                     headers["Authorization"] = `Bearer ${newAccessToken}`;
                     headers["X-Retry-After-Refresh"] = "true";
 
-                    response = await fetch(`${this.baseUrl}${endpoint}`, {
-                        ...options,
-                        headers,
-                    });
+                    // Set up new timeout for retry
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+                    try {
+                        responseToUse = await fetch(`${this.baseUrl}${endpoint}`, {
+                            ...options,
+                            headers,
+                            signal: controller.signal,
+                        });
+                        clearTimeout(timeoutId);
+                    } catch (retryError: unknown) {
+                        clearTimeout(timeoutId);
+                        if (retryError instanceof Error && retryError.name === "AbortError") {
+                            throw new ApiError(
+                                "Request timed out after token refresh",
+                                "TIMEOUT",
+                                null,
+                                408,
+                                true
+                            );
+                        }
+                        throw retryError;
+                    }
                 } catch (refreshError) {
                     // Refresh token was already cleared in refreshAccessToken if needed
                     // Re-throw with token status if it's an ApiError, otherwise create new one
@@ -140,7 +209,8 @@ export class ApiClient {
                     throw new ApiError(
                         "Session expired, please log in again",
                         "SESSION_EXPIRED",
-                        "invalid"
+                        "invalid",
+                        401
                     );
                 }
             } else {
@@ -148,20 +218,27 @@ export class ApiClient {
                 throw new ApiError(
                     "Session expired, please log in again",
                     "SESSION_EXPIRED",
-                    "invalid"
+                    "invalid",
+                    401
                 );
             }
         }
 
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({
+        if (!responseToUse.ok) {
+            const error = await responseToUse.json().catch(() => ({
                 code: "UNKNOWN_ERROR",
                 message: "An unknown error occurred",
             }));
-            throw new Error(error.message || "Request failed");
+            throw new ApiError(
+                error.message || "Request failed",
+                error.code || "UNKNOWN_ERROR",
+                tokenStatus,
+                responseToUse.status,
+                false
+            );
         }
 
-        return response.json();
+        return responseToUse.json();
     }
 
     async get<T>(endpoint: string): Promise<T> {
