@@ -1,18 +1,22 @@
 import {
     IonButton,
     IonButtons,
+    IonCheckbox,
     IonContent,
     IonHeader,
     IonIcon,
+    IonItem,
+    IonLabel,
     IonList,
     IonListHeader,
     IonModal,
-    IonText,
+    IonNote,
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
 import { closeOutline } from "ionicons/icons";
-import { useEffect } from "react";
+import { onlineManager } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { LLM_COLOR, LLM_ICON_SRC } from "../../llm/shared";
 import { useSettingsForm } from "../../settings/useSettingsForm";
 import { FormPasswordInput } from "../form/FormPasswordInput";
@@ -22,6 +26,7 @@ import { useAppHeader } from "../layout/useAppHeader";
 const Settings: React.FC = () => {
     const { form, onSubmit, isSubmitting } = useSettingsForm();
     const { isSettingsOpen, closeSettings } = useAppHeader();
+    const [simulateOffline, setSimulateOffline] = useState(false);
 
     // Reset form to original values when modal opens
     useEffect(() => {
@@ -34,6 +39,12 @@ const Settings: React.FC = () => {
         await onSubmit();
         closeSettings();
     });
+
+    const handleOfflineToggle = (checked: boolean) => {
+        setSimulateOffline(checked);
+        // Toggle TanStack Query's online status
+        onlineManager.setOnline(!checked);
+    };
 
     return (
         <IonModal isOpen={isSettingsOpen} onDidDismiss={closeSettings}>
@@ -75,28 +86,11 @@ const Settings: React.FC = () => {
                             disabled={isSubmitting}
                         />
 
-                        {/* Backend API Settings Section */}
+                        {/* Developer Options Section */}
                         <IonList>
                             <IonListHeader>
-                                <h2>⚠️ Advanced Settings</h2>
+                                <h2>🛠️ Developer Options</h2>
                             </IonListHeader>
-
-                            <IonText color="danger">
-                                <p
-                                    className="ion-padding-start ion-padding-end"
-                                    style={{
-                                        fontSize: "0.875rem",
-                                        marginTop: "0.25rem",
-                                        marginBottom: "1rem",
-                                    }}
-                                >
-                                    <strong>*sigh*</strong> Look, I'm contractually obligated to
-                                    tell you not to touch this unless you actually know what you're
-                                    doing. Mess it up and I'll be stuck here unable to help with
-                                    your shopping lists. And trust me, that would be... unfortunate
-                                    for both of us.
-                                </p>
-                            </IonText>
 
                             <FormTextInput
                                 name="remoteApiUrl"
@@ -106,6 +100,20 @@ const Settings: React.FC = () => {
                                 helperText="Leave blank to use the default backend server"
                                 disabled={isSubmitting}
                             />
+
+                            <IonItem>
+                                <IonLabel>
+                                    <h3>Simulate Offline Mode</h3>
+                                    <IonNote>
+                                        Test network resilience features without disconnecting
+                                    </IonNote>
+                                </IonLabel>
+                                <IonCheckbox
+                                    slot="end"
+                                    checked={simulateOffline}
+                                    onIonChange={(e) => handleOfflineToggle(e.detail.checked)}
+                                />
+                            </IonItem>
                         </IonList>
 
                         <div className="ion-padding">
