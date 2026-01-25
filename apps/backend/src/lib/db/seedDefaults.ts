@@ -20,7 +20,7 @@ export function createDefaultStoreForUser(userId: string, userName: string): str
     const storeId = randomUUID();
 
     // Determine the new store's name
-    const storeName = `${userName}'s Store`;
+    const storeName = `${userName}'s Example Store`;
 
     // Create the store
     db.prepare(

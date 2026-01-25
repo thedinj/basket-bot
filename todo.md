@@ -1,16 +1,14 @@
 If I add an existing store item to the shopping list but move it to another aisle/section, the new aisle/section is disregarded.
 Test all workflows, reviewing the API calls
 Invitation code for making a new account
-For debugging, pick the right IP based on mobile v live-update
-edit account details: email, name etc.
 hard to select items at the bottom of pages/lists
 insists on quantity of 1 for some reason, at least for imported stuff
 review data model
 confirm we handle loading aisles from sections
-refresh @ midnight so we show snoozed items on time
 Shield while loading AI data or doing other slow stuff
 Add potential future item columns
 =====
+edit account details: email, name etc.
 Offline mode: remember delta
 eslint.config.js for the monorepo?
 ionic.config.json?

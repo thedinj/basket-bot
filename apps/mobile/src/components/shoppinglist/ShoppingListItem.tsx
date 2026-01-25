@@ -14,8 +14,9 @@ import {
     IonToolbar,
 } from "@ionic/react";
 import { closeOutline, swapHorizontalOutline } from "ionicons/icons";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMoveItemToStore, useStores, useToggleItemChecked } from "../../db/hooks";
+import { useMidnightUpdate } from "../../hooks/useMidnightUpdate";
 import { useToast } from "../../hooks/useToast";
 import { formatSnoozeDate, isCurrentlySnoozed } from "../../utils/dateUtils";
 import { GenericStoreSelector } from "../shared/GenericStoreSelector";
@@ -28,11 +29,23 @@ interface ShoppingListItemProps {
     isChecked: boolean;
 }
 
+const useSnoozeStatus = (snoozedUntil: string | null, currentDate: string) => {
+    return useMemo(() => {
+        const snoozed = isCurrentlySnoozed(snoozedUntil);
+        return {
+            isSnoozed: snoozed,
+            formattedSnoozeDate: snoozed ? formatSnoozeDate(snoozedUntil!) : null,
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [snoozedUntil, currentDate]);
+};
+
 export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => {
     const toast = useToast();
     const { openEditModal, newlyImportedItemIds } = useShoppingListContext();
     const [showMoveModal, setShowMoveModal] = useState(false);
     const [pendingMove, setPendingMove] = useState<Store | null>(null);
+    const currentDate = useMidnightUpdate();
     const toggleChecked = useToggleItemChecked();
     const moveItemToStore = useMoveItemToStore();
     const { data: stores } = useStores();
@@ -101,9 +114,8 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
     const titleToUse = item.isIdea ? item.notes : item.itemName;
     const notesToUse = item.isIdea ? "" : item.notes;
 
-    // Check if item is snoozed (date-only comparison)
-    const isSnoozed = isCurrentlySnoozed(item.snoozedUntil);
-    const formattedSnoozeDate = isSnoozed ? formatSnoozeDate(item.snoozedUntil!) : null;
+    // Check if item is snoozed (recalculates at midnight via currentDate dependency)
+    const { isSnoozed, formattedSnoozeDate } = useSnoozeStatus(item.snoozedUntil, currentDate);
 
     return (
         <IonItem style={itemStyle} button={false}>
