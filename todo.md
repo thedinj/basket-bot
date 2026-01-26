@@ -1,8 +1,8 @@
+Offline -- doesn't make sense to have it be a column stored ... remotely.
 Install use https?
 Weird 401s
 Run Lighthouse?
 Test with prd backend build--is it faster?
-Test it in offline mode
 Test on phone
 Test all workflows, reviewing the API calls
 review data model

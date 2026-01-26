@@ -147,6 +147,97 @@
             }
         },
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // Production/Release Tasks
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        {
+            "label": "Prod: Backend (Build)",
+            "type": "shell",
+            "command": "pnpm build",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/backend"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": ["$tsc"]
+        },
+        {
+            "label": "Prod: Backend (Start)",
+            "type": "shell",
+            "command": "pnpm start",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/backend"
+            },
+            "isBackground": true,
+            "dependsOn": ["Prod: Backend (Build)"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "prod"
+            },
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".",
+                    "endsPattern": "(Local:|ready|started server)"
+                }
+            }
+        },
+        {
+            "label": "Prod: Mobile (Build)",
+            "type": "shell",
+            "command": "pnpm build:prod",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/mobile"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": ["$tsc"]
+        },
+        {
+            "label": "Prod: Mobile (Preview)",
+            "type": "shell",
+            "command": "pnpm preview",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/mobile"
+            },
+            "isBackground": true,
+            "dependsOn": ["Prod: Mobile (Build)"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "prod"
+            },
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".",
+                    "endsPattern": "(Local:|ready)"
+                }
+            }
+        },
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Utility Tasks
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         {

@@ -100,20 +100,6 @@ const Settings: React.FC = () => {
                                 helperText="Leave blank to use the default backend server"
                                 disabled={isSubmitting}
                             />
-
-                            <IonItem>
-                                <IonLabel>
-                                    <h3>Simulate Offline Mode</h3>
-                                    <IonNote>
-                                        Test network resilience features without disconnecting
-                                    </IonNote>
-                                </IonLabel>
-                                <IonCheckbox
-                                    slot="end"
-                                    checked={simulateOffline}
-                                    onIonChange={(e) => handleOfflineToggle(e.detail.checked)}
-                                />
-                            </IonItem>
                         </IonList>
 
                         <div className="ion-padding">
@@ -123,6 +109,27 @@ const Settings: React.FC = () => {
                         </div>
                     </IonList>
                 </form>
+
+                {/* Network Testing Section - Outside form since it's not persisted */}
+                <IonList>
+                    <IonListHeader>
+                        <h2>🔌 Network Testing</h2>
+                    </IonListHeader>
+
+                    <IonItem>
+                        <IonLabel>
+                            <h3>Simulate Offline Mode</h3>
+                            <IonNote>
+                                Test network resilience features without disconnecting
+                            </IonNote>
+                        </IonLabel>
+                        <IonCheckbox
+                            slot="end"
+                            checked={simulateOffline}
+                            onIonChange={(e) => handleOfflineToggle(e.detail.checked)}
+                        />
+                    </IonItem>
+                </IonList>
             </IonContent>
         </IonModal>
     );
