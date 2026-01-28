@@ -1,3 +1,5 @@
+import { KEYS, secureStorage } from "../../utils/secureStorage";
+
 const DEFAULT_API_BASE_URL =
     (typeof import.meta !== "undefined" &&
         (import.meta as ImportMeta & { env: Record<string, string> }).env.VITE_API_URL) ||
@@ -30,6 +32,15 @@ export class ApiClient {
     private refreshToken: string | null = null;
     private isRefreshing = false;
     private refreshPromise: Promise<string> | null = null;
+    private authReadyPromise: Promise<void>;
+    private authReadyResolver!: () => void;
+
+    constructor() {
+        // Create a promise that resolves when auth is initialized
+        this.authReadyPromise = new Promise<void>((resolve) => {
+            this.authReadyResolver = resolve;
+        });
+    }
 
     setBaseUrl(url: string) {
         this.baseUrl = url;
@@ -41,6 +52,14 @@ export class ApiClient {
 
     setRefreshToken(token: string | null) {
         this.refreshToken = token;
+    }
+
+    /**
+     * Mark authentication as ready (either tokens loaded and validated, or no tokens found)
+     * This allows all pending requests to proceed
+     */
+    markAuthReady() {
+        this.authReadyResolver();
     }
 
     /**
@@ -85,6 +104,10 @@ export class ApiClient {
 
                 const data = await response.json();
                 this.accessToken = data.accessToken;
+
+                // Persist the new access token to secure storage
+                await secureStorage.set(KEYS.ACCESS_TOKEN, data.accessToken);
+
                 return data.accessToken;
             } finally {
                 this.isRefreshing = false;
@@ -96,6 +119,14 @@ export class ApiClient {
     }
 
     async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+        // Auth endpoints don't need to wait for auth readiness (would cause deadlock)
+        const isAuthEndpoint = endpoint.startsWith("/api/auth/");
+
+        if (!isAuthEndpoint) {
+            // Wait for auth initialization to complete before making any requests
+            await this.authReadyPromise;
+        }
+
         // Always use a plain object for headers so we can assign to it
         const headers: Record<string, string> = {
             "Content-Type": "application/json",
@@ -104,8 +135,8 @@ export class ApiClient {
 
         if (this.accessToken) {
             headers["Authorization"] = `Bearer ${this.accessToken}`;
-        } else {
-            console.warn("[ApiClient] No access token available for request:", endpoint);
+        } else if (!isAuthEndpoint) {
+            console.warn("[ApiClient] No access token for:", endpoint);
         }
 
         // Set up timeout using AbortController

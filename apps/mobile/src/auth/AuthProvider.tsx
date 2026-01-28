@@ -17,19 +17,15 @@ import {
  */
 export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const [user, setUser] = useState<LoginUser | null>(null);
-    const [hasTokens, setHasTokens] = useState(false);
     const [isInitializing, setIsInitializing] = useState(true);
+    const [shouldFetchUser, setShouldFetchUser] = useState(false);
 
     const loginMutation = useLoginMutation();
     const registerMutation = useRegisterMutation();
     const logoutMutation = useLogoutMutation();
 
-    // Use React Query to fetch user data when tokens are available
-    const {
-        data: userData,
-        error: userError,
-        isSuccess: authQuerySuccess,
-    } = useAuthUser(hasTokens);
+    // Use React Query to fetch user data when tokens are loaded from storage
+    const { data: userData, error: userError } = useAuthUser(shouldFetchUser);
 
     /**
      * Load tokens from secure storage on mount
@@ -54,17 +50,17 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
                 ]);
 
                 if (accessToken && refreshToken) {
-                    console.log("[AuthProvider] Tokens loaded from storage, setting in apiClient");
                     apiClient.setAccessToken(accessToken);
                     apiClient.setRefreshToken(refreshToken);
-                    console.log("[AuthProvider] Tokens set, triggering useAuthUser query");
-                    setHasTokens(true); // This will trigger useAuthUser query
+                    setShouldFetchUser(true); // This will trigger useAuthUser query
+                    apiClient.markAuthReady();
                 } else {
-                    console.log("[AuthProvider] No tokens found in storage");
+                    apiClient.markAuthReady();
                     setIsInitializing(false);
                 }
             } catch (error) {
                 console.error("Failed to load tokens:", error);
+                apiClient.markAuthReady();
                 setIsInitializing(false);
             }
         };
@@ -76,6 +72,10 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
      * Update user state when query data changes
      */
     useEffect(() => {
+        console.log(
+            "[AuthProvider] userData effect triggered, userData:",
+            userData ? "present" : "null"
+        );
         if (userData) {
             console.log(
                 "[AuthProvider] useAuthUser query succeeded, user data received:",
@@ -107,7 +107,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
                     ]);
                     apiClient.setAccessToken(null);
                     apiClient.setRefreshToken(null);
-                    setHasTokens(false);
+                    setShouldFetchUser(false);
                     setIsInitializing(false);
                 };
                 clearInvalidTokens();
@@ -125,7 +125,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
         try {
             const response = await loginMutation.mutateAsync({ email, password });
             setUser(response.user);
-            setHasTokens(true);
+            setShouldFetchUser(true);
         } catch (error) {
             console.error("[AuthProvider] Login failed:", error);
             throw error;
@@ -170,7 +170,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
         } finally {
             // Update local state after mutation completes (success or failure)
             setUser(null);
-            setHasTokens(false);
+            setShouldFetchUser(false);
         }
     };
 
@@ -178,7 +178,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
         user,
         isAuthenticated: !!user,
         isInitializing,
-        isAuthReady: !isInitializing && (authQuerySuccess || !hasTokens),
+        isAuthReady: !isInitializing,
         login,
         register,
         logout,
