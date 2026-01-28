@@ -1011,23 +1011,28 @@ export function useRemoveShoppingListItem() {
 
 /**
  * Hook to clear all checked items from a shopping list
+ * Uses optimistic updates for instant UI feedback
  */
 export function useClearCheckedItems() {
     const database = useDatabase();
-    const queryClient = useQueryClient();
     const { showError } = useToast();
 
-    return useTanstackMutation({
+    return useOptimisticMutation({
         mutationFn: ({ storeId }: { storeId: string }) =>
             database.clearCheckedShoppingListItems(storeId),
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.storeId],
-            });
-        },
-        onError: (error: Error) => {
-            showError(`Failed to clear checked items: ${error.message}`);
-        },
+        queryKeys: (vars) => [["shopping-list-items", vars.storeId]],
+        updateCache: (vars) => ({
+            queryKey: ["shopping-list-items", vars.storeId],
+            updateFn: (old: unknown) => {
+                const data = old as QueryData<ShoppingListItemWithDetails> | undefined;
+                if (!data?.data) return data;
+                return {
+                    ...data,
+                    data: data.data.filter((item) => !item.isChecked),
+                };
+            },
+        }),
+        onError: (error) => showError(formatErrorMessage(error, "clear checked items")),
     });
 }
 

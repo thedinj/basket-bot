@@ -164,6 +164,7 @@ See [apps/backend/readme.md](apps/backend/readme.md) for complete production dep
 - Systemd service setup
 - Environment configuration
 - Database management
+- **HTTPS setup with Caddy** (see [docs/HTTPS_SETUP.md](docs/HTTPS_SETUP.md))
 
 ### Mobile (Android APK)
 

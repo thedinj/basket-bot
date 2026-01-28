@@ -3,7 +3,8 @@ set -e
 
 # Basket Bot Backend Installation Script
 # For Raspberry Pi Raspbian - Run as admin user
-# This script installs dependencies, sets up the database, and configures systemd service
+# This script installs dependencies, sets up the database, configures systemd service,
+# and optionally sets up HTTPS with Caddy
 
 echo "================================================"
 echo "Basket Bot Backend Installation"
@@ -102,6 +103,35 @@ else
 fi
 echo ""
 
+# Ask if user wants to enable HTTPS with Caddy
+echo "================================================"
+echo "HTTPS Configuration (Optional)"
+echo "================================================"
+echo ""
+echo "Would you like to enable HTTPS using Caddy?"
+echo "This provides free automatic SSL certificates via Let's Encrypt."
+echo ""
+echo "Prerequisites:"
+echo "  - You have a domain name pointing to this server"
+echo "  - Ports 80 and 443 are forwarded to this server"
+echo ""
+read -p "Enable HTTPS? (y/N): " -n 1 -r
+echo ""
+ENABLE_HTTPS=false
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    ENABLE_HTTPS=true
+
+    # Get domain name
+    echo ""
+    read -p "Enter your domain name (e.g., basketbot.yourdomain.com): " DOMAIN_NAME
+
+    if [ -z "$DOMAIN_NAME" ]; then
+        echo "❌ Domain name is required for HTTPS. Skipping HTTPS setup."
+        ENABLE_HTTPS=false
+    fi
+fi
+echo ""
+
 # Initialize database
 echo "Initializing database..."
 pnpm db:init
@@ -163,29 +193,129 @@ echo ""
 PORT=$(grep -E '^PORT=' "$BACKEND_DIR/.env" | cut -d '=' -f 2 | tr -d '"' || echo "3000")
 
 # Configure firewall to allow access from network
-echo "Configuring firewall for port $PORT..."
+if [ "$ENABLE_HTTPS" = true ]; then
+    echo "Configuring firewall for HTTPS (ports 80, 443)..."
+    FIREWALL_PORTS="80 443"
+else
+    echo "Configuring firewall for port $PORT..."
+    FIREWALL_PORTS="$PORT"
+fi
+
 if command -v ufw &> /dev/null; then
     echo "Detected ufw firewall"
-    sudo ufw allow $PORT/tcp
-    echo "✓ Firewall rule added (ufw allow $PORT/tcp)"
+    for port in $FIREWALL_PORTS; do
+        sudo ufw allow $port/tcp
+        echo "✓ Firewall rule added (ufw allow $port/tcp)"
+    done
 elif command -v iptables &> /dev/null; then
     echo "Detected iptables firewall"
-    # Check if rule already exists
-    if ! sudo iptables -C INPUT -p tcp --dport $PORT -j ACCEPT 2>/dev/null; then
-        sudo iptables -A INPUT -p tcp --dport $PORT -j ACCEPT
-        # Save iptables rules (method varies by distro)
-        if command -v iptables-save &> /dev/null; then
-            sudo sh -c "iptables-save > /etc/iptables/rules.v4" 2>/dev/null || true
+    for port in $FIREWALL_PORTS; do
+        # Check if rule already exists
+        if ! sudo iptables -C INPUT -p tcp --dport $port -j ACCEPT 2>/dev/null; then
+            sudo iptables -A INPUT -p tcp --dport $port -j ACCEPT
+            echo "✓ Firewall rule added (iptables -A INPUT -p tcp --dport $port -j ACCEPT)"
+        else
+            echo "✓ Firewall rule already exists for port $port"
         fi
-        echo "✓ Firewall rule added (iptables -A INPUT -p tcp --dport $PORT -j ACCEPT)"
-    else
-        echo "✓ Firewall rule already exists"
+    done
+    # Save iptables rules (method varies by distro)
+    if command -v iptables-save &> /dev/null; then
+        sudo sh -c "iptables-save > /etc/iptables/rules.v4" 2>/dev/null || true
     fi
 else
     echo "⚠️  No supported firewall detected (ufw/iptables)"
-    echo "   If you need network access, manually allow port $PORT"
+    echo "   If you need network access, manually allow port(s): $FIREWALL_PORTS"
 fi
 echo ""
+
+# Install and configure Caddy if HTTPS is enabled
+if [ "$ENABLE_HTTPS" = true ]; then
+    echo "================================================"
+    echo "Installing Caddy"
+    echo "================================================"
+    echo ""
+
+    # Check if Caddy is already installed
+    if command -v caddy &> /dev/null; then
+        echo "✓ Caddy is already installed ($(caddy version))"
+    else
+        echo "Installing Caddy..."
+
+        # Install dependencies
+        sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
+
+        # Add Caddy repository
+        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+
+        # Install Caddy
+        sudo apt update
+        sudo apt install -y caddy
+
+        echo "✓ Caddy installed"
+    fi
+    echo ""
+
+    # Create Caddyfile
+    echo "Creating Caddyfile..."
+    CADDYFILE="/etc/caddy/Caddyfile"
+
+    sudo tee "$CADDYFILE" > /dev/null <<EOF
+# Basket Bot Backend - Automatic HTTPS
+$DOMAIN_NAME {
+    # Reverse proxy to Next.js backend
+    reverse_proxy localhost:$PORT
+
+    # Enable gzip compression
+    encode gzip
+
+    # Security headers
+    header {
+        # Enable HSTS (6 months)
+        Strict-Transport-Security "max-age=15552000; includeSubDomains"
+        # Prevent clickjacking
+        X-Frame-Options "SAMEORIGIN"
+        # Prevent MIME sniffing
+        X-Content-Type-Options "nosniff"
+        # Enable XSS filter
+        X-XSS-Protection "1; mode=block"
+    }
+
+    # Log access
+    log {
+        output file /var/log/caddy/basketbot-access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+    }
+}
+EOF
+
+    echo "✓ Caddyfile created at $CADDYFILE"
+    echo ""
+
+    # Create log directory
+    sudo mkdir -p /var/log/caddy
+    sudo chown caddy:caddy /var/log/caddy
+
+    # Enable and start Caddy
+    echo "Starting Caddy service..."
+    sudo systemctl enable caddy
+    sudo systemctl restart caddy
+
+    # Check Caddy status
+    sleep 2
+    if sudo systemctl is-active --quiet caddy; then
+        echo "✓ Caddy is running"
+    else
+        echo "❌ Caddy failed to start. Checking logs..."
+        sudo journalctl -u caddy -n 50 --no-pager
+        echo ""
+        echo "⚠️  HTTPS setup incomplete. Backend is still accessible on port $PORT."
+        echo "   Check logs and Caddyfile configuration."
+    fi
+    echo ""
+fi
 
 # Display useful commands
 echo "================================================"
@@ -193,22 +323,72 @@ echo "Installation Complete!"
 echo "================================================"
 echo ""
 echo "The backend service is now running and will start automatically on boot."
-echo "Firewall configured to allow network access on port $PORT."
+
+if [ "$ENABLE_HTTPS" = true ]; then
+    echo ""
+    echo "HTTPS Configuration:"
+    echo "  Domain: https://$DOMAIN_NAME"
+    echo "  Certificate: Automatic (Let's Encrypt)"
+    echo "  Renewal: Automatic (handled by Caddy)"
+    echo ""
+    echo "⚠️  IMPORTANT: Ensure your domain's DNS is configured correctly"
+    echo "   and ports 80/443 are forwarded to this server."
+    echo ""
+    echo "Caddy commands:"
+    echo "  sudo systemctl status caddy        # Check Caddy status"
+    echo "  sudo systemctl restart caddy       # Restart Caddy"
+    echo "  sudo journalctl -u caddy -f        # View Caddy logs"
+    echo "  caddy validate --config /etc/caddy/Caddyfile  # Test config"
+    echo ""
+    echo "Test HTTPS:"
+    echo "  curl -I https://$DOMAIN_NAME"
+    echo ""
+    echo "Update mobile app configuration:"
+    echo "  Edit apps/mobile/.env and set:"
+    echo "  VITE_API_BASE_URL=https://$DOMAIN_NAME"
+else
+    echo "Firewall configured to allow network access on port $PORT."
+fi
 echo ""
-echo "Useful commands:"
+echo "Backend service commands:"
 echo "  sudo systemctl status $SERVICE_NAME    # Check service status"
 echo "  sudo systemctl restart $SERVICE_NAME   # Restart service"
 echo "  sudo systemctl stop $SERVICE_NAME      # Stop service"
 echo "  sudo journalctl -u $SERVICE_NAME -f   # View live logs"
 echo "  sudo journalctl -u $SERVICE_NAME -n 100  # View last 100 log lines"
 echo ""
-echo "Backend should be accessible at:"
-echo "  Local:   http://localhost:$PORT"
-echo "  Network: http://$(hostname -I | awk '{print $1}'):$PORT"
-echo ""
-echo "Admin portal:"
-echo "  http://localhost:$PORT/admin"
+
+if [ "$ENABLE_HTTPS" = true ]; then
+    echo "Backend accessible at:"
+    echo "  HTTPS:   https://$DOMAIN_NAME"
+    echo "  Local:   http://localhost:$PORT"
+    echo ""
+    echo "Admin portal:"
+    echo "  https://$DOMAIN_NAME/admin"
+else
+    echo "Backend should be accessible at:"
+    echo "  Local:   http://localhost:$PORT"
+    echo "  Network: http://$(hostname -I | awk '{print $1}'):$PORT"
+    echo ""
+    echo "Admin portal:"
+    echo "  http://localhost:$PORT/admin"
+fi
+
 echo ""
 echo "Environment file location: $BACKEND_DIR/.env"
 echo "Database location: $BACKEND_DIR/production.db"
+
+if [ "$ENABLE_HTTPS" = true ]; then
+    echo "Caddyfile location: /etc/caddy/Caddyfile"
+    echo "Caddy logs: /var/log/caddy/basketbot-access.log"
+    echo ""
+    echo "For detailed HTTPS setup documentation, see:"
+    echo "  $PROJECT_ROOT/docs/HTTPS_SETUP.md"
+fi
+
+echo ""
+
+# Make update script executable
+chmod +x "$BACKEND_DIR/scripts/update.sh"
+
 echo ""

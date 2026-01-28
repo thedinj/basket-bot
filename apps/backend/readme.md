@@ -505,7 +505,47 @@ To connect the mobile app to your Raspberry Pi backend:
 3. Ensure both devices are on the same local network
 4. Test connectivity with curl first (as shown above)
 
-**Note:** For production deployments outside your local network, use a proper domain name, HTTPS, and consider security implications (firewall rules, rate limiting, etc.).
+**Note:** For production deployments outside your local network, use a proper domain name, HTTPS, and consider security implications (firewall rules, rate limiting, etc.). See [HTTPS Setup Guide](../../docs/HTTPS_SETUP.md) for detailed instructions.
+
+## HTTPS Setup (Production)
+
+For production deployments accessible over the internet, you should enable HTTPS to secure communication between the mobile app and backend.
+
+### Quick Start
+
+The installation script (`scripts/install.sh`) includes an optional HTTPS setup using Caddy:
+
+```bash
+cd apps/backend/scripts
+./install.sh
+# Answer "Y" when prompted to enable HTTPS
+# Enter your domain name
+```
+
+This automatically:
+
+- Installs Caddy web server
+- Configures reverse proxy
+- Obtains free Let's Encrypt SSL certificate
+- Sets up automatic certificate renewal
+- Configures firewall rules
+
+### Manual Setup
+
+If you've already installed the backend, you can manually configure HTTPS. See the comprehensive [HTTPS Setup Guide](../../docs/HTTPS_SETUP.md) for:
+
+- Prerequisites (domain name, DNS configuration, port forwarding)
+- Step-by-step Caddy installation
+- Alternative nginx + Certbot approach
+- Troubleshooting common issues
+- Security best practices
+
+### Key Points
+
+- **Free certificates**: Uses Let's Encrypt (automated by Caddy)
+- **Automatic renewal**: No manual maintenance required
+- **Reverse proxy**: Caddy forwards HTTPS (443) → Backend (3000)
+- **Mobile app update**: Change `VITE_API_BASE_URL` to `https://yourdomain.com`
 
 ## Architecture Notes
 

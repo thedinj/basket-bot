@@ -62,10 +62,16 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
         });
     }, [items, showSnoozed]);
 
+    const [showClearCheckedAlert, setShowClearCheckedAlert] = useState(false);
+    const [hasTriggeredClear, setHasTriggeredClear] = useState(false);
+
     const uncheckedItems = activeItems?.filter((item) => !item.isChecked) || [];
     const checkedItems = activeItems?.filter((item) => item.isChecked) || [];
 
-    const [showClearCheckedAlert, setShowClearCheckedAlert] = useState(false);
+    // Reset clear flag when checked items are actually gone
+    if (hasTriggeredClear && checkedItems.length === 0) {
+        setHasTriggeredClear(false);
+    }
 
     // Check if there are any snoozed items
     const handleClearChecked = useCallback(() => {
@@ -80,6 +86,7 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
 
         // Wait for animation to complete, then clear items
         setTimeout(() => {
+            setHasTriggeredClear(true);
             clearChecked.mutate({ storeId });
         }, ANIMATION_EFFECTS.LASER_OBLITERATION.duration);
     }, [clearChecked, storeId, triggerLaser]);
@@ -130,12 +137,14 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
                 {activeItems.length > 0 && (
                     <>
                         <UncheckedItems items={uncheckedItems} />
-                        <CheckedItems
-                            items={checkedItems}
-                            onClearChecked={handleClearChecked}
-                            isClearing={clearChecked.isPending}
-                            isFadingOut={isObliterating}
-                        />
+                        {!hasTriggeredClear && (
+                            <CheckedItems
+                                items={checkedItems}
+                                onClearChecked={handleClearChecked}
+                                isClearing={clearChecked.isPending}
+                                isFadingOut={isObliterating}
+                            />
+                        )}
                     </>
                 )}
 
