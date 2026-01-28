@@ -1,9 +1,32 @@
+import { Capacitor } from "@capacitor/core";
 import { KEYS, secureStorage } from "../../utils/secureStorage";
 
-const DEFAULT_API_BASE_URL =
-    (typeof import.meta !== "undefined" &&
-        (import.meta as ImportMeta & { env: Record<string, string> }).env.VITE_API_URL) ||
-    "http://localhost:3000";
+const DEFAULT_API_BASE_URL = (() => {
+    // If VITE_API_URL is explicitly set, use that (highest priority)
+    if (
+        typeof import.meta !== "undefined" &&
+        (import.meta as ImportMeta & { env: Record<string, string> }).env.VITE_API_URL
+    ) {
+        return (import.meta as ImportMeta & { env: Record<string, string> }).env.VITE_API_URL;
+    }
+
+    // Check if we're in Vite dev mode
+    const isDev =
+        typeof import.meta !== "undefined" &&
+        (import.meta as ImportMeta & { env: Record<string, string> }).env.DEV;
+
+    if (isDev) {
+        // In dev mode on native platform, use Android emulator host address
+        if (Capacitor.isNativePlatform()) {
+            return "http://10.0.2.2:3000";
+        }
+        // Otherwise (web browser), use localhost
+        return "http://localhost:3000";
+    }
+
+    // Production default (TODO: replace with actual production domain)
+    return "http://localhost:3000";
+})();
 
 /**
  * Custom error class that includes response metadata like token status

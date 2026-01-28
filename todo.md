@@ -1,9 +1,5 @@
-Delete store->kept on same page ... sometimes
-Run Lighthouse?
 Test on phone
-Test all workflows, reviewing the API calls
-review data model
-Add potential future item columns
+review data model / add potential future item columns
 =====
 edit account details: email, name etc.
 Offline mode: remember delta
