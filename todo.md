@@ -1,4 +1,4 @@
-Weird 401s
+Delete store->kept on same page ... sometimes
 Run Lighthouse?
 Test on phone
 Test all workflows, reviewing the API calls

@@ -108,7 +108,10 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     return (
         <>
             <AppHeader title="Shopping List" menuItems={menuItems}>
-                <GlobalActions refreshQueryKeys={[["shopping-list-items", storeId]]} />
+                <GlobalActions
+                    refreshQueryKeys={[["shopping-list-items", storeId]]}
+                    showKeepAwake
+                />
             </AppHeader>
             <IonContent fullscreen>
                 {activeItems.length === 0 && (
