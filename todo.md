@@ -1,4 +1,4 @@
-Test on phone
+Changing collaborator role throws an exception: Failed to update role / network error
 review data model / add potential future item columns
 =====
 edit account details: email, name etc.

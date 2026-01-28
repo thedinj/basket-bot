@@ -18,7 +18,7 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { closeOutline, personAddOutline } from "ionicons/icons";
+import { closeOutline, personAddOutline, refreshOutline } from "ionicons/icons";
 import { useState } from "react";
 import { useAuth } from "../../auth/useAuth";
 import {
@@ -42,7 +42,7 @@ export const StoreCollaboratorsModal: React.FC<StoreCollaboratorsModalProps> = (
     userRole,
 }) => {
     const { user } = useAuth();
-    const { data: collaborators, isLoading } = useStoreCollaborators(storeId);
+    const { data: collaborators, isLoading, refetch } = useStoreCollaborators(storeId);
     const updateRole = useUpdateStoreCollaboratorRole();
     const removeCollaborator = useRemoveStoreCollaborator();
 
@@ -79,6 +79,9 @@ export const StoreCollaboratorsModal: React.FC<StoreCollaboratorsModalProps> = (
                     <IonToolbar>
                         <IonTitle>Manage Collaborators</IonTitle>
                         <IonButtons slot="end">
+                            <IonButton onClick={() => refetch()}>
+                                <IonIcon icon={refreshOutline} />
+                            </IonButton>
                             <IonButton onClick={onDismiss}>
                                 <IonIcon icon={closeOutline} />
                             </IonButton>

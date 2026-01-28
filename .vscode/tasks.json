@@ -146,6 +146,22 @@
                 }
             }
         },
+        {
+            "label": "Dev: Mobile on Android Emulator",
+            "type": "shell",
+            "command": "pnpm android:dev",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/mobile"
+            },
+            "isBackground": true,
+            "dependsOn": ["Dev: Mobile (Hot-reload)"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "dev"
+            },
+            "problemMatcher": []
+        },
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // Production/Release Tasks
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
