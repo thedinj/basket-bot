@@ -30,14 +30,17 @@ set -e
 #    cd ~/basket-bot
 #    git pull origin main
 #
-# 5. Navigate to the backend scripts directory:
-#    cd ~/basket-bot/apps/backend/scripts
-#    # Or if you're already in ~/basket-bot: cd apps/backend/scripts
+# 5. Configure Git to ignore file mode changes (prevents chmod from showing as change):
+#    cd ~/basket-bot
+#    git config core.filemode false
 #
-# 6. Make this script executable (if not already):
+# 6. Navigate to the backend scripts directory:
+#    cd apps/backend/scripts
+#
+# 7. Make this script executable (if not already):
 #    chmod +x install.sh
 #
-# 7. Run this installation script:
+# 8. Run this installation script:
 #    ./install.sh
 #
 # WHAT THIS SCRIPT DOES:
