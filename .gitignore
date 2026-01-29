@@ -46,6 +46,8 @@ next-env.d.ts
 
 # Capacitor
 android/
+!/apps/mobile/resources/android/
+!/apps/mobile/resources/android/**
 ios/
 *.apk
 *.ipa

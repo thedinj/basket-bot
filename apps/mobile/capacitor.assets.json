@@ -1,0 +1,19 @@
+{
+    "android": {
+        "icon": {
+            "sources": ["resources/icon.png"]
+        },
+        "adaptiveIcon": {
+            "foreground": {
+                "sources": ["resources/android/icon-foreground.png"]
+            },
+            "background": {
+                "sources": ["resources/android/icon-background.png"]
+            }
+        },
+        "splash": {
+            "sources": ["resources/splash.png"],
+            "darkSources": ["resources/splash-dark.png"]
+        }
+    }
+}
