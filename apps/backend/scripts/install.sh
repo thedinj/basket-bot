@@ -90,7 +90,7 @@ if ! command -v pnpm &> /dev/null; then
         exit 1
     fi
 
-    npm install -g pnpm
+    sudo npm install -g pnpm
 else
     echo "✓ pnpm is already installed ($(pnpm --version))"
 fi
