@@ -5,6 +5,7 @@ import { config } from "dotenv";
 import { resolve } from "path";
 import { initializeDatabase } from "../src/db/init";
 import { db } from "../src/lib/db/db";
+import * as referenceRepo from "../src/lib/repos/referenceRepo";
 
 // Load environment variables from .env file
 config({ path: resolve(__dirname, "../.env") });
@@ -58,6 +59,13 @@ async function main() {
 
     // Initialize database schema
     initializeDatabase();
+
+    // Seed REGISTRATION_INVITATION_CODE into AppSettings
+    const invitationCode = process.env.REGISTRATION_INVITATION_CODE || "";
+    referenceRepo.setAppSetting("REGISTRATION_INVITATION_CODE", invitationCode);
+    console.log(
+        `Set REGISTRATION_INVITATION_CODE: ${invitationCode ? "[code set]" : "[empty - open registration]"}`
+    );
 
     // Create admin user
     await createUserIfNotExists(adminEmail, adminPassword, adminName, "admin");

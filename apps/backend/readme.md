@@ -105,7 +105,6 @@ cp .env.example .env
 
 Edit `.env` and configure:
 
-- `DATABASE_URL` (default: `file:./dev.db`)
 - `JWT_SECRET` (generate with `openssl rand -base64 32`)
 - `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD`
 
@@ -161,7 +160,6 @@ See [.env.example](.env.example) for all available options.
 
 **Required:**
 
-- `DATABASE_URL` - SQLite database path (e.g., `file:./production.db`)
 - `JWT_SECRET` - Secret key for signing JWTs (use `openssl rand -base64 32`)
 - `ADMIN_EMAIL` - Bootstrap admin user email
 - `ADMIN_PASSWORD` - Bootstrap admin user password
@@ -174,24 +172,26 @@ See [.env.example](.env.example) for all available options.
 - `REFRESH_TOKEN_TTL_SECONDS` - Refresh token lifetime (default: 2592000 = 30 days)
 - `PORT` - Server port (default: 3000)
 - `NODE_ENV` - Environment (`development` or `production`)
-- `REGISTRATION_INVITATION_CODE` - Require invitation code for new registrations (leave empty for open registration)
+- `REGISTRATION_INVITATION_CODE` - Initial invitation code for seeding (leave empty for open registration)
 
 ### Registration Restriction
 
-To restrict signups during initial rollout:
+The registration invitation code is stored in the database (`AppSetting` table) and can be changed via the admin UI (future feature).
 
-1. Set `REGISTRATION_INVITATION_CODE` in `.env` to your chosen code (e.g., `"beta2026"`)
-2. Share this code with invited users
-3. Users will see an invitation code field during registration
-4. Registration will fail if the code is missing or incorrect
+**During Initial Setup:**
 
-To allow open registration:
+1. Set `REGISTRATION_INVITATION_CODE` in `.env` to your chosen code (e.g., `"beta2026"`) before running `pnpm db:init`
+2. This value will be stored in the database during seeding
+3. Leave empty or unset to allow open registration
 
-- Leave `REGISTRATION_INVITATION_CODE` empty or unset in `.env`
-- The invitation code field will not appear in the registration form
-- Anyone can register without a code
+**After Initial Setup:**
 
-**Note:** The invitation code is case-insensitive and whitespace is trimmed.
+- The invitation code is read from the database, not the `.env` file
+- To change the code after seeding, you'll need to update the `AppSetting` table directly or use the admin UI (future feature)
+- Users will see an invitation code field during registration if a code is set in the database
+- Registration will fail if the code is missing or incorrect
+
+**Note:** The invitation code is case-insensitive and whitespace is trimmed. An empty string in the database means open registration.
 
 ## Database Management
 

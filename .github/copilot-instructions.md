@@ -319,7 +319,6 @@ Do not hardcode credentials. Fail clearly if env vars are missing when seeding.
 - Use **better-sqlite3** for direct SQLite access (synchronous, performant).
 - Database schema is maintained via SQL scripts in `src/db/init.ts`.
 - All database access uses prepared statements for safety.
-- Keep SQLite file path configurable via env (`DATABASE_URL=file:./path/to/db.db`).
 - Schema includes:
     - `User`
     - `Household`
@@ -715,7 +714,6 @@ Use `.env.example` in `apps/backend` and document required env vars.
 
 Likely env vars:
 
-- `DATABASE_URL` (SQLite)
 - `JWT_SECRET`
 - `JWT_ISSUER` (optional)
 - `JWT_AUDIENCE` (optional)

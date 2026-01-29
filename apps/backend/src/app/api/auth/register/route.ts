@@ -1,6 +1,7 @@
 import { hashPassword } from "@/lib/auth/password";
 import { checkRateLimit } from "@/lib/auth/rateLimiter";
 import { db } from "@/lib/db/db";
+import * as referenceRepo from "@/lib/repos/referenceRepo";
 import * as storeService from "@/lib/services/storeService";
 import { createUserRequestSchema } from "@basket-bot/core";
 import { randomUUID } from "crypto";
@@ -18,7 +19,8 @@ export async function POST(req: NextRequest) {
         const { email, name, password, invitationCode } = createUserRequestSchema.parse(body);
 
         // Check invitation code if required
-        const requiredInvitationCode = process.env.REGISTRATION_INVITATION_CODE;
+        const setting = referenceRepo.getAppSetting("REGISTRATION_INVITATION_CODE");
+        const requiredInvitationCode = setting?.value || "";
         if (requiredInvitationCode && requiredInvitationCode.trim().length > 0) {
             if (!invitationCode) {
                 return NextResponse.json(

@@ -57,7 +57,7 @@
         {
             "label": "Build: Production APK",
             "type": "shell",
-            "command": "pnpm android:prod",
+            "command": "pnpm build:prod && pnpm cap:sync:prod",
             "options": {
                 "cwd": "${workspaceFolder}/apps/mobile"
             },
@@ -71,7 +71,7 @@
         {
             "label": "Build: Debug APK",
             "type": "shell",
-            "command": "pnpm android:debug",
+            "command": "pnpm build && pnpm cap:sync",
             "options": {
                 "cwd": "${workspaceFolder}/apps/mobile"
             },
