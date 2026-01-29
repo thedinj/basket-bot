@@ -5,8 +5,8 @@ const globalForDb = globalThis as unknown as {
     db: Database.Database | undefined;
 };
 
-// Get database path from environment or use default
-const dbPath = process.env.DATABASE_URL?.replace("file:", "") || path.join(process.cwd(), "dev.db");
+// Database path is always database.db in the backend directory
+const dbPath = path.join(process.cwd(), "database.db");
 
 export const db =
     globalForDb.db ??

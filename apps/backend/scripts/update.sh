@@ -124,7 +124,6 @@ fi
 
 # Extract required variables from .env.example (non-empty, non-comment lines with =)
 REQUIRED_VARS=(
-    "DATABASE_URL"
     "JWT_SECRET"
     "ADMIN_EMAIL"
     "ADMIN_NAME"
@@ -207,11 +206,7 @@ CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 echo "Current commit: $CURRENT_COMMIT ($CURRENT_BRANCH)"
 
 # Backup database
-DB_PATH=$(grep "^DATABASE_URL=" "$ENV_FILE" | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's|file:||')
-# Handle relative paths
-if [[ ! "$DB_PATH" = /* ]]; then
-    DB_PATH="$BACKEND_DIR/$DB_PATH"
-fi
+DB_PATH="$BACKEND_DIR/database.db"
 
 if [ -f "$DB_PATH" ]; then
     BACKUP_DB="$BACKUP_DIR/database-backup-$TIMESTAMP.db"

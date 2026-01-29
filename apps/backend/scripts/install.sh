@@ -159,7 +159,6 @@ fi
 
 echo ""
 echo "⚠️  IMPORTANT: Please edit $BACKEND_DIR/.env and verify/update:"
-echo "   - DATABASE_URL (currently set to: $(grep -E '^DATABASE_URL=' "$BACKEND_DIR/.env" | cut -d '=' -f 2))"
 echo "   - ADMIN_EMAIL"
 echo "   - ADMIN_NAME"
 echo "   - ADMIN_PASSWORD"
@@ -194,7 +193,8 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 
     # Get domain name
     echo ""
-    read -p "Enter your domain name (e.g., basketbot.yourdomain.com): " DOMAIN_NAME
+    read -p "Enter your domain name [basketbot.ddns.net]: " DOMAIN_NAME
+    DOMAIN_NAME=${DOMAIN_NAME:-basketbot.ddns.net}
 
     if [ -z "$DOMAIN_NAME" ]; then
         echo "❌ Domain name is required for HTTPS. Skipping HTTPS setup."
@@ -208,9 +208,6 @@ echo "Initializing database..."
 pnpm db:init
 echo "✓ Database initialized"
 echo ""
-
-# Get DATABASE_URL from .env for systemd service
-DATABASE_URL=$(grep -E '^DATABASE_URL=' "$BACKEND_DIR/.env" | cut -d '=' -f 2 | tr -d '"' || echo "file:./database.db")
 
 # Create systemd service file
 SERVICE_NAME="basket-bot-backend"
@@ -227,7 +224,6 @@ Type=simple
 User=$CURRENT_USER
 WorkingDirectory=$BACKEND_DIR
 Environment="NODE_ENV=production"
-Environment="DATABASE_URL=$DATABASE_URL"
 Environment="PATH=/usr/bin:/usr/local/bin:$HOME/.local/share/pnpm"
 ExecStart=$(which pnpm) start
 Restart=always
@@ -456,7 +452,7 @@ fi
 
 echo ""
 echo "Environment file location: $BACKEND_DIR/.env"
-echo "Database location: $BACKEND_DIR/$(echo $DATABASE_URL | sed 's|file:./||')"
+echo "Database location: $BACKEND_DIR/database.db"
 
 if [ "$ENABLE_HTTPS" = true ]; then
     echo "Caddyfile location: /etc/caddy/Caddyfile"
@@ -471,4 +467,37 @@ echo ""
 # Make update script executable
 chmod +x "$BACKEND_DIR/scripts/update.sh"
 
+echo ""
+echo "================================================"
+echo "Database Inspection Guide (SQLite3)"
+echo "================================================"
+echo ""
+echo "To inspect the database, use sqlite3 CLI:"
+echo ""
+echo "1. Open the database:"
+echo "   sqlite3 $BACKEND_DIR/database.db"
+echo ""
+echo "2. Common commands (run inside sqlite3):"
+echo "   .tables                      # List all tables"
+echo "   .schema User                 # Show User table schema"
+echo "   .schema                      # Show schema for all tables"
+echo "   .headers on                  # Enable column headers"
+echo "   .mode column                 # Enable column-aligned output"
+echo ""
+echo "3. Query examples:"
+echo "   SELECT COUNT(*) FROM User;                    # Count total users"
+echo "   SELECT id, email, name FROM User;             # List all users"
+echo "   SELECT * FROM User WHERE email LIKE '%admin%'; # Find admin users"
+echo "   SELECT COUNT(*) FROM Store;                   # Count stores"
+echo "   SELECT * FROM Household;                      # View all households"
+echo "   SELECT * FROM RefreshToken;                   # View active tokens"
+echo ""
+echo "4. Exit sqlite3:"
+echo "   .quit"
+echo ""
+echo "Quick one-liner examples (no need to enter sqlite3 shell):"
+echo "   sqlite3 $BACKEND_DIR/database.db 'SELECT COUNT(*) FROM User;'"
+echo "   sqlite3 $BACKEND_DIR/database.db 'SELECT email, name FROM User;'"
+echo ""
+echo "================================================"
 echo ""
