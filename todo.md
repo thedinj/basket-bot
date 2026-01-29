@@ -1,5 +1,6 @@
 Changing collaborator role throws an exception: Failed to update role / network error
 review data model / add potential future item columns
+let users change their backend mode from the login page, maybe secret keypresses
 =====
 edit account details: email, name etc.
 Offline mode: remember delta

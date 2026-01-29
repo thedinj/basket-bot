@@ -107,6 +107,18 @@ else
 fi
 echo ""
 
+# Check if sqlite3 is installed (useful for database inspection)
+echo "Checking for sqlite3..."
+if ! command -v sqlite3 &> /dev/null; then
+    echo "sqlite3 not found. Installing sqlite3..."
+    sudo apt-get update
+    sudo apt-get install -y sqlite3
+    echo "✓ sqlite3 installed"
+else
+    echo "✓ sqlite3 is already installed ($(sqlite3 --version))"
+fi
+echo ""
+
 # Navigate to project root
 cd "$PROJECT_ROOT"
 
@@ -122,15 +134,9 @@ pnpm --filter @basket-bot/core build
 echo "✓ Core package built"
 echo ""
 
-# Build backend
-echo "Building backend..."
-cd "$BACKEND_DIR"
-pnpm build
-echo "✓ Backend built"
-echo ""
-
-# Set up environment file
+# Set up environment file (must be done BEFORE building backend)
 echo "Setting up environment file..."
+cd "$BACKEND_DIR"
 if [ ! -f "$BACKEND_DIR/.env" ]; then
     echo "Creating .env from .env.example..."
     cp "$BACKEND_DIR/.env.example" "$BACKEND_DIR/.env"
@@ -160,6 +166,12 @@ echo "   - ADMIN_PASSWORD"
 echo "   - JWT_SECRET (if using existing .env)"
 echo ""
 read -p "Press Enter after you've updated the .env file..."
+echo ""
+
+# Build backend (after .env is configured)
+echo "Building backend..."
+pnpm build
+echo "✓ Backend built"
 echo ""
 
 # Ask if user wants to enable HTTPS with Caddy
@@ -198,7 +210,7 @@ echo "✓ Database initialized"
 echo ""
 
 # Get DATABASE_URL from .env for systemd service
-DATABASE_URL=$(grep -E '^DATABASE_URL=' "$BACKEND_DIR/.env" | cut -d '=' -f 2 | tr -d '"' || echo "file:./production.db")
+DATABASE_URL=$(grep -E '^DATABASE_URL=' "$BACKEND_DIR/.env" | cut -d '=' -f 2 | tr -d '"' || echo "file:./database.db")
 
 # Create systemd service file
 SERVICE_NAME="basket-bot-backend"
@@ -444,7 +456,7 @@ fi
 
 echo ""
 echo "Environment file location: $BACKEND_DIR/.env"
-echo "Database location: $BACKEND_DIR/production.db"
+echo "Database location: $BACKEND_DIR/$(echo $DATABASE_URL | sed 's|file:./||')"
 
 if [ "$ENABLE_HTTPS" = true ]; then
     echo "Caddyfile location: /etc/caddy/Caddyfile"
