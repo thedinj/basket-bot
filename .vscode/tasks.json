@@ -69,6 +69,20 @@
             "problemMatcher": []
         },
         {
+            "label": "Build: Debug APK",
+            "type": "shell",
+            "command": "pnpm android:debug",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/mobile"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "Setup: Initialize Database",
             "type": "shell",
             "command": "pnpm db:init",

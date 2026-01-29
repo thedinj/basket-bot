@@ -43,7 +43,7 @@ Copilot: prioritize correctness, consistency, and boring maintainable patterns o
 - **Households**: Reserved for future meal planning features only. Not used for stores/shopping lists.
 - Mobile: **always-online** (no offline-first sync engine).
 - **Data retention: This is a low-stakes shopping list app. Prefer hard-deleting unimportant data (like revoked tokens) rather than soft-deletes or keeping audit trails. No plans for cleanup batch jobs.**
-- **Breaking changes: This app is unreleased. Breaking database schema changes are acceptable without migration. Just reseed the database after schema changes.**
+- **Breaking changes: This app is RELEASED. All database schema changes MUST include proper migrations. Never reseed or break existing user data.**
 
 ---
 
@@ -51,25 +51,32 @@ Copilot: prioritize correctness, consistency, and boring maintainable patterns o
 
 ### Schema synchronization (critical)
 
-**When modifying database schema, you MUST update both layers together:**
+**When modifying database schema, you MUST update THREE layers together:**
 
-1. **SQL schema** (`apps/backend/src/db/init.ts` - the database initialization script)
-2. **Zod schemas** (`packages/core/src/schemas/*.ts`)
+1. **Migration script** (create new migration file in `apps/backend/src/db/migrations/`)
+2. **SQL schema** (`apps/backend/src/db/init.ts` - update for new database initialization)
+3. **Zod schemas** (`packages/core/src/schemas/*.ts`)
 
-These two must always stay perfectly in sync. When adding/removing/renaming fields:
+All three must stay perfectly in sync. When adding/removing/renaming fields:
 
-- Update the SQL schema in init.ts with correct DDL statements (CREATE TABLE or ALTER TABLE)
+- Create a new migration file with timestamp prefix (e.g., `YYYYMMDD_HHMMSS_description.ts`)
+- Write forward migration (up) and backward migration (down) logic
+- Update the SQL schema in init.ts for fresh database initialization
 - Update all relevant Zod schemas (base schemas AND extended/detailed schemas)
-- Ensure field types match (e.g., `TEXT`/`z.string()`, `INTEGER`/`z.number()`)
+- Ensure field types match across all three layers
 - Ensure nullability matches (`NULL`/`.nullable()`, `NOT NULL`/required field)
 - Keep naming consistent (camelCase in TypeScript/Zod, snake_case in SQL if preferred)
+- Test migration on a copy of production data before deploying
 
 **Example: Adding a field to `Store`**
 
-1. SQL: `ALTER TABLE "Store" ADD COLUMN "newField" TEXT NOT NULL;`
-2. Zod: `newField: z.string()` in `storeSchema`
+1. Migration: Create `20260128_123000_add_store_new_field.ts` with ALTER TABLE statement
+2. Init.ts: Update CREATE TABLE statement to include the field
+3. Zod: Add `newField: z.string()` in `storeSchema`
 
 Failure to keep these in sync will cause runtime validation errors, type mismatches, and query failures.
+
+**CRITICAL: Never modify existing migration files. Always create new migrations for schema changes.**
 
 ### Shared types and validation
 
@@ -324,9 +331,55 @@ Do not hardcode credentials. Fail clearly if env vars are missing when seeding.
 
 **Database workflow:**
 
-- To initialize/reset database: `pnpm db:init` (runs schema + seed)
+- To initialize fresh database: `pnpm db:init` (runs schema + seed) - NEW DATABASES ONLY
+- To apply migrations: `pnpm db:migrate` (applies pending migrations) - PRODUCTION
 - Direct SQL queries via `db.prepare(...).run/get/all()`
 - Always use `datetime('now')` for timestamps in SQLite
+
+**Database migrations (CRITICAL - app is released):**
+
+The app is now released with real user data. All schema changes MUST be done through migrations.
+
+**Migration file structure:**
+
+- Location: `apps/backend/src/db/migrations/`
+- Naming: `YYYYMMDD_HHMMSS_description.ts` (timestamp ensures ordering)
+- Must export `up()` and `down()` functions
+- Each function receives the database connection
+
+**Migration rules:**
+
+1. **Never modify existing migration files** - they've already run in production
+2. **Always create new migrations** for any schema change
+3. **Test on production data copy** before deploying
+4. **Make migrations reversible** when possible (implement `down()`)
+5. **Handle data migration** - don't just ALTER TABLE, migrate existing data if needed
+6. **Be backwards compatible** when possible - add nullable fields, provide defaults
+7. **Migration order matters** - timestamp prefix ensures correct execution order
+
+**Migration example:**
+
+```typescript
+// apps/backend/src/db/migrations/20260128_120000_add_store_tags.ts
+import type { Database } from "better-sqlite3";
+
+export function up(db: Database): void {
+    db.exec(`
+    ALTER TABLE "Store" ADD COLUMN "tags" TEXT;
+    UPDATE "Store" SET "tags" = '[]' WHERE "tags" IS NULL;
+  `);
+}
+
+export function down(db: Database): void {
+    db.exec(`ALTER TABLE "Store" DROP COLUMN "tags";`);
+}
+```
+
+**When to use init.ts vs migrations:**
+
+- **init.ts**: Only for creating fresh/test databases from scratch
+- **Migrations**: For all production schema changes
+- Both must stay in sync - update init.ts when creating migrations
 
 **Boolean storage convention:**
 
