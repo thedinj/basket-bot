@@ -21,7 +21,7 @@ export function middleware(request: NextRequest) {
                 status: 200,
                 headers: {
                     "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
                     "Access-Control-Allow-Headers":
                         "Content-Type, Authorization, X-Retry-After-Refresh",
                     "Access-Control-Expose-Headers": "X-Token-Status",
@@ -33,7 +33,7 @@ export function middleware(request: NextRequest) {
         // Add CORS headers to actual requests
         const response = NextResponse.next();
         response.headers.set("Access-Control-Allow-Origin", "*");
-        response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
         response.headers.set(
             "Access-Control-Allow-Headers",
             "Content-Type, Authorization, X-Retry-After-Refresh"
