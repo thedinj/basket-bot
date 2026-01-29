@@ -1,12 +1,11 @@
 import { IonButton, IonIcon, IonSpinner } from "@ionic/react";
 import { cloudUploadOutline, refreshOutline, sunny, sunnyOutline } from "ionicons/icons";
+import { useRefreshContext } from "../../hooks/refresh/useRefreshContext";
 import { useKeepAwake } from "../../hooks/useKeepAwake";
 import { useMutationQueue } from "../../hooks/useMutationQueue";
-import { useRefresh, useSync } from "../../hooks/useRefreshAndSync";
+import { useSync } from "../../hooks/useRefreshAndSync";
 
 interface GlobalActionsProps {
-    /** Optional specific query keys to refresh. If omitted, refreshes all queries */
-    refreshQueryKeys?: string[][];
     /** Whether to show the keep-awake button (per-page opt-in) */
     showKeepAwake?: boolean;
 }
@@ -14,12 +13,10 @@ interface GlobalActionsProps {
 /**
  * Global action buttons for refresh and sync
  * To be used in AppHeader children slot
+ * Uses configured query keys from RefreshContext
  */
-export const GlobalActions: React.FC<GlobalActionsProps> = ({
-    refreshQueryKeys,
-    showKeepAwake = false,
-}) => {
-    const { refresh, isRefreshing } = useRefresh();
+export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = false }) => {
+    const { refresh, isRefreshing, configuredQueryKeys } = useRefreshContext();
     const { sync, isSyncing } = useSync();
     const { hasQueuedMutations } = useMutationQueue();
     const {
@@ -29,7 +26,7 @@ export const GlobalActions: React.FC<GlobalActionsProps> = ({
     } = useKeepAwake();
 
     const handleRefresh = async () => {
-        await refresh(refreshQueryKeys);
+        await refresh();
     };
 
     const handleSync = async () => {
@@ -38,18 +35,20 @@ export const GlobalActions: React.FC<GlobalActionsProps> = ({
 
     return (
         <>
-            <IonButton
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                title="Refresh data"
-                aria-label="Refresh data"
-            >
-                {isRefreshing ? (
-                    <IonSpinner name="circular" />
-                ) : (
-                    <IonIcon slot="icon-only" icon={refreshOutline} />
-                )}
-            </IonButton>
+            {configuredQueryKeys && (
+                <IonButton
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    title="Refresh data"
+                    aria-label="Refresh data"
+                >
+                    {isRefreshing ? (
+                        <IonSpinner name="circular" />
+                    ) : (
+                        <IonIcon slot="icon-only" icon={refreshOutline} />
+                    )}
+                </IonButton>
+            )}
             {hasQueuedMutations && (
                 <IonButton
                     onClick={handleSync}

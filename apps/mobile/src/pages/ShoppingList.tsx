@@ -17,6 +17,7 @@ import { GlobalActions } from "../components/layout/GlobalActions";
 import LoadingFallback from "../components/LoadingFallback";
 import { FabSpacer } from "../components/shared/FabSpacer";
 import { OverlayAnimation } from "../components/shared/OverlayAnimation";
+import PullToRefresh from "../components/shared/PullToRefresh";
 import { useBulkImportModal } from "../components/shoppinglist/BulkImportModal";
 import { CheckedItems } from "../components/shoppinglist/CheckedItems";
 import { ItemEditorModal } from "../components/shoppinglist/ItemEditorModal";
@@ -25,6 +26,7 @@ import { StoreSelector } from "../components/shoppinglist/StoreSelector";
 import { UncheckedItems } from "../components/shoppinglist/UncheckedItems";
 import { useShoppingListContext } from "../components/shoppinglist/useShoppingListContext";
 import { useClearCheckedItems, useShoppingListItems } from "../db/hooks";
+import RefreshConfig from "../hooks/refresh/RefreshConfig";
 import { useOverlayAnimation } from "../hooks/useOverlayAnimation";
 import { useShowSnoozedItems } from "../hooks/useShowSnoozedItems";
 import { LLMFabButton } from "../llm/shared";
@@ -106,14 +108,12 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     ];
 
     return (
-        <>
+        <RefreshConfig queryKeys={[["shopping-list-items", storeId]]}>
             <AppHeader title="Shopping List" menuItems={menuItems}>
-                <GlobalActions
-                    refreshQueryKeys={[["shopping-list-items", storeId]]}
-                    showKeepAwake
-                />
+                <GlobalActions showKeepAwake />
             </AppHeader>
             <IonContent fullscreen>
+                <PullToRefresh />
                 {activeItems.length === 0 && (
                     <div
                         style={{
@@ -193,7 +193,7 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
                     },
                 ]}
             />
-        </>
+        </RefreshConfig>
     );
 };
 

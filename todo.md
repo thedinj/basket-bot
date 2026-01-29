@@ -1,6 +1,5 @@
 Keep screen on until "Successfully imported" aisles/sections
 let users change their backend mode from the login page, maybe secret keypresses
-Favorites updating not working
 move pi to its permanent home
 
 ---

@@ -26,7 +26,9 @@ import { z } from "zod";
 import { AppHeader } from "../components/layout/AppHeader";
 import GlobalActions from "../components/layout/GlobalActions";
 import { FabSpacer } from "../components/shared/FabSpacer";
+import PullToRefresh from "../components/shared/PullToRefresh";
 import { useCreateStore, useNotificationCounts, useStores, useUpdateStore } from "../db/hooks";
+import RefreshConfig from "../hooks/refresh/RefreshConfig";
 
 const storeFormSchema = z.object({
     name: z
@@ -85,127 +87,132 @@ const StoresList: React.FC = () => {
 
     return (
         <IonPage>
-            <AppHeader title="Stores">
-                <GlobalActions refreshQueryKeys={[["stores"]]} />
-                <IonButtons slot="end">
-                    <IonButton routerLink="/invitations">
-                        <IonIcon slot="icon-only" icon={mailOutline} />
-                        {notificationCounts && notificationCounts.storeInvitations > 0 && (
-                            <IonBadge
-                                color="danger"
-                                style={{ position: "absolute", top: "4px", right: "4px" }}
-                            >
-                                {notificationCounts.storeInvitations}
-                            </IonBadge>
-                        )}
-                    </IonButton>
-                </IonButtons>
-            </AppHeader>
-            <IonContent fullscreen>
-                {isLoading ? (
-                    <IonList>
-                        {[1, 2, 3].map((i) => (
-                            <IonItem key={i}>
-                                <IonLabel>
-                                    <IonSkeletonText animated style={{ width: "60%" }} />
-                                </IonLabel>
-                            </IonItem>
-                        ))}
-                    </IonList>
-                ) : !stores?.length ? (
-                    <div
-                        style={{
-                            textAlign: "center",
-                            marginTop: "40px",
-                            padding: "20px",
-                        }}
-                    >
-                        <IonText color="medium">
-                            <p>No stores configured. Add one to begin optimizing your shopping.</p>
-                        </IonText>
-                    </div>
-                ) : (
-                    <IonList>
-                        {stores.map((store) => (
-                            <IonItem
-                                key={store.id}
-                                routerLink={`/stores/${store.id}`}
-                                button
-                                detail
-                            >
-                                <IonIcon icon={storefrontOutline} slot="start" />
-                                <IonLabel>
-                                    <h2>{store.name}</h2>
-                                </IonLabel>
-                            </IonItem>
-                        ))}
-                    </IonList>
-                )}
-
-                <FabSpacer />
-
-                <IonFab slot="fixed" vertical="bottom" horizontal="end">
-                    <IonFabButton onClick={openCreateModal}>
-                        <IonIcon icon={add} />
-                    </IonFabButton>
-                </IonFab>
-
-                {/* Store Name Modal */}
-                <IonModal isOpen={isModalOpen} onDidDismiss={closeModal}>
-                    <IonHeader>
-                        <IonToolbar>
-                            <IonTitle>{editingStore ? "Edit Store" : "New Store"}</IonTitle>
-                            <IonButtons slot="end">
-                                <IonButton onClick={closeModal}>
-                                    <IonIcon icon={closeOutline} />
-                                </IonButton>
-                            </IonButtons>
-                        </IonToolbar>
-                    </IonHeader>
-                    <IonContent className="ion-padding">
-                        <form onSubmit={handleSubmit(onSubmit)}>
-                            <Controller
-                                name="name"
-                                control={control}
-                                render={({ field }) => (
-                                    <IonItem>
-                                        <IonLabel position="stacked">Store Name</IonLabel>
-                                        <IonInput
-                                            {...field}
-                                            placeholder="Enter store name"
-                                            autocapitalize="sentences"
-                                            onIonInput={(e) => field.onChange(e.detail.value)}
-                                        />
-                                    </IonItem>
-                                )}
-                            />
-                            {errors.name && (
-                                <IonText color="danger">
-                                    <p
-                                        style={{
-                                            fontSize: "12px",
-                                            marginLeft: "16px",
-                                        }}
-                                    >
-                                        {errors.name.message}
-                                    </p>
-                                </IonText>
+            <RefreshConfig queryKeys={[["stores"]]}>
+                <AppHeader title="Stores">
+                    <GlobalActions />
+                    <IonButtons slot="end">
+                        <IonButton routerLink="/invitations">
+                            <IonIcon slot="icon-only" icon={mailOutline} />
+                            {notificationCounts && notificationCounts.storeInvitations > 0 && (
+                                <IonBadge
+                                    color="danger"
+                                    style={{ position: "absolute", top: "4px", right: "4px" }}
+                                >
+                                    {notificationCounts.storeInvitations}
+                                </IonBadge>
                             )}
+                        </IonButton>
+                    </IonButtons>
+                </AppHeader>
+                <IonContent fullscreen>
+                    <PullToRefresh />
+                    {isLoading ? (
+                        <IonList>
+                            {[1, 2, 3].map((i) => (
+                                <IonItem key={i}>
+                                    <IonLabel>
+                                        <IonSkeletonText animated style={{ width: "60%" }} />
+                                    </IonLabel>
+                                </IonItem>
+                            ))}
+                        </IonList>
+                    ) : !stores?.length ? (
+                        <div
+                            style={{
+                                textAlign: "center",
+                                marginTop: "40px",
+                                padding: "20px",
+                            }}
+                        >
+                            <IonText color="medium">
+                                <p>
+                                    No stores configured. Add one to begin optimizing your shopping.
+                                </p>
+                            </IonText>
+                        </div>
+                    ) : (
+                        <IonList>
+                            {stores.map((store) => (
+                                <IonItem
+                                    key={store.id}
+                                    routerLink={`/stores/${store.id}`}
+                                    button
+                                    detail
+                                >
+                                    <IonIcon icon={storefrontOutline} slot="start" />
+                                    <IonLabel>
+                                        <h2>{store.name}</h2>
+                                    </IonLabel>
+                                </IonItem>
+                            ))}
+                        </IonList>
+                    )}
 
-                            <IonButton
-                                expand="block"
-                                type="submit"
-                                disabled={
-                                    !isValid || createStore.isPending || updateStore.isPending
-                                }
-                                style={{ marginTop: "20px" }}
-                            >
-                                {editingStore ? "Update" : "Create"}
-                            </IonButton>
-                        </form>
-                    </IonContent>
-                </IonModal>
-            </IonContent>
+                    <FabSpacer />
+
+                    <IonFab slot="fixed" vertical="bottom" horizontal="end">
+                        <IonFabButton onClick={openCreateModal}>
+                            <IonIcon icon={add} />
+                        </IonFabButton>
+                    </IonFab>
+
+                    {/* Store Name Modal */}
+                    <IonModal isOpen={isModalOpen} onDidDismiss={closeModal}>
+                        <IonHeader>
+                            <IonToolbar>
+                                <IonTitle>{editingStore ? "Edit Store" : "New Store"}</IonTitle>
+                                <IonButtons slot="end">
+                                    <IonButton onClick={closeModal}>
+                                        <IonIcon icon={closeOutline} />
+                                    </IonButton>
+                                </IonButtons>
+                            </IonToolbar>
+                        </IonHeader>
+                        <IonContent className="ion-padding">
+                            <form onSubmit={handleSubmit(onSubmit)}>
+                                <Controller
+                                    name="name"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <IonItem>
+                                            <IonLabel position="stacked">Store Name</IonLabel>
+                                            <IonInput
+                                                {...field}
+                                                placeholder="Enter store name"
+                                                autocapitalize="sentences"
+                                                onIonInput={(e) => field.onChange(e.detail.value)}
+                                            />
+                                        </IonItem>
+                                    )}
+                                />
+                                {errors.name && (
+                                    <IonText color="danger">
+                                        <p
+                                            style={{
+                                                fontSize: "12px",
+                                                marginLeft: "16px",
+                                            }}
+                                        >
+                                            {errors.name.message}
+                                        </p>
+                                    </IonText>
+                                )}
+
+                                <IonButton
+                                    expand="block"
+                                    type="submit"
+                                    disabled={
+                                        !isValid || createStore.isPending || updateStore.isPending
+                                    }
+                                    style={{ marginTop: "20px" }}
+                                >
+                                    {editingStore ? "Update" : "Create"}
+                                </IonButton>
+                            </form>
+                        </IonContent>
+                    </IonModal>
+                </IonContent>
+            </RefreshConfig>
         </IonPage>
     );
 };

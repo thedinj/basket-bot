@@ -41,7 +41,6 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
                 // Apply custom API URL if configured
                 if (remoteApiUrl?.trim()) {
                     apiClient.setBaseUrl(remoteApiUrl.trim());
-                    console.log("[AuthProvider] Using custom API URL:", remoteApiUrl.trim());
                 }
 
                 const [accessToken, refreshToken] = await Promise.all([
@@ -72,15 +71,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
      * Update user state when query data changes
      */
     useEffect(() => {
-        console.log(
-            "[AuthProvider] userData effect triggered, userData:",
-            userData ? "present" : "null"
-        );
         if (userData) {
-            console.log(
-                "[AuthProvider] useAuthUser query succeeded, user data received:",
-                userData.user.email
-            );
             setUser(userData.user);
             setIsInitializing(false);
         }
@@ -122,14 +113,9 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
      * Login with email and password using React Query mutation
      */
     const login = async (email: string, password: string) => {
-        try {
-            const response = await loginMutation.mutateAsync({ email, password });
-            setUser(response.user);
-            setShouldFetchUser(true);
-        } catch (error) {
-            console.error("[AuthProvider] Login failed:", error);
-            throw error;
-        }
+        const response = await loginMutation.mutateAsync({ email, password });
+        setUser(response.user);
+        setShouldFetchUser(true);
     };
 
     /**
