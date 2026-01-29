@@ -405,8 +405,8 @@ PORT=$(grep "^PORT=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -
 echo "Testing API endpoint on port $PORT..."
 sleep 2  # Give it a moment to fully start
 
-echo "Running: curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:$PORT/api/health\""
-HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT/api/health" 2>/dev/null)
+echo "Running: curl --max-time 10 -s -o /dev/null -w \"%{http_code}\" \"http://localhost:$PORT/api/health\""
+HTTP_STATUS=$(curl --max-time 10 -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT/api/health" 2>/dev/null || true)
 # If curl completely failed, HTTP_STATUS might be empty or malformed
 if [ -z "$HTTP_STATUS" ] || [ ${#HTTP_STATUS} -ne 3 ]; then
     HTTP_STATUS="000"
