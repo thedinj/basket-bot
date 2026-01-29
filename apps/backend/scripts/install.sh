@@ -1,10 +1,53 @@
 #!/bin/bash
 set -e
 
-# Basket Bot Backend Installation Script
+# ==============================================================================
+# BASKET BOT BACKEND INSTALLATION SCRIPT
+# ==============================================================================
 # For Raspberry Pi Raspbian - Run as admin user
-# This script installs dependencies, sets up the database, configures systemd service,
-# and optionally sets up HTTPS with Caddy
+#
+# PREREQUISITES - Getting the code onto your server:
+# ------------------------------------------------------------------------------
+# 1. SSH into your Raspberry Pi as the admin user:
+#    ssh admin@your-pi-hostname
+#
+# 2. Install Node.js (v18 or higher) if not already installed:
+#    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+#    sudo apt-get install -y nodejs
+#    # Verify installation: node --version && npm --version
+#
+# 3. Navigate to your home directory (recommended location):
+#    cd ~
+#    # This takes you to /home/admin (typical for admin user on Raspbian)
+#    # You can clone to any directory you have write permissions for
+#    # Use 'pwd' to confirm your current location
+#
+# 4. Clone the repository from GitHub:
+#    git clone https://github.com/thedinj/basket-bot.git
+#    # This creates a new directory: ~/basket-bot
+#
+#    OR, if you've already cloned it, navigate into it and update to latest:
+#    cd ~/basket-bot
+#    git pull origin main
+#
+# 5. Navigate to the backend scripts directory:
+#    cd ~/basket-bot/apps/backend/scripts
+#    # Or if you're already in ~/basket-bot: cd apps/backend/scripts
+#
+# 6. Make this script executable (if not already):
+#    chmod +x install.sh
+#
+# 7. Run this installation script:
+#    ./install.sh
+#
+# WHAT THIS SCRIPT DOES:
+# ------------------------------------------------------------------------------
+# - Installs dependencies (pnpm, Node.js packages)
+# - Builds the backend application
+# - Sets up the SQLite database
+# - Configures systemd service for auto-start on boot
+# - Optionally configures HTTPS with Caddy reverse proxy
+# ==============================================================================
 
 echo "================================================"
 echo "Basket Bot Backend Installation"
@@ -35,6 +78,18 @@ fi
 echo "Checking for pnpm..."
 if ! command -v pnpm &> /dev/null; then
     echo "pnpm not found. Installing pnpm globally..."
+
+    # Check if npm is available
+    if ! command -v npm &> /dev/null; then
+        echo "❌ npm is not installed. Please install Node.js first:"
+        echo "   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -"
+        echo "   sudo apt-get install -y nodejs"
+        echo ""
+        echo "   Then verify installation:"
+        echo "   node --version && npm --version"
+        exit 1
+    fi
+
     npm install -g pnpm
 else
     echo "✓ pnpm is already installed ($(pnpm --version))"
