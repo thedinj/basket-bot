@@ -405,7 +405,13 @@ PORT=$(grep "^PORT=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -
 echo "Testing API endpoint on port $PORT..."
 sleep 2  # Give it a moment to fully start
 
-HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT/api/health" 2>/dev/null || echo "000")
+echo "Running: curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:$PORT/api/health\""
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT/api/health" 2>/dev/null)
+# If curl completely failed, HTTP_STATUS might be empty or malformed
+if [ -z "$HTTP_STATUS" ] || [ ${#HTTP_STATUS} -ne 3 ]; then
+    HTTP_STATUS="000"
+fi
+echo "Response code: $HTTP_STATUS"
 if [ "$HTTP_STATUS" = "200" ]; then
     echo -e "${GREEN}✓${NC} API health check passed (HTTP $HTTP_STATUS)"
 elif [ "$HTTP_STATUS" = "404" ]; then
