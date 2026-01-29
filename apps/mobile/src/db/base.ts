@@ -97,8 +97,8 @@ export abstract class BaseDatabase implements Database {
         aisleId?: string | null,
         sectionId?: string | null
     ): Promise<StoreItem>;
-    abstract toggleItemFavorite(id: string): Promise<StoreItem>;
-    abstract deleteItem(id: string): Promise<void>;
+    abstract toggleItemFavorite(storeId: string, id: string): Promise<StoreItem>;
+    abstract deleteItem(storeId: string, id: string): Promise<void>;
     abstract searchStoreItems(
         storeId: string,
         searchTerm: string,

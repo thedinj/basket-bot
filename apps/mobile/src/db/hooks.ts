@@ -807,7 +807,8 @@ export function useDeleteItem() {
     const { showError } = useToast();
 
     return useTanstackMutation({
-        mutationFn: ({ id }: { id: string; storeId: string }) => database.deleteItem(id),
+        mutationFn: ({ id, storeId }: { id: string; storeId: string }) =>
+            database.deleteItem(storeId, id),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["items", variables.storeId],
@@ -831,7 +832,8 @@ export function useToggleFavorite() {
     const { showError } = useToast();
 
     return useOptimisticMutation({
-        mutationFn: ({ id }: { id: string; storeId: string }) => database.toggleItemFavorite(id),
+        mutationFn: ({ id, storeId }: { id: string; storeId: string }) =>
+            database.toggleItemFavorite(storeId, id),
         queryKeys: (vars) => [
             ["items", vars.storeId],
             ["items", "with-details", vars.storeId],

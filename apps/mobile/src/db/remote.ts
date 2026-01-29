@@ -336,14 +336,31 @@ export class RemoteDatabase extends BaseDatabase {
         );
     }
 
-    async toggleItemFavorite(_id: string): Promise<StoreItem> {
-        throw new Error(
-            "toggleItemFavorite requires storeId - use toggleItemFavoriteForStore instead"
+    async toggleItemFavorite(storeId: string, id: string): Promise<StoreItem> {
+        return this.executeMutation(
+            "toggleItemFavoriteForStore",
+            `/api/stores/${storeId}/items/${id}/favorite`,
+            "POST",
+            async () => {
+                const response = await apiClient.post<{ item: StoreItem }>(
+                    `/api/stores/${storeId}/items/${id}/favorite`,
+                    {}
+                );
+                return response.item;
+            },
+            {}
         );
     }
 
-    async deleteItem(_id: string): Promise<void> {
-        throw new Error("deleteItem requires storeId - use deleteItemForStore instead");
+    async deleteItem(storeId: string, id: string): Promise<void> {
+        return this.executeMutation(
+            "deleteItemForStore",
+            `/api/stores/${storeId}/items/${id}`,
+            "DELETE",
+            async () => {
+                await apiClient.delete(`/api/stores/${storeId}/items/${id}`);
+            }
+        );
     }
 
     async searchStoreItems(
@@ -377,7 +394,7 @@ export class RemoteDatabase extends BaseDatabase {
             const normalizedAisleId = sectionId ? null : (aisleId ?? null);
 
             // Update the item if location information differs
-            const needsUpdate = 
+            const needsUpdate =
                 normalizedSectionId !== (exactMatch.sectionId ?? null) ||
                 normalizedAisleId !== (exactMatch.aisleId ?? null);
 
@@ -395,33 +412,6 @@ export class RemoteDatabase extends BaseDatabase {
         }
 
         return this.insertItem(storeId, name, aisleId, sectionId);
-    }
-
-    async toggleItemFavoriteForStore(storeId: string, id: string): Promise<StoreItem> {
-        return this.executeMutation(
-            "toggleItemFavoriteForStore",
-            `/api/stores/${storeId}/items/${id}/favorite`,
-            "POST",
-            async () => {
-                const response = await apiClient.post<{ item: StoreItem }>(
-                    `/api/stores/${storeId}/items/${id}/favorite`,
-                    {}
-                );
-                return response.item;
-            },
-            {}
-        );
-    }
-
-    async deleteItemForStore(storeId: string, id: string): Promise<void> {
-        return this.executeMutation(
-            "deleteItemForStore",
-            `/api/stores/${storeId}/items/${id}`,
-            "DELETE",
-            async () => {
-                await apiClient.delete(`/api/stores/${storeId}/items/${id}`);
-            }
-        );
     }
 
     // ========== ShoppingList Operations ==========

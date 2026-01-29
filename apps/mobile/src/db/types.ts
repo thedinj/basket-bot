@@ -198,12 +198,12 @@ export interface EntityDatabase {
     /**
      * Toggle the favorite status of an item
      */
-    toggleItemFavorite(id: string): Promise<StoreItem>;
+    toggleItemFavorite(storeId: string, id: string): Promise<StoreItem>;
 
     /**
      * Soft delete an item
      */
-    deleteItem(id: string): Promise<void>;
+    deleteItem(storeId: string, id: string): Promise<void>;
 
     /**
      * Search for items by name prefix (for autocomplete)

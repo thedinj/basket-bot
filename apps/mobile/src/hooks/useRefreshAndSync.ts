@@ -35,6 +35,42 @@ export const useRefresh = () => {
 };
 
 /**
+ * Hook for queue management actions (clear, remove individual items)
+ */
+export const useQueueActions = () => {
+    const { showSuccess, showError } = useToast();
+
+    const clearQueue = useCallback(async () => {
+        try {
+            await mutationQueue.clearQueue();
+            showSuccess("Cleared all pending changes");
+        } catch (error: unknown) {
+            console.error("[useQueueActions] Error clearing queue:", error);
+            showError("Failed to clear queue");
+        }
+    }, [showSuccess, showError]);
+
+    const removeMutation = useCallback(
+        async (mutationId: string) => {
+            try {
+                await mutationQueue.removeMutation(mutationId);
+                showSuccess("Removed pending change");
+            } catch (error: unknown) {
+                console.error("[useQueueActions] Error removing mutation:", error);
+                showError("Failed to remove change");
+            }
+        },
+        [showSuccess, showError]
+    );
+
+    const getQueue = useCallback(() => {
+        return mutationQueue.getQueue();
+    }, []);
+
+    return { clearQueue, removeMutation, getQueue };
+};
+
+/**
  * Hook to manually sync queued mutations
  */
 export const useSync = () => {

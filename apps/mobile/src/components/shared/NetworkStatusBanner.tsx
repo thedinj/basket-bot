@@ -1,16 +1,26 @@
 import { IonText } from "@ionic/react";
 import pluralize from "pluralize";
+import { useState } from "react";
 import { useMutationQueue } from "../../hooks/useMutationQueue";
 import { useNetworkStatus } from "../../hooks/useNetworkStatus";
 import "./NetworkStatusBanner.scss";
+import QueueReviewModal from "./QueueReviewModal";
 
 /**
  * Banner that displays network status and queued mutation count
  * Shows when offline or when there are pending mutations
+ * Click to open queue review modal when there are pending changes
  */
 export const NetworkStatusBanner: React.FC = () => {
     const { isOffline } = useNetworkStatus();
     const { queueSize, isProcessing } = useMutationQueue();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const handleClick = () => {
+        if (queueSize > 0) {
+            setIsModalOpen(true);
+        }
+    };
 
     // Don't show banner if online and no queued mutations
     if (!isOffline && queueSize === 0) {
@@ -40,11 +50,22 @@ export const NetworkStatusBanner: React.FC = () => {
     }
 
     return (
-        <div className={`network-status-banner network-status-banner--${colorClass}`}>
-            <IonText color={colorClass}>
-                <small>{message}</small>
-            </IonText>
-        </div>
+        <>
+            <div
+                className={`network-status-banner network-status-banner--${colorClass} ${
+                    queueSize > 0 ? "network-status-banner--clickable" : ""
+                }`}
+                onClick={handleClick}
+            >
+                <IonText color={colorClass}>
+                    <small>
+                        {message}
+                        {queueSize > 0 && " • Tap to review"}
+                    </small>
+                </IonText>
+            </div>
+            <QueueReviewModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+        </>
     );
 };
 

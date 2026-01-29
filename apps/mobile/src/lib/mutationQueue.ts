@@ -92,7 +92,7 @@ export class MutationQueue {
     }
 
     /**
-     * Get all queued mutations
+     * Get all queued mutations (detailed view for review UI)
      */
     getQueue(): readonly QueuedMutation[] {
         return [...this.queue];
@@ -103,6 +103,13 @@ export class MutationQueue {
      */
     getQueueSize(): number {
         return this.queue.length;
+    }
+
+    /**
+     * Remove a specific mutation from the queue (manual abort)
+     */
+    async removeMutation(mutationId: string): Promise<void> {
+        await this.dequeue(mutationId);
     }
 
     /**
