@@ -92,6 +92,7 @@ if ! git rev-parse --git-dir > /dev/null 2>&1; then
 fi
 
 # Check for uncommitted changes
+git update-index -q --refresh 2>/dev/null || true
 if ! git diff-index --quiet HEAD --; then
     echo -e "${YELLOW}⚠️  Warning: You have uncommitted changes in your working directory.${NC}"
     git status --short
@@ -403,15 +404,36 @@ echo -e "${GREEN}✓${NC} Service is active"
 # Test API health endpoint (if it exists)
 PORT=$(grep "^PORT=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "3000")
 echo "Testing API endpoint on port $PORT..."
-sleep 2  # Give it a moment to fully start
 
-echo "Running: curl --max-time 10 -s -o /dev/null -w \"%{http_code}\" \"http://localhost:$PORT/api/health\""
-HTTP_STATUS=$(curl --max-time 10 -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT/api/health" 2>/dev/null || true)
-# If curl completely failed, HTTP_STATUS might be empty or malformed
-if [ -z "$HTTP_STATUS" ] || [ ${#HTTP_STATUS} -ne 3 ]; then
-    HTTP_STATUS="000"
-fi
-echo "Response code: $HTTP_STATUS"
+# Retry up to 5 times with 3 seconds between attempts
+MAX_RETRIES=5
+RETRY_COUNT=0
+HTTP_STATUS="000"
+
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if [ $RETRY_COUNT -gt 0 ]; then
+        echo "Retry $RETRY_COUNT/$MAX_RETRIES - waiting 3 seconds..."
+    fi
+    sleep 3
+
+    echo "Running: curl --max-time 10 -s -o /dev/null -w \"%{http_code}\" \"http://localhost:$PORT/api/health\""
+    HTTP_STATUS=$(curl --max-time 10 -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT/api/health" 2>/dev/null || true)
+
+    # If curl completely failed, HTTP_STATUS might be empty or malformed
+    if [ -z "$HTTP_STATUS" ] || [ ${#HTTP_STATUS} -ne 3 ]; then
+        HTTP_STATUS="000"
+    fi
+
+    echo "Response code: $HTTP_STATUS"
+
+    # Break on success
+    if [ "$HTTP_STATUS" = "200" ]; then
+        break
+    fi
+
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+done
+
 if [ "$HTTP_STATUS" = "200" ]; then
     echo -e "${GREEN}✓${NC} API health check passed (HTTP $HTTP_STATUS)"
 elif [ "$HTTP_STATUS" = "404" ]; then
