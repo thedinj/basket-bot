@@ -24,8 +24,8 @@ const DEFAULT_API_BASE_URL = (() => {
         return "http://localhost:3000";
     }
 
-    // Production default (TODO: replace with actual production domain)
-    return "http://localhost:3000";
+    // Production default
+    return "https://basketbot.ddns.net";
 })();
 
 /**

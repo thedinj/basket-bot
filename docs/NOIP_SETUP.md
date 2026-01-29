@@ -60,54 +60,95 @@ sudo apt install -y build-essential
 
 ### 2.2 Download and Install No-IP DUC
 
+The recommended method is to use the package manager which will download all dependencies and ensure correct installation.
+
+**Step 1: Download the latest Linux DUC**
+
 ```bash
 cd /usr/local/src
-sudo wget https://dmej72pbskrbg.cloudfront.net/downloads/noip-duc_3.0.0-beta.7.tar.gz
-sudo tar xzf noip-duc_3.0.0-beta.7.tar.gz
-cd noip-duc_3.0.0-beta.7
-sudo ./install.sh
+sudo wget --content-disposition https://www.noip.com/download/linux/latest
 ```
 
-**Note:** Check [No-IP's download page](https://www.noip.com/download) for the latest version if the above link doesn't work.
+**Step 2: Extract the tarball**
 
-### 2.3 Configure the DUC
-
-During installation, you'll be prompted:
-
-```
-Please enter your No-IP account username: YOUR_EMAIL@example.com
-Please enter your No-IP account password: YOUR_PASSWORD
+```bash
+sudo tar xf noip-duc_3.3.0.tar.gz
 ```
 
-Enter your No-IP account credentials.
+**Step 3: Install using package manager**
 
-The installer will show your hostnames and ask which one to update:
+For **Raspberry Pi 3, 4, 5, and newer models** (64-bit ARM):
 
-```
-1. basketbot.ddns.net
-Please select a hostname to update: 1
-```
-
-Select your hostname by entering its number.
-
-### 2.4 Set Update Interval
-
-```
-Please enter an update interval (in minutes): 5
+```bash
+cd noip-duc_3.3.0/binaries
+sudo apt install ./noip-duc_3.3.0_arm64.deb
 ```
 
-Enter `5` (updates every 5 minutes) or `30` (every 30 minutes). Lower intervals ensure faster IP change detection.
+**Note:** Version numbers in filenames may vary. Use `ls` to see available .deb files and adjust the filename accordingly.
 
-### 2.5 Enable DUC as a Service
+**For other systems:**
 
-The installer will create a systemd service automatically. Enable and start it:
+- 32-bit ARM (Pi 1, 2, Zero): Use `noip-duc_3.3.0_armhf.deb`
+- 64-bit x86/AMD64: Use `noip-duc_3.3.0_amd64.deb`
+
+**Step 4: Start the DUC**
+
+Once installation is complete, run:
+
+```bash
+noip-duc --help
+```
+
+To see available commands and options.
+
+**Additional Resources:** See [No-IP's installation guide](https://www.noip.com/support/knowledgebase/install-linux-3-x-dynamic-update-client-duc) for the latest instructions.
+
+### 2.3 Configure and Run the DUC
+
+The No-IP DUC v3.0 requires a configuration file to run automatically.
+
+**Step 1: Create the configuration file**
+
+```bash
+sudo nano /etc/default/noip-duc
+```
+
+**Step 2: Add your No-IP credentials**
+
+```bash
+NOIP_USERNAME=your_email@example.com
+NOIP_PASSWORD=your_password
+NOIP_HOSTNAMES=basketbot.ddns.net
+```
+
+Replace:
+
+- `your_email@example.com` with your No-IP account email
+- `your_password` with your No-IP account password
+- `basketbot.ddns.net` with your actual hostname
+
+**For multiple hostnames**, separate with commas:
+
+```bash
+NOIP_HOSTNAMES=basketbot.ddns.net,another.hopto.org
+```
+
+Save and exit (`Ctrl+X`, then `Y`, then `Enter`).
+
+**Step 3: Reload systemd daemon**
+
+```bash
+sudo systemctl daemon-reload
+```
+
+**Step 4: Enable and start the service**
 
 ```bash
 sudo systemctl enable noip-duc
 sudo systemctl start noip-duc
 ```
 
-### 2.6 Verify DUC is Running
+**Step 5: Verify the service is running**
 
 ```bash
 sudo systemctl status noip-duc
@@ -121,11 +162,18 @@ Check logs to confirm it's updating:
 sudo journalctl -u noip-duc -n 50
 ```
 
-Look for messages like:
+Look for messages indicating successful IP updates.
 
-```
-INFO: IP address updated successfully
-```
+**Troubleshooting:** If the service fails to start, check:
+
+1. Configuration file has correct credentials: `sudo cat /etc/default/noip-duc`
+2. Service logs for errors: `sudo journalctl -u noip-duc -n 100`
+3. Hostname is valid in your No-IP account
+
+**Additional Resources:**
+
+- [Running Linux DUC at Startup](https://www.noip.com/support/knowledgebase/running-linux-duc-v3-0-startup-2)
+- [No-IP Installation Guide](https://www.noip.com/support/knowledgebase/install-linux-3-x-dynamic-update-client-duc)
 
 ---
 
@@ -209,81 +257,52 @@ Router interfaces vary, but the general steps are:
 
 ### 3.4 Test Port Forwarding
 
-Wait 1-2 minutes after saving, then test:
+Wait 1-2 minutes after saving, then test from an external network (not your home network).
+
+**Best Method: Use an online port checker tool**
+
+From another device (phone on mobile data, or another computer not on your home network):
+
+1. Go to [PortCheckTool.com](https://www.portchecktool.com/) or [YouGetSignal Port Checker](https://www.yougetsignal.com/tools/open-ports/)
+2. Enter your No-IP hostname (e.g., `basketbot.ddns.net`)
+3. Test port `80` - should show **Open**
+4. Test port `443` - should show **Open**
+
+**Alternative: From your Pi, test if the ports respond**
+
+Once the backend is running (after Step 4), you can test:
 
 ```bash
-# From your Pi, check if ports are open externally
-curl http://portchecker.co/check?port=80
-curl http://portchecker.co/check?port=443
+# Test if port 80 responds (should get a response once backend is running)
+curl -I http://basketbot.ddns.net
+
+# Test if port 443 is reachable (will fail until SSL cert is obtained)
+curl -I https://basketbot.ddns.net
 ```
 
-Or use an online tool like [PortCheckTool.com](https://www.portchecktool.com/) and enter your No-IP hostname.
+**Note:** Ports won't respond until the backend service is running, so this test is optional at this stage. You can verify port forwarding is working after installing the backend in Step 4.
 
 ---
 
 ## Step 4: Run Basket Bot Installation with HTTPS
 
-Now that your hostname and ports are configured, run the installation script.
-
-### 4.1 Navigate to Backend Scripts Directory
+Now that your hostname and ports are configured, navigate to the backend scripts directory and run the installation script:
 
 ```bash
 cd ~/basket-bot/apps/backend/scripts
-```
-
-(Adjust path if your project is in a different location)
-
-### 4.2 Run Installation Script
-
-```bash
 ./install.sh
 ```
 
-### 4.3 Follow Installation Prompts
+The script will guide you through the installation process. When prompted about HTTPS, enter `y` and provide your No-IP hostname (e.g., `basketbot.ddns.net`).
 
-The script will:
+The script will automatically:
 
-1. Install dependencies and build the backend
-2. Create `.env` file (edit it with your admin credentials)
-3. Ask if you want HTTPS
-
-When prompted:
-
-```
-Enable HTTPS? (y/N): y
-```
-
-Type `y` and press Enter.
-
-```
-Enter your domain name (e.g., basketbot.yourdomain.com): basketbot.ddns.net
-```
-
-Enter your **full No-IP hostname** (e.g., `basketbot.ddns.net`).
-
-The script will:
-
+- Install dependencies and build the backend
 - Initialize the database
 - Create systemd service for the backend
-- Install Caddy reverse proxy
-- Configure automatic HTTPS with Let's Encrypt
+- Install and configure Caddy reverse proxy
+- Obtain SSL certificate from Let's Encrypt
 - Start all services
-
-### 4.4 Wait for SSL Certificate
-
-Caddy will automatically request an SSL certificate from Let's Encrypt. This takes 10-30 seconds.
-
-Check Caddy logs:
-
-```bash
-sudo journalctl -u caddy -f
-```
-
-Look for:
-
-```
-certificate obtained successfully
-```
 
 ---
 
@@ -431,11 +450,15 @@ Launch the app and try logging in. The app should now connect to your backend vi
     - Click "Modify" and update the IP manually
 
 4. **Reconfigure DUC**
-    ```bash
-    cd /usr/local/src/noip-duc_3.0.0-beta.7
-    sudo ./install.sh
-    ```
-    Enter your credentials and hostname again.
+    - Edit the config file:
+        ```bash
+        sudo nano /etc/default/noip-duc
+        ```
+    - Verify credentials are correct
+    - Restart the service:
+        ```bash
+        sudo systemctl restart noip-duc
+        ```
 
 ### Issue: Port Forwarding Not Working
 

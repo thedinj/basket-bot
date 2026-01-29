@@ -142,20 +142,24 @@ if [ ! -f "$BACKEND_DIR/.env" ]; then
     # Set production environment
     sed -i 's|NODE_ENV="development"|NODE_ENV="production"|g' "$BACKEND_DIR/.env"
 
-    # Set database path to production location
-    sed -i 's|DATABASE_URL="file:./dev.db"|DATABASE_URL="file:./production.db"|g' "$BACKEND_DIR/.env"
-
     echo "✓ .env file created with random JWT secret"
-    echo ""
-    echo "⚠️  IMPORTANT: Please edit $BACKEND_DIR/.env and update:"
-    echo "   - ADMIN_EMAIL"
-    echo "   - ADMIN_NAME"
-    echo "   - ADMIN_PASSWORD"
-    echo ""
-    read -p "Press Enter after you've updated the .env file..."
 else
     echo "✓ .env file already exists"
+    echo "Updating NODE_ENV to production..."
+
+    # Ensure production environment
+    sed -i 's|NODE_ENV="development"|NODE_ENV="production"|g' "$BACKEND_DIR/.env"
 fi
+
+echo ""
+echo "⚠️  IMPORTANT: Please edit $BACKEND_DIR/.env and verify/update:"
+echo "   - DATABASE_URL (currently set to: $(grep -E '^DATABASE_URL=' "$BACKEND_DIR/.env" | cut -d '=' -f 2))"
+echo "   - ADMIN_EMAIL"
+echo "   - ADMIN_NAME"
+echo "   - ADMIN_PASSWORD"
+echo "   - JWT_SECRET (if using existing .env)"
+echo ""
+read -p "Press Enter after you've updated the .env file..."
 echo ""
 
 # Ask if user wants to enable HTTPS with Caddy
@@ -193,6 +197,9 @@ pnpm db:init
 echo "✓ Database initialized"
 echo ""
 
+# Get DATABASE_URL from .env for systemd service
+DATABASE_URL=$(grep -E '^DATABASE_URL=' "$BACKEND_DIR/.env" | cut -d '=' -f 2 | tr -d '"' || echo "file:./production.db")
+
 # Create systemd service file
 SERVICE_NAME="basket-bot-backend"
 SERVICE_FILE="/etc/systemd/system/$SERVICE_NAME.service"
@@ -208,6 +215,7 @@ Type=simple
 User=$CURRENT_USER
 WorkingDirectory=$BACKEND_DIR
 Environment="NODE_ENV=production"
+Environment="DATABASE_URL=$DATABASE_URL"
 Environment="PATH=/usr/bin:/usr/local/bin:$HOME/.local/share/pnpm"
 ExecStart=$(which pnpm) start
 Restart=always
@@ -409,8 +417,13 @@ echo "Backend service commands:"
 echo "  sudo systemctl status $SERVICE_NAME    # Check service status"
 echo "  sudo systemctl restart $SERVICE_NAME   # Restart service"
 echo "  sudo systemctl stop $SERVICE_NAME      # Stop service"
+echo "  sudo systemctl start $SERVICE_NAME     # Start service"
 echo "  sudo journalctl -u $SERVICE_NAME -f   # View live logs"
 echo "  sudo journalctl -u $SERVICE_NAME -n 100  # View last 100 log lines"
+echo ""
+echo "After making changes to code or .env:"
+echo "  1. Rebuild: cd $BACKEND_DIR && pnpm build"
+echo "  2. Restart: sudo systemctl restart $SERVICE_NAME"
 echo ""
 
 if [ "$ENABLE_HTTPS" = true ]; then
