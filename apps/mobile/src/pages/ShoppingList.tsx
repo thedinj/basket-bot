@@ -93,16 +93,21 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
         }, ANIMATION_EFFECTS.LASER_OBLITERATION.duration);
     }, [clearChecked, storeId, triggerLaser]);
 
-    const customActions: GlobalActionConfig[] = [
-        {
+    const hasSnoozedItems = useMemo(() => {
+        return items?.some((item) => isCurrentlySnoozed(item.snoozedUntil));
+    }, [items]);
+
+    const customActions: GlobalActionConfig[] = [];
+    if (hasSnoozedItems) {
+        customActions.push({
             id: "toggle-snoozed",
             icon: showSnoozed ? bed : bedOutline,
             title: `${showSnoozed ? "Hide" : "Show"} snoozed items (${snoozedItemCount})`,
             ariaLabel: `${showSnoozed ? "Hide" : "Show"} snoozed items`,
             onClick: toggleShowSnoozed,
             color: showSnoozed ? "primary" : undefined,
-        },
-    ];
+        });
+    }
 
     return (
         <RefreshConfig queryKeys={[["shopping-list-items", storeId]]}>

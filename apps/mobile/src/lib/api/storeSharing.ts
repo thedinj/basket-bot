@@ -43,7 +43,7 @@ export async function getOutgoingStoreInvitations(
 }
 
 export async function retractStoreInvitation(invitationId: string): Promise<void> {
-    await apiClient.delete(`/api/stores/invitations/${invitationId}`);
+    await apiClient.delete(`/api/stores/invitations?id=${encodeURIComponent(invitationId)}`);
 }
 
 // ========== Store Collaborators ==========

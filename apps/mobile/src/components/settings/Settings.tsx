@@ -1,32 +1,25 @@
 import {
     IonButton,
     IonButtons,
-    IonCheckbox,
     IonContent,
     IonHeader,
     IonIcon,
-    IonItem,
-    IonLabel,
     IonList,
     IonListHeader,
     IonModal,
-    IonNote,
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { onlineManager } from "@tanstack/react-query";
 import { closeOutline } from "ionicons/icons";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { LLM_COLOR, LLM_ICON_SRC } from "../../llm/shared";
 import { useSettingsForm } from "../../settings/useSettingsForm";
 import { FormPasswordInput } from "../form/FormPasswordInput";
-import { FormTextInput } from "../form/FormTextInput";
 import { useAppHeader } from "../layout/useAppHeader";
 
 const Settings: React.FC = () => {
     const { form, onSubmit, isSubmitting } = useSettingsForm();
     const { isSettingsOpen, closeSettings } = useAppHeader();
-    const [simulateOffline, setSimulateOffline] = useState(false);
 
     // Reset form to original values when modal opens
     useEffect(() => {
@@ -39,12 +32,6 @@ const Settings: React.FC = () => {
         await onSubmit();
         closeSettings();
     });
-
-    const handleOfflineToggle = (checked: boolean) => {
-        setSimulateOffline(checked);
-        // Toggle TanStack Query's online status
-        onlineManager.setOnline(!checked);
-    };
 
     return (
         <IonModal isOpen={isSettingsOpen} onDidDismiss={closeSettings}>
@@ -86,22 +73,6 @@ const Settings: React.FC = () => {
                             disabled={isSubmitting}
                         />
 
-                        {/* Developer Options Section */}
-                        <IonList>
-                            <IonListHeader>
-                                <h2>🛠️ Developer Options</h2>
-                            </IonListHeader>
-
-                            <FormTextInput
-                                name="remoteApiUrl"
-                                control={form.control}
-                                label="Remote API URL"
-                                placeholder="http://192.168.1.100:3000"
-                                helperText="Leave blank to use the default backend server"
-                                disabled={isSubmitting}
-                            />
-                        </IonList>
-
                         <div className="ion-padding">
                             <IonButton expand="block" type="submit" disabled={isSubmitting}>
                                 {isSubmitting ? "Saving..." : "Save Settings"}
@@ -109,27 +80,6 @@ const Settings: React.FC = () => {
                         </div>
                     </IonList>
                 </form>
-
-                {/* Network Testing Section - Outside form since it's not persisted */}
-                <IonList>
-                    <IonListHeader>
-                        <h2>🔌 Network Testing</h2>
-                    </IonListHeader>
-
-                    <IonItem>
-                        <IonLabel>
-                            <h3>Simulate Offline Mode</h3>
-                            <IonNote>
-                                Test network resilience features without disconnecting
-                            </IonNote>
-                        </IonLabel>
-                        <IonCheckbox
-                            slot="end"
-                            checked={simulateOffline}
-                            onIonChange={(e) => handleOfflineToggle(e.detail.checked)}
-                        />
-                    </IonItem>
-                </IonList>
             </IonContent>
         </IonModal>
     );
