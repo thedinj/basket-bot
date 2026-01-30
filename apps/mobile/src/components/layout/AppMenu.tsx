@@ -1,3 +1,6 @@
+import PasswordChangeModal from "@/components/settings/PasswordChangeModal";
+import ProfileEditorModal from "@/components/settings/ProfileEditorModal";
+import Settings from "@/components/settings/Settings";
 import {
     IonButton,
     IonContent,
@@ -11,12 +14,12 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { logOut, settings } from "ionicons/icons";
+import { keyOutline, logOut, person, settings } from "ionicons/icons";
 import { useAuth } from "../../auth/useAuth";
 import { useAppHeader } from "./useAppHeader";
 
 export const AppMenu: React.FC = () => {
-    const { openSettings } = useAppHeader();
+    const { openSettings, openProfile, openPassword } = useAppHeader();
     const { user, logout } = useAuth();
 
     const handleLogout = async () => {
@@ -33,63 +36,82 @@ export const AppMenu: React.FC = () => {
     };
 
     return (
-        <IonMenu contentId="main-content" type="overlay">
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>
+        <>
+            <IonMenu contentId="main-content" type="overlay">
+                <IonHeader>
+                    <IonToolbar>
+                        <IonTitle>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "12px",
+                                }}
+                            >
+                                <img
+                                    src="/img/icon.png"
+                                    alt="Basket Bot"
+                                    style={{
+                                        width: "32px",
+                                        height: "32px",
+                                        borderRadius: "50%",
+                                        objectFit: "cover",
+                                    }}
+                                />
+                                <span>Basket Bot</span>
+                            </div>
+                        </IonTitle>
+                    </IonToolbar>
+                </IonHeader>
+                <IonContent>
+                    {user && (
                         <div
                             style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "12px",
+                                padding: "20px 16px",
+                                borderBottom: "1px solid var(--ion-color-light)",
                             }}
                         >
-                            <img
-                                src="/img/icon.png"
-                                alt="Basket Bot"
-                                style={{
-                                    width: "32px",
-                                    height: "32px",
-                                    borderRadius: "50%",
-                                    objectFit: "cover",
-                                }}
-                            />
-                            <span>Basket Bot</span>
+                            <div
+                                style={{ fontSize: "18px", fontWeight: "600", marginBottom: "4px" }}
+                            >
+                                {user.name}
+                            </div>
+                            <div style={{ fontSize: "14px", color: "var(--ion-color-medium)" }}>
+                                {user.email}
+                            </div>
                         </div>
-                    </IonTitle>
-                </IonToolbar>
-            </IonHeader>
-            <IonContent>
-                {user && (
-                    <div
-                        style={{
-                            padding: "20px 16px",
-                            borderBottom: "1px solid var(--ion-color-light)",
-                        }}
-                    >
-                        <div style={{ fontSize: "18px", fontWeight: "600", marginBottom: "4px" }}>
-                            {user.name}
-                        </div>
-                        <div style={{ fontSize: "14px", color: "var(--ion-color-medium)" }}>
-                            {user.email}
-                        </div>
+                    )}
+                    <IonList>
+                        <IonMenuToggle autoHide={false}>
+                            <IonItem button onClick={openSettings} lines="none">
+                                <IonIcon icon={settings} slot="start" />
+                                <IonLabel>Settings</IonLabel>
+                            </IonItem>
+                        </IonMenuToggle>
+                        <IonMenuToggle autoHide={false}>
+                            <IonItem button onClick={openProfile} lines="none">
+                                <IonIcon icon={person} slot="start" />
+                                <IonLabel>Profile</IonLabel>
+                            </IonItem>
+                        </IonMenuToggle>
+                        <IonMenuToggle autoHide={false}>
+                            <IonItem button onClick={openPassword} lines="none">
+                                <IonIcon icon={keyOutline} slot="start" />
+                                <IonLabel>Change Password</IonLabel>
+                            </IonItem>
+                        </IonMenuToggle>
+                    </IonList>
+                    <div style={{ padding: "16px", marginTop: "auto" }}>
+                        <IonButton expand="block" color="danger" onClick={handleLogout}>
+                            <IonIcon icon={logOut} slot="start" />
+                            Log Out
+                        </IonButton>
                     </div>
-                )}
-                <IonList>
-                    <IonMenuToggle autoHide={false}>
-                        <IonItem button onClick={openSettings} lines="none">
-                            <IonIcon icon={settings} slot="start" />
-                            <IonLabel>Settings</IonLabel>
-                        </IonItem>
-                    </IonMenuToggle>
-                </IonList>
-                <div style={{ padding: "16px", marginTop: "auto" }}>
-                    <IonButton expand="block" color="danger" onClick={handleLogout}>
-                        <IonIcon icon={logOut} slot="start" />
-                        Log Out
-                    </IonButton>
-                </div>
-            </IonContent>
-        </IonMenu>
+                </IonContent>
+            </IonMenu>
+            <Settings />
+            <ProfileEditorModal />
+            <PasswordChangeModal />
+        </>
     );
 };

@@ -22,7 +22,6 @@ import StoreItemsPage from "../pages/StoreItemsPage";
 import StoresList from "../pages/StoresList";
 import { AppHeaderProvider } from "./layout/AppHeaderProvider";
 import { AppMenu } from "./layout/AppMenu";
-import Settings from "./settings/Settings";
 import NetworkStatusBanner from "./shared/NetworkStatusBanner";
 import ShieldProvider from "./shield/ShieldProvider";
 
@@ -54,7 +53,6 @@ const Main: React.FC = () => {
                 <LLMModalProvider>
                     <AppHeaderProvider>
                         <AppMenu />
-                        <Settings />
                         <NetworkStatusBanner />
                         <IonTabs>
                             <IonRouterOutlet id="main-content">

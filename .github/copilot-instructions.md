@@ -257,6 +257,53 @@ Never return a new object literal directly from a hook unless it is memoized. Th
     };
     ```
 
+### Form UI Patterns
+
+**CRITICAL: Never create "uber-forms" with multiple independent submit buttons in a single modal/page.**
+
+This creates confusing UX where users might:
+
+- Start editing one form section
+- Submit a different section
+- Lose unsaved changes or create data inconsistencies
+
+**Anti-pattern example (DO NOT DO THIS):**
+
+```tsx
+// ❌ BAD - Multiple forms with separate submits in one modal
+<IonModal>
+    <form onSubmit={handleProfileSubmit}>
+        <input name="name" />
+        <button type="submit">Save Profile</button>
+    </form>
+
+    <form onSubmit={handlePasswordSubmit}>
+        <input name="password" />
+        <button type="submit">Change Password</button>
+    </form>
+</IonModal>
+```
+
+**Correct pattern:**
+
+- **Each modal/page should contain ONE form with ONE submit action**
+- If you need to edit multiple unrelated things, create separate modals/pages
+- Each gets its own menu item or navigation entry
+
+**Example (GOOD):**
+
+```tsx
+// ✅ GOOD - Separate modals for separate concerns
+<ProfileEditorModal />  {/* One form: edit name */}
+<PasswordChangeModal /> {/* One form: change password */}
+
+// In menu:
+<IonItem onClick={openProfile}>Profile</IonItem>
+<IonItem onClick={openPassword}>Change Password</IonItem>
+```
+
+**Why:** This keeps each modal focused, prevents user confusion, and ensures form state isolation.
+
 ### Async Data Loading
 
 - **Avoid `isLoading` flags in contexts.** Use React's `use()` hook to suspend during async operations, relying on existing `<Suspense>` boundaries.

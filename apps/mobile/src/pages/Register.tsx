@@ -1,4 +1,4 @@
-import { MIN_PASSWORD_LENGTH } from "@basket-bot/core";
+import { MIN_PASSWORD_LENGTH, passwordSchema } from "@basket-bot/core";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonButton,
@@ -23,12 +23,7 @@ const registerSchema = z
     .object({
         name: z.string().min(1, "Name is required"),
         email: z.string().email("Please enter a valid email"),
-        password: z
-            .string()
-            .min(
-                MIN_PASSWORD_LENGTH,
-                `Password must be at least ${MIN_PASSWORD_LENGTH} characters`
-            ),
+        password: passwordSchema,
         confirmPassword: z.string(),
         invitationCode: z.string().optional(),
     })

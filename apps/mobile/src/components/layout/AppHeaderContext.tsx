@@ -32,6 +32,12 @@ export interface AppHeaderContextValue {
     isSettingsOpen: boolean;
     openSettings: () => void;
     closeSettings: () => void;
+    isProfileOpen: boolean;
+    openProfile: () => void;
+    closeProfile: () => void;
+    isPasswordOpen: boolean;
+    openPassword: () => void;
+    closePassword: () => void;
 }
 
 export const AppHeaderContext = createContext<AppHeaderContextValue | undefined>(undefined);

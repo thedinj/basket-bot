@@ -1,16 +1,24 @@
 import { withAuth } from "@/lib/auth/withAuth";
+import { getUserById } from "@/lib/repos/userRepo";
 import { NextResponse } from "next/server";
 
 export const GET = withAuth(async (req) => {
-    // User info already attached by withAuth middleware
-    const { auth } = req;
+    // Fetch full user data from database
+    const user = getUserById(req.auth.sub);
+
+    if (!user) {
+        return NextResponse.json(
+            { code: "USER_NOT_FOUND", message: "User not found" },
+            { status: 404 }
+        );
+    }
 
     return NextResponse.json({
         user: {
-            id: auth.sub,
-            email: auth.email || "",
-            name: "", // JWT doesn't include name, would need DB lookup if required
-            scopes: auth.scopes,
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            scopes: user.scopes,
         },
     });
 });

@@ -1,5 +1,5 @@
 Test keeping screen on until "Successfully imported" aisles/sections
-edit account details: email, name etc.
+Review user profile/change password commit
 move pi to its permanent home
 
 ---
