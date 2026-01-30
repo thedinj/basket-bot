@@ -4,10 +4,13 @@ import { useRefreshContext } from "../../hooks/refresh/useRefreshContext";
 import { useKeepAwake } from "../../hooks/useKeepAwake";
 import { useMutationQueue } from "../../hooks/useMutationQueue";
 import { useSync } from "../../hooks/useRefreshAndSync";
+import type { GlobalActionConfig } from "./AppHeaderContext";
 
 interface GlobalActionsProps {
     /** Whether to show the keep-awake button (per-page opt-in) */
     showKeepAwake?: boolean;
+    /** Custom page-specific actions */
+    actions?: GlobalActionConfig[];
 }
 
 /**
@@ -15,7 +18,7 @@ interface GlobalActionsProps {
  * To be used in AppHeader children slot
  * Uses configured query keys from RefreshContext
  */
-export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = false }) => {
+export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = false, actions }) => {
     const { refresh, isRefreshing, configuredQueryKeys } = useRefreshContext();
     const { sync, isSyncing } = useSync();
     const { hasQueuedMutations } = useMutationQueue();
@@ -35,20 +38,6 @@ export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = fa
 
     return (
         <>
-            {configuredQueryKeys && (
-                <IonButton
-                    onClick={handleRefresh}
-                    disabled={isRefreshing}
-                    title="Refresh data"
-                    aria-label="Refresh data"
-                >
-                    {isRefreshing ? (
-                        <IonSpinner name="circular" />
-                    ) : (
-                        <IonIcon slot="icon-only" icon={refreshOutline} />
-                    )}
-                </IonButton>
-            )}
             {hasQueuedMutations && (
                 <IonButton
                     onClick={handleSync}
@@ -64,6 +53,18 @@ export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = fa
                     )}
                 </IonButton>
             )}
+            {actions?.map((action) => (
+                <IonButton
+                    key={action.id}
+                    onClick={action.onClick}
+                    disabled={action.disabled}
+                    title={action.title}
+                    aria-label={action.ariaLabel}
+                    color={action.color}
+                >
+                    <IonIcon slot="icon-only" icon={action.icon} />
+                </IonButton>
+            ))}
             {showKeepAwake && showKeepAwakeButton && (
                 <IonButton
                     onClick={toggleKeepAwake}
@@ -72,6 +73,20 @@ export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = fa
                     color={keepAwakeEnabled ? "warning" : undefined}
                 >
                     <IonIcon slot="icon-only" icon={keepAwakeEnabled ? sunny : sunnyOutline} />
+                </IonButton>
+            )}
+            {configuredQueryKeys && (
+                <IonButton
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    title="Refresh data"
+                    aria-label="Refresh data"
+                >
+                    {isRefreshing ? (
+                        <IonSpinner name="circular" />
+                    ) : (
+                        <IonIcon slot="icon-only" icon={refreshOutline} />
+                    )}
                 </IonButton>
             )}
         </>

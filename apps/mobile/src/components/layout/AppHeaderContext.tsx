@@ -9,12 +9,20 @@ export interface PageMenuItemConfig {
     disabled?: boolean;
 }
 
+export interface GlobalActionConfig {
+    id: string;
+    icon: string;
+    title: string;
+    ariaLabel: string;
+    onClick: () => void;
+    color?: string;
+    disabled?: boolean;
+}
+
 export interface AppHeaderContextValue {
     isSettingsOpen: boolean;
     openSettings: () => void;
     closeSettings: () => void;
 }
 
-export const AppHeaderContext = createContext<
-    AppHeaderContextValue | undefined
->(undefined);
+export const AppHeaderContext = createContext<AppHeaderContextValue | undefined>(undefined);

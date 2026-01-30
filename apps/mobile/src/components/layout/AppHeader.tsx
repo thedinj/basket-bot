@@ -32,15 +32,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     menuItems = [],
 }) => {
     const [showPageMenu, setShowPageMenu] = useState(false);
+    const [popoverEvent, setPopoverEvent] = useState<unknown>(undefined);
 
     return (
         <IonHeader>
             <IonToolbar>
                 <IonButtons slot="start">
                     <IonMenuButton />
-                    {showBackButton && (
-                        <IonBackButton defaultHref={backButtonHref} />
-                    )}
+                    {showBackButton && <IonBackButton defaultHref={backButtonHref} />}
                 </IonButtons>
                 <IonTitle>{title}</IonTitle>
                 <IonButtons slot="end">
@@ -48,16 +47,15 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     {menuItems.length > 0 && (
                         <>
                             <IonButton
-                                id="page-menu-trigger"
-                                onClick={() => setShowPageMenu(true)}
+                                onClick={(e) => {
+                                    setPopoverEvent(e);
+                                    setShowPageMenu(true);
+                                }}
                             >
-                                <IonIcon
-                                    slot="icon-only"
-                                    icon={ellipsisVertical}
-                                />
+                                <IonIcon slot="icon-only" icon={ellipsisVertical} />
                             </IonButton>
                             <IonPopover
-                                trigger="page-menu-trigger"
+                                event={popoverEvent}
                                 isOpen={showPageMenu}
                                 onDidDismiss={() => setShowPageMenu(false)}
                                 side="bottom"
@@ -80,9 +78,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                                                 slot="start"
                                                 color={item.color}
                                             />
-                                            <IonLabel color={item.color}>
-                                                {item.label}
-                                            </IonLabel>
+                                            <IonLabel color={item.color}>{item.label}</IonLabel>
                                         </IonItem>
                                     ))}
                                 </IonList>

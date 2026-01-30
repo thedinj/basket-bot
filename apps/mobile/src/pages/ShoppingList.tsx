@@ -8,11 +8,11 @@ import {
     IonText,
     IonToolbar,
 } from "@ionic/react";
-import { add, eyeOffOutline, eyeOutline } from "ionicons/icons";
+import { add, bed, bedOutline } from "ionicons/icons";
 import { Suspense, useCallback, useMemo, useState } from "react";
 import { ANIMATION_EFFECTS } from "../animations/effects";
 import { AppHeader } from "../components/layout/AppHeader";
-import { PageMenuItemConfig } from "../components/layout/AppHeaderContext";
+import { GlobalActionConfig } from "../components/layout/AppHeaderContext";
 import { GlobalActions } from "../components/layout/GlobalActions";
 import LoadingFallback from "../components/LoadingFallback";
 import { FabSpacer } from "../components/shared/FabSpacer";
@@ -93,24 +93,21 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
         }, ANIMATION_EFFECTS.LASER_OBLITERATION.duration);
     }, [clearChecked, storeId, triggerLaser]);
 
-    const menuItems: PageMenuItemConfig[] = [
+    const customActions: GlobalActionConfig[] = [
         {
             id: "toggle-snoozed",
-            icon: showSnoozed ? eyeOffOutline : eyeOutline,
-            label: (
-                <>
-                    {showSnoozed ? "Hide Snoozed Items" : "Show Snoozed Items"}{" "}
-                    <span style={{ color: "var(--ion-color-medium)" }}>({snoozedItemCount})</span>
-                </>
-            ),
+            icon: showSnoozed ? bed : bedOutline,
+            title: `${showSnoozed ? "Hide" : "Show"} snoozed items (${snoozedItemCount})`,
+            ariaLabel: `${showSnoozed ? "Hide" : "Show"} snoozed items`,
             onClick: toggleShowSnoozed,
+            color: showSnoozed ? "primary" : undefined,
         },
     ];
 
     return (
         <RefreshConfig queryKeys={[["shopping-list-items", storeId]]}>
-            <AppHeader title="Shopping List" menuItems={menuItems}>
-                <GlobalActions showKeepAwake />
+            <AppHeader title="Shopping List">
+                <GlobalActions showKeepAwake actions={customActions} />
             </AppHeader>
             <IonContent fullscreen>
                 <PullToRefresh />
@@ -203,7 +200,7 @@ const ShoppingListContent: React.FC = () => {
     if (!selectedStoreId) {
         return (
             <>
-                <AppHeader title="Shopping List" menuItems={[]} />
+                <AppHeader title="Shopping List" />
                 <IonToolbar>
                     <StoreSelector />
                 </IonToolbar>
