@@ -20,9 +20,9 @@ export function getUserByEmail(email: string): User | null {
         id: row.id,
         email: row.email,
         name: row.name,
-        scopes: row.scopes,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
+        scopes: row.scopes ? row.scopes.split(",").filter(Boolean) : [],
+        createdAt: new Date(row.createdAt),
+        updatedAt: new Date(row.updatedAt),
     };
 }
 
@@ -44,9 +44,9 @@ export function getUserById(id: string): User | null {
         id: row.id,
         email: row.email,
         name: row.name,
-        scopes: row.scopes,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
+        scopes: row.scopes ? row.scopes.split(",").filter(Boolean) : [],
+        createdAt: new Date(row.createdAt),
+        updatedAt: new Date(row.updatedAt),
     };
 }
 
@@ -76,8 +76,8 @@ export async function changeUserPassword(
     newPassword: string
 ): Promise<boolean> {
     // Get current password hash
-    const row = db.prepare(`SELECT passwordHash FROM User WHERE id = ?`).get(userId) as
-        | { passwordHash: string }
+    const row = db.prepare(`SELECT password FROM User WHERE id = ?`).get(userId) as
+        | { password: string }
         | undefined;
 
     if (!row) {
@@ -85,7 +85,7 @@ export async function changeUserPassword(
     }
 
     // Verify current password
-    const isValid = await verifyPassword(currentPassword, row.passwordHash);
+    const isValid = await verifyPassword(currentPassword, row.password);
     if (!isValid) {
         return false;
     }
@@ -96,7 +96,7 @@ export async function changeUserPassword(
     // Update password hash
     db.prepare(
         `UPDATE User
-         SET passwordHash = ?, updatedAt = datetime('now')
+         SET password = ?, updatedAt = datetime('now')
          WHERE id = ?`
     ).run(newHash, userId);
 
