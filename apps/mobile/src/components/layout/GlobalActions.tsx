@@ -1,9 +1,11 @@
 import { IonButton, IonIcon, IonSpinner } from "@ionic/react";
 import { cloudUploadOutline, refreshOutline, sunny, sunnyOutline } from "ionicons/icons";
+import { useCallback } from "react";
 import { useRefreshContext } from "../../hooks/refresh/useRefreshContext";
 import { useKeepAwake } from "../../hooks/useKeepAwake";
 import { useMutationQueue } from "../../hooks/useMutationQueue";
 import { useSync } from "../../hooks/useRefreshAndSync";
+import { useToast } from "../../hooks/useToast";
 import type { GlobalActionConfig } from "./AppHeaderContext";
 
 interface GlobalActionsProps {
@@ -27,14 +29,44 @@ export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = fa
         toggle: toggleKeepAwake,
         showKeepAwake: showKeepAwakeButton,
     } = useKeepAwake();
+    const { showToast } = useToast();
 
-    const handleRefresh = async () => {
+    const handleRefresh = useCallback(async () => {
         await refresh();
-    };
+    }, [refresh]);
 
-    const handleSync = async () => {
+    const handleSync = useCallback(async () => {
         await sync();
-    };
+    }, [sync]);
+
+    const handleActionClick = useCallback(
+        (action: GlobalActionConfig) => {
+            action.onClick();
+            if (action.messageGenerator) {
+                const result = action.messageGenerator();
+                if (result?.message) {
+                    showToast({
+                        message: result.message,
+                        type: result.type ?? "info",
+                        position: "bottom",
+                        id: action.id, // Use action ID so toasts from same action replace each other
+                    });
+                }
+            }
+        },
+        [showToast]
+    );
+
+    const handleToggleKeepAwake = useCallback(() => {
+        toggleKeepAwake();
+        const newState = !keepAwakeEnabled;
+        showToast({
+            message: newState ? "Screen will stay on." : "Screen sleep allowed.",
+            type: "info",
+            position: "bottom",
+            id: "keep-awake-toggle",
+        });
+    }, [toggleKeepAwake, keepAwakeEnabled, showToast]);
 
     return (
         <>
@@ -56,7 +88,7 @@ export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = fa
             {actions?.map((action) => (
                 <IonButton
                     key={action.id}
-                    onClick={action.onClick}
+                    onClick={() => handleActionClick(action)}
                     disabled={action.disabled}
                     title={action.title}
                     aria-label={action.ariaLabel}
@@ -67,7 +99,7 @@ export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = fa
             ))}
             {showKeepAwake && showKeepAwakeButton && (
                 <IonButton
-                    onClick={toggleKeepAwake}
+                    onClick={handleToggleKeepAwake}
                     title={keepAwakeEnabled ? "Allow screen sleep" : "Keep screen on"}
                     aria-label={keepAwakeEnabled ? "Allow screen sleep" : "Keep screen on"}
                     color={keepAwakeEnabled ? "warning" : undefined}

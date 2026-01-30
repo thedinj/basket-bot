@@ -93,21 +93,26 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
         }, ANIMATION_EFFECTS.LASER_OBLITERATION.duration);
     }, [clearChecked, storeId, triggerLaser]);
 
-    const hasSnoozedItems = useMemo(() => {
-        return items?.some((item) => isCurrentlySnoozed(item.snoozedUntil));
-    }, [items]);
+    const customActions = useMemo<GlobalActionConfig[]>(() => {
+        if (snoozedItemCount === 0) return [];
 
-    const customActions: GlobalActionConfig[] = [];
-    if (hasSnoozedItems) {
-        customActions.push({
-            id: "toggle-snoozed",
-            icon: showSnoozed ? bed : bedOutline,
-            title: `${showSnoozed ? "Hide" : "Show"} snoozed items (${snoozedItemCount})`,
-            ariaLabel: `${showSnoozed ? "Hide" : "Show"} snoozed items`,
-            onClick: toggleShowSnoozed,
-            color: showSnoozed ? "primary" : undefined,
-        });
-    }
+        return [
+            {
+                id: "toggle-snoozed",
+                icon: showSnoozed ? bed : bedOutline,
+                title: `${showSnoozed ? "Hide" : "Show"} snoozed items (${snoozedItemCount})`,
+                ariaLabel: `${showSnoozed ? "Hide" : "Show"} snoozed items`,
+                onClick: toggleShowSnoozed,
+                color: showSnoozed ? "primary" : undefined,
+                messageGenerator: () => {
+                    return {
+                        message: showSnoozed ? "Hiding snoozed items." : "Showing snoozed items.",
+                        type: "info" as const,
+                    };
+                },
+            },
+        ];
+    }, [snoozedItemCount, showSnoozed, toggleShowSnoozed]);
 
     return (
         <RefreshConfig queryKeys={[["shopping-list-items", storeId]]}>

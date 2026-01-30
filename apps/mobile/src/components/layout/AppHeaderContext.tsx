@@ -1,4 +1,5 @@
 import { createContext } from "react";
+import type { ToastType } from "../../hooks/useToast";
 
 export interface PageMenuItemConfig {
     id: string;
@@ -9,6 +10,13 @@ export interface PageMenuItemConfig {
     disabled?: boolean;
 }
 
+export interface MessageGeneratorResult {
+    message: string;
+    type?: ToastType;
+}
+
+export type MessageGenerator = () => MessageGeneratorResult | null | undefined;
+
 export interface GlobalActionConfig {
     id: string;
     icon: string;
@@ -17,6 +25,7 @@ export interface GlobalActionConfig {
     onClick: () => void;
     color?: string;
     disabled?: boolean;
+    messageGenerator?: MessageGenerator;
 }
 
 export interface AppHeaderContextValue {
