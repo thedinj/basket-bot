@@ -8,8 +8,6 @@ export interface ToastOptions {
     type?: ToastType;
     duration?: number;
     position?: "top" | "middle" | "bottom";
-    /** Optional ID - if provided, will dismiss any existing toast with the same ID before showing new one */
-    id?: string;
 }
 
 const colorMap: Record<ToastType, string> = {
@@ -22,18 +20,18 @@ const colorMap: Record<ToastType, string> = {
 /**
  * Custom hook that wraps Ionic's useIonToast with consistent defaults
  * and a simplified API for showing toast notifications.
- * Supports toast IDs for replacing existing toasts with new content.
+ * Ensures only one toast per position is shown at a time.
  */
 export function useToast() {
     const [present, dismiss] = useIonToast();
-    const activeToasts = useRef<Map<string, number>>(new Map());
+    const activeToasts = useRef<Map<"top" | "middle" | "bottom", number>>(new Map());
 
     const showToast = useCallback(
-        async ({ message, type = "info", duration = 3000, position = "top", id }: ToastOptions) => {
-            // If an ID is provided and a toast with that ID was recently shown, dismiss all toasts first
-            if (id && activeToasts.current.has(id)) {
+        async ({ message, type = "info", duration = 3000, position = "top" }: ToastOptions) => {
+            // If a toast at this position was recently shown, dismiss all toasts first
+            if (activeToasts.current.has(position)) {
                 await dismiss();
-                activeToasts.current.delete(id);
+                activeToasts.current.delete(position);
             }
 
             await present({
@@ -43,16 +41,12 @@ export function useToast() {
                 position,
                 onDidDismiss: () => {
                     // Clean up when toast is dismissed
-                    if (id) {
-                        activeToasts.current.delete(id);
-                    }
+                    activeToasts.current.delete(position);
                 },
             });
 
-            // Track the toast ID with current timestamp
-            if (id) {
-                activeToasts.current.set(id, Date.now());
-            }
+            // Track the toast position with current timestamp
+            activeToasts.current.set(position, Date.now());
         },
         [present, dismiss]
     );

@@ -49,7 +49,6 @@ export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = fa
                         message: result.message,
                         type: result.type ?? "info",
                         position: "bottom",
-                        id: action.id, // Use action ID so toasts from same action replace each other
                     });
                 }
             }
@@ -64,7 +63,6 @@ export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = fa
             message: newState ? "Screen will stay on." : "Screen sleep allowed.",
             type: "info",
             position: "bottom",
-            id: "keep-awake-toggle",
         });
     }, [toggleKeepAwake, keepAwakeEnabled, showToast]);
 
