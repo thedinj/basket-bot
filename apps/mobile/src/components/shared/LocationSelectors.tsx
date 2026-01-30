@@ -96,12 +96,8 @@ export function LocationSelectors<T extends FieldValues = FieldValues>({
         try {
             const result = await autoCategorize({
                 itemName,
-                aisles:
-                    sortedAisles?.map((aisle) => ({
-                        id: aisle.id,
-                        name: aisle.name,
-                        sections: sections?.filter((s) => s.aisleId === aisle.id) || [],
-                    })) || [],
+                fullAisles: sortedAisles || [],
+                fullSections: sections || [],
             });
 
             // Apply categorization

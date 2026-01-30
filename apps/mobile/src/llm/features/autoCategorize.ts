@@ -2,6 +2,8 @@
  * Auto-categorization feature for shopping list items
  */
 
+import type { StoreAisle, StoreSection } from "@basket-bot/core";
+
 export interface AutoCategorizeResult {
     aisleName: string;
     sectionName: string | null;
@@ -12,12 +14,8 @@ export interface AutoCategorizeResult {
 export interface AutoCategorizeInput {
     itemName: string;
     aisles: Array<{
-        id: string;
         name: string;
-        sections: Array<{
-            id: string;
-            name: string;
-        }>;
+        sections?: string[]; // Optional: omit if no sections
     }>;
 }
 
@@ -41,10 +39,14 @@ export function validateAutoCategorizeResult(data: unknown): data is AutoCategor
 
 /**
  * Transforms LLM response to actual aisle/section IDs
+ * @param result - The LLM's categorization result
+ * @param aisles - Full aisle data from database (with IDs)
+ * @param sections - Full section data from database (with IDs)
  */
 export function transformAutoCategorizeResult(
     result: AutoCategorizeResult,
-    aisles: AutoCategorizeInput["aisles"]
+    aisles: StoreAisle[],
+    sections: StoreSection[]
 ): { aisleId: string | null; sectionId: string | null } {
     // Find matching aisle (case-insensitive)
     const aisle = aisles.find((a) => a.name.toLowerCase() === result.aisleName.toLowerCase());
@@ -56,8 +58,8 @@ export function transformAutoCategorizeResult(
     // Find matching section if provided
     let sectionId: string | null = null;
     if (result.sectionName) {
-        const section = aisle.sections.find(
-            (s) => s.name.toLowerCase() === result.sectionName!.toLowerCase()
+        const section = sections.find(
+            (s) => s.aisleId === aisle.id && s.name.toLowerCase() === result.sectionName!.toLowerCase()
         );
         sectionId = section?.id || null;
     }

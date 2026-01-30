@@ -73,18 +73,8 @@ export function useBulkImport(storeId: string) {
                                 try {
                                     const categorization = await autoCategorize({
                                         itemName: parsed.name,
-                                        aisles:
-                                            aisles.map((aisle) => ({
-                                                id: aisle.id,
-                                                name: aisle.name,
-                                                sections:
-                                                    sections
-                                                        ?.filter((s) => s.aisleId === aisle.id)
-                                                        .map((s) => ({
-                                                            id: s.id,
-                                                            name: s.name,
-                                                        })) || [],
-                                            })) || [],
+                                        fullAisles: aisles,
+                                        fullSections: sections || [],
                                     });
                                     aisleId = categorization.aisleId;
                                     sectionId = categorization.sectionId;

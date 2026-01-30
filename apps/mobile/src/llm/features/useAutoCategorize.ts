@@ -2,6 +2,7 @@
  * Hook for auto-categorization feature
  */
 
+import type { StoreAisle, StoreSection } from "@basket-bot/core";
 import { useCallback } from "react";
 import { useShield } from "../../components/shield/useShield";
 import { useSecureApiKey } from "../../hooks/useSecureStorage";
@@ -15,7 +16,8 @@ import { AUTO_CATEGORIZE_PROMPT } from "./autoCategorizePrompt";
 
 export interface UseAutoCategorizeOptions {
     itemName: string;
-    aisles: AutoCategorizeInput["aisles"];
+    fullAisles: StoreAisle[]; // Full aisle data for ID resolution
+    fullSections: StoreSection[]; // Full section data for ID resolution
 }
 
 export interface UseAutoCategorizeResult {
@@ -36,7 +38,8 @@ export function useAutoCategorize() {
     const autoCategorize = useCallback(
         async ({
             itemName,
-            aisles,
+            fullAisles,
+            fullSections,
         }: UseAutoCategorizeOptions): Promise<UseAutoCategorizeResult> => {
             const shieldId = "auto-categorize";
 
@@ -51,9 +54,22 @@ export function useAutoCategorize() {
                     throw new Error("Item name is required");
                 }
 
-                if (!aisles || aisles.length === 0) {
+                if (!fullAisles || fullAisles.length === 0) {
                     throw new Error("No aisles available");
                 }
+
+                // Build minimal structure for LLM (name-only, no IDs)
+                const aisles: AutoCategorizeInput["aisles"] = fullAisles.map((aisle) => {
+                    const aisleSections = fullSections.filter((s) => s.aisleId === aisle.id);
+                    const aisleData: { name: string; sections?: string[] } = {
+                        name: aisle.name,
+                    };
+                    // Only include sections field if there are sections
+                    if (aisleSections.length > 0) {
+                        aisleData.sections = aisleSections.map((s) => s.name);
+                    }
+                    return aisleData;
+                });
 
                 const input: AutoCategorizeInput = {
                     itemName: itemName,
@@ -75,7 +91,8 @@ export function useAutoCategorize() {
 
                 const { aisleId, sectionId } = transformAutoCategorizeResult(
                     response.data,
-                    input.aisles
+                    fullAisles,
+                    fullSections
                 );
 
                 if (!aisleId) {
@@ -83,8 +100,8 @@ export function useAutoCategorize() {
                 }
 
                 // Find names for the result
-                const aisle = aisles.find((a) => a.id === aisleId);
-                const section = aisle?.sections.find((s) => s.id === sectionId);
+                const aisle = fullAisles.find((a) => a.id === aisleId);
+                const section = fullSections.find((s) => s.id === sectionId);
 
                 return {
                     aisleId,
