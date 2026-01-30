@@ -8,6 +8,7 @@ import {
     IonHeader,
     IonIcon,
     IonItem,
+    IonItemDivider,
     IonLabel,
     IonList,
     IonModal,
@@ -22,7 +23,9 @@ import { closeOutline, personAddOutline, refreshOutline } from "ionicons/icons";
 import { useState } from "react";
 import { useAuth } from "../../auth/useAuth";
 import {
+    useOutgoingStoreInvitations,
     useRemoveStoreCollaborator,
+    useRetractStoreInvitation,
     useStoreCollaborators,
     useUpdateStoreCollaboratorRole,
 } from "../../db/hooks";
@@ -43,11 +46,26 @@ export const StoreCollaboratorsModal: React.FC<StoreCollaboratorsModalProps> = (
 }) => {
     const { user } = useAuth();
     const { data: collaborators, isLoading, refetch } = useStoreCollaborators(storeId);
+    const {
+        data: invitations,
+        isLoading: invitationsLoading,
+        refetch: refetchInvitations,
+    } = useOutgoingStoreInvitations(storeId);
     const updateRole = useUpdateStoreCollaboratorRole();
     const removeCollaborator = useRemoveStoreCollaborator();
+    const retractInvitation = useRetractStoreInvitation();
 
     const [inviteModalOpen, setInviteModalOpen] = useState(false);
     const [removeConfirm, setRemoveConfirm] = useState<StoreCollaboratorDetail | null>(null);
+    const [retractConfirm, setRetractConfirm] = useState<{
+        id: string;
+        email: string;
+    } | null>(null);
+
+    const handleRefreshAll = () => {
+        refetch();
+        refetchInvitations();
+    };
 
     const handleRoleChange = async (
         collaborator: StoreCollaboratorDetail,
@@ -68,9 +86,31 @@ export const StoreCollaboratorsModal: React.FC<StoreCollaboratorsModalProps> = (
         setRemoveConfirm(null);
     };
 
+    const handleRetract = async (invitationId: string) => {
+        await retractInvitation.mutateAsync({
+            storeId,
+            invitationId,
+        });
+        setRetractConfirm(null);
+    };
+
     const isOwner = userRole === "owner";
     const isCurrentUser = (collaborator: StoreCollaboratorDetail) =>
         collaborator.userId === user?.id;
+
+    const canRetractInvitation = (invitation: { invitedById: string }) => {
+        // Only owner or original inviter can retract
+        return isOwner || invitation.invitedById === user?.id;
+    };
+
+    const formatDate = (isoDate: string) => {
+        const date = new Date(isoDate);
+        return date.toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+            year: date.getFullYear() !== new Date().getFullYear() ? "numeric" : undefined,
+        });
+    };
 
     return (
         <>
@@ -79,7 +119,7 @@ export const StoreCollaboratorsModal: React.FC<StoreCollaboratorsModalProps> = (
                     <IonToolbar>
                         <IonTitle>Manage Collaborators</IonTitle>
                         <IonButtons slot="end">
-                            <IonButton onClick={() => refetch()}>
+                            <IonButton onClick={handleRefreshAll}>
                                 <IonIcon icon={refreshOutline} />
                             </IonButton>
                             <IonButton onClick={onDismiss}>
@@ -158,6 +198,67 @@ export const StoreCollaboratorsModal: React.FC<StoreCollaboratorsModalProps> = (
                         )}
                     </IonList>
 
+                    {/* Pending Invitations Section - only show if there are invitations */}
+                    {invitations && invitations.length > 0 && (
+                        <IonList>
+                            <IonItemDivider>
+                                <IonLabel>Pending Invitations</IonLabel>
+                            </IonItemDivider>
+                            {invitationsLoading ? (
+                                <>
+                                    {[1, 2].map((i) => (
+                                        <IonItem key={i}>
+                                            <IonLabel>
+                                                <IonSkeletonText animated style={{ width: "60%" }} />
+                                                <IonSkeletonText animated style={{ width: "40%" }} />
+                                            </IonLabel>
+                                        </IonItem>
+                                    ))}
+                                </>
+                            ) : (
+                                <>
+                                    {invitations.map((invitation) => (
+                                        <IonItem key={invitation.id}>
+                                            <IonLabel>
+                                                <h2>{invitation.invitedEmail}</h2>
+                                                <p>
+                                                    Invited by {invitation.inviterName} •{" "}
+                                                    {formatDate(invitation.createdAt)}
+                                                </p>
+                                            </IonLabel>
+
+                                            <IonBadge
+                                                slot="end"
+                                                color={
+                                                    invitation.role === "owner" ? "primary" : "medium"
+                                                }
+                                                style={{ marginRight: "8px" }}
+                                            >
+                                                {invitation.role}
+                                            </IonBadge>
+
+                                            {canRetractInvitation(invitation) && (
+                                                <IonButton
+                                                    slot="end"
+                                                    fill="clear"
+                                                    color="danger"
+                                                    onClick={() =>
+                                                        setRetractConfirm({
+                                                            id: invitation.id,
+                                                            email: invitation.invitedEmail,
+                                                        })
+                                                    }
+                                                >
+                                                    Cancel
+                                                </IonButton>
+                                            )}
+                                        </IonItem>
+                                    ))}
+                                </>
+                            )}
+                        </IonList>
+                    )}
+
                     <div className="ion-padding">
                         <IonButton expand="block" onClick={() => setInviteModalOpen(true)}>
                             <IonIcon slot="start" icon={personAddOutline} />
@@ -189,6 +290,28 @@ export const StoreCollaboratorsModal: React.FC<StoreCollaboratorsModalProps> = (
                         handler: () => {
                             if (removeConfirm) {
                                 handleRemove(removeConfirm);
+                            }
+                        },
+                    },
+                ]}
+            />
+
+            <IonAlert
+                isOpen={!!retractConfirm}
+                onDidDismiss={() => setRetractConfirm(null)}
+                header="Cancel Invitation"
+                message={`Are you sure you want to cancel the invitation for ${retractConfirm?.email}?`}
+                buttons={[
+                    {
+                        text: "No",
+                        role: "cancel",
+                    },
+                    {
+                        text: "Yes, Cancel",
+                        role: "destructive",
+                        handler: () => {
+                            if (retractConfirm) {
+                                handleRetract(retractConfirm.id);
                             }
                         },
                     },

@@ -1251,3 +1251,42 @@ export function useRemoveStoreCollaborator() {
         },
     });
 }
+
+/**
+ * Hook to get outgoing store invitations (pending invitations sent from this store)
+ */
+export function useOutgoingStoreInvitations(storeId: string) {
+    return useTanstackQuery({
+        queryKey: ["outgoingStoreInvitations", storeId],
+        queryFn: () => storeSharingApi.getOutgoingStoreInvitations(storeId),
+    });
+}
+
+/**
+ * Hook to retract (cancel) a pending store invitation
+ */
+export function useRetractStoreInvitation() {
+    const queryClient = useQueryClient();
+    const { showSuccess, showError } = useToast();
+
+    return useTanstackMutation({
+        mutationFn: (params: { storeId: string; invitationId: string }) =>
+            storeSharingApi.retractStoreInvitation(params.invitationId),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: ["outgoingStoreInvitations", variables.storeId],
+            });
+            showSuccess("Invitation cancelled");
+        },
+        onError: (error: unknown) => {
+            // Gracefully handle 404 - invitation already accepted/declined
+            if (error instanceof Error && error.message.includes("not found")) {
+                // Silently refresh - the invitation is already gone
+                queryClient.invalidateQueries({ queryKey: ["outgoingStoreInvitations"] });
+                return;
+            }
+            showError(formatErrorMessage(error, "cancel invitation"));
+        },
+    });
+}
+

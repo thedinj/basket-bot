@@ -119,3 +119,62 @@ export function declineStoreInvitation(token: string, userEmail: string): void {
     // Delete invitation when declined
     storeInvitationRepo.deleteStoreInvitation(invitation.id);
 }
+
+/**
+ * Get pending invitations for a store (for owners to see outgoing invitations)
+ */
+export function getStoreInvitations(storeId: string, userId: string): StoreInvitationDetail[] {
+    // Verify store exists
+    const store = storeRepo.getStoreById(storeId);
+    if (!store) {
+        throw new Error("NOT_FOUND: Store not found");
+    }
+
+    // Verify user has access to this store
+    const userRole = storeRepo.getUserStoreRole(userId, storeId);
+    if (!userRole) {
+        throw new Error("FORBIDDEN: User does not have access to this store");
+    }
+
+    // Only owners and editors can view invitations (consistent with who can send them)
+    if (userRole !== "owner" && userRole !== "editor") {
+        throw new Error("FORBIDDEN: Only owners and editors can view store invitations");
+    }
+
+    return storeInvitationRepo.getStoreInvitationsWithDetails(storeId);
+}
+
+/**
+ * Retract (delete) a pending store invitation
+ * Only the original inviter or store owner can retract
+ */
+export function retractStoreInvitation(invitationId: string, userId: string): void {
+    const invitation = storeInvitationRepo.getStoreInvitationById(invitationId);
+
+    if (!invitation) {
+        throw new Error("NOT_FOUND: Invitation not found or already accepted");
+    }
+
+    if (invitation.status !== "pending") {
+        throw new Error("CONFLICT: Invitation has already been processed");
+    }
+
+    // Verify user has access to this store
+    const userRole = storeRepo.getUserStoreRole(userId, invitation.storeId);
+    if (!userRole) {
+        throw new Error("FORBIDDEN: User does not have access to this store");
+    }
+
+    // Only the original inviter or store owner can retract
+    const isOriginalInviter = invitation.invitedById === userId;
+    const isOwner = userRole === "owner";
+
+    if (!isOriginalInviter && !isOwner) {
+        throw new Error(
+            "FORBIDDEN: Only the original inviter or store owner can retract this invitation"
+        );
+    }
+
+    // Delete the invitation
+    storeInvitationRepo.deleteStoreInvitation(invitation.id);
+}

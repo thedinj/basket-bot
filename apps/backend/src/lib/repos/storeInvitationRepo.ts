@@ -128,6 +128,73 @@ export function countUserPendingStoreInvitations(email: string): number {
 }
 
 /**
+ * Get pending invitations for a store with details (for store owners to see outgoing invitations)
+ */
+export function getStoreInvitationsWithDetails(storeId: string): StoreInvitationDetail[] {
+    const rows = db
+        .prepare(
+            `SELECT
+                i.id,
+                i.storeId,
+                i.invitedEmail,
+                i.invitedById,
+                i.role,
+                i.token,
+                i.status,
+                i.createdAt,
+                s.name as storeName,
+                u.name as inviterName,
+                u.email as inviterEmail
+             FROM StoreInvitation i
+             JOIN Store s ON i.storeId = s.id
+             JOIN User u ON i.invitedById = u.id
+             WHERE i.storeId = ? AND i.status = 'pending'
+             ORDER BY i.createdAt DESC`
+        )
+        .all(storeId) as any[];
+
+    return rows.map((row) => ({
+        id: row.id,
+        storeId: row.storeId,
+        invitedEmail: row.invitedEmail,
+        invitedById: row.invitedById,
+        role: row.role,
+        token: row.token,
+        status: row.status as StoreInvitationStatus,
+        createdAt: row.createdAt,
+        storeName: row.storeName,
+        inviterName: row.inviterName,
+        inviterEmail: row.inviterEmail,
+    }));
+}
+
+/**
+ * Get an invitation by ID
+ */
+export function getStoreInvitationById(invitationId: string): StoreInvitation | null {
+    const row = db
+        .prepare(
+            `SELECT id, storeId, invitedEmail, invitedById, role, token, status, createdAt
+             FROM StoreInvitation
+             WHERE id = ?`
+        )
+        .get(invitationId) as any;
+
+    if (!row) return null;
+
+    return {
+        id: row.id,
+        storeId: row.storeId,
+        invitedEmail: row.invitedEmail,
+        invitedById: row.invitedById,
+        role: row.role,
+        token: row.token,
+        status: row.status,
+        createdAt: row.createdAt,
+    };
+}
+
+/**
  * Update invitation status
  */
 export function updateStoreInvitationStatus(

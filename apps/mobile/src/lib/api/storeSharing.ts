@@ -33,6 +33,19 @@ export async function declineStoreInvitation(token: string): Promise<void> {
     await apiClient.post(`/api/stores/invitations/${token}/decline`, {});
 }
 
+export async function getOutgoingStoreInvitations(
+    storeId: string
+): Promise<StoreInvitationDetail[]> {
+    const response = await apiClient.get<{ invitations: StoreInvitationDetail[] }>(
+        `/api/stores/${storeId}/invitations`
+    );
+    return response.invitations;
+}
+
+export async function retractStoreInvitation(invitationId: string): Promise<void> {
+    await apiClient.delete(`/api/stores/invitations/${invitationId}`);
+}
+
 // ========== Store Collaborators ==========
 
 export async function getStoreCollaborators(storeId: string): Promise<StoreCollaboratorDetail[]> {
