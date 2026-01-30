@@ -4,13 +4,17 @@ import type {
     ShoppingListItemWithDetails,
     StoreItemWithDetails,
 } from "@basket-bot/core";
+import { KeepAwake } from "@capacitor-community/keep-awake";
+import { Capacitor } from "@capacitor/core";
 import {
     useQueryClient,
     useMutation as useTanstackMutation,
     useQuery as useTanstackQuery,
     useSuspenseQuery as useTanstackSuspenseQuery,
 } from "@tanstack/react-query";
-import { use } from "react";
+import pluralize from "pluralize";
+import { use, useCallback } from "react";
+import { useShield } from "../components/shield/useShield";
 import { useToast } from "../hooks/useToast";
 import * as storeSharingApi from "../lib/api/storeSharing";
 import { formatErrorMessage } from "../utils/errorUtils";
@@ -552,16 +556,18 @@ export function useReorderSections() {
 }
 
 /**
- * Hook to bulk replace all aisles and sections for a store
+ * Hook to bulk replace all aisles and sections for a store with progress tracking
  * Deletes all existing aisles (CASCADE deletes sections) then creates new ones
+ * Shows progress via shield and keeps screen awake during operation
  */
 export function useBulkReplaceAislesAndSections() {
     const database = useDatabase();
     const queryClient = useQueryClient();
     const { showError, showSuccess } = useToast();
+    const { raiseShield, lowerShield } = useShield();
 
-    return useTanstackMutation({
-        mutationFn: async ({
+    const replaceAislesAndSections = useCallback(
+        async ({
             storeId,
             aisles,
             sections,
@@ -574,76 +580,128 @@ export function useBulkReplaceAislesAndSections() {
                 sortOrder: number;
             }>;
         }) => {
-            // Step 1: Get all existing aisles
-            const existingAisles = await database.getAislesByStore(storeId);
+            const shieldId = "bulk-replace-aisles";
+            let aisleSuccessCount = 0;
+            let sectionSuccessCount = 0;
+            let errorCount = 0;
 
-            // Step 2: Delete all existing aisles (CASCADE will delete sections)
-            for (const aisle of existingAisles) {
-                await database.deleteAisle(storeId, aisle.id);
-            }
-
-            // Step 3: Create new aisles and build a map of name -> id
-            const aisleNameToId = new Map<string, string>();
-
-            for (const aisleData of aisles) {
-                const createdAisle = await database.insertAisle(storeId, aisleData.name);
-                aisleNameToId.set(aisleData.name, createdAisle.id);
-
-                // Update sort order if needed (insertAisle assigns automatically)
-                if (createdAisle.sortOrder !== aisleData.sortOrder) {
-                    await database.reorderAisles(storeId, [
-                        {
-                            id: createdAisle.id,
-                            sortOrder: aisleData.sortOrder,
-                        },
-                    ]);
+            try {
+                // Keep screen awake during bulk operation
+                if (Capacitor.isNativePlatform()) {
+                    await KeepAwake.keepAwake();
                 }
-            }
 
-            // Step 4: Create sections for each aisle
-            for (const sectionData of sections) {
-                const aisleId = aisleNameToId.get(sectionData.aisleName);
-                if (!aisleId) {
-                    console.warn(
-                        `Aisle not found for section: ${sectionData.name} in ${sectionData.aisleName}`
+                // Step 1: Clear existing layout
+                raiseShield(shieldId, "Clearing existing layout...");
+                const existingAisles = await database.getAislesByStore(storeId);
+                for (const aisle of existingAisles) {
+                    await database.deleteAisle(storeId, aisle.id);
+                }
+
+                // Step 2: Create new aisles with progress
+                const aisleNameToId = new Map<string, string>();
+
+                for (let i = 0; i < aisles.length; i++) {
+                    raiseShield(shieldId, `Importing aisle ${i + 1} of ${aisles.length}...`);
+
+                    try {
+                        const aisleData = aisles[i];
+                        const createdAisle = await database.insertAisle(storeId, aisleData.name);
+                        aisleNameToId.set(aisleData.name, createdAisle.id);
+
+                        // Update sort order if needed
+                        if (createdAisle.sortOrder !== aisleData.sortOrder) {
+                            await database.reorderAisles(storeId, [
+                                {
+                                    id: createdAisle.id,
+                                    sortOrder: aisleData.sortOrder,
+                                },
+                            ]);
+                        }
+
+                        aisleSuccessCount++;
+                    } catch (error) {
+                        console.error(`Failed to import aisle "${aisles[i].name}":`, error);
+                        errorCount++;
+                        // Continue with remaining aisles
+                    }
+                }
+
+                // Step 3: Create sections with progress
+                for (let i = 0; i < sections.length; i++) {
+                    raiseShield(shieldId, `Importing section ${i + 1} of ${sections.length}...`);
+
+                    try {
+                        const sectionData = sections[i];
+                        const aisleId = aisleNameToId.get(sectionData.aisleName);
+                        if (!aisleId) {
+                            console.warn(
+                                `Aisle not found for section: ${sectionData.name} in ${sectionData.aisleName}`
+                            );
+                            errorCount++;
+                            continue;
+                        }
+
+                        const createdSection = await database.insertSection(
+                            storeId,
+                            sectionData.name,
+                            aisleId
+                        );
+
+                        // Update sort order if needed
+                        if (createdSection.sortOrder !== sectionData.sortOrder) {
+                            await database.reorderSections(storeId, [
+                                {
+                                    id: createdSection.id,
+                                    sortOrder: sectionData.sortOrder,
+                                },
+                            ]);
+                        }
+
+                        sectionSuccessCount++;
+                    } catch (error) {
+                        console.error(`Failed to import section "${sections[i].name}":`, error);
+                        errorCount++;
+                        // Continue with remaining sections
+                    }
+                }
+
+                // Step 4: Invalidate queries to refresh UI
+                queryClient.invalidateQueries({
+                    queryKey: ["aisles", storeId],
+                });
+                queryClient.invalidateQueries({
+                    queryKey: ["sections", storeId],
+                });
+
+                // Show success/error messages
+                if (aisleSuccessCount > 0 || sectionSuccessCount > 0) {
+                    showSuccess(
+                        `Successfully imported ${aisleSuccessCount} ${pluralize("aisle", aisleSuccessCount)} and ${sectionSuccessCount} ${pluralize("section", sectionSuccessCount)}`
                     );
-                    continue;
                 }
 
-                const createdSection = await database.insertSection(
-                    storeId,
-                    sectionData.name,
-                    aisleId
+                if (errorCount > 0) {
+                    showError(`Failed to import ${errorCount} ${pluralize("item", errorCount)}`);
+                }
+            } catch (error) {
+                showError(
+                    error instanceof Error
+                        ? `Failed to replace aisles/sections: ${error.message}`
+                        : "Failed to replace aisles/sections"
                 );
-
-                // Update sort order if needed
-                if (createdSection.sortOrder !== sectionData.sortOrder) {
-                    await database.reorderSections(storeId, [
-                        {
-                            id: createdSection.id,
-                            sortOrder: sectionData.sortOrder,
-                        },
-                    ]);
+            } finally {
+                // Allow screen to sleep again
+                if (Capacitor.isNativePlatform()) {
+                    await KeepAwake.allowSleep();
                 }
+                lowerShield(shieldId);
             }
+        },
+        [database, queryClient, showError, showSuccess, raiseShield, lowerShield]
+    );
 
-            return { aisleCount: aisles.length, sectionCount: sections.length };
-        },
-        onSuccess: (result, variables) => {
-            queryClient.invalidateQueries({
-                queryKey: ["aisles", variables.storeId],
-            });
-            queryClient.invalidateQueries({
-                queryKey: ["sections", variables.storeId],
-            });
-            showSuccess(
-                `Successfully imported ${result.aisleCount} aisles and ${result.sectionCount} sections`
-            );
-        },
-        onError: (error: Error) => {
-            showError(`Failed to replace aisles/sections: ${error.message}`);
-        },
-    });
+    return { replaceAislesAndSections };
 }
 
 // ============================================================================
@@ -1289,4 +1347,3 @@ export function useRetractStoreInvitation() {
         },
     });
 }
-

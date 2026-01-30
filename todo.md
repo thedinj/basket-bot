@@ -1,3 +1,4 @@
+test viewing outgoing invitations and retracting
 Keep screen on until "Successfully imported" aisles/sections
 edit account details: email, name etc.
 let users change their backend mode from the login page, maybe secret keypresses. or maybe never? remove everything but the api key?
@@ -8,7 +9,6 @@ move pi to its permanent home
 background job to clean up the database:
 
 - delete stale collaboration invitations
-
 
 eslint.config.js for the monorepo?
 ionic.config.json?

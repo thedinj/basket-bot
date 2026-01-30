@@ -209,8 +209,14 @@ export const StoreCollaboratorsModal: React.FC<StoreCollaboratorsModalProps> = (
                                     {[1, 2].map((i) => (
                                         <IonItem key={i}>
                                             <IonLabel>
-                                                <IonSkeletonText animated style={{ width: "60%" }} />
-                                                <IonSkeletonText animated style={{ width: "40%" }} />
+                                                <IonSkeletonText
+                                                    animated
+                                                    style={{ width: "60%" }}
+                                                />
+                                                <IonSkeletonText
+                                                    animated
+                                                    style={{ width: "40%" }}
+                                                />
                                             </IonLabel>
                                         </IonItem>
                                     ))}
@@ -230,7 +236,9 @@ export const StoreCollaboratorsModal: React.FC<StoreCollaboratorsModalProps> = (
                                             <IonBadge
                                                 slot="end"
                                                 color={
-                                                    invitation.role === "owner" ? "primary" : "medium"
+                                                    invitation.role === "owner"
+                                                        ? "primary"
+                                                        : "medium"
                                                 }
                                                 style={{ marginRight: "8px" }}
                                             >

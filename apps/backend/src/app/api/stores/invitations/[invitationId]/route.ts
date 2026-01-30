@@ -8,10 +8,7 @@ import { NextResponse } from "next/server";
  * Only the original inviter or store owner can retract
  */
 export const DELETE = withAuth(
-    async (
-        req: AuthenticatedRequest,
-        { params }: { params: Promise<Record<string, string>> }
-    ) => {
+    async (req: AuthenticatedRequest, { params }: { params: Promise<Record<string, string>> }) => {
         try {
             const { invitationId } = await params;
             const userId = req.auth.sub;

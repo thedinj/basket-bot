@@ -64,7 +64,7 @@ const StoreDetail: React.FC = () => {
     const { data: collaborators } = useStoreCollaborators(id);
     const updateStore = useUpdateStore();
     const deleteStore = useDeleteStore();
-    const bulkReplace = useBulkReplaceAislesAndSections();
+    const { replaceAislesAndSections } = useBulkReplaceAislesAndSections();
     const { openModal } = useLLMModal();
     const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
@@ -182,17 +182,14 @@ const StoreDetail: React.FC = () => {
                     </div>
                 );
             },
-            onAccept: async (response) => {
-                try {
-                    const transformed = transformStoreScanResult(response.data);
-                    await bulkReplace.mutateAsync({
-                        storeId: id,
-                        aisles: transformed.aisles,
-                        sections: transformed.sections,
-                    });
-                } catch (error) {
-                    console.error("Failed to import aisles/sections:", error);
-                }
+            onAccept: (response) => {
+                const transformed = transformStoreScanResult(response.data);
+                // Don't await - let shield take over for background work
+                replaceAislesAndSections({
+                    storeId: id,
+                    aisles: transformed.aisles,
+                    sections: transformed.sections,
+                });
             },
         });
     };

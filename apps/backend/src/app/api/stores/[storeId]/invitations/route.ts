@@ -7,10 +7,7 @@ import { NextResponse } from "next/server";
  * Get pending outgoing invitations for a store (for owners/editors)
  */
 export const GET = withAuth(
-    async (
-        req: AuthenticatedRequest,
-        { params }: { params: Promise<Record<string, string>> }
-    ) => {
+    async (req: AuthenticatedRequest, { params }: { params: Promise<Record<string, string>> }) => {
         try {
             const { storeId } = await params;
             const userId = req.auth.sub;
