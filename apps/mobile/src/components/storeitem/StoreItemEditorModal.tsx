@@ -1,7 +1,6 @@
 import { storeItemInputSchema, type StoreItemFormData } from "@basket-bot/core";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-    IonAlert,
     IonButton,
     IonButtons,
     IonContent,
@@ -13,8 +12,9 @@ import {
     IonText,
     IonTitle,
     IonToolbar,
+    useIonAlert,
 } from "@ionic/react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useCreateItem, useDeleteItem, useUpdateItem } from "../../db/hooks";
 import { StoreItem } from "../../db/types";
@@ -37,7 +37,7 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
     const createItem = useCreateItem();
     const updateItem = useUpdateItem();
     const deleteItem = useDeleteItem();
-    const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+    const [presentAlert] = useIonAlert();
 
     const form = useForm<StoreItemFormData>({
         resolver: zodResolver(storeItemInputSchema),
@@ -104,23 +104,7 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
 
     const handleClose = () => {
         reset();
-        setShowDeleteAlert(false);
         onClose();
-    };
-
-    const handleDelete = async () => {
-        if (!editingItem) return;
-
-        try {
-            await deleteItem.mutateAsync({
-                id: editingItem.id,
-                storeId: storeId,
-            });
-            setShowDeleteAlert(false);
-            onClose();
-        } catch (error) {
-            console.error("Error deleting store item:", error);
-        }
     };
 
     const isPending = createItem.isPending || updateItem.isPending || deleteItem.isPending;
@@ -196,7 +180,31 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
                                 expand="block"
                                 color="danger"
                                 fill="outline"
-                                onClick={() => setShowDeleteAlert(true)}
+                                onClick={() => {
+                                    presentAlert({
+                                        header: "Delete Item",
+                                        message: `Are you sure you want to delete "${editingItem?.name}"? This will remove it from all shopping lists.`,
+                                        buttons: [
+                                            {
+                                                text: "Cancel",
+                                                role: "cancel",
+                                            },
+                                            {
+                                                text: "Delete",
+                                                role: "destructive",
+                                                handler: async () => {
+                                                    if (editingItem) {
+                                                        await deleteItem.mutateAsync({
+                                                            id: editingItem.id,
+                                                            storeId,
+                                                        });
+                                                        onClose();
+                                                    }
+                                                },
+                                            },
+                                        ],
+                                    });
+                                }}
                                 disabled={isPending}
                                 style={{ marginTop: "10px" }}
                             >
@@ -205,24 +213,6 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
                         )}
                     </form>
                 </StoreItemEditorProvider>
-
-                <IonAlert
-                    isOpen={showDeleteAlert}
-                    onDidDismiss={() => setShowDeleteAlert(false)}
-                    header="Delete Item"
-                    message={`Are you sure you want to delete "${editingItem?.name}"? This will remove it from all shopping lists.`}
-                    buttons={[
-                        {
-                            text: "Cancel",
-                            role: "cancel",
-                        },
-                        {
-                            text: "Delete",
-                            role: "destructive",
-                            handler: handleDelete,
-                        },
-                    ]}
-                />
             </IonContent>
         </IonModal>
     );

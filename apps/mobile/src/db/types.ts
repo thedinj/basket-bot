@@ -1,5 +1,6 @@
 import type {
     AppSetting,
+    CheckConflictResult,
     QuantityUnit,
     ShoppingListItem,
     ShoppingListItemInput,
@@ -238,8 +239,13 @@ export interface EntityDatabase {
 
     /**
      * Toggle the checked status of a shopping list item
+     * Returns conflict info if item was already checked by another user
      */
-    toggleShoppingListItemChecked(storeId: string, id: string, isChecked: boolean): Promise<void>;
+    toggleShoppingListItemChecked(
+        storeId: string,
+        id: string,
+        isChecked: boolean
+    ): Promise<CheckConflictResult>;
 
     /**
      * Delete a shopping list item

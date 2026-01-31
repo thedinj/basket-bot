@@ -1,6 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-    IonAlert,
     IonButton,
     IonButtons,
     IonContent,
@@ -16,6 +15,7 @@ import {
     IonText,
     IonTitle,
     IonToolbar,
+    useIonAlert,
 } from "@ionic/react";
 import {
     closeOutline,
@@ -25,7 +25,7 @@ import {
     peopleOutline,
     trash,
 } from "ionicons/icons";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useHistory, useParams } from "react-router-dom";
 import { z } from "zod";
@@ -66,10 +66,9 @@ const StoreDetail: React.FC = () => {
     const deleteStore = useDeleteStore();
     const { replaceAislesAndSections } = useBulkReplaceAislesAndSections();
     const { openModal } = useLLMModal();
+    const [presentAlert] = useIonAlert();
     const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
-    const [showDeleteAlert, setShowDeleteAlert] = useState(false);
     const [showCollaboratorsModal, setShowCollaboratorsModal] = useState(false);
-    const [deleteSuccess, setDeleteSuccess] = useState(false);
 
     // Determine current user's role
     const currentUserRole = collaborators?.find((c) => c.userId === user?.id)?.role;
@@ -84,52 +83,61 @@ const StoreDetail: React.FC = () => {
         mode: "onChange",
     });
 
-    const openRenameModal = () => {
+    const openRenameModal = useCallback(() => {
         if (store) {
             reset({ name: store.name });
             setIsRenameModalOpen(true);
         }
-    };
+    }, [reset, store]);
 
-    const closeRenameModal = () => {
+    const closeRenameModal = useCallback(() => {
         setIsRenameModalOpen(false);
         reset({ name: "" });
-    };
+    }, [reset]);
 
-    const onSubmitRename = async (data: StoreFormData) => {
-        await updateStore.mutateAsync({ id, name: data.name });
-        closeRenameModal();
-    };
+    const onSubmitRename = useCallback(
+        async (data: StoreFormData) => {
+            await updateStore.mutateAsync({ id, name: data.name });
+            closeRenameModal();
+        },
+        [closeRenameModal, id, updateStore]
+    );
 
-    const handleDelete = async () => {
-        try {
-            await deleteStore.mutateAsync(id);
-            setDeleteSuccess(true);
-            return true; // Allow alert to dismiss
-        } catch (_error: unknown) {
-            // Error is already handled by the mutation hook (toast shown)
-            return false; // Keep alert open on error
-        }
-    };
+    const handleDeleteStore = useCallback(() => {
+        presentAlert({
+            header: "Delete Store",
+            message: `Are you sure you want to delete "${store?.name}"? This will also delete all aisles, sections, and items for this store.`,
+            buttons: [
+                {
+                    text: "Cancel",
+                    role: "cancel",
+                },
+                {
+                    text: "Delete",
+                    role: "destructive",
+                    handler: async () => {
+                        try {
+                            await deleteStore.mutateAsync(id);
+                            // CRITICAL: Use React Router's history.replace() instead of useIonRouter().push()
+                            // Ionic's router navigation does NOT work reliably when called from IonAlert's
+                            // onDidDismiss callback or button handlers within a tabs layout context.
+                            // The navigation would update the URL but fail to unmount/remount the page component,
+                            // leaving the user stuck viewing the deleted store's page with an updated URL.
+                            // React Router's history.replace() bypasses Ionic's animation/transition system
+                            // and directly manipulates the browser history, which properly triggers the
+                            // route change and component unmount. This is the recommended pattern for
+                            // navigation after destructive operations initiated from alerts/modals.
+                            history.replace("/stores");
+                        } catch (_error: unknown) {
+                            // Error is already handled by the mutation hook (toast shown)
+                        }
+                    },
+                },
+            ],
+        });
+    }, [deleteStore, history, id, presentAlert, store?.name]);
 
-    const handleAlertDismiss = () => {
-        setShowDeleteAlert(false);
-        if (deleteSuccess) {
-            setDeleteSuccess(false);
-            // CRITICAL: Use React Router's history.replace() instead of useIonRouter().push()
-            // Ionic's router navigation does NOT work reliably when called from IonAlert's
-            // onDidDismiss callback or button handlers within a tabs layout context.
-            // The navigation would update the URL but fail to unmount/remount the page component,
-            // leaving the user stuck viewing the deleted store's page with an updated URL.
-            // React Router's history.replace() bypasses Ionic's animation/transition system
-            // and directly manipulates the browser history, which properly triggers the
-            // route change and component unmount. This is the recommended pattern for
-            // navigation after destructive operations initiated from alerts/modals.
-            history.replace("/stores");
-        }
-    };
-
-    const handleAutoScan = () => {
+    const handleAutoScan = useCallback(() => {
         openModal<StoreScanResult>({
             title: "Scan Store Directory",
             prompt: STORE_SCAN_PROMPT,
@@ -192,7 +200,7 @@ const StoreDetail: React.FC = () => {
                 });
             },
         });
-    };
+    }, [id, openModal, replaceAislesAndSections]);
 
     return (
         <IonPage>
@@ -257,7 +265,7 @@ const StoreDetail: React.FC = () => {
                         expand="block"
                         color="danger"
                         fill="outline"
-                        onClick={() => setShowDeleteAlert(true)}
+                        onClick={handleDeleteStore}
                         disabled={isLoading || deleteStore.isPending}
                     >
                         <IonIcon slot="start" icon={trash} />
@@ -318,25 +326,6 @@ const StoreDetail: React.FC = () => {
                         </form>
                     </IonContent>
                 </IonModal>
-
-                {/* Delete Confirmation Alert */}
-                <IonAlert
-                    isOpen={showDeleteAlert}
-                    onDidDismiss={handleAlertDismiss}
-                    header="Delete Store"
-                    message={`Are you sure you want to delete "${store?.name}"? This will also delete all aisles, sections, and items for this store.`}
-                    buttons={[
-                        {
-                            text: "Cancel",
-                            role: "cancel",
-                        },
-                        {
-                            text: "Delete",
-                            role: "destructive",
-                            handler: handleDelete,
-                        },
-                    ]}
-                />
 
                 {/* Store Collaborators Modal */}
                 {currentUserRole && (

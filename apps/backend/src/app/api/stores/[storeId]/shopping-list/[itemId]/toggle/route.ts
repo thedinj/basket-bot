@@ -18,8 +18,19 @@ async function handlePost(
             );
         }
 
-        storeEntityService.toggleShoppingListItemChecked(itemId, isChecked, storeId, req.auth.sub);
-        return NextResponse.json({ success: true });
+        const result = storeEntityService.toggleShoppingListItemChecked(
+            itemId,
+            isChecked,
+            storeId,
+            req.auth.sub
+        );
+        return NextResponse.json({
+            success: true,
+            conflict: result.conflict,
+            itemId: result.itemId,
+            itemName: result.itemName,
+            conflictUser: result.conflictUser,
+        });
     } catch (error: any) {
         if (error.message === "Access denied") {
             return NextResponse.json(

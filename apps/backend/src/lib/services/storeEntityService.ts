@@ -1,4 +1,5 @@
 import type {
+    CheckConflictResult,
     ShoppingListItem,
     ShoppingListItemInput,
     ShoppingListItemWithDetails,
@@ -256,9 +257,9 @@ export function toggleShoppingListItemChecked(
     isChecked: boolean,
     storeId: string,
     userId: string
-): void {
+): CheckConflictResult {
     verifyStoreAccess(storeId, userId);
-    shoppingListRepo.toggleShoppingListItemChecked(id, isChecked, userId);
+    return shoppingListRepo.toggleShoppingListItemChecked(id, isChecked, userId);
 }
 
 /**

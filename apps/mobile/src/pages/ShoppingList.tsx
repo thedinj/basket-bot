@@ -1,5 +1,4 @@
 import {
-    IonAlert,
     IonContent,
     IonFab,
     IonFabButton,
@@ -7,6 +6,7 @@ import {
     IonPage,
     IonText,
     IonToolbar,
+    useIonAlert,
 } from "@ionic/react";
 import { add, bed, bedOutline } from "ionicons/icons";
 import { Suspense, useCallback, useMemo, useState } from "react";
@@ -39,6 +39,7 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     const { data: items } = useShoppingListItems(storeId);
 
     const clearChecked = useClearCheckedItems();
+    const [presentAlert] = useIonAlert();
 
     // Laser obliteration animation
     const {
@@ -72,7 +73,6 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [items, showSnoozed, currentDate]);
 
-    const [showClearCheckedAlert, setShowClearCheckedAlert] = useState(false);
     const [hasTriggeredClear, setHasTriggeredClear] = useState(false);
 
     const uncheckedItems = activeItems?.filter((item) => !item.isChecked) || [];
@@ -83,14 +83,7 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
         setHasTriggeredClear(false);
     }
 
-    // Check if there are any snoozed items
-    const handleClearChecked = useCallback(() => {
-        setShowClearCheckedAlert(true);
-    }, []);
-
     const confirmClearChecked = useCallback(async () => {
-        setShowClearCheckedAlert(false);
-
         // Trigger laser animation
         await triggerLaser();
 
@@ -99,7 +92,26 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
             setHasTriggeredClear(true);
             clearChecked.mutate({ storeId });
         }, ANIMATION_EFFECTS.LASER_OBLITERATION.duration);
-    }, [clearChecked, storeId, triggerLaser]);
+    }, [clearChecked, storeId, triggerLaser, setHasTriggeredClear]);
+
+    // Check if there are any snoozed items
+    const handleClearChecked = useCallback(() => {
+        presentAlert({
+            header: "Obliterate Checked Items?",
+            message: "Clear all checked items? If you're certain you're done with them.",
+            buttons: [
+                {
+                    text: "Cancel",
+                    role: "cancel",
+                },
+                {
+                    text: "Obliterate",
+                    role: "destructive",
+                    handler: confirmClearChecked,
+                },
+            ],
+        });
+    }, [presentAlert, confirmClearChecked]);
 
     const customActions = useMemo<GlobalActionConfig[]>(() => {
         if (currentlySnoozedItemCount === 0) return [];
@@ -190,24 +202,6 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
 
                 <ItemEditorModal storeId={storeId} />
             </IonContent>
-
-            <IonAlert
-                isOpen={showClearCheckedAlert}
-                onDidDismiss={() => setShowClearCheckedAlert(false)}
-                header="Obliterate Checked Items?"
-                message={"Clear all checked items? If you're certain you're done with them."}
-                buttons={[
-                    {
-                        text: "Cancel",
-                        role: "cancel",
-                    },
-                    {
-                        text: "Obliterate",
-                        role: "destructive",
-                        handler: confirmClearChecked,
-                    },
-                ]}
-            />
         </RefreshConfig>
     );
 };

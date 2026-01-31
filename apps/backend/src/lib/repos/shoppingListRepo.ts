@@ -1,4 +1,8 @@
-import type { ShoppingListItem, ShoppingListItemWithDetails } from "@basket-bot/core";
+import type {
+    CheckConflictResult,
+    ShoppingListItem,
+    ShoppingListItemWithDetails,
+} from "@basket-bot/core";
 import { db } from "../db/db";
 
 /**
@@ -201,10 +205,45 @@ export function toggleShoppingListItemChecked(
     id: string,
     isChecked: boolean,
     userId: string
-): void {
+): CheckConflictResult {
     const now = new Date().toISOString();
 
     if (isChecked) {
+        // Check current state to detect conflicts when checking
+        const current = db
+            .prepare(
+                `SELECT sli.id, sli.isChecked, sli.checkedBy, u.name as checkedByName, si.name as itemName
+                 FROM ShoppingListItem sli
+                 LEFT JOIN User u ON sli.checkedBy = u.id
+                 LEFT JOIN StoreItem si ON sli.storeItemId = si.id
+                 WHERE sli.id = ?`
+            )
+            .get(id) as
+            | {
+                  id: string;
+                  isChecked: number | null;
+                  checkedBy: string | null;
+                  checkedByName: string | null;
+                  itemName: string | null;
+              }
+            | undefined;
+
+        const conflict =
+            current?.isChecked === 1 && current?.checkedBy != null && current?.checkedBy !== userId;
+
+        // If there's a conflict, don't update the item, just return the conflict info
+        if (conflict) {
+            return {
+                conflict: true,
+                itemId: current!.id,
+                itemName: current!.itemName ?? undefined,
+                conflictUser: {
+                    id: current!.checkedBy!,
+                    name: current!.checkedByName ?? "Unknown user",
+                },
+            };
+        }
+
         // When checking: update checked fields AND clear snooze
         db.prepare(
             `UPDATE ShoppingListItem
@@ -219,6 +258,10 @@ export function toggleShoppingListItemChecked(
              WHERE id = ?`
         ).run(boolToInt(isChecked), now, userId, now, id);
     }
+
+    return {
+        conflict: false,
+    };
 }
 
 /**

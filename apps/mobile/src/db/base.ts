@@ -1,5 +1,6 @@
 import type {
     AppSetting,
+    CheckConflictResult,
     QuantityUnit,
     ShoppingListItem,
     ShoppingListItemInput,
@@ -118,7 +119,7 @@ export abstract class BaseDatabase implements Database {
         storeId: string,
         id: string,
         isChecked: boolean
-    ): Promise<void>;
+    ): Promise<CheckConflictResult>;
     abstract deleteShoppingListItem(storeId: string, id: string): Promise<void>;
     abstract removeShoppingListItem(storeId: string, id: string): Promise<void>;
     abstract clearCheckedShoppingListItems(storeId: string): Promise<void>;

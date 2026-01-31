@@ -1,6 +1,5 @@
-import type { ShoppingListItemWithDetails, Store } from "@basket-bot/core";
+import type { ShoppingListItemWithDetails } from "@basket-bot/core";
 import {
-    IonAlert,
     IonButton,
     IonButtons,
     IonCheckbox,
@@ -12,6 +11,7 @@ import {
     IonModal,
     IonTitle,
     IonToolbar,
+    useIonAlert,
 } from "@ionic/react";
 import clsx from "clsx";
 import { closeOutline, swapHorizontalOutline } from "ionicons/icons";
@@ -49,7 +49,7 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
     const { user } = useAuth();
     const { openEditModal, newlyImportedItemIds } = useShoppingListContext();
     const [showMoveModal, setShowMoveModal] = useState(false);
-    const [pendingMove, setPendingMove] = useState<Store | null>(null);
+    const [presentAlert] = useIonAlert();
     const toggleChecked = useToggleItemChecked();
     const moveItemToStore = useMoveItemToStore();
     const { data: stores } = useStores();
@@ -60,37 +60,43 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
         if (storeId && stores) {
             const storeObj = stores.find((s) => s.id === storeId);
             if (storeObj) {
-                setPendingMove(storeObj);
                 setShowMoveModal(false);
+                presentAlert({
+                    header: "Move to Store",
+                    message: `Move this item to ${storeObj.name}? The item will be removed from the current store and added to the selected store.`,
+                    buttons: [
+                        {
+                            text: "Cancel",
+                            role: "cancel",
+                        },
+                        {
+                            text: "Move",
+                            handler: async () => {
+                                try {
+                                    const result = await moveItemToStore.mutateAsync({
+                                        item: {
+                                            id: item.id,
+                                            itemName: item.itemName,
+                                            notes: item.notes,
+                                            qty: item.qty,
+                                            unitId: item.unitId,
+                                            isIdea: item.isIdea,
+                                        },
+                                        sourceStoreId: item.storeId,
+                                        targetStoreId: storeObj.id,
+                                        targetStoreName: storeObj.name,
+                                    });
+                                    toast.showSuccess(
+                                        `Moved "${result.itemName}" to ${result.targetStoreName}`
+                                    );
+                                } catch (_error) {
+                                    // Error already handled by mutation
+                                }
+                            },
+                        },
+                    ],
+                });
             }
-        }
-    };
-
-    const handleMoveToStore = async () => {
-        if (!pendingMove) return;
-
-        try {
-            const result = await moveItemToStore.mutateAsync({
-                item: {
-                    id: item.id,
-                    itemName: item.itemName,
-                    notes: item.notes,
-                    qty: item.qty,
-                    unitId: item.unitId,
-                    isIdea: item.isIdea,
-                },
-                sourceStoreId: item.storeId,
-                targetStoreId: pendingMove.id,
-                targetStoreName: pendingMove.name,
-            });
-
-            toast.showSuccess(
-                `Moved "${result.itemName}" to ${result.targetStoreName}. Obviously.`
-            );
-            setPendingMove(null);
-        } catch (error) {
-            toast.showError("Failed to move item. Perhaps try again?");
-            console.error("Error moving item to store:", error);
         }
     };
 
@@ -163,26 +169,6 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                 </IonButton>
             )}
 
-            <IonAlert
-                isOpen={!!pendingMove}
-                onDidDismiss={() => setPendingMove(null)}
-                header="Move to Store"
-                message={`Move this item  to ${
-                    pendingMove?.name ?? "the other store"
-                }? The item will be removed from the current store and added to the selected store.`}
-                buttons={[
-                    {
-                        text: "Cancel",
-                        role: "cancel",
-                        handler: () => setPendingMove(null),
-                    },
-                    {
-                        text: "Move",
-                        handler: handleMoveToStore,
-                    },
-                ]}
-            />
-
             {/* Move to Store Modal */}
             <IonModal isOpen={showMoveModal} onDidDismiss={() => setShowMoveModal(false)}>
                 <IonHeader>
@@ -192,7 +178,6 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                             <IonButton
                                 onClick={() => {
                                     setShowMoveModal(false);
-                                    setPendingMove(null);
                                 }}
                             >
                                 <IonIcon icon={closeOutline} />

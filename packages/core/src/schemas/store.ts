@@ -429,3 +429,25 @@ export const toggleShoppingListItemCheckedRequestSchema = z.object({
 export type ToggleShoppingListItemCheckedRequest = z.infer<
     typeof toggleShoppingListItemCheckedRequestSchema
 >;
+
+export const checkConflictResultSchema = z.object({
+    conflict: z.boolean(),
+    itemId: z.string().optional(),
+    itemName: z.string().optional(),
+    conflictUser: z
+        .object({
+            id: z.string(),
+            name: z.string(),
+        })
+        .optional(),
+});
+
+export type CheckConflictResult = z.infer<typeof checkConflictResultSchema>;
+
+export const toggleShoppingListItemCheckedResponseSchema = checkConflictResultSchema.extend({
+    success: z.boolean(),
+});
+
+export type ToggleShoppingListItemCheckedResponse = z.infer<
+    typeof toggleShoppingListItemCheckedResponseSchema
+>;

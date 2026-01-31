@@ -6,6 +6,7 @@ import type {
 } from "@basket-bot/core";
 import { KeepAwake } from "@capacitor-community/keep-awake";
 import { Capacitor } from "@capacitor/core";
+import { useIonAlert } from "@ionic/react";
 import {
     useQueryClient,
     useMutation as useTanstackMutation,
@@ -1035,10 +1036,12 @@ export function useUpsertShoppingListItem() {
 /**
  * Hook to toggle shopping list item checked status
  * Uses optimistic updates for instant UI feedback
+ * Shows alert if item was already checked by another user (requires dismissal)
  */
 export function useToggleItemChecked() {
     const database = useDatabase();
     const { showError } = useToast();
+    const [presentAlert] = useIonAlert();
 
     return useOptimisticMutation({
         mutationFn: (params: { id: string; isChecked: boolean; storeId: string }) =>
@@ -1060,6 +1063,16 @@ export function useToggleItemChecked() {
                 );
             },
         }),
+        onSuccess: (result) => {
+            if (result.conflict && result.conflictUser) {
+                const itemDisplay = result.itemName ? `"${result.itemName}"` : "This item";
+                presentAlert({
+                    header: "Already Checked",
+                    message: `${itemDisplay} was already checked by ${result.conflictUser.name}.`,
+                    buttons: ["OK"],
+                });
+            }
+        },
         onError: (error) => showError(formatErrorMessage(error, "update item")),
     });
 }

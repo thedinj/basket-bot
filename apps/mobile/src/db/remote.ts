@@ -1,5 +1,6 @@
 import type {
     AppSetting,
+    CheckConflictResult,
     QuantityUnit,
     ShoppingListItem,
     ShoppingListItemInput,
@@ -447,15 +448,24 @@ export class RemoteDatabase extends BaseDatabase {
         storeId: string,
         id: string,
         isChecked: boolean
-    ): Promise<void> {
+    ): Promise<CheckConflictResult> {
         return this.executeMutation(
             "toggleShoppingListItemChecked",
             `/api/stores/${storeId}/shopping-list/${id}/toggle`,
             "POST",
             async () => {
-                await apiClient.post(`/api/stores/${storeId}/shopping-list/${id}/toggle`, {
-                    isChecked,
-                });
+                const response = await apiClient.post<CheckConflictResult>(
+                    `/api/stores/${storeId}/shopping-list/${id}/toggle`,
+                    {
+                        isChecked,
+                    }
+                );
+                return {
+                    conflict: response.conflict,
+                    conflictUser: response.conflictUser,
+                    itemId: response.itemId,
+                    itemName: response.itemName,
+                };
             },
             { isChecked }
         );
