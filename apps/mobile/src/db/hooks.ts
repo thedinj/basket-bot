@@ -74,20 +74,20 @@ export const usePreloadCoreData = () => {
         // Check if app version changed and invalidate cache if needed
         await checkAndInvalidateCoreDataCache(queryClient);
 
-        // Prefetch quantity units (static reference data)
-        await queryClient.prefetchQuery({
-            queryKey: ["quantityUnits"],
-            queryFn: () => database.loadAllQuantityUnits(),
-            staleTime: CORE_DATA_CACHE.STATIC.staleTime,
-        });
-
-        // Prefetch user's stores (30 minute cache)
+        // Prefetch quantity units and stores in parallel
         try {
-            const stores = await queryClient.fetchQuery({
-                queryKey: ["stores"],
-                queryFn: () => database.loadAllStores(),
-                staleTime: 30 * 60 * 1000, // 30 minutes
-            });
+            const [, stores] = await Promise.all([
+                queryClient.prefetchQuery({
+                    queryKey: ["quantityUnits"],
+                    queryFn: () => database.loadAllQuantityUnits(),
+                    staleTime: CORE_DATA_CACHE.STATIC.staleTime,
+                }),
+                queryClient.fetchQuery({
+                    queryKey: ["stores"],
+                    queryFn: () => database.loadAllStores(),
+                    staleTime: 30 * 60 * 1000, // 30 minutes
+                }),
+            ]);
 
             // Prefetch aisles and sections for each store (30 minute cache)
             if (stores && stores.length > 0) {
@@ -107,7 +107,7 @@ export const usePreloadCoreData = () => {
                 );
             }
         } catch (error) {
-            console.error("[usePreloadCoreData] Failed to prefetch stores:", error);
+            console.error("[usePreloadCoreData] Failed to prefetch quantities and stores:", error);
             // Don't block app initialization on preload failures
         }
     }, [database, queryClient]);
