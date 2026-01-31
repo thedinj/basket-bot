@@ -9,95 +9,101 @@ import { ShoppingListItem } from "./ShoppingListItem";
 
 interface GroupedShoppingListProps {
     items: ShoppingListItemWithDetails[];
-    isChecked: boolean;
     onClearChecked?: () => void;
     isClearing?: boolean;
 }
 
+const HEADER_STYLE = {
+    fontSize: "0.9rem",
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+} as const;
+
+const INDENT_LEVEL = 16;
+const IDEAS_SORT_ORDER = 0;
+const AISLE_SORT_ORDER_OFFSET = 100;
+
+const createCheckedItemsGroup = (
+    items: ShoppingListItemWithDetails[],
+    onClearChecked?: () => void,
+    isClearing?: boolean
+): ItemGroup<ShoppingListItemWithDetails> => ({
+    id: "checked-items",
+    items,
+    header: {
+        label: "Checked Items",
+        color: "light",
+        sticky: true,
+        labelStyle: HEADER_STYLE,
+        actionSlot: onClearChecked && (
+            <IonButton fill="clear" size="small" onClick={onClearChecked} disabled={isClearing}>
+                <IonIcon slot="start" icon={checkmarkDone} />
+                Obliterate
+            </IonButton>
+        ),
+    },
+    sortOrder: 0,
+    indentLevel: INDENT_LEVEL,
+});
+
+const createIdeasGroup = (
+    ideas: ShoppingListItemWithDetails[]
+): ItemGroup<ShoppingListItemWithDetails> => ({
+    id: "ideas",
+    items: ideas,
+    header: {
+        label: (
+            <>
+                <IonIcon icon={bulbOutline} color="warning" /> Ideas
+            </>
+        ),
+        color: "light",
+        sticky: true,
+        labelStyle: HEADER_STYLE,
+    },
+    sortOrder: IDEAS_SORT_ORDER,
+    indentLevel: INDENT_LEVEL,
+});
+
 export const GroupedShoppingList = ({
     items,
-    isChecked,
     onClearChecked,
     isClearing,
 }: GroupedShoppingListProps) => {
     const groups = useMemo(() => {
         const itemGroups: ItemGroup<ShoppingListItemWithDetails>[] = [];
 
-        if (isChecked) {
-            // CHECKED ITEMS: Header group + flat list of all items
-            const headerGroup: ItemGroup<ShoppingListItemWithDetails> = {
-                id: "checked-items",
-                items: items,
-                header: {
-                    label: "Checked Items",
-                    color: "light",
-                    sticky: true,
-                    labelStyle: {
-                        // TODO: share this label style constant with grouping.utils.ts
-                        fontSize: "0.9rem",
-                        fontWeight: "600",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.5px",
-                    },
-                    actionSlot: onClearChecked && (
-                        <IonButton
-                            fill="clear"
-                            size="small"
-                            onClick={onClearChecked}
-                            disabled={isClearing}
-                        >
-                            <IonIcon slot="start" icon={checkmarkDone} />
-                            Obliterate
-                        </IonButton>
-                    ),
-                },
-                sortOrder: 0,
-                indentLevel: 16, // TODO: This too
-            };
+        // Partition items by checked status
+        const checkedItems = items.filter((item) => item.isChecked);
+        const uncheckedItems = items.filter((item) => !item.isChecked);
 
-            itemGroups.push(headerGroup);
-        } else {
-            // UNCHECKED ITEMS: Ideas + Categorized items
-            const ideas = items.filter((item) => item.isIdea);
-            const regularItems = items.filter((item) => !item.isIdea);
+        // Add checked items group if any exist
+        if (checkedItems.length > 0) {
+            itemGroups.push(createCheckedItemsGroup(checkedItems, onClearChecked, isClearing));
+        }
 
-            // Group 1: Ideas (if any)
+        // Process unchecked items
+        if (uncheckedItems.length > 0) {
+            const ideas = uncheckedItems.filter((item) => item.isIdea);
+            const regularItems = uncheckedItems.filter((item) => !item.isIdea);
+
+            // Add ideas group
             if (ideas.length > 0) {
-                itemGroups.push({
-                    id: "ideas",
-                    items: ideas,
-                    header: {
-                        label: (
-                            <>
-                                <IonIcon icon={bulbOutline} color="warning" /> Ideas
-                            </>
-                        ),
-                        color: "light",
-                        sticky: true,
-                        labelStyle: {
-                            fontSize: "0.9rem",
-                            fontWeight: "600",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.5px",
-                        },
-                    },
-                    sortOrder: 0,
-                    indentLevel: 16,
-                });
+                itemGroups.push(createIdeasGroup(ideas));
             }
 
-            // Groups 2+: Regular items organized by aisle/section
+            // Add aisle/section groups for regular items
             const aisleGroups = createAisleSectionGroups(regularItems, {
                 showAisleHeaders: true,
                 showSectionHeaders: true,
-                sortOrderOffset: 100, // Sort after ideas
+                sortOrderOffset: AISLE_SORT_ORDER_OFFSET,
             });
-
             itemGroups.push(...aisleGroups);
         }
 
         return itemGroups;
-    }, [items, isChecked, onClearChecked, isClearing]);
+    }, [items, onClearChecked, isClearing]);
 
     if (items.length === 0) {
         return null;
@@ -107,7 +113,7 @@ export const GroupedShoppingList = ({
         <GroupedItemList<ShoppingListItemWithDetails>
             groups={groups}
             renderItem={(item) => (
-                <ShoppingListItem key={item.id} item={item} isChecked={isChecked} />
+                <ShoppingListItem key={item.id} item={item} isChecked={item.isChecked} />
             )}
         />
     );

@@ -20,7 +20,7 @@ import * as storeSharingApi from "../lib/api/storeSharing";
 import { formatErrorMessage } from "../utils/errorUtils";
 import { DatabaseContext } from "./context";
 import { checkAndInvalidateCoreDataCache } from "./coreDataVersion";
-import { useOptimisticMutation, type QueryData } from "./optimisticUpdates";
+import { useOptimisticMutation } from "./optimisticUpdates";
 import { type Database } from "./types";
 
 // ============================================================================
@@ -310,6 +310,17 @@ export function useUpdateAisle() {
             queryClient.invalidateQueries({
                 queryKey: ["aisles", "detail", variables.id],
             });
+            // Invalidate store items since they display aisle names
+            queryClient.invalidateQueries({
+                queryKey: ["items", variables.storeId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["items", "with-details", variables.storeId],
+            });
+            // Invalidate shopping list items since they display aisle names
+            queryClient.invalidateQueries({
+                queryKey: ["shopping-list-items", variables.storeId],
+            });
         },
         onError: (error: Error) => {
             showError(`Failed to update aisle: ${error.message}`);
@@ -331,6 +342,13 @@ export function useDeleteAisle() {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["aisles", variables.storeId],
+            });
+            // Invalidate store items and shopping list since aisle was deleted
+            queryClient.invalidateQueries({
+                queryKey: ["items", "with-details", variables.storeId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["shopping-list-items", variables.storeId],
             });
         },
         onError: (error: Error) => {
@@ -358,6 +376,10 @@ export function useReorderAisles() {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["aisles", variables.storeId],
+            });
+            // Invalidate shopping list items since they display items in aisle order
+            queryClient.invalidateQueries({
+                queryKey: ["shopping-list-items", variables.storeId],
             });
         },
         onError: (error: Error) => {
@@ -450,6 +472,14 @@ export function useUpdateSection() {
             queryClient.invalidateQueries({
                 queryKey: ["sections", "detail", variables.id],
             });
+            // Invalidate store items since they display section names
+            queryClient.invalidateQueries({
+                queryKey: ["items", "with-details", variables.storeId],
+            });
+            // Invalidate shopping list items since they display section names and order
+            queryClient.invalidateQueries({
+                queryKey: ["shopping-list-items", variables.storeId],
+            });
         },
         onError: (error: Error) => {
             showError(`Failed to update section: ${error.message}`);
@@ -471,6 +501,13 @@ export function useDeleteSection() {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["sections", variables.storeId],
+            });
+            // Invalidate store items and shopping list since section was deleted
+            queryClient.invalidateQueries({
+                queryKey: ["items", "with-details", variables.storeId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["shopping-list-items", variables.storeId],
             });
         },
         onError: (error: Error) => {
@@ -521,6 +558,14 @@ export function useMoveSection() {
             queryClient.invalidateQueries({
                 queryKey: ["sections", variables.storeId],
             });
+            // Invalidate store items since section locations changed
+            queryClient.invalidateQueries({
+                queryKey: ["items", "with-details", variables.storeId],
+            });
+            // Invalidate shopping list items since they display section order
+            queryClient.invalidateQueries({
+                queryKey: ["shopping-list-items", variables.storeId],
+            });
         },
         onError: (error: Error) => {
             showError(`Failed to move section: ${error.message}`);
@@ -547,6 +592,10 @@ export function useReorderSections() {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["sections", variables.storeId],
+            });
+            // Invalidate shopping list items since they display items in section order
+            queryClient.invalidateQueries({
+                queryKey: ["shopping-list-items", variables.storeId],
             });
         },
         onError: (error: Error) => {
@@ -901,27 +950,21 @@ export function useToggleFavorite() {
             {
                 queryKey: ["items", "with-details", vars.storeId],
                 updateFn: (old: unknown) => {
-                    const data = old as QueryData<StoreItemWithDetails> | undefined;
-                    if (!data?.data) return data;
-                    return {
-                        ...data,
-                        data: data.data.map((item) =>
-                            item.id === vars.id ? { ...item, isFavorite: !item.isFavorite } : item
-                        ),
-                    };
+                    const items = old as StoreItemWithDetails[] | undefined;
+                    if (!items) return items;
+                    return items.map((item) =>
+                        item.id === vars.id ? { ...item, isFavorite: !item.isFavorite } : item
+                    );
                 },
             },
             {
                 queryKey: ["items", vars.storeId],
                 updateFn: (old: unknown) => {
-                    const data = old as QueryData<StoreItemWithDetails> | undefined;
-                    if (!data?.data) return data;
-                    return {
-                        ...data,
-                        data: data.data.map((item) =>
-                            item.id === vars.id ? { ...item, isFavorite: !item.isFavorite } : item
-                        ),
-                    };
+                    const items = old as StoreItemWithDetails[] | undefined;
+                    if (!items) return items;
+                    return items.map((item) =>
+                        item.id === vars.id ? { ...item, isFavorite: !item.isFavorite } : item
+                    );
                 },
             },
         ],
@@ -1004,20 +1047,17 @@ export function useToggleItemChecked() {
         updateCache: (vars) => ({
             queryKey: ["shopping-list-items", vars.storeId],
             updateFn: (old: unknown) => {
-                const data = old as QueryData<ShoppingListItemWithDetails> | undefined;
-                if (!data?.data) return data;
-                return {
-                    ...data,
-                    data: data.data.map((item) =>
-                        item.id === vars.id
-                            ? {
-                                  ...item,
-                                  isChecked: vars.isChecked,
-                                  checkedAt: vars.isChecked ? new Date().toISOString() : null,
-                              }
-                            : item
-                    ),
-                };
+                const items = old as ShoppingListItemWithDetails[] | undefined;
+                if (!items) return items;
+                return items.map((item) =>
+                    item.id === vars.id
+                        ? {
+                              ...item,
+                              isChecked: vars.isChecked,
+                              checkedAt: vars.isChecked ? new Date().toISOString() : null,
+                          }
+                        : item
+                );
             },
         }),
         onError: (error) => showError(formatErrorMessage(error, "update item")),
@@ -1084,12 +1124,9 @@ export function useClearCheckedItems() {
         updateCache: (vars) => ({
             queryKey: ["shopping-list-items", vars.storeId],
             updateFn: (old: unknown) => {
-                const data = old as QueryData<ShoppingListItemWithDetails> | undefined;
-                if (!data?.data) return data;
-                return {
-                    ...data,
-                    data: data.data.filter((item) => !item.isChecked),
-                };
+                const items = old as ShoppingListItemWithDetails[] | undefined;
+                if (!items) return items;
+                return items.filter((item) => !item.isChecked);
             },
         }),
         onError: (error) => showError(formatErrorMessage(error, "clear checked items")),

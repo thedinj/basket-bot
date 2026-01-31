@@ -310,16 +310,16 @@ echo -e "${BLUE}[7/10] Running database migrations...${NC}"
 echo ""
 
 # Check if migrations exist
-MIGRATIONS_DIR="$BACKEND_DIR/migrations"
+MIGRATIONS_DIR="$BACKEND_DIR/src/db/migrations"
 if [ -d "$MIGRATIONS_DIR" ] && [ -n "$(ls -A $MIGRATIONS_DIR 2>/dev/null)" ]; then
     echo "Found migrations directory, running migrations..."
     cd "$BACKEND_DIR"
     # This assumes a migration script exists - adjust as needed
-    if grep -q '"migrate"' package.json; then
-        pnpm migrate
+    if grep -q '"db:migrate"' package.json; then
+        pnpm db:migrate
         echo -e "${GREEN}✓${NC} Migrations completed"
     else
-        echo -e "${YELLOW}⚠️  Migrations directory exists but no 'migrate' script found in package.json${NC}"
+        echo -e "${YELLOW}⚠️  Migrations directory exists but no 'db:migrate' script found in package.json${NC}"
         echo "If you need to run migrations manually, do so now."
         read -p "Press Enter to continue..."
     fi

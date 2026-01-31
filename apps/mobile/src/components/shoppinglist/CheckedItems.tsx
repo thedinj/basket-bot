@@ -23,7 +23,6 @@ export const CheckedItems = ({
         >
             <GroupedShoppingList
                 items={items}
-                isChecked={true}
                 onClearChecked={onClearChecked}
                 isClearing={isClearing}
             />

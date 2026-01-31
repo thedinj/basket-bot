@@ -15,6 +15,7 @@ import {
 } from "@ionic/react";
 import { closeOutline, swapHorizontalOutline } from "ionicons/icons";
 import { useMemo, useState } from "react";
+import { useAuth } from "../../auth/useAuth";
 import { useMoveItemToStore, useStores, useToggleItemChecked } from "../../db/hooks";
 import { useMidnightUpdate } from "../../hooks/useMidnightUpdate";
 import { useToast } from "../../hooks/useToast";
@@ -42,6 +43,7 @@ const useSnoozeStatus = (snoozedUntil: string | null, currentDate: string) => {
 
 export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => {
     const toast = useToast();
+    const { user } = useAuth();
     const { openEditModal, newlyImportedItemIds } = useShoppingListContext();
     const [showMoveModal, setShowMoveModal] = useState(false);
     const [pendingMove, setPendingMove] = useState<Store | null>(null);
@@ -106,8 +108,13 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
 
     const itemStyle = isChecked
         ? {
-              textDecoration: "line-through",
               opacity: 0.6,
+          }
+        : {};
+
+    const textStyle = isChecked
+        ? {
+              textDecoration: "line-through",
           }
         : {};
 
@@ -128,13 +135,6 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                     cursor: "pointer",
                 }}
                 onClick={handleCheckboxClick}
-                onTouchStart={(e) => {
-                    e.stopPropagation();
-                }}
-                onTouchEnd={(e) => {
-                    e.stopPropagation();
-                    handleCheckboxClick(e);
-                }}
             >
                 <IonCheckbox checked={isChecked} style={{ pointerEvents: "none" }} />
             </div>
@@ -147,6 +147,9 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                         className={isNewlyImported ? "shimmer-text" : ""}
                         style={{
                             color: isSnoozed ? "var(--ion-color-medium)" : undefined,
+                            marginTop: "0",
+                            marginBottom: "0",
+                            ...textStyle,
                         }}
                     >
                         {titleToUse}{" "}
@@ -168,17 +171,45 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                             </span>
                         ) : null}
                     </h2>
-                    {notesToUse && <p style={{ fontStyle: "italic" }}>{notesToUse}</p>}
+
+                    {notesToUse && (
+                        <p
+                            style={{
+                                fontSize: "0.8em",
+                                fontStyle: "italic",
+                                marginTop: "0",
+                                marginBottom: "0",
+                                ...textStyle,
+                            }}
+                        >
+                            {notesToUse}
+                        </p>
+                    )}
                     {isSnoozed && (
                         <p
                             style={{
-                                fontSize: "0.85em",
+                                fontSize: "0.7em",
                                 color: "var(--ion-color-medium)",
-                                marginTop: notesToUse ? "4px" : "0",
                                 fontStyle: "italic",
+                                marginTop: "0",
+                                marginBottom: "0",
+                                ...textStyle,
                             }}
                         >
                             Snoozed until {formattedSnoozeDate}
+                        </p>
+                    )}
+                    {item.isChecked && item.checkedBy !== user?.id && (
+                        <p
+                            style={{
+                                fontSize: "0.7em",
+                                marginTop: "0",
+                                marginBottom: "0",
+                                color: "var(--ion-color-medium)",
+                                textDecoration: "none",
+                            }}
+                        >
+                            Checked by {item.checkedByName}
                         </p>
                     )}
                 </>

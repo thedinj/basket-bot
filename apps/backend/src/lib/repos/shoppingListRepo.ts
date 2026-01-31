@@ -31,7 +31,7 @@ export function getShoppingListItems(storeId: string): ShoppingListItemWithDetai
         .prepare(
             `SELECT
                 sli.id, sli.storeId, sli.storeItemId, sli.qty, sli.unitId, sli.notes,
-                sli.isChecked, sli.checkedAt, sli.isSample, sli.isUnsure, sli.isIdea, sli.snoozedUntil,
+                sli.isChecked, sli.checkedAt, sli.checkedBy, sli.checkedUpdatedAt, sli.isSample, sli.isUnsure, sli.isIdea, sli.snoozedUntil,
                 sli.createdById, sli.updatedById, sli.createdAt, sli.updatedAt,
                 si.name as itemName,
                 qu.abbreviation as unitAbbreviation,
@@ -40,12 +40,14 @@ export function getShoppingListItems(storeId: string): ShoppingListItemWithDetai
                 s.name as sectionName,
                 s.sortOrder as sectionSortOrder,
                 a.name as aisleName,
-                a.sortOrder as aisleSortOrder
+                a.sortOrder as aisleSortOrder,
+                u.name as checkedByName
              FROM ShoppingListItem sli
              LEFT JOIN StoreItem si ON sli.storeItemId = si.id
              LEFT JOIN QuantityUnit qu ON sli.unitId = qu.id
              LEFT JOIN StoreSection s ON si.sectionId = s.id
              LEFT JOIN StoreAisle a ON COALESCE(s.aisleId, si.aisleId) = a.id
+             LEFT JOIN User u ON sli.checkedBy = u.id
              WHERE sli.storeId = ?
              ORDER BY
                 COALESCE(a.sortOrder, 999999) ASC,
@@ -90,7 +92,7 @@ export function upsertShoppingListItem(params: {
         // Update existing
         const existing = db
             .prepare(
-                `SELECT id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, isSample, isUnsure, isIdea, snoozedUntil, createdById, updatedById, createdAt, updatedAt
+                `SELECT id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, checkedBy, checkedUpdatedAt, isSample, isUnsure, isIdea, snoozedUntil, createdById, updatedById, createdAt, updatedAt
                  FROM ShoppingListItem
                  WHERE id = ?`
             )
@@ -100,10 +102,14 @@ export function upsertShoppingListItem(params: {
             throw new Error(`Shopping list item ${params.id} not found`);
         }
 
-        // Compute checkedAt based on state change
+        // Compute checkedAt, checkedBy, and checkedUpdatedAt based on state change
         let checkedAt = existing.checkedAt;
+        let checkedBy = existing.checkedBy;
+        let checkedUpdatedAt = existing.checkedUpdatedAt;
         if (isChecked !== existing.isChecked) {
             checkedAt = isChecked ? now : null;
+            checkedBy = isChecked ? params.userId : null;
+            checkedUpdatedAt = now;
         }
 
         // Clear snoozedUntil if item is checked
@@ -111,7 +117,7 @@ export function upsertShoppingListItem(params: {
 
         db.prepare(
             `UPDATE ShoppingListItem
-             SET storeItemId = ?, qty = ?, unitId = ?, notes = ?, isChecked = ?, checkedAt = ?,
+             SET storeItemId = ?, qty = ?, unitId = ?, notes = ?, isChecked = ?, checkedAt = ?, checkedBy = ?, checkedUpdatedAt = ?,
                  isSample = ?, isUnsure = ?, isIdea = ?, snoozedUntil = ?, updatedById = ?, updatedAt = ?
              WHERE id = ?`
         ).run(
@@ -121,6 +127,8 @@ export function upsertShoppingListItem(params: {
             params.notes,
             boolToInt(isChecked),
             checkedAt,
+            checkedBy,
+            checkedUpdatedAt,
             boolToInt(isSample),
             boolToInt(isUnsure),
             boolToInt(isIdea),
@@ -135,12 +143,14 @@ export function upsertShoppingListItem(params: {
         // Create new
         const id = crypto.randomUUID();
         const checkedAt = isChecked ? now : null;
+        const checkedBy = isChecked ? params.userId : null;
+        const checkedUpdatedAt = isChecked ? now : null;
         // Clear snoozedUntil if item is checked
         const snoozedUntil = isChecked ? null : (params.snoozedUntil ?? null);
 
         db.prepare(
-            `INSERT INTO ShoppingListItem (id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, isSample, isUnsure, isIdea, snoozedUntil, createdById, updatedById, createdAt, updatedAt)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            `INSERT INTO ShoppingListItem (id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, checkedBy, checkedUpdatedAt, isSample, isUnsure, isIdea, snoozedUntil, createdById, updatedById, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).run(
             id,
             params.storeId,
@@ -150,6 +160,8 @@ export function upsertShoppingListItem(params: {
             params.notes ?? null,
             boolToInt(isChecked),
             checkedAt,
+            checkedBy,
+            checkedUpdatedAt,
             boolToInt(isSample),
             boolToInt(isUnsure),
             boolToInt(isIdea),
@@ -167,7 +179,7 @@ export function upsertShoppingListItem(params: {
 export function getShoppingListItemById(id: string): ShoppingListItem | null {
     const row = db
         .prepare(
-            `SELECT id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, isSample, isUnsure, isIdea, snoozedUntil, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, checkedBy, checkedUpdatedAt, isSample, isUnsure, isIdea, snoozedUntil, createdById, updatedById, createdAt, updatedAt
              FROM ShoppingListItem
              WHERE id = ?`
         )
@@ -196,16 +208,16 @@ export function toggleShoppingListItemChecked(
         // When checking: update checked fields AND clear snooze
         db.prepare(
             `UPDATE ShoppingListItem
-             SET isChecked = ?, checkedAt = ?, snoozedUntil = NULL, updatedById = ?, updatedAt = ?
+             SET isChecked = ?, checkedAt = ?, checkedBy = ?, checkedUpdatedAt = ?, snoozedUntil = NULL, updatedById = ?, updatedAt = ?
              WHERE id = ?`
-        ).run(boolToInt(isChecked), now, userId, now, id);
+        ).run(boolToInt(isChecked), now, userId, now, userId, now, id);
     } else {
         // When unchecking: only update checked fields, leave snoozedUntil alone
         db.prepare(
             `UPDATE ShoppingListItem
-             SET isChecked = ?, checkedAt = NULL, updatedById = ?, updatedAt = ?
+             SET isChecked = ?, checkedAt = NULL, checkedBy = NULL, checkedUpdatedAt = ?, updatedById = ?, updatedAt = ?
              WHERE id = ?`
-        ).run(boolToInt(isChecked), userId, now, id);
+        ).run(boolToInt(isChecked), now, userId, now, id);
     }
 }
 

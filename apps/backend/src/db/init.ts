@@ -176,6 +176,8 @@ export function initializeDatabase() {
             "notes" TEXT,
             "isChecked" BOOLEAN,
             "checkedAt" DATETIME,
+            "checkedBy" TEXT,
+            "checkedUpdatedAt" DATETIME,
             "isSample" BOOLEAN,
             "isUnsure" BOOLEAN,
             "isIdea" BOOLEAN,
@@ -187,6 +189,7 @@ export function initializeDatabase() {
             FOREIGN KEY ("storeId") REFERENCES "Store" ("id") ON DELETE CASCADE,
             FOREIGN KEY ("storeItemId") REFERENCES "StoreItem" ("id") ON DELETE CASCADE,
             FOREIGN KEY ("unitId") REFERENCES "QuantityUnit" ("id") ON DELETE SET NULL,
+            FOREIGN KEY ("checkedBy") REFERENCES "User" ("id") ON DELETE SET NULL,
             FOREIGN KEY ("createdById") REFERENCES "User" ("id") ON DELETE RESTRICT,
             FOREIGN KEY ("updatedById") REFERENCES "User" ("id") ON DELETE RESTRICT
         );

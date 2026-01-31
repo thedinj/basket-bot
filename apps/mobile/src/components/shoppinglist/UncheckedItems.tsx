@@ -6,5 +6,5 @@ interface UncheckedItemsProps {
 }
 
 export const UncheckedItems = ({ items }: UncheckedItemsProps) => {
-    return <GroupedShoppingList items={items} isChecked={false} />;
+    return <GroupedShoppingList items={items} />;
 };

@@ -229,6 +229,8 @@ const shoppingContextFields = {
     notes: z.string().nullable(),
     isChecked: z.boolean(),
     checkedAt: z.string().datetime().nullable(),
+    checkedBy: z.string().uuid().nullable(),
+    checkedUpdatedAt: z.string().datetime().nullable(),
     isSample: z.boolean().nullable(),
     isUnsure: z.boolean().nullable(),
     isIdea: z.boolean(),
@@ -254,6 +256,7 @@ export const shoppingListItemWithDetailsSchema = shoppingListItemSchema.extend({
     sectionSortOrder: z.number().int().nullable(),
     aisleName: z.string().nullable(),
     aisleSortOrder: z.number().int().nullable(),
+    checkedByName: z.string().nullable(),
 });
 
 export type ShoppingListItemWithDetails = z.infer<typeof shoppingListItemWithDetailsSchema>;

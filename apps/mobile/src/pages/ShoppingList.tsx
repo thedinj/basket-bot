@@ -35,8 +35,6 @@ import { isCurrentlySnoozed } from "../utils/dateUtils";
 const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     const { openCreateModal } = useShoppingListContext();
     const { showSnoozed, toggleShowSnoozed } = useShowSnoozedItems();
-
-    // Use Suspense pattern - component suspends until data loads
     const { data: items } = useShoppingListItems(storeId);
 
     const clearChecked = useClearCheckedItems();

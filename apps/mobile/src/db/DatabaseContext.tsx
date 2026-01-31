@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import React, { PropsWithChildren, use, useEffect, useRef } from "react";
+import React, { PropsWithChildren, use, useRef } from "react";
 import { DatabaseContext, type DatabaseContextValue } from "./context";
 import { Database, getDatabase } from "./database";
 
@@ -51,16 +51,6 @@ export const DatabaseProvider: React.FC<PropsWithChildren> = ({ children }) => {
     // This will automatically suspend while loading and throw errors to boundary
     const databasePromise = useRef(initializeDatabase());
     const database = use(databasePromise.current);
-
-    // Subscribe to database changes and invalidate all queries
-    useEffect(() => {
-        const unsubscribe = database.onChange(() => {
-            // Invalidate all queries when database changes
-            queryClient.invalidateQueries();
-        });
-
-        return unsubscribe;
-    }, [database]);
 
     const contextValue: DatabaseContextValue = {
         database,

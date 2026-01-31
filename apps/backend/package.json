@@ -11,6 +11,8 @@
         "typecheck": "tsc --noEmit",
         "db:init": "tsx db/seed.ts",
         "db:seed": "tsx db/seed.ts",
+        "db:migrate": "tsx src/db/migrate.ts",
+        "db:migrate:rollback": "tsx src/db/migrate.ts rollback",
         "postinstall": "pnpm rebuild better-sqlite3"
     },
     "dependencies": {

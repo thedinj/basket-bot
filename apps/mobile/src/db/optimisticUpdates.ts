@@ -157,7 +157,19 @@ export const useOptimisticMutation = <TVariables, TData = void, TError = Error>(
 
             // Apply optimistic updates
             cacheUpdates.forEach((update) => {
-                queryClient.setQueryData(update.queryKey, update.updateFn);
+                const oldData = queryClient.getQueryData(update.queryKey);
+                const newData = update.updateFn(oldData);
+                queryClient.setQueryData(update.queryKey, newData);
+            });
+
+            // CRITICAL FIX: Force React Query to notify subscribers immediately
+            // Without this, useSuspenseQuery won't re-render until next tick
+            cacheUpdates.forEach((update) => {
+                // Invalidate without refetching to trigger subscriber notifications
+                queryClient.invalidateQueries({
+                    queryKey: update.queryKey,
+                    refetchType: "none", // Don't refetch, just notify
+                });
             });
 
             // Return context for rollback
@@ -178,16 +190,10 @@ export const useOptimisticMutation = <TVariables, TData = void, TError = Error>(
 
         onSuccess: config.onSuccess,
 
-        onSettled: (_, __, variables) => {
-            // Invalidate all affected queries to sync with server
-            const queryKeys =
-                typeof config.queryKeys === "function"
-                    ? config.queryKeys(variables)
-                    : config.queryKeys;
-
-            queryKeys.forEach((queryKey) => {
-                queryClient.invalidateQueries({ queryKey });
-            });
+        onSettled: () => {
+            // IMPORTANT: Don't invalidate! We already have the optimistic update in cache.
+            // Invalidation triggers a refetch which is slow. Trust the optimistic update.
+            // Only invalidate on error (which happens in onError via rollback).
         },
     };
 

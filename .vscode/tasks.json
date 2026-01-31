@@ -97,6 +97,20 @@
             "problemMatcher": []
         },
         {
+            "label": "Setup: Run Database Migrations",
+            "type": "shell",
+            "command": "pnpm db:migrate",
+            "options": {
+                "cwd": "${workspaceFolder}/apps/backend"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "Setup: Generate Mobile Icons",
             "type": "shell",
             "command": "pnpm capacitor-assets generate",
