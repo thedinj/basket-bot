@@ -3,6 +3,7 @@
  */
 
 import type { StoreAisle, StoreSection } from "@basket-bot/core";
+import pluralize from "pluralize";
 import { useCallback } from "react";
 import { useShield } from "../../components/shield/useShield";
 import { useSecureApiKey } from "../../hooks/useSecureStorage";
@@ -56,6 +57,38 @@ export function useAutoCategorize() {
 
                 if (!fullAisles || fullAisles.length === 0) {
                     throw new Error("No aisles available");
+                }
+
+                // First check if there is an exact match in the aisle or section names (case insensitive, singular)
+                const normalizedItemName = pluralize.singular(itemName.trim().toLowerCase());
+
+                // Check for exact aisle match
+                for (const aisle of fullAisles) {
+                    const normalizedAisleName = pluralize.singular(aisle.name.trim().toLowerCase());
+                    if (normalizedAisleName === normalizedItemName) {
+                        return {
+                            aisleId: aisle.id,
+                            sectionId: null,
+                            aisleName: aisle.name,
+                            sectionName: undefined,
+                        };
+                    }
+                }
+
+                // Check for exact section match
+                for (const section of fullSections) {
+                    const normalizedSectionName = pluralize.singular(
+                        section.name.trim().toLowerCase()
+                    );
+                    if (normalizedSectionName === normalizedItemName) {
+                        const aisle = fullAisles.find((a) => a.id === section.aisleId);
+                        return {
+                            aisleId: section.aisleId,
+                            sectionId: section.id,
+                            aisleName: aisle?.name,
+                            sectionName: section.name,
+                        };
+                    }
                 }
 
                 // Build minimal structure for LLM (name-only, no IDs)
