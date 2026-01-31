@@ -13,6 +13,7 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
+import clsx from "clsx";
 import { closeOutline, swapHorizontalOutline } from "ionicons/icons";
 import { useMemo, useState } from "react";
 import { useAuth } from "../../auth/useAuth";
@@ -107,50 +108,28 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
         handleCheckboxChange(!isChecked);
     };
 
-    const itemStyle = isChecked
-        ? {
-              opacity: 0.6,
-          }
-        : {};
-
-    const textStyle = isChecked
-        ? {
-              textDecoration: "line-through",
-          }
-        : {};
-
     const titleToUse = item.isIdea ? item.notes : item.itemName;
     const notesToUse = item.isIdea ? "" : item.notes;
 
     const { isSnoozed, formattedSnoozeDate } = useSnoozeStatus(item.snoozedUntil);
 
     return (
-        <IonItem style={itemStyle} button={false}>
-            <div
-                slot="start"
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    paddingRight: "8px",
-                    cursor: "pointer",
-                }}
-                onClick={handleCheckboxClick}
-            >
+        <IonItem className={isChecked ? "shopping-list-item--checked" : ""} button={false}>
+            <div slot="start" className="checkbox-container" onClick={handleCheckboxClick}>
                 <IonCheckbox checked={isChecked} style={{ pointerEvents: "none" }} />
             </div>
             <IonLabel
-                style={{ cursor: "pointer" }}
+                className="item-label"
                 onClick={() => openEditModal(item as ShoppingListItemWithDetails)}
             >
                 <>
                     <h2
-                        className={isNewlyImported ? "shimmer-text" : ""}
-                        style={{
-                            color: isSnoozed ? "var(--ion-color-medium)" : undefined,
-                            marginTop: "0",
-                            marginBottom: "0",
-                            ...textStyle,
-                        }}
+                        className={clsx(
+                            "item-title",
+                            isNewlyImported && "shimmer-text",
+                            isChecked && "item-text--checked",
+                            isSnoozed && "item-text--snoozed"
+                        )}
                     >
                         {titleToUse}{" "}
                         {(item.qty !== null || item.unitAbbreviation) && (
@@ -159,58 +138,21 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                                 {item.unitAbbreviation && ` ${item.unitAbbreviation}`})
                             </span>
                         )}{" "}
-                        {item.isSample ? (
-                            <span
-                                style={{
-                                    fontSize: "0.6em",
-                                    textTransform: "uppercase",
-                                    color: "var(--ion-color-medium)",
-                                }}
-                            >
-                                [sample]
-                            </span>
-                        ) : null}
+                        {item.isSample ? <span className="sample-badge">[sample]</span> : null}
                     </h2>
 
                     {notesToUse && (
-                        <p
-                            style={{
-                                fontSize: "0.8em",
-                                fontStyle: "italic",
-                                marginTop: "0",
-                                marginBottom: "0",
-                                ...textStyle,
-                            }}
-                        >
+                        <p className={clsx("item-notes", isChecked && "item-text--checked")}>
                             {notesToUse}
                         </p>
                     )}
                     {isSnoozed && (
-                        <p
-                            style={{
-                                fontSize: "0.7em",
-                                color: "var(--ion-color-medium)",
-                                fontStyle: "italic",
-                                marginTop: "0",
-                                marginBottom: "0",
-                                ...textStyle,
-                            }}
-                        >
+                        <p className={clsx("item-snoozed-info", isChecked && "item-text--checked")}>
                             Snoozed until {formattedSnoozeDate}
                         </p>
                     )}
                     {item.isChecked && item.checkedBy !== user?.id && item.checkedByName && (
-                        <p
-                            style={{
-                                fontSize: "0.7em",
-                                marginTop: "0",
-                                marginBottom: "0",
-                                color: "var(--ion-color-medium)",
-                                textDecoration: "none",
-                            }}
-                        >
-                            Checked by {item.checkedByName}
-                        </p>
+                        <p className="item-checked-by">Checked by {item.checkedByName}</p>
                     )}
                 </>
             </IonLabel>

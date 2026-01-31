@@ -26,3 +26,69 @@
         background-position: -100% 0;
     }
 }
+
+/* Item states */
+.shopping-list-item--checked {
+    opacity: 0.6;
+}
+
+/* Text states */
+.item-text--checked {
+    text-decoration: line-through;
+}
+
+.item-text--snoozed {
+    color: var(--ion-color-medium);
+}
+
+/* Checkbox container */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    padding-right: 8px;
+    cursor: pointer;
+}
+
+/* Label */
+.item-label {
+    cursor: pointer;
+}
+
+/* Item title */
+.item-title {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Item notes */
+.item-notes {
+    font-size: 0.8em;
+    font-style: italic;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Snoozed info */
+.item-snoozed-info {
+    font-size: 0.7em;
+    color: var(--ion-color-medium);
+    font-style: italic;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Checked by info */
+.item-checked-by {
+    font-size: 0.7em;
+    margin-top: 0;
+    margin-bottom: 0;
+    color: var(--ion-color-medium);
+    text-decoration: none;
+}
+
+/* Sample badge */
+.sample-badge {
+    font-size: 0.6em;
+    text-transform: uppercase;
+    color: var(--ion-color-medium);
+}
