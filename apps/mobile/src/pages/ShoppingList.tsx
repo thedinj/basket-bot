@@ -27,6 +27,7 @@ import { UncheckedItems } from "../components/shoppinglist/UncheckedItems";
 import { useShoppingListContext } from "../components/shoppinglist/useShoppingListContext";
 import { useClearCheckedItems, useShoppingListItems } from "../db/hooks";
 import RefreshConfig from "../hooks/refresh/RefreshConfig";
+import { useMidnightUpdate } from "../hooks/useMidnightUpdate";
 import { useOverlayAnimation } from "../hooks/useOverlayAnimation";
 import { useShowSnoozedItems } from "../hooks/useShowSnoozedItems";
 import { LLMFabButton } from "../llm/shared";
@@ -48,10 +49,18 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
 
     const { openBulkImport } = useBulkImportModal(storeId);
 
-    const snoozedItemCount = useMemo(() => {
+    // Check if there are any snoozed items (enable midnight updates only if needed)
+    const hasItemsWithSnoozeUntil = useMemo(
+        () => items?.some((item) => item.snoozedUntil !== null) ?? false,
+        [items]
+    );
+    const currentDate = useMidnightUpdate(hasItemsWithSnoozeUntil);
+
+    const currentlySnoozedItemCount = useMemo(() => {
         if (!items) return 0;
         return items.filter((item) => isCurrentlySnoozed(item.snoozedUntil)).length;
-    }, [items]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [items, currentDate]);
 
     const activeItems = useMemo(() => {
         if (showSnoozed) return items;
@@ -60,7 +69,8 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
             // Show items that are not snoozed or whose snooze has expired
             return !isCurrentlySnoozed(item.snoozedUntil);
         });
-    }, [items, showSnoozed]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [items, showSnoozed, currentDate]);
 
     const [showClearCheckedAlert, setShowClearCheckedAlert] = useState(false);
     const [hasTriggeredClear, setHasTriggeredClear] = useState(false);
@@ -92,13 +102,13 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     }, [clearChecked, storeId, triggerLaser]);
 
     const customActions = useMemo<GlobalActionConfig[]>(() => {
-        if (snoozedItemCount === 0) return [];
+        if (currentlySnoozedItemCount === 0) return [];
 
         return [
             {
                 id: "toggle-snoozed",
                 icon: showSnoozed ? bed : bedOutline,
-                title: `${showSnoozed ? "Hide" : "Show"} snoozed items (${snoozedItemCount})`,
+                title: `${showSnoozed ? "Hide" : "Show"} snoozed items (${currentlySnoozedItemCount})`,
                 ariaLabel: `${showSnoozed ? "Hide" : "Show"} snoozed items`,
                 onClick: toggleShowSnoozed,
                 color: showSnoozed ? "primary" : undefined,
@@ -110,7 +120,7 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
                 },
             },
         ];
-    }, [snoozedItemCount, showSnoozed, toggleShowSnoozed]);
+    }, [currentlySnoozedItemCount, showSnoozed, toggleShowSnoozed]);
 
     return (
         <RefreshConfig queryKeys={[["shopping-list-items", storeId]]}>
@@ -132,9 +142,9 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
                                 Your list is empty. Tap + to add items, if your memory permits.
                                 <br />
                                 <br />
-                                {snoozedItemCount > 0
-                                    ? `(${snoozedItemCount} item${
-                                          snoozedItemCount > 1 ? "s" : ""
+                                {currentlySnoozedItemCount > 0
+                                    ? `(${currentlySnoozedItemCount} item${
+                                          currentlySnoozedItemCount > 1 ? "s" : ""
                                       } snoozed.)`
                                     : ""}
                             </p>

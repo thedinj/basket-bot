@@ -4,12 +4,15 @@ import { useEffect, useState } from "react";
  * Hook that triggers a state update at midnight every day.
  * Useful for recalculating date-dependent logic when the date changes.
  *
- * @returns currentDate - A string representation of the current date that updates at midnight
+ * @param enabled - Whether to schedule midnight updates. If false, returns current date but doesn't set up timers.
+ * @returns currentDate - A string representation of the current date that updates at midnight (when enabled)
  */
-export const useMidnightUpdate = (): string => {
+export const useMidnightUpdate = (enabled: boolean = true): string => {
     const [currentDate, setCurrentDate] = useState(() => new Date().toDateString());
 
     useEffect(() => {
+        if (!enabled) return;
+
         const scheduleNextUpdate = () => {
             const now = new Date();
             const tomorrow = new Date(now);
@@ -27,7 +30,7 @@ export const useMidnightUpdate = (): string => {
 
         const timeout = scheduleNextUpdate();
         return () => clearTimeout(timeout);
-    }, []);
+    }, [enabled]);
 
     return currentDate;
 };

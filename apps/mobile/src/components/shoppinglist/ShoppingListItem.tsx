@@ -30,7 +30,9 @@ interface ShoppingListItemProps {
     isChecked: boolean;
 }
 
-const useSnoozeStatus = (snoozedUntil: string | null, currentDate: string) => {
+const useSnoozeStatus = (snoozedUntil: string | null) => {
+    // Only enable midnight updates if the item is actually snoozed
+    const currentDate = useMidnightUpdate(snoozedUntil !== null);
     return useMemo(() => {
         const snoozed = isCurrentlySnoozed(snoozedUntil);
         return {
@@ -47,7 +49,6 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
     const { openEditModal, newlyImportedItemIds } = useShoppingListContext();
     const [showMoveModal, setShowMoveModal] = useState(false);
     const [pendingMove, setPendingMove] = useState<Store | null>(null);
-    const currentDate = useMidnightUpdate();
     const toggleChecked = useToggleItemChecked();
     const moveItemToStore = useMoveItemToStore();
     const { data: stores } = useStores();
@@ -121,8 +122,7 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
     const titleToUse = item.isIdea ? item.notes : item.itemName;
     const notesToUse = item.isIdea ? "" : item.notes;
 
-    // Check if item is snoozed (recalculates at midnight via currentDate dependency)
-    const { isSnoozed, formattedSnoozeDate } = useSnoozeStatus(item.snoozedUntil, currentDate);
+    const { isSnoozed, formattedSnoozeDate } = useSnoozeStatus(item.snoozedUntil);
 
     return (
         <IonItem style={itemStyle} button={false}>
@@ -199,7 +199,7 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                             Snoozed until {formattedSnoozeDate}
                         </p>
                     )}
-                    {item.isChecked && item.checkedBy !== user?.id && (
+                    {item.isChecked && item.checkedBy !== user?.id && item.checkedByName && (
                         <p
                             style={{
                                 fontSize: "0.7em",
