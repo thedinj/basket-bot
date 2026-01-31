@@ -1,6 +1,6 @@
 import type { LoginUser } from "@basket-bot/core";
 import { Preferences } from "@capacitor/preferences";
-import React, { useEffect, useState, type PropsWithChildren } from "react";
+import React, { useCallback, useEffect, useMemo, useState, type PropsWithChildren } from "react";
 import { apiClient, ApiError } from "../lib/api/client";
 import { KEYS, secureStorage } from "../utils/secureStorage";
 import { AuthContext, type AuthContextValue } from "./AuthContext";
@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
                     setIsInitializing(false);
                 }
             } catch (error) {
-                console.error("Failed to load tokens:", error);
+                console.error("[Auth] ❌ Failed to load tokens:", error);
                 apiClient.markAuthReady();
                 setIsInitializing(false);
             }
@@ -84,7 +84,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
      */
     useEffect(() => {
         if (userError) {
-            console.error("Failed to verify stored tokens:", userError);
+            console.error("[Auth] ❌ Failed to verify stored tokens:", userError);
 
             // Check if this is an ApiError with invalid token status
             const shouldClearTokens =
@@ -112,37 +112,38 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     /**
      * Login with email and password using React Query mutation
      */
-    const login = async (email: string, password: string) => {
-        const response = await loginMutation.mutateAsync({ email, password });
-        setUser(response.user);
-        setShouldFetchUser(true);
-    };
+    const login = useCallback(
+        async (email: string, password: string) => {
+            const response = await loginMutation.mutateAsync({ email, password });
+            setUser(response.user);
+            setShouldFetchUser(true);
+        },
+        [loginMutation]
+    );
 
     /**
      * Register a new user and auto-login using React Query mutations
      */
-    const register = async (
-        email: string,
-        name: string,
-        password: string,
-        invitationCode?: string
-    ) => {
-        try {
-            // Create user account
-            await registerMutation.mutateAsync({ email, name, password, invitationCode });
+    const register = useCallback(
+        async (email: string, name: string, password: string, invitationCode?: string) => {
+            try {
+                // Create user account
+                await registerMutation.mutateAsync({ email, name, password, invitationCode });
 
-            // Auto-login with same credentials
-            await login(email, password);
-        } catch (error) {
-            console.error("Registration failed:", error);
-            throw error;
-        }
-    };
+                // Auto-login with same credentials
+                await login(email, password);
+            } catch (error) {
+                console.error("Registration failed:", error);
+                throw error;
+            }
+        },
+        [registerMutation, login]
+    );
 
     /**
      * Logout and clear all authentication data using React Query mutation
      */
-    const logout = async () => {
+    const logout = useCallback(async () => {
         try {
             const refreshToken = await secureStorage.get(KEYS.REFRESH_TOKEN);
 
@@ -158,17 +159,19 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
             setUser(null);
             setShouldFetchUser(false);
         }
-    };
+    }, [logoutMutation]);
 
-    const value: AuthContextValue = {
-        user,
-        isAuthenticated: !!user,
-        isInitializing,
-        isAuthReady: !isInitializing,
-        login,
-        register,
-        logout,
-    };
+    const value: AuthContextValue = useMemo(() => {
+        return {
+            user,
+            isAuthenticated: !!user,
+            isInitializing,
+            isAuthReady: !isInitializing,
+            login,
+            register,
+            logout,
+        };
+    }, [user, isInitializing, login, register, logout]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

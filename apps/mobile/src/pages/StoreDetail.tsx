@@ -1,3 +1,4 @@
+import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonButton,
@@ -57,6 +58,7 @@ const storeFormSchema = z.object({
 type StoreFormData = z.infer<typeof storeFormSchema>;
 
 const StoreDetail: React.FC = () => {
+    useRenderStormDetector("StoreDetail");
     const { id } = useParams<{ id: string }>();
     const history = useHistory();
     const { user } = useAuth();

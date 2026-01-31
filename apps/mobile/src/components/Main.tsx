@@ -40,7 +40,7 @@ const Main: React.FC = () => {
     useEffect(() => {
         if (isAuthReady && !hasPrefetched.current) {
             hasPrefetched.current = true;
-            prefetchCoreData().catch((error) => {
+            prefetchCoreData().catch((error: unknown) => {
                 // Prefetch errors are non-critical - data will be fetched when actually needed
                 console.warn("[Main] Prefetch failed, will fetch on demand:", error);
             });
@@ -55,16 +55,21 @@ const Main: React.FC = () => {
                         <AppMenu />
                         <NetworkStatusBanner />
                         <IonTabs>
-                            <IonRouterOutlet id="main-content">
-                                <Route exact path="/shoppinglist" component={ShoppingList} />
-                                <Route exact path="/stores" component={StoresList} />
-                                <Route exact path="/invitations" component={StoreInvitations} />
+                            <IonRouterOutlet id="main-content" animated={false}>
+                                {/* Most specific routes first - nested store pages */}
                                 <Route exact path="/stores/:id/items" component={StoreItemsPage} />
                                 <Route
                                     exact
                                     path="/stores/:id/aisles"
                                     component={StoreAislesPage}
                                 />
+
+                                {/* Tab routes */}
+                                <Route exact path="/shoppinglist" component={ShoppingList} />
+                                <Route exact path="/stores" component={StoresList} />
+                                <Route exact path="/invitations" component={StoreInvitations} />
+
+                                {/* Store detail - must come after nested routes */}
                                 <Route exact path="/stores/:id" component={StoreDetail} />
                             </IonRouterOutlet>
                             <IonTabBar slot="bottom">

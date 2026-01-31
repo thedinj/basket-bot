@@ -1,15 +1,12 @@
+import LoadingFallback from "@/components/LoadingFallback";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import React, { PropsWithChildren, use, useRef } from "react";
+import React, { PropsWithChildren, useEffect, useState } from "react";
 import { DatabaseContext, type DatabaseContextValue } from "./context";
 import { Database, getDatabase } from "./database";
 
 /**
- * Initialize database and return promise that resolves to it
+ * Loading fallback component
  */
-function initializeDatabase(): Promise<Database> {
-    return getDatabase();
-}
-
 /**
  * Create QueryClient instance with default options
  * Optimized for mobile with longer cache times and better retry logic
@@ -47,10 +44,37 @@ export const queryClient = new QueryClient({
  * and provides TanStack Query client for data fetching/caching
  */
 export const DatabaseProvider: React.FC<PropsWithChildren> = ({ children }) => {
-    // Use React 19's use() hook to unwrap the database initialization promise
-    // This will automatically suspend while loading and throw errors to boundary
-    const databasePromise = useRef(initializeDatabase());
-    const database = use(databasePromise.current);
+    const [database, setDatabase] = useState<Database | null>(null);
+    const [error, setError] = useState<Error | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        getDatabase()
+            .then((db) => {
+                if (!cancelled) {
+                    setDatabase(db);
+                }
+            })
+            .catch((err) => {
+                if (!cancelled) {
+                    console.error("[DB] ❌ Database initialization failed:", err);
+                    setError(err);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    if (error) {
+        throw error;
+    }
+
+    if (!database) {
+        return <LoadingFallback message="Initializing database..." />;
+    }
 
     const contextValue: DatabaseContextValue = {
         database,

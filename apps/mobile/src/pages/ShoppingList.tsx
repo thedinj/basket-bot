@@ -1,3 +1,4 @@
+import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
 import {
     IonContent,
     IonFab,
@@ -244,6 +245,8 @@ const ShoppingListContent: React.FC = () => {
 };
 
 const ShoppingList: React.FC = () => {
+    useRenderStormDetector("ShoppingList");
+
     return (
         <IonPage>
             <Suspense fallback={<LoadingFallback />}>

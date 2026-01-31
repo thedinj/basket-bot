@@ -1,5 +1,6 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
 import * as storeEntityService from "@/lib/services/storeEntityService";
+import { NotFoundError } from "@basket-bot/core";
 import { NextResponse } from "next/server";
 
 async function handlePost(
@@ -32,6 +33,12 @@ async function handlePost(
             conflictUser: result.conflictUser,
         });
     } catch (error: any) {
+        if (error instanceof NotFoundError) {
+            return NextResponse.json(
+                { code: "ITEM_NOT_FOUND", message: "Shopping list item not found" },
+                { status: 404 }
+            );
+        }
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },

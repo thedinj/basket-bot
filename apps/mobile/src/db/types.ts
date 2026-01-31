@@ -261,7 +261,7 @@ export interface EntityDatabase {
     /**
      * Clear all checked items from a shopping list for a store
      */
-    clearCheckedShoppingListItems(storeId: string): Promise<void>;
+    clearCheckedShoppingListItems(storeId: string): Promise<number>;
 }
 
 /**

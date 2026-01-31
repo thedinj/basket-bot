@@ -1,10 +1,5 @@
-import {
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonIcon,
-    IonPage,
-} from "@ionic/react";
+import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
+import { IonContent, IonFab, IonFabButton, IonIcon, IonPage } from "@ionic/react";
 import { add } from "ionicons/icons";
 import { useParams } from "react-router-dom";
 import { AppHeader } from "../components/layout/AppHeader";
@@ -15,6 +10,7 @@ import { StoreManagementProvider } from "../components/store/StoreManagementProv
 import { useStore } from "../db/hooks";
 
 const StoreAislesPageContent: React.FC<{ storeId: string }> = ({ storeId }) => {
+    useRenderStormDetector("StoreAislesPageContent", { storeId });
     const { data: store } = useStore(storeId);
     const { openCreateModal, mode } = useStoreManagement();
 

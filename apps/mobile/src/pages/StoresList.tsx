@@ -1,3 +1,4 @@
+import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonBadge,
@@ -40,6 +41,7 @@ const storeFormSchema = z.object({
 type StoreFormData = z.infer<typeof storeFormSchema>;
 
 const StoresList: React.FC = () => {
+    useRenderStormDetector("StoresList");
     const { data: stores, isLoading } = useStores();
     const { data: notificationCounts } = useNotificationCounts();
     const createStore = useCreateStore();

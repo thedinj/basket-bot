@@ -1,3 +1,4 @@
+import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
 import { MIN_PASSWORD_LENGTH, passwordSchema } from "@basket-bot/core";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -35,6 +36,7 @@ const registerSchema = z
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 const Register: React.FC = () => {
+    useRenderStormDetector("Register");
     const { register: registerUser } = useAuth();
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);

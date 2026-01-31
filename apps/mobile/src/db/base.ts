@@ -122,7 +122,7 @@ export abstract class BaseDatabase implements Database {
     ): Promise<CheckConflictResult>;
     abstract deleteShoppingListItem(storeId: string, id: string): Promise<void>;
     abstract removeShoppingListItem(storeId: string, id: string): Promise<void>;
-    abstract clearCheckedShoppingListItems(storeId: string): Promise<void>;
+    abstract clearCheckedShoppingListItems(storeId: string): Promise<number>;
 
     // ========== Helper for Store Checking (Abstract) ==========
     /**

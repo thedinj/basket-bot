@@ -1,3 +1,4 @@
+import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
 import {
     IonAlert,
     IonButton,
@@ -34,6 +35,7 @@ import { StoreItemWithDetails } from "../db/types";
 import { useToast } from "../hooks/useToast";
 
 const StoreItemsPage: React.FC = () => {
+    useRenderStormDetector("StoreItemsPage");
     const { id: storeId } = useParams<{ id: string }>();
     const { data: store } = useStore(storeId);
     const { data: items, isLoading } = useStoreItemsWithDetails(storeId);

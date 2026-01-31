@@ -29,7 +29,8 @@ const RefreshConfig: React.FC<PropsWithChildren<RefreshConfigProps>> = ({
         return () => {
             setConfiguredQueryKeys(null);
         };
-    }, [queryKeys, setConfiguredQueryKeys]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [JSON.stringify(queryKeys)]);
 
     return <>{children}</>;
 };

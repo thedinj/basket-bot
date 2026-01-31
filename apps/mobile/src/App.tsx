@@ -43,45 +43,34 @@ import "./theme/variables.scss";
 setupIonicReact();
 
 /**
- * Protected route wrapper - redirects to login if not authenticated
+ * Protected Route - renders Main if authenticated, else redirects to login
  */
-const ProtectedRoute: React.FC<{
-    component: React.ComponentType;
-    path: string;
-    exact?: boolean;
-}> = ({ component: Component, ...rest }) => {
+const ProtectedContent: React.FC = () => {
     const { isAuthenticated } = useAuth();
-
-    return (
-        <Route
-            {...rest}
-            render={() => (isAuthenticated ? <Component /> : <Redirect to="/login" />)}
-        />
-    );
+    return isAuthenticated ? <Main /> : <Redirect to="/login" />;
 };
 
 /**
- * Auth route wrapper - redirects to shopping list if already authenticated
+ * Auth Route - renders Auth if not authenticated, else redirects to shopping list
  */
-const AuthRoute: React.FC<{ component: React.ComponentType; path: string; exact?: boolean }> = ({
-    component: Component,
-    ...rest
-}) => {
+const AuthContent: React.FC = () => {
     const { isAuthenticated } = useAuth();
+    return isAuthenticated ? <Redirect to="/shoppinglist" /> : <Auth />;
+};
 
-    return (
-        <Route
-            {...rest}
-            render={() => (isAuthenticated ? <Redirect to="/shoppinglist" /> : <Component />)}
-        />
-    );
+/**
+ * Root Redirect - redirects to shopping list if authenticated, else login
+ */
+const RootRedirect: React.FC = () => {
+    const { isAuthenticated } = useAuth();
+    return <Redirect to={isAuthenticated ? "/shoppinglist" : "/login"} />;
 };
 
 /**
  * App routing structure
  */
 const AppRoutes: React.FC = () => {
-    const { isAuthenticated, isInitializing } = useAuth();
+    const { isInitializing } = useAuth();
 
     // Wait for auth state to be determined before rendering routes
     if (isInitializing) {
@@ -91,23 +80,14 @@ const AppRoutes: React.FC = () => {
     return (
         <IonRouterOutlet>
             {/* Default redirect */}
-            <Route
-                exact
-                path="/"
-                render={() => <Redirect to={isAuthenticated ? "/shoppinglist" : "/login"} />}
-            />
+            <Route exact path="/" component={RootRedirect} />
 
             {/* Auth routes - redirect to /shoppinglist if authenticated */}
-            <AuthRoute path="/login" component={Auth} />
-            <AuthRoute path="/register" component={Auth} />
+            <Route exact path="/login" component={AuthContent} />
+            <Route exact path="/register" component={AuthContent} />
 
-            {/* Protected routes - redirect to /login if not authenticated */}
-            <ProtectedRoute path="/shoppinglist" component={Main} />
-            <ProtectedRoute path="/stores" component={Main} />
-            <ProtectedRoute path="/invitations" component={Main} />
-
-            {/* Catch-all - redirect unknown routes */}
-            <Route render={() => <Redirect to={isAuthenticated ? "/shoppinglist" : "/login"} />} />
+            {/* Protected routes - all other routes render Main (if authenticated) or redirect to login */}
+            <Route component={ProtectedContent} />
         </IonRouterOutlet>
     );
 };

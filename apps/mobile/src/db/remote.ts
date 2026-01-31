@@ -501,13 +501,17 @@ export class RemoteDatabase extends BaseDatabase {
         );
     }
 
-    async clearCheckedShoppingListItems(storeId: string): Promise<void> {
+    async clearCheckedShoppingListItems(storeId: string): Promise<number> {
         return this.executeMutation(
             "clearCheckedShoppingListItems",
             `/api/stores/${storeId}/shopping-list/clear-checked`,
             "POST",
             async () => {
-                await apiClient.post(`/api/stores/${storeId}/shopping-list/clear-checked`, {});
+                const response = await apiClient.post<{ success: boolean; count: number }>(
+                    `/api/stores/${storeId}/shopping-list/clear-checked`,
+                    {}
+                );
+                return response.count;
             },
             {}
         );

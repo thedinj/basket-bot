@@ -1,3 +1,4 @@
+import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
 import type { StoreInvitationDetail } from "@basket-bot/core";
 import {
     IonAlert,
@@ -24,6 +25,7 @@ import {
 } from "../db/hooks";
 
 const StoreInvitations: React.FC = () => {
+    useRenderStormDetector("StoreInvitations");
     const { data: invitations, isLoading, refetch } = useStoreInvitations();
     const acceptInvitation = useAcceptStoreInvitation();
     const declineInvitation = useDeclineStoreInvitation();

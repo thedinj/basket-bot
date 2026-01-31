@@ -1,3 +1,4 @@
+import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonButton,
@@ -24,6 +25,7 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const Login: React.FC = () => {
+    useRenderStormDetector("Login");
     const { login } = useAuth();
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,6 +45,7 @@ const Login: React.FC = () => {
         try {
             await login(data.email, data.password);
             // Navigation will be handled by AuthRoute in App.tsx
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             // Handle rate limit (429)
             if (err?.response?.status === 429) {

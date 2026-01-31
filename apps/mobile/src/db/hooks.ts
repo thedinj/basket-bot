@@ -1,3 +1,4 @@
+import { ApiError } from "@/lib/api/client";
 import type {
     ShoppingListItem,
     ShoppingListItemInput,
@@ -14,8 +15,9 @@ import {
     useSuspenseQuery as useTanstackSuspenseQuery,
 } from "@tanstack/react-query";
 import pluralize from "pluralize";
-import { use, useCallback } from "react";
+import { use, useCallback, useMemo } from "react";
 import { useShield } from "../components/shield/useShield";
+import { useRefreshContext } from "../hooks/refresh/useRefreshContext";
 import { useToast } from "../hooks/useToast";
 import * as storeSharingApi from "../lib/api/storeSharing";
 import { formatErrorMessage } from "../utils/errorUtils";
@@ -68,7 +70,7 @@ export const usePreloadCoreData = () => {
     const database = useDatabase();
     const queryClient = useQueryClient();
 
-    const prefetchCoreData = async () => {
+    const prefetchCoreData = useCallback(async () => {
         // Check if app version changed and invalidate cache if needed
         await checkAndInvalidateCoreDataCache(queryClient);
 
@@ -108,9 +110,9 @@ export const usePreloadCoreData = () => {
             console.error("[usePreloadCoreData] Failed to prefetch stores:", error);
             // Don't block app initialization on preload failures
         }
-    };
+    }, [database, queryClient]);
 
-    return { prefetchCoreData };
+    return useMemo(() => ({ prefetchCoreData }), [prefetchCoreData]);
 };
 
 // ============================================================================
@@ -938,6 +940,7 @@ export function useDeleteItem() {
 export function useToggleFavorite() {
     const database = useDatabase();
     const { showError } = useToast();
+    const { refresh } = useRefreshContext();
 
     return useOptimisticMutation({
         mutationFn: ({ id, storeId }: { id: string; storeId: string }) =>
@@ -969,7 +972,20 @@ export function useToggleFavorite() {
                 },
             },
         ],
-        onError: (error) => showError(`Failed to update favorite: ${error.message}`),
+        onError: async (error, vars) => {
+            // Gracefully handle 404 - item was deleted
+            if (error instanceof ApiError && error.status === 404) {
+                // Silently refresh to sync with server state
+                await refresh([
+                    ["items", vars.storeId],
+                    ["items", "with-details", vars.storeId],
+                ]);
+                return;
+            }
+            showError(
+                `Failed to update favorite: ${error instanceof Error ? error.message : "Unknown error"}`
+            );
+        },
     });
 }
 
@@ -1042,6 +1058,7 @@ export function useToggleItemChecked() {
     const database = useDatabase();
     const { showError } = useToast();
     const [presentAlert] = useIonAlert();
+    const { refresh } = useRefreshContext();
 
     return useOptimisticMutation({
         mutationFn: (params: { id: string; isChecked: boolean; storeId: string }) =>
@@ -1073,7 +1090,15 @@ export function useToggleItemChecked() {
                 });
             }
         },
-        onError: (error) => showError(formatErrorMessage(error, "update item")),
+        onError: async (error, vars) => {
+            // Gracefully handle 404 - item was already deleted
+            if (error instanceof ApiError && error.status === 404) {
+                // Silently refresh to sync with server state
+                await refresh([["shopping-list-items", vars.storeId]]);
+                return;
+            }
+            showError(formatErrorMessage(error, "update item"));
+        },
     });
 }
 
@@ -1084,6 +1109,7 @@ export function useDeleteShoppingListItem() {
     const database = useDatabase();
     const queryClient = useQueryClient();
     const { showError } = useToast();
+    const { refresh } = useRefreshContext();
 
     return useTanstackMutation({
         mutationFn: (params: { id: string; storeId: string }) =>
@@ -1093,7 +1119,13 @@ export function useDeleteShoppingListItem() {
                 queryKey: ["shopping-list-items", variables.storeId],
             });
         },
-        onError: (error: Error) => {
+        onError: async (error: unknown, variables) => {
+            // Gracefully handle 404 - item was already deleted
+            if (error instanceof ApiError && error.status === 404) {
+                // Silently refresh to sync with server state
+                await refresh([["shopping-list-items", variables.storeId]]);
+                return;
+            }
             showError(formatErrorMessage(error, "delete item"));
         },
     });
@@ -1107,6 +1139,7 @@ export function useRemoveShoppingListItem() {
     const database = useDatabase();
     const queryClient = useQueryClient();
     const { showError } = useToast();
+    const { refresh } = useRefreshContext();
 
     return useTanstackMutation({
         mutationFn: (params: { id: string; storeId: string }) =>
@@ -1116,8 +1149,16 @@ export function useRemoveShoppingListItem() {
                 queryKey: ["shopping-list-items", variables.storeId],
             });
         },
-        onError: (error: Error) => {
-            showError(`Failed to remove item: ${error.message}`);
+        onError: async (error: unknown, variables) => {
+            // Gracefully handle 404 - item was already removed
+            if (error instanceof ApiError && error.status === 404) {
+                // Silently refresh to sync with server state
+                await refresh([["shopping-list-items", variables.storeId]]);
+                return;
+            }
+            showError(
+                `Failed to remove item: ${error instanceof Error ? error.message : "Unknown error"}`
+            );
         },
     });
 }
@@ -1128,7 +1169,7 @@ export function useRemoveShoppingListItem() {
  */
 export function useClearCheckedItems() {
     const database = useDatabase();
-    const { showError } = useToast();
+    const { showError, showSuccess } = useToast();
 
     return useOptimisticMutation({
         mutationFn: ({ storeId }: { storeId: string }) =>
@@ -1142,6 +1183,11 @@ export function useClearCheckedItems() {
                 return items.filter((item) => !item.isChecked);
             },
         }),
+        onSuccess: (count) => {
+            if (count > 0) {
+                showSuccess(`Cleared ${count} ${pluralize("item", count)}`);
+            }
+        },
         onError: (error) => showError(formatErrorMessage(error, "clear checked items")),
     });
 }

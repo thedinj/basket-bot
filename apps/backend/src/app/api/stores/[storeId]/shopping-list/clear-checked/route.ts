@@ -8,8 +8,8 @@ async function handlePost(
 ) {
     try {
         const { storeId } = await params;
-        storeEntityService.clearCheckedShoppingListItems(storeId, req.auth.sub);
-        return NextResponse.json({ success: true });
+        const count = storeEntityService.clearCheckedShoppingListItems(storeId, req.auth.sub);
+        return NextResponse.json({ success: true, count });
     } catch (error: any) {
         if (error.message === "Access denied") {
             return NextResponse.json(

@@ -2,7 +2,11 @@ import { IonIcon, IonText } from "@ionic/react";
 import { LLM_COLOR_ACTIVATED, LLM_ICON_SRC } from "../llm/shared";
 import "./LoadingFallback.css";
 
-const LoadingFallback: React.FC = () => {
+interface LoadingFallbackProps {
+    message?: string;
+}
+
+const LoadingFallback: React.FC<LoadingFallbackProps> = ({ message }) => {
     return (
         <div className="loading-fallback">
             <IonIcon
@@ -11,7 +15,7 @@ const LoadingFallback: React.FC = () => {
                 style={{ fontSize: 80, color: LLM_COLOR_ACTIVATED }}
             />
             <IonText color="medium">
-                <p>Processing... Even you must wait.</p>
+                <p>{message || "Processing... Even you must wait."}</p>
             </IonText>
         </div>
     );
