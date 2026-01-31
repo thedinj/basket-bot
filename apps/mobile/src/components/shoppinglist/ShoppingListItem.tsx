@@ -1,27 +1,15 @@
 import type { ShoppingListItemWithDetails } from "@basket-bot/core";
-import {
-    IonButton,
-    IonButtons,
-    IonCheckbox,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonModal,
-    IonTitle,
-    IonToolbar,
-    useIonAlert,
-} from "@ionic/react";
+import { IonButton, IonCheckbox, IonIcon, IonItem, IonLabel, useIonAlert } from "@ionic/react";
 import clsx from "clsx";
-import { closeOutline, swapHorizontalOutline } from "ionicons/icons";
-import { useMemo, useState } from "react";
+import { swapHorizontalOutline } from "ionicons/icons";
+import { useCallback, useMemo, useState } from "react";
 import { useAuth } from "../../auth/useAuth";
 import { useMoveItemToStore, useStores, useToggleItemChecked } from "../../db/hooks";
 import { useMidnightUpdate } from "../../hooks/useMidnightUpdate";
 import { useToast } from "../../hooks/useToast";
 import { formatSnoozeDate, isCurrentlySnoozed } from "../../utils/dateUtils";
-import { GenericStoreSelector } from "../shared/GenericStoreSelector";
+import type { SelectableItem } from "../shared/ClickableSelectionModal";
+import { ClickableSelectionModal } from "../shared/ClickableSelectionModal";
 import { useShoppingListContext } from "./useShoppingListContext";
 
 import "./ShoppingListItem.css";
@@ -48,57 +36,94 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
     const toast = useToast();
     const { user } = useAuth();
     const { openEditModal, newlyImportedItemIds } = useShoppingListContext();
-    const [showMoveModal, setShowMoveModal] = useState(false);
     const [presentAlert] = useIonAlert();
     const toggleChecked = useToggleItemChecked();
     const moveItemToStore = useMoveItemToStore();
     const { data: stores } = useStores();
+    const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
 
     const isNewlyImported = newlyImportedItemIds.has(item.id);
 
-    const handleStoreSelected = (storeId: string | null) => {
-        if (storeId && stores) {
-            const storeObj = stores.find((s) => s.id === storeId);
-            if (storeObj) {
-                setShowMoveModal(false);
-                presentAlert({
-                    header: "Move to Store",
-                    message: `Move this item to ${storeObj.name}? The item will be removed from the current store and added to the selected store.`,
-                    buttons: [
-                        {
-                            text: "Cancel",
-                            role: "cancel",
-                        },
-                        {
-                            text: "Move",
-                            handler: async () => {
-                                try {
-                                    const result = await moveItemToStore.mutateAsync({
-                                        item: {
-                                            id: item.id,
-                                            itemName: item.itemName,
-                                            notes: item.notes,
-                                            qty: item.qty,
-                                            unitId: item.unitId,
-                                            isIdea: item.isIdea,
-                                        },
-                                        sourceStoreId: item.storeId,
-                                        targetStoreId: storeObj.id,
-                                        targetStoreName: storeObj.name,
-                                    });
-                                    toast.showSuccess(
-                                        `Moved "${result.itemName}" to ${result.targetStoreName}`
-                                    );
-                                } catch (_error) {
-                                    // Error already handled by mutation
-                                }
+    const storeItems: SelectableItem[] = useMemo(() => {
+        if (!stores) return [];
+        return stores
+            .filter((s) => s.id !== item.storeId)
+            .map((store) => ({
+                id: store.id,
+                label: store.name,
+            }));
+    }, [stores, item.storeId]);
+
+    const handleStoreSelected = useCallback(
+        (storeId: string | null) => {
+            if (storeId && stores) {
+                const storeObj = stores.find((s) => s.id === storeId);
+                if (storeObj) {
+                    presentAlert({
+                        header: "Move to Store",
+                        message: `Move this item to ${storeObj.name}? The item will be removed from the current store and added to the selected store.`,
+                        buttons: [
+                            {
+                                text: "Cancel",
+                                role: "cancel",
                             },
-                        },
-                    ],
-                });
+                            {
+                                text: "Move",
+                                handler: async () => {
+                                    try {
+                                        const result = await moveItemToStore.mutateAsync({
+                                            item: {
+                                                id: item.id,
+                                                itemName: item.itemName,
+                                                notes: item.notes,
+                                                qty: item.qty,
+                                                unitId: item.unitId,
+                                                isIdea: item.isIdea,
+                                            },
+                                            sourceStoreId: item.storeId,
+                                            targetStoreId: storeObj.id,
+                                            targetStoreName: storeObj.name,
+                                        });
+                                        toast.showSuccess(
+                                            `Moved "${result.itemName}" to ${result.targetStoreName}`
+                                        );
+                                    } catch (_error) {
+                                        // Error already handled by mutation
+                                    }
+                                },
+                            },
+                        ],
+                    });
+                }
             }
+        },
+        [
+            item.id,
+            item.isIdea,
+            item.itemName,
+            item.notes,
+            item.qty,
+            item.storeId,
+            item.unitId,
+            moveItemToStore,
+            presentAlert,
+            stores,
+            toast,
+        ]
+    );
+
+    const handleMoveIconClick = useCallback(() => {
+        if (!stores || stores.length <= 1) return;
+
+        const otherStores = stores.filter((s) => s.id !== item.storeId);
+
+        // Special case: if exactly one other store, skip modal and go straight to confirmation
+        if (otherStores.length === 1) {
+            handleStoreSelected(otherStores[0].id);
+        } else {
+            setIsStoreModalOpen(true);
         }
-    };
+    }, [handleStoreSelected, item.storeId, stores]);
 
     const handleCheckboxChange = (checked: boolean) => {
         toggleChecked.mutate({
@@ -164,38 +189,21 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
             </IonLabel>
 
             {stores && stores.length > 1 && (
-                <IonButton slot="end" fill="clear" onClick={() => setShowMoveModal(true)}>
+                <IonButton slot="end" fill="clear" onClick={handleMoveIconClick}>
                     <IonIcon icon={swapHorizontalOutline} color="medium" />
                 </IonButton>
             )}
 
-            {/* Move to Store Modal */}
-            <IonModal isOpen={showMoveModal} onDidDismiss={() => setShowMoveModal(false)}>
-                <IonHeader>
-                    <IonToolbar>
-                        <IonTitle>Move to Store</IonTitle>
-                        <IonButtons slot="end">
-                            <IonButton
-                                onClick={() => {
-                                    setShowMoveModal(false);
-                                }}
-                            >
-                                <IonIcon icon={closeOutline} />
-                            </IonButton>
-                        </IonButtons>
-                    </IonToolbar>
-                </IonHeader>
-                <IonContent>
-                    <GenericStoreSelector
-                        selectedStoreId={null}
-                        onStoreSelect={handleStoreSelected}
-                        modalTitle="Select Destination Store"
-                        placeholderText="Select destination store"
-                        excludeStoreIds={[item.storeId]}
-                        allowClear={false}
-                    />
-                </IonContent>
-            </IonModal>
+            <ClickableSelectionModal
+                items={storeItems}
+                value={undefined}
+                onSelect={handleStoreSelected}
+                isOpen={isStoreModalOpen}
+                onDismiss={() => setIsStoreModalOpen(false)}
+                title="Move to Store"
+                showSearch={false}
+                allowClear={false}
+            />
         </IonItem>
     );
 };

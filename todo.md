@@ -9,7 +9,6 @@ background job to clean up the database:
 
 eslint.config.js for the monorepo?
 ionic.config.json?
-remove redundant click when moving store items
 Move all delete buttons up to header
 More transition CSS effects
 "next item" hey Google integration
