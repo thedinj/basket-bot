@@ -153,6 +153,15 @@ export function upsertShoppingListItem(params: {
         // Clear snoozedUntil if item is checked
         const snoozedUntil = isChecked ? null : (params.snoozedUntil ?? null);
 
+        // Increment usage count for the store item if provided
+        if (params.storeItemId) {
+            db.prepare(
+                `UPDATE StoreItem
+                 SET usageCount = usageCount + 1, lastUsedAt = ?, updatedById = ?, updatedAt = ?
+                 WHERE id = ?`
+            ).run(now, params.userId, now, params.storeItemId);
+        }
+
         db.prepare(
             `INSERT INTO ShoppingListItem (id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, checkedBy, checkedUpdatedAt, isSample, isUnsure, isIdea, snoozedUntil, createdById, updatedById, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`

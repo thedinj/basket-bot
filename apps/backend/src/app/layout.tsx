@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { ColorSchemeScript } from "@mantine/core";
+import "@mantine/core/styles.css";
 import "./globals.scss";
 
 export const metadata: Metadata = {
@@ -13,7 +15,10 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en">
-            <body>{children}</body>
+            <head>
+                <ColorSchemeScript defaultColorScheme="auto" />
+            </head>
+            <body suppressHydrationWarning>{children}</body>
         </html>
     );
 }

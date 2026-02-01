@@ -27,6 +27,16 @@ export function getAppSetting(key: string): AppSetting | null {
     return row ?? null;
 }
 
+export function getAllAppSettings(): AppSetting[] {
+    return db
+        .prepare(
+            `SELECT key, value, createdAt, updatedAt
+             FROM AppSetting
+             ORDER BY key ASC`
+        )
+        .all() as AppSetting[];
+}
+
 export function setAppSetting(key: string, value: string): void {
     const now = new Date().toISOString();
     const existing = getAppSetting(key);

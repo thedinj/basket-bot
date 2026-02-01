@@ -102,3 +102,25 @@ export async function changeUserPassword(
 
     return true;
 }
+
+/**
+ * Get all users (admin only)
+ */
+export function getAllUsers(): User[] {
+    const rows = db
+        .prepare(
+            `SELECT id, email, name, scopes, createdAt, updatedAt
+             FROM User
+             ORDER BY createdAt DESC`
+        )
+        .all() as any[];
+
+    return rows.map((row) => ({
+        id: row.id,
+        email: row.email,
+        name: row.name,
+        scopes: row.scopes ? row.scopes.split(",").filter(Boolean) : [],
+        createdAt: new Date(row.createdAt),
+        updatedAt: new Date(row.updatedAt),
+    }));
+}
