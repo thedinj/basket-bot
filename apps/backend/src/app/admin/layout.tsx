@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { MantineProvider } from "@mantine/core";
 import AdminSessionProvider from "@/lib/admin/AdminSessionProvider";
 import { useAdminSession } from "@/lib/admin/useAdminSession";
+import { MantineProvider } from "@mantine/core";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-const ProtectedAdminContent: React.FC<{ children: React.ReactNode }> = ({
-    children,
-}) => {
+const ProtectedAdminContent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user, isLoading } = useAdminSession();
     const router = useRouter();
     const pathname = usePathname();

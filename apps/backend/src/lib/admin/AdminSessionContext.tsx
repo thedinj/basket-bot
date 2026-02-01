@@ -11,6 +11,4 @@ export interface AdminSessionContextValue {
     tryRefreshToken: () => Promise<boolean>;
 }
 
-export const AdminSessionContext = createContext<
-    AdminSessionContextValue | undefined
->(undefined);
+export const AdminSessionContext = createContext<AdminSessionContextValue | undefined>(undefined);

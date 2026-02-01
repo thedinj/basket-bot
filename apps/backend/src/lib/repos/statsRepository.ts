@@ -21,15 +21,11 @@ export const statsRepository = {
             .get()!.count;
 
         const storeItemCount = db
-            .prepare<[], { count: number }>(
-                `SELECT COUNT(*) as count FROM "StoreItem"`
-            )
+            .prepare<[], { count: number }>(`SELECT COUNT(*) as count FROM "StoreItem"`)
             .get()!.count;
 
         const shoppingListItemCount = db
-            .prepare<[], { count: number }>(
-                `SELECT COUNT(*) as count FROM "ShoppingListItem"`
-            )
+            .prepare<[], { count: number }>(`SELECT COUNT(*) as count FROM "ShoppingListItem"`)
             .get()!.count;
 
         return {

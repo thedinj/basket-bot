@@ -1,6 +1,6 @@
-import type { Metadata } from "next";
 import { ColorSchemeScript } from "@mantine/core";
 import "@mantine/core/styles.css";
+import type { Metadata } from "next";
 import "./globals.scss";
 
 export const metadata: Metadata = {

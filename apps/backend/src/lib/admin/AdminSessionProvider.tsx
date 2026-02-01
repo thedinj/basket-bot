@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
 import type { User } from "@basket-bot/core";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminSessionContext } from "./AdminSessionContext";
 
 interface AdminSessionProviderProps {
@@ -12,9 +12,7 @@ const STORAGE_ACCESS_TOKEN_KEY = "admin_access_token";
 const STORAGE_REFRESH_TOKEN_KEY = "admin_refresh_token";
 const STORAGE_USER_KEY = "admin_user";
 
-const AdminSessionProvider: React.FC<AdminSessionProviderProps> = ({
-    children,
-}) => {
+const AdminSessionProvider: React.FC<AdminSessionProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [refreshToken, setRefreshToken] = useState<string | null>(null);
@@ -41,32 +39,35 @@ const AdminSessionProvider: React.FC<AdminSessionProviderProps> = ({
     }, []);
 
     // Refresh access token using refresh token
-    const refreshAccessToken = useCallback(async (currentRefreshToken: string): Promise<boolean> => {
-        try {
-            const response = await fetch("/api/auth/refresh", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ refreshToken: currentRefreshToken }),
-            });
+    const refreshAccessToken = useCallback(
+        async (currentRefreshToken: string): Promise<boolean> => {
+            try {
+                const response = await fetch("/api/auth/refresh", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ refreshToken: currentRefreshToken }),
+                });
 
-            if (!response.ok) {
+                if (!response.ok) {
+                    return false;
+                }
+
+                const data = await response.json();
+
+                // Verify admin scope
+                if (!data.user.scopes || !data.user.scopes.includes("admin")) {
+                    return false;
+                }
+
+                persistSession(data.accessToken, data.refreshToken, data.user);
+                return true;
+            } catch (error) {
+                console.error("Token refresh failed:", error);
                 return false;
             }
-
-            const data = await response.json();
-
-            // Verify admin scope
-            if (!data.user.scopes || !data.user.scopes.includes("admin")) {
-                return false;
-            }
-
-            persistSession(data.accessToken, data.refreshToken, data.user);
-            return true;
-        } catch (error) {
-            console.error("Token refresh failed:", error);
-            return false;
-        }
-    }, [persistSession]);
+        },
+        [persistSession]
+    );
 
     // Check for existing session on mount
     useEffect(() => {
@@ -97,27 +98,30 @@ const AdminSessionProvider: React.FC<AdminSessionProviderProps> = ({
         checkSession();
     }, [refreshAccessToken, clearSession]);
 
-    const login = useCallback(async (email: string, password: string) => {
-        const response = await fetch("/api/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
-        });
+    const login = useCallback(
+        async (email: string, password: string) => {
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            });
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || "Login failed");
-        }
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || "Login failed");
+            }
 
-        const data = await response.json();
+            const data = await response.json();
 
-        // Verify admin scope
-        if (!data.user.scopes || !data.user.scopes.includes("admin")) {
-            throw new Error("Access denied: admin privileges required");
-        }
+            // Verify admin scope
+            if (!data.user.scopes || !data.user.scopes.includes("admin")) {
+                throw new Error("Access denied: admin privileges required");
+            }
 
-        persistSession(data.accessToken, data.refreshToken, data.user);
-    }, [persistSession]);
+            persistSession(data.accessToken, data.refreshToken, data.user);
+        },
+        [persistSession]
+    );
 
     const logout = useCallback(async () => {
         try {
@@ -150,11 +154,7 @@ const AdminSessionProvider: React.FC<AdminSessionProviderProps> = ({
         [user, accessToken, refreshToken, isLoading, login, logout, tryRefreshToken]
     );
 
-    return (
-        <AdminSessionContext.Provider value={value}>
-            {children}
-        </AdminSessionContext.Provider>
-    );
+    return <AdminSessionContext.Provider value={value}>{children}</AdminSessionContext.Provider>;
 };
 
 export default AdminSessionProvider;

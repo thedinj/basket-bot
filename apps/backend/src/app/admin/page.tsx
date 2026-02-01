@@ -1,23 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import {
-    Container,
-    Title,
-    Paper,
-    Grid,
-    Text,
-    Button,
-    Stack,
-    Group,
-    Table,
-    TextInput,
-    LoadingOverlay,
-    Anchor,
-} from "@mantine/core";
 import { useAdminSession } from "@/lib/admin/useAdminSession";
 import type { AppSetting } from "@basket-bot/core";
+import {
+    Button,
+    Container,
+    Grid,
+    Group,
+    LoadingOverlay,
+    Paper,
+    Table,
+    Text,
+    TextInput,
+    Title,
+} from "@mantine/core";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface SystemStats {
     userCount: number;
@@ -40,7 +38,7 @@ const AdminDashboardPage: React.FC = () => {
 
             try {
                 const headers = {
-                    "Authorization": `Bearer ${accessToken}`,
+                    Authorization: `Bearer ${accessToken}`,
                 };
 
                 const [statsRes, settingsRes] = await Promise.all([
@@ -97,16 +95,14 @@ const AdminDashboardPage: React.FC = () => {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${accessToken}`,
+                    Authorization: `Bearer ${accessToken}`,
                 },
                 body: JSON.stringify({ value: editValue }),
             });
 
             if (res.ok) {
                 const data = await res.json();
-                setSettings((prev) =>
-                    prev.map((s) => (s.key === key ? data.setting : s))
-                );
+                setSettings((prev) => prev.map((s) => (s.key === key ? data.setting : s)));
                 setEditingKey(null);
                 setEditValue("");
             }
@@ -221,9 +217,7 @@ const AdminDashboardPage: React.FC = () => {
                                     {editingKey === setting.key ? (
                                         <TextInput
                                             value={editValue}
-                                            onChange={(e) =>
-                                                setEditValue(e.target.value)
-                                            }
+                                            onChange={(e) => setEditValue(e.target.value)}
                                         />
                                     ) : (
                                         <Text>{setting.value}</Text>
@@ -231,9 +225,7 @@ const AdminDashboardPage: React.FC = () => {
                                 </Table.Td>
                                 <Table.Td>
                                     <Text size="sm" c="dimmed">
-                                        {new Date(
-                                            setting.updatedAt
-                                        ).toLocaleString()}
+                                        {new Date(setting.updatedAt).toLocaleString()}
                                     </Text>
                                 </Table.Td>
                                 <Table.Td>
@@ -241,9 +233,7 @@ const AdminDashboardPage: React.FC = () => {
                                         <Group gap="xs">
                                             <Button
                                                 size="xs"
-                                                onClick={() =>
-                                                    handleEditSave(setting.key)
-                                                }
+                                                onClick={() => handleEditSave(setting.key)}
                                             >
                                                 Save
                                             </Button>
@@ -260,10 +250,7 @@ const AdminDashboardPage: React.FC = () => {
                                             size="xs"
                                             variant="light"
                                             onClick={() =>
-                                                handleEditStart(
-                                                    setting.key,
-                                                    setting.value
-                                                )
+                                                handleEditStart(setting.key, setting.value)
                                             }
                                         >
                                             Edit

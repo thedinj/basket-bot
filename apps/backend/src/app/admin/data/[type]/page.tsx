@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { LoadingOverlay, Container } from "@mantine/core";
 import { useAdminSession } from "@/lib/admin/useAdminSession";
+import { Container, LoadingOverlay } from "@mantine/core";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import DataTable from "../../components/DataTable";
 
 const DataPage: React.FC = () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Table, Text, Badge, Container, Title, Button, Paper } from "@mantine/core";
+import { Badge, Button, Container, Paper, Table, Text, Title } from "@mantine/core";
 import Link from "next/link";
 
 interface DataTableProps {
@@ -10,15 +10,19 @@ interface DataTableProps {
 }
 
 const typeLabels: Record<string, string> = {
-    "users": "Users",
-    "stores": "Stores",
+    users: "Users",
+    stores: "Stores",
     "store-items": "Store Items",
     "shopping-list-items": "Shopping List Items",
 };
 
 const formatValue = (key: string, value: any): React.ReactNode => {
     if (value === null || value === undefined) {
-        return <Text c="dimmed" size="sm">—</Text>;
+        return (
+            <Text c="dimmed" size="sm">
+                —
+            </Text>
+        );
     }
 
     // Boolean fields (check column name for is* prefix or isChecked)
@@ -42,7 +46,12 @@ const formatValue = (key: string, value: any): React.ReactNode => {
 
     // Arrays (scopes)
     if (Array.isArray(value)) {
-        if (value.length === 0) return <Text c="dimmed" size="sm">None</Text>;
+        if (value.length === 0)
+            return (
+                <Text c="dimmed" size="sm">
+                    None
+                </Text>
+            );
         return (
             <>
                 {value.map((item, idx) => (
@@ -104,9 +113,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, columns, type }) => {
                         {data.map((row, idx) => (
                             <Table.Tr key={row.id || idx}>
                                 {columns.map((col) => (
-                                    <Table.Td key={col}>
-                                        {formatValue(col, row[col])}
-                                    </Table.Td>
+                                    <Table.Td key={col}>{formatValue(col, row[col])}</Table.Td>
                                 ))}
                             </Table.Tr>
                         ))}
