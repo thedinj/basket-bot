@@ -5,6 +5,7 @@ import {
     IonButtons,
     IonContent,
     IonHeader,
+    IonIcon,
     IonInput,
     IonItem,
     IonLabel,
@@ -14,6 +15,7 @@ import {
     IonToolbar,
     useIonAlert,
 } from "@ionic/react";
+import { closeOutline, trash } from "ionicons/icons";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useCreateItem, useDeleteItem, useUpdateItem } from "../../db/hooks";
@@ -115,8 +117,40 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
                 <IonToolbar>
                     <IonTitle>{editingItem ? "Edit Item" : "Add Item"}</IonTitle>
                     <IonButtons slot="end">
+                        {editingItem && (
+                            <IonButton
+                                onClick={() => {
+                                    presentAlert({
+                                        header: "Delete Item",
+                                        message: `Are you sure you want to delete "${editingItem?.name}"? This will remove it from all shopping lists.`,
+                                        buttons: [
+                                            {
+                                                text: "Cancel",
+                                                role: "cancel",
+                                            },
+                                            {
+                                                text: "Delete",
+                                                role: "destructive",
+                                                handler: async () => {
+                                                    if (editingItem) {
+                                                        await deleteItem.mutateAsync({
+                                                            id: editingItem.id,
+                                                            storeId,
+                                                        });
+                                                        onClose();
+                                                    }
+                                                },
+                                            },
+                                        ],
+                                    });
+                                }}
+                                disabled={isPending}
+                            >
+                                <IonIcon slot="icon-only" icon={trash} />
+                            </IonButton>
+                        )}
                         <IonButton onClick={handleClose} disabled={isPending}>
-                            Cancel
+                            <IonIcon icon={closeOutline} />
                         </IonButton>
                     </IonButtons>
                 </IonToolbar>
@@ -174,43 +208,6 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
                         >
                             {editingItem ? "Update" : "Add"} Item
                         </IonButton>
-
-                        {editingItem && (
-                            <IonButton
-                                expand="block"
-                                color="danger"
-                                fill="outline"
-                                onClick={() => {
-                                    presentAlert({
-                                        header: "Delete Item",
-                                        message: `Are you sure you want to delete "${editingItem?.name}"? This will remove it from all shopping lists.`,
-                                        buttons: [
-                                            {
-                                                text: "Cancel",
-                                                role: "cancel",
-                                            },
-                                            {
-                                                text: "Delete",
-                                                role: "destructive",
-                                                handler: async () => {
-                                                    if (editingItem) {
-                                                        await deleteItem.mutateAsync({
-                                                            id: editingItem.id,
-                                                            storeId,
-                                                        });
-                                                        onClose();
-                                                    }
-                                                },
-                                            },
-                                        ],
-                                    });
-                                }}
-                                disabled={isPending}
-                                style={{ marginTop: "10px" }}
-                            >
-                                Delete Item
-                            </IonButton>
-                        )}
                     </form>
                 </StoreItemEditorProvider>
             </IonContent>

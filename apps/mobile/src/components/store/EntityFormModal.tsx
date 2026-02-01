@@ -14,7 +14,7 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { closeOutline } from "ionicons/icons";
+import { closeOutline, trash } from "ionicons/icons";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -189,6 +189,14 @@ export const EntityFormModal = ({ storeId, aisles }: EntityFormModalProps) => {
                 <IonToolbar>
                     <IonTitle>{getModalTitle()}</IonTitle>
                     <IonButtons slot="end">
+                        {editingEntity && (
+                            <IonButton
+                                onClick={() => setShowDeleteAlert(true)}
+                                disabled={deleteAisle.isPending || deleteSection.isPending}
+                            >
+                                <IonIcon slot="icon-only" icon={trash} />
+                            </IonButton>
+                        )}
                         <IonButton onClick={closeModal}>
                             <IonIcon icon={closeOutline} />
                         </IonButton>
@@ -304,19 +312,6 @@ export const EntityFormModal = ({ storeId, aisles }: EntityFormModalProps) => {
                     >
                         {editingEntity ? "Update" : "Create"}
                     </IonButton>
-
-                    {editingEntity && (
-                        <IonButton
-                            expand="block"
-                            color="danger"
-                            fill="outline"
-                            onClick={() => setShowDeleteAlert(true)}
-                            disabled={deleteAisle.isPending || deleteSection.isPending}
-                            style={{ marginTop: "10px" }}
-                        >
-                            Delete {editingEntity.type === "aisle" ? "Aisle" : "Section"}
-                        </IonButton>
-                    )}
                 </form>
 
                 <IonAlert

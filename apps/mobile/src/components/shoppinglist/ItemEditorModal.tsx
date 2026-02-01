@@ -15,7 +15,7 @@ import {
     IonToolbar,
 } from "@ionic/react";
 import { UseMutationResult } from "@tanstack/react-query";
-import { bulbOutline, cartOutline, closeOutline } from "ionicons/icons";
+import { bulbOutline, cartOutline, closeOutline, trash } from "ionicons/icons";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -204,6 +204,14 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                               : "Add Item"}
                     </IonTitle>
                     <IonButtons slot="end">
+                        {editingItem && (
+                            <IonButton
+                                onClick={() => setShowDeleteAlert(true)}
+                                disabled={deleteItem.isPending}
+                            >
+                                <IonIcon slot="icon-only" icon={trash} />
+                            </IonButton>
+                        )}
                         <IonButton onClick={closeItemModal}>
                             <IonIcon icon={closeOutline} />
                         </IonButton>
@@ -280,19 +288,6 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                             editingItem={editingItem}
                             isIdea={!!isIdea}
                         />
-
-                        {editingItem && (
-                            <IonButton
-                                expand="block"
-                                color="danger"
-                                fill="outline"
-                                onClick={() => setShowDeleteAlert(true)}
-                                disabled={deleteItem.isPending}
-                                style={{ marginTop: "10px" }}
-                            >
-                                Delete {isIdea ? "Idea" : "Item"}
-                            </IonButton>
-                        )}
                     </form>
                 </ItemEditorProvider>
 

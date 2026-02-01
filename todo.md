@@ -9,9 +9,7 @@ background job to clean up the database:
 
 eslint.config.js for the monorepo?
 ionic.config.json?
-Move all delete buttons up to header
 More transition CSS effects
-"next item" hey Google integration
-Chunk bulk item assignments so it isn't overloaded
 
+"next item" hey Google integration
 RECIPES/MEAL PLANNING TAB

@@ -218,6 +218,12 @@ const StoreDetail: React.FC = () => {
                 backButtonHref="/stores"
             >
                 <IonButtons slot="end">
+                    <IonButton
+                        onClick={handleDeleteStore}
+                        disabled={isLoading || deleteStore.isPending}
+                    >
+                        <IonIcon slot="icon-only" icon={trash} />
+                    </IonButton>
                     <IonButton onClick={openRenameModal} disabled={isLoading}>
                         <IonIcon slot="icon-only" icon={create} />
                     </IonButton>
@@ -261,19 +267,6 @@ const StoreDetail: React.FC = () => {
                         </IonLabel>
                     </IonItem>
                 </IonList>
-
-                <div className="ion-padding">
-                    <IonButton
-                        expand="block"
-                        color="danger"
-                        fill="outline"
-                        onClick={handleDeleteStore}
-                        disabled={isLoading || deleteStore.isPending}
-                    >
-                        <IonIcon slot="start" icon={trash} />
-                        Delete Store
-                    </IonButton>
-                </div>
 
                 {/* Rename Store Modal */}
                 <IonModal isOpen={isRenameModalOpen} onDidDismiss={closeRenameModal}>
