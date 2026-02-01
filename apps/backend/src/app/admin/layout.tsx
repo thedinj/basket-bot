@@ -36,7 +36,26 @@ export default function AdminLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <MantineProvider defaultColorScheme="auto">
+        <MantineProvider
+            defaultColorScheme="auto"
+            theme={{
+                primaryColor: "violet",
+                colors: {
+                    violet: [
+                        "#f5f3ff",
+                        "#ede9fe",
+                        "#ddd6fe",
+                        "#c4b5fd",
+                        "#9f7aea",
+                        "#6b46c1",
+                        "#6b46c1",
+                        "#5b3ba1",
+                        "#4c3181",
+                        "#3d2661",
+                    ],
+                },
+            }}
+        >
             <AdminSessionProvider>
                 <ProtectedAdminContent>{children}</ProtectedAdminContent>
             </AdminSessionProvider>
