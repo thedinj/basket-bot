@@ -40,7 +40,7 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
     const toggleChecked = useToggleItemChecked();
     const moveItemToStore = useMoveItemToStore();
     const { data: stores } = useStores();
-    const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
+    const [isMoveToStoreModalOpen, setIsMoveToStoreModalOpen] = useState(false);
 
     const isNewlyImported = newlyImportedItemIds.has(item.id);
 
@@ -54,7 +54,7 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
             }));
     }, [stores, item.storeId]);
 
-    const handleStoreSelected = useCallback(
+    const handleStoreSelectedForMove = useCallback(
         (storeId: string | null) => {
             if (storeId && stores) {
                 const storeObj = stores.find((s) => s.id === storeId);
@@ -119,11 +119,11 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
 
         // Special case: if exactly one other store, skip modal and go straight to confirmation
         if (otherStores.length === 1) {
-            handleStoreSelected(otherStores[0].id);
+            handleStoreSelectedForMove(otherStores[0].id);
         } else {
-            setIsStoreModalOpen(true);
+            setIsMoveToStoreModalOpen(true);
         }
-    }, [handleStoreSelected, item.storeId, stores]);
+    }, [handleStoreSelectedForMove, item.storeId, stores]);
 
     const handleCheckboxChange = (checked: boolean) => {
         toggleChecked.mutate({
@@ -197,9 +197,9 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
             <ClickableSelectionModal
                 items={storeItems}
                 value={undefined}
-                onSelect={handleStoreSelected}
-                isOpen={isStoreModalOpen}
-                onDismiss={() => setIsStoreModalOpen(false)}
+                onSelect={handleStoreSelectedForMove}
+                isOpen={isMoveToStoreModalOpen}
+                onDismiss={() => setIsMoveToStoreModalOpen(false)}
                 title="Move to Store"
                 showSearch={false}
                 allowClear={false}

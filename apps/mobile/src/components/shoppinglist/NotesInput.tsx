@@ -12,17 +12,12 @@ export const NotesInput = () => {
             control={control}
             render={({ field }) => (
                 <IonItem>
-                    <IonLabel position="stacked">
-                        {isIdea ? "Idea" : "Notes"}
-                    </IonLabel>
+                    <IonLabel position="stacked">{isIdea ? "Idea" : "Notes"}</IonLabel>
                     <IonInput
                         value={field.value || ""}
-                        placeholder={
-                            isIdea ? "Enter your idea" : "Enter any notes"
-                        }
-                        onIonInput={(e) =>
-                            field.onChange(e.detail.value || null)
-                        }
+                        autocapitalize="sentences"
+                        placeholder={isIdea ? "Enter your idea" : "Enter any notes"}
+                        onIonInput={(e) => field.onChange(e.detail.value || null)}
                     />
                 </IonItem>
             )}
