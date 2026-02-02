@@ -16,6 +16,7 @@ import { z } from "zod";
 import { useAuth } from "../auth/useAuth";
 import { FormPasswordInput } from "../components/form/FormPasswordInput";
 import { FormTextInput } from "../components/form/FormTextInput";
+import "./AuthPages.scss";
 
 const loginSchema = z.object({
     email: z.string().email("Please enter a valid email"),
@@ -69,16 +70,9 @@ const Login: React.FC = () => {
 
     return (
         <IonPage>
-            <IonContent className="ion-padding">
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        minHeight: "100%",
-                    }}
-                >
-                    <IonCard style={{ maxWidth: "400px", width: "100%" }}>
+            <IonContent className="ion-padding auth-page-content">
+                <div className="auth-card-container">
+                    <IonCard className="auth-card">
                         <IonCardHeader>
                             <IonCardTitle>Sign In</IonCardTitle>
                         </IonCardHeader>

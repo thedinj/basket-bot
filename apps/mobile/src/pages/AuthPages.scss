@@ -1,0 +1,16 @@
+.auth-page-content {
+    --background: url(/img/splash.png) no-repeat center center / cover;
+}
+
+.auth-card-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100%;
+}
+
+.auth-card {
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.85);
+}

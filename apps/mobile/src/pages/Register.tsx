@@ -19,6 +19,7 @@ import { useAuth } from "../auth/useAuth";
 import { FormPasswordInput } from "../components/form/FormPasswordInput";
 import { FormTextInput } from "../components/form/FormTextInput";
 import { apiClient } from "../lib/api/client";
+import "./AuthPages.scss";
 
 const registerSchema = z
     .object({
@@ -111,16 +112,9 @@ const Register: React.FC = () => {
 
     return (
         <IonPage>
-            <IonContent className="ion-padding">
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        minHeight: "100%",
-                    }}
-                >
-                    <IonCard style={{ maxWidth: "400px", width: "100%" }}>
+            <IonContent className="ion-padding auth-page-content">
+                <div className="auth-card-container">
+                    <IonCard className="auth-card">
                         <IonCardHeader>
                             <IonCardTitle>Create Account</IonCardTitle>
                         </IonCardHeader>
@@ -191,7 +185,9 @@ const Register: React.FC = () => {
                                     routerLink="/login"
                                     disabled={isSubmitting}
                                 >
-                                    Already have an account? Sign in
+                                    Already have an account?
+                                    <br />
+                                    Sign in
                                 </IonButton>
                             </form>
                         </IonCardContent>
