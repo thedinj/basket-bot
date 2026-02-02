@@ -92,7 +92,24 @@ export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = fa
                     aria-label={action.ariaLabel}
                     color={action.color}
                 >
-                    <IonIcon slot="icon-only" icon={action.icon} />
+                    {action.customIcon ? (
+                        <span
+                            style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: "1.5em",
+                                height: "1.5em",
+                                color: action.color
+                                    ? `var(--ion-color-${action.color})`
+                                    : "currentColor",
+                            }}
+                        >
+                            {action.customIcon}
+                        </span>
+                    ) : (
+                        <IonIcon slot="icon-only" icon={action.icon!} />
+                    )}
                 </IonButton>
             ))}
             {showKeepAwake && showKeepAwakeButton && (

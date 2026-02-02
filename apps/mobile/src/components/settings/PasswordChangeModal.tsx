@@ -6,7 +6,6 @@ import {
     IonHeader,
     IonIcon,
     IonList,
-    IonListHeader,
     IonModal,
     IonTitle,
     IonToolbar,
@@ -53,10 +52,6 @@ const PasswordChangeModal: React.FC = () => {
             <IonContent className="ion-padding">
                 <form onSubmit={handlePasswordSubmit}>
                     <IonList>
-                        <IonListHeader>
-                            <h2>Update Your Password</h2>
-                        </IonListHeader>
-
                         <FormPasswordInput
                             name="currentPassword"
                             control={passwordForm.control}
@@ -88,7 +83,7 @@ const PasswordChangeModal: React.FC = () => {
                                 color="primary"
                                 disabled={isSubmittingPassword}
                             >
-                                {isSubmittingPassword ? "Updating..." : "Update Password"}
+                                {isSubmittingPassword ? "Updating..." : "Change Password"}
                             </IonButton>
                         </div>
                     </IonList>

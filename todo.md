@@ -3,6 +3,8 @@ move pi to its permanent home
 
 ---
 
+copy store (for onesself, for others)
+
 background job to clean up the database:
 
 - delete stale collaboration invitations

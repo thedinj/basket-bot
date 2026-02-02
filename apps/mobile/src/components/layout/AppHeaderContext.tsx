@@ -19,7 +19,8 @@ export type MessageGenerator = () => MessageGeneratorResult | null | undefined;
 
 export interface GlobalActionConfig {
     id: string;
-    icon: string;
+    icon?: string;
+    customIcon?: React.ReactNode;
     title: string;
     ariaLabel: string;
     onClick: () => void;

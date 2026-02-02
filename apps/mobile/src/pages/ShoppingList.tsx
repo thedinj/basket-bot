@@ -9,7 +9,7 @@ import {
     IonToolbar,
     useIonAlert,
 } from "@ionic/react";
-import { add, bed, bedOutline } from "ionicons/icons";
+import { add } from "ionicons/icons";
 import { Suspense, useCallback, useMemo, useState } from "react";
 import { ANIMATION_EFFECTS } from "../animations/effects";
 import { AppHeader } from "../components/layout/AppHeader";
@@ -17,6 +17,7 @@ import { GlobalActionConfig } from "../components/layout/AppHeaderContext";
 import { GlobalActions } from "../components/layout/GlobalActions";
 import LoadingFallback from "../components/LoadingFallback";
 import { FabSpacer } from "../components/shared/FabSpacer";
+import ZzzIcon from "../components/shared/icons/ZzzIcon.svg?react";
 import { OverlayAnimation } from "../components/shared/OverlayAnimation";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { useBulkImportModal } from "../components/shoppinglist/BulkImportModal";
@@ -120,7 +121,7 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
         return [
             {
                 id: "toggle-snoozed",
-                icon: showSnoozed ? bed : bedOutline,
+                customIcon: <ZzzIcon />,
                 title: `${showSnoozed ? "Hide" : "Show"} snoozed items (${currentlySnoozedItemCount})`,
                 ariaLabel: `${showSnoozed ? "Hide" : "Show"} snoozed items`,
                 onClick: toggleShowSnoozed,
