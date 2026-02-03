@@ -93,11 +93,18 @@ export async function runMigrations(): Promise<void> {
         }
 
         try {
+            // Temporarily disable foreign keys for schema migrations that recreate tables
+            // This is safe because the transaction will roll back on any error
+            db.pragma("foreign_keys = OFF");
+
             // Run migration in a transaction
             db.transaction(() => {
                 migration.up(db);
                 recordMigration(filename);
             })();
+
+            // Re-enable foreign keys
+            db.pragma("foreign_keys = ON");
 
             console.log(`  ✓ Applied: ${filename}`);
         } catch (error) {

@@ -1,4 +1,15 @@
 import { z } from "zod";
+import {
+    MAX_EMAIL_LENGTH,
+    MAX_NAME_LENGTH,
+    MAX_NOTES_LENGTH,
+    MAX_SETTING_KEY_LENGTH,
+    MAX_SETTING_VALUE_LENGTH,
+    MAX_UNIT_ABBREVIATION_LENGTH,
+    MAX_UNIT_CATEGORY_LENGTH,
+    MAX_UNIT_NAME_LENGTH,
+} from "../constants/index.js";
+import { maxLengthString, minMaxLengthString } from "./zodHelpers.js";
 
 // ========== Shared Fields ==========
 // Audit fields used across multiple schemas
@@ -11,8 +22,8 @@ const auditFields = {
 
 // ========== AppSetting ==========
 export const appSettingSchema = z.object({
-    key: z.string(),
-    value: z.string(),
+    key: maxLengthString(MAX_SETTING_KEY_LENGTH, "Setting key"),
+    value: maxLengthString(MAX_SETTING_VALUE_LENGTH, "Setting value"),
     updatedAt: z.string().datetime(),
 });
 
@@ -21,10 +32,10 @@ export type AppSetting = z.infer<typeof appSettingSchema>;
 // ========== QuantityUnit ==========
 export const quantityUnitSchema = z.object({
     id: z.string(),
-    name: z.string(),
-    abbreviation: z.string(),
+    name: maxLengthString(MAX_UNIT_NAME_LENGTH, "Unit name"),
+    abbreviation: maxLengthString(MAX_UNIT_ABBREVIATION_LENGTH, "Unit abbreviation"),
     sortOrder: z.number().int(),
-    category: z.string(),
+    category: maxLengthString(MAX_UNIT_CATEGORY_LENGTH, "Unit category"),
 });
 
 export type QuantityUnit = z.infer<typeof quantityUnitSchema>;
@@ -32,20 +43,20 @@ export type QuantityUnit = z.infer<typeof quantityUnitSchema>;
 // ========== Store ==========
 export const storeSchema = z.object({
     id: z.string().uuid(),
-    name: z.string().min(1),
+    name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
     ...auditFields,
 });
 
 export type Store = z.infer<typeof storeSchema>;
 
 export const createStoreRequestSchema = z.object({
-    name: z.string().min(1).max(100),
+    name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
 });
 
 export type CreateStoreRequest = z.infer<typeof createStoreRequestSchema>;
 
 export const updateStoreRequestSchema = z.object({
-    name: z.string().min(1).max(100),
+    name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
 });
 
 export type UpdateStoreRequest = z.infer<typeof updateStoreRequestSchema>;
@@ -66,14 +77,20 @@ export const storeCollaboratorSchema = z.object({
 export type StoreCollaborator = z.infer<typeof storeCollaboratorSchema>;
 
 export const storeCollaboratorDetailSchema = storeCollaboratorSchema.extend({
-    userEmail: z.string().email(),
-    userName: z.string(),
+    userEmail: z
+        .string()
+        .email()
+        .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` }),
+    userName: maxLengthString(MAX_NAME_LENGTH, "Name"),
 });
 
 export type StoreCollaboratorDetail = z.infer<typeof storeCollaboratorDetailSchema>;
 
 export const createStoreCollaboratorRequestSchema = z.object({
-    email: z.string().email(),
+    email: z
+        .string()
+        .email()
+        .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` }),
     role: storeCollaboratorRoleSchema,
 });
 
@@ -93,7 +110,10 @@ export type StoreInvitationStatus = z.infer<typeof storeInvitationStatusSchema>;
 export const storeInvitationSchema = z.object({
     id: z.string().uuid(),
     storeId: z.string().uuid(),
-    invitedEmail: z.string().email(),
+    invitedEmail: z
+        .string()
+        .email()
+        .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` }),
     invitedById: z.string().uuid(),
     role: storeCollaboratorRoleSchema,
     token: z.string().uuid(),
@@ -104,15 +124,21 @@ export const storeInvitationSchema = z.object({
 export type StoreInvitation = z.infer<typeof storeInvitationSchema>;
 
 export const storeInvitationDetailSchema = storeInvitationSchema.extend({
-    inviterName: z.string(),
-    inviterEmail: z.string().email(),
-    storeName: z.string(),
+    inviterName: maxLengthString(MAX_NAME_LENGTH, "Name"),
+    inviterEmail: z
+        .string()
+        .email()
+        .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` }),
+    storeName: maxLengthString(MAX_NAME_LENGTH, "Store name"),
 });
 
 export type StoreInvitationDetail = z.infer<typeof storeInvitationDetailSchema>;
 
 export const createStoreInvitationRequestSchema = z.object({
-    email: z.string().email(),
+    email: z
+        .string()
+        .email()
+        .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` }),
     role: storeCollaboratorRoleSchema,
 });
 
@@ -132,7 +158,7 @@ const reorderItemsSchema = z.object({
 export const storeAisleSchema = z.object({
     id: z.string().uuid(),
     storeId: z.string().uuid(),
-    name: z.string().min(1),
+    name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
     sortOrder: z.number().int().min(0),
     ...auditFields,
 });
@@ -141,13 +167,13 @@ export type StoreAisle = z.infer<typeof storeAisleSchema>;
 
 export const createStoreAisleRequestSchema = z.object({
     storeId: z.string().uuid(),
-    name: z.string().min(1).max(100),
+    name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
 });
 
 export type CreateStoreAisleRequest = z.infer<typeof createStoreAisleRequestSchema>;
 
 export const updateStoreAisleRequestSchema = z.object({
-    name: z.string().min(1).max(100),
+    name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
 });
 
 export type UpdateStoreAisleRequest = z.infer<typeof updateStoreAisleRequestSchema>;
@@ -160,7 +186,7 @@ export const storeSectionSchema = z.object({
     id: z.string().uuid(),
     storeId: z.string().uuid(),
     aisleId: z.string().uuid(),
-    name: z.string().min(1),
+    name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
     sortOrder: z.number().int().min(0),
     ...auditFields,
 });
@@ -170,13 +196,13 @@ export type StoreSection = z.infer<typeof storeSectionSchema>;
 export const createStoreSectionRequestSchema = z.object({
     storeId: z.string().uuid(),
     aisleId: z.string().uuid(),
-    name: z.string().min(1).max(100),
+    name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
 });
 
 export type CreateStoreSectionRequest = z.infer<typeof createStoreSectionRequestSchema>;
 
 export const updateStoreSectionRequestSchema = z.object({
-    name: z.string().min(1).max(100),
+    name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
     aisleId: z.string().uuid(),
 });
 
@@ -189,8 +215,8 @@ export type ReorderStoreSectionsRequest = z.infer<typeof reorderStoreSectionsReq
 export const storeItemSchema = z.object({
     id: z.string().uuid(),
     storeId: z.string().uuid(),
-    name: z.string().min(1),
-    nameNorm: z.string().min(1),
+    name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
+    nameNorm: z.string().min(1).max(MAX_NAME_LENGTH),
     aisleId: z.string().uuid().nullable(),
     sectionId: z.string().uuid().nullable(),
     usageCount: z.number().int().min(0),
@@ -202,9 +228,9 @@ export const storeItemSchema = z.object({
 
 export type StoreItem = z.infer<typeof storeItemSchema>;
 export const storeItemWithDetailsSchema = storeItemSchema.extend({
-    sectionName: z.string().nullable(),
+    sectionName: z.string().max(MAX_NAME_LENGTH).nullable(),
     sectionSortOrder: z.number().int().nullable(),
-    aisleName: z.string().nullable(),
+    aisleName: z.string().max(MAX_NAME_LENGTH).nullable(),
     aisleSortOrder: z.number().int().nullable(),
 });
 
@@ -212,7 +238,7 @@ export type StoreItemWithDetails = z.infer<typeof storeItemWithDetailsSchema>;
 
 export const searchStoreItemsRequestSchema = z.object({
     storeId: z.string().uuid(),
-    searchTerm: z.string().min(1),
+    searchTerm: minMaxLengthString(1, MAX_NAME_LENGTH, "Search term"),
     limit: z.number().int().min(1).max(100).optional().default(10),
 });
 
@@ -226,7 +252,10 @@ const shoppingContextFields = {
     storeItemId: z.string().uuid().nullable(),
     qty: z.number().nullable(),
     unitId: z.string().nullable(),
-    notes: z.string().nullable(),
+    notes: z
+        .string()
+        .max(MAX_NOTES_LENGTH, { message: `Notes must be ${MAX_NOTES_LENGTH} characters or less` })
+        .nullable(),
     isChecked: z.boolean(),
     checkedAt: z.string().datetime().nullable(),
     checkedBy: z.string().uuid().nullable(),
@@ -248,15 +277,15 @@ export type ShoppingListItem = z.infer<typeof shoppingListItemSchema>;
 
 // Shopping list item with details (includes store item and location details)
 export const shoppingListItemWithDetailsSchema = shoppingListItemSchema.extend({
-    itemName: z.string().nullable(),
-    unitAbbreviation: z.string().nullable(),
+    itemName: z.string().max(MAX_NAME_LENGTH).nullable(),
+    unitAbbreviation: z.string().max(MAX_UNIT_ABBREVIATION_LENGTH).nullable(),
     sectionId: z.string().uuid().nullable(),
     aisleId: z.string().uuid().nullable(),
-    sectionName: z.string().nullable(),
+    sectionName: z.string().max(MAX_NAME_LENGTH).nullable(),
     sectionSortOrder: z.number().int().nullable(),
-    aisleName: z.string().nullable(),
+    aisleName: z.string().max(MAX_NAME_LENGTH).nullable(),
     aisleSortOrder: z.number().int().nullable(),
-    checkedByName: z.string().nullable(),
+    checkedByName: z.string().max(MAX_NAME_LENGTH).nullable(),
 });
 
 export type ShoppingListItemWithDetails = z.infer<typeof shoppingListItemWithDetailsSchema>;
@@ -273,7 +302,10 @@ const serverControlledFields = ["createdById", "updatedById", "createdAt", "upda
 const storeItemInputBaseSchema = z.object({
     id: z.string().uuid().optional(),
     storeId: z.string().uuid(),
-    name: z.string().optional(),
+    name: z
+        .string()
+        .max(MAX_NAME_LENGTH, { message: `Name must be ${MAX_NAME_LENGTH} characters or less` })
+        .optional(),
     aisleId: z.string().uuid().nullable().optional(),
     sectionId: z.string().uuid().nullable().optional(),
 });
@@ -285,6 +317,7 @@ export const storeItemInputSchema = z
         storeId: z.string().uuid(),
         name: z
             .string()
+            .max(MAX_NAME_LENGTH, { message: `Name must be ${MAX_NAME_LENGTH} characters or less` })
             .transform((val) => val.trim())
             .optional(),
         aisleId: z.string().uuid().nullable().optional(),
@@ -303,7 +336,10 @@ export type StoreItemInput = z.infer<typeof storeItemInputSchema>;
 const shoppingListItemInputBaseSchema = z.object({
     id: z.string().uuid().optional(),
     storeId: z.string().uuid(),
-    name: z.string().optional(),
+    name: z
+        .string()
+        .max(MAX_NAME_LENGTH, { message: `Name must be ${MAX_NAME_LENGTH} characters or less` })
+        .optional(),
     aisleId: z.string().uuid().nullable().optional(),
     sectionId: z.string().uuid().nullable().optional(),
     storeItemId: z.string().uuid().nullable().optional(),
@@ -323,6 +359,7 @@ export const shoppingListItemInputSchema = z
         storeId: z.string().uuid(),
         name: z
             .string()
+            .max(MAX_NAME_LENGTH, { message: `Name must be ${MAX_NAME_LENGTH} characters or less` })
             .transform((val) => val.trim())
             .optional(),
         aisleId: z.string().uuid().nullable().optional(),
@@ -330,7 +367,13 @@ export const shoppingListItemInputSchema = z
         storeItemId: z.string().uuid().nullable().optional(),
         qty: z.number().min(0.01).nullable().optional(),
         unitId: z.string().nullable().optional(),
-        notes: z.string().nullable().optional(),
+        notes: z
+            .string()
+            .max(MAX_NOTES_LENGTH, {
+                message: `Notes must be ${MAX_NOTES_LENGTH} characters or less`,
+            })
+            .nullable()
+            .optional(),
         isChecked: z.boolean().optional(),
         isIdea: z.boolean().nullable().optional(),
         isSample: z.boolean().nullable().optional(),

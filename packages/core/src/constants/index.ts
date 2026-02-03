@@ -3,6 +3,9 @@ export const DEFAULT_ACCESS_TOKEN_TTL_SECONDS = 15 * 60; // 15 minutes
 export const DEFAULT_REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
 export const MIN_PASSWORD_LENGTH = 6;
 
+// Text field length limits
+export * from "./textLimits";
+
 // Role hierarchy
 export const ROLE_HIERARCHY = {
     owner: 3,

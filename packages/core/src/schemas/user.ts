@@ -1,10 +1,18 @@
 import { z } from "zod";
-import { MIN_PASSWORD_LENGTH } from "../constants/index.js";
+import {
+    MAX_EMAIL_LENGTH,
+    MAX_NAME_LENGTH,
+    MAX_PASSWORD_HASH_LENGTH,
+    MIN_PASSWORD_LENGTH,
+} from "../constants/index.js";
+import { minMaxLengthString } from "./zodHelpers.js";
 
 // Reusable password validation schema
-export const passwordSchema = z.string().min(MIN_PASSWORD_LENGTH, {
-    message: `Password must be at least ${MIN_PASSWORD_LENGTH} characters`,
-});
+export const passwordSchema = minMaxLengthString(
+    MIN_PASSWORD_LENGTH,
+    MAX_PASSWORD_HASH_LENGTH,
+    "Password"
+);
 
 // Reusable password with confirmation schema
 export const passwordWithConfirmationSchema = z
@@ -20,8 +28,11 @@ export const passwordWithConfirmationSchema = z
 // User schemas
 export const userSchema = z.object({
     id: z.string().uuid(),
-    email: z.string().email(),
-    name: z.string().min(1),
+    email: z
+        .string()
+        .email()
+        .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` }),
+    name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
     scopes: z.array(z.string()),
     createdAt: z.date(),
     updatedAt: z.date(),
@@ -30,8 +41,11 @@ export const userSchema = z.object({
 export type User = z.infer<typeof userSchema>;
 
 export const createUserRequestSchema = z.object({
-    email: z.string().email(),
-    name: z.string().min(1),
+    email: z
+        .string()
+        .email()
+        .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` }),
+    name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
     password: passwordSchema,
     invitationCode: z.string().optional(),
 });
@@ -40,7 +54,7 @@ export type CreateUserRequest = z.infer<typeof createUserRequestSchema>;
 
 // Profile update (name only, email is view-only)
 export const updateProfileRequestSchema = z.object({
-    name: z.string().min(1, "Name is required"),
+    name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
 });
 
 export type UpdateProfileRequest = z.infer<typeof updateProfileRequestSchema>;

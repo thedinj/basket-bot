@@ -1,9 +1,9 @@
-import { IonInput, IonItem, IonLabel } from "@ionic/react";
+import { IonInput, IonItem, IonLabel, IonText } from "@ionic/react";
 import { Controller, useWatch } from "react-hook-form";
 import { useItemEditorContext } from "./useItemEditorContext";
 
 export const NotesInput = () => {
-    const { control } = useItemEditorContext();
+    const { control, errors } = useItemEditorContext();
     const isIdea = useWatch({ control, name: "isIdea" });
 
     return (
@@ -19,6 +19,18 @@ export const NotesInput = () => {
                         placeholder={isIdea ? "Enter your idea" : "Enter any notes"}
                         onIonInput={(e) => field.onChange(e.detail.value || null)}
                     />
+                    {errors.notes && (
+                        <IonText color="danger">
+                            <p
+                                style={{
+                                    fontSize: "12px",
+                                    marginLeft: "16px",
+                                }}
+                            >
+                                {errors.notes.message}
+                            </p>
+                        </IonText>
+                    )}
                 </IonItem>
             )}
         />

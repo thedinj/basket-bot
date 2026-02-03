@@ -3,7 +3,7 @@ move pi to its permanent home
 
 ---
 
-max field lengths?
+Household tables??? I thought we got rid of those.
 
 copy store (for onesself, for others)
 

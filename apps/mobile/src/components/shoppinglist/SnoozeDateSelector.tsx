@@ -13,7 +13,7 @@ export const SnoozeDateSelector: React.FC = () => {
     const tomorrow = new Date();
     tomorrow.setHours(0, 0, 0, 0); // Set to start of today
     tomorrow.setDate(tomorrow.getDate() + 1); // Move to start of tomorrow
-    const minDate = undefined; // tomorrow.toISOString().split("T")[0];
+    const minDate = tomorrow.toISOString().split("T")[0];
 
     const clearSnooze = () => {
         setValue("snoozedUntil", null);

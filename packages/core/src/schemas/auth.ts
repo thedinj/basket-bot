@@ -1,9 +1,13 @@
 import { z } from "zod";
+import { MAX_EMAIL_LENGTH, MAX_TOKEN_LENGTH } from "../constants";
 import { userSchema } from "./user";
 
 // Auth schemas
 export const loginRequestSchema = z.object({
-    email: z.string().email(),
+    email: z
+        .string()
+        .email()
+        .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` }),
     password: z.string().min(1),
 });
 
@@ -23,7 +27,9 @@ export const loginResponseSchema = z.object({
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
 
 export const refreshTokenRequestSchema = z.object({
-    refreshToken: z.string(),
+    refreshToken: z
+        .string()
+        .max(MAX_TOKEN_LENGTH, { message: `Token must be ${MAX_TOKEN_LENGTH} characters or less` }),
 });
 
 export type RefreshTokenRequest = z.infer<typeof refreshTokenRequestSchema>;
@@ -37,7 +43,11 @@ export type RefreshTokenResponse = z.infer<typeof refreshTokenResponseSchema>;
 
 export const jwtPayloadSchema = z.object({
     sub: z.string().uuid(), // user id
-    email: z.string().email().optional(),
+    email: z
+        .string()
+        .email()
+        .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` })
+        .optional(),
     scopes: z.array(z.string()),
     iat: z.number(),
     exp: z.number(),
