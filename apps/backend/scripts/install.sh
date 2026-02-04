@@ -66,6 +66,32 @@ echo "Project root: $PROJECT_ROOT"
 echo "Backend directory: $BACKEND_DIR"
 echo ""
 
+# Cleanup function for script failures
+SERVICE_CREATED=false
+FIREWALL_CONFIGURED=false
+cleanup_on_error() {
+    local exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo ""
+        echo "❌ Installation failed. Cleaning up..."
+
+        # Remove systemd service if created
+        if [ "$SERVICE_CREATED" = true ] && [ -n "$SERVICE_NAME" ]; then
+            sudo systemctl stop "$SERVICE_NAME" 2>/dev/null || true
+            sudo systemctl disable "$SERVICE_NAME" 2>/dev/null || true
+            sudo rm -f "/etc/systemd/system/$SERVICE_NAME.service" 2>/dev/null || true
+            sudo systemctl daemon-reload
+            echo "✓ Removed systemd service"
+        fi
+
+        echo "⚠️  Partial installation state. You may need to manually clean up:"
+        echo "   - Firewall rules (ufw status)"
+        echo "   - Samba shares (/etc/samba/smb.conf)"
+        echo "   - Caddy config (/etc/caddy/Caddyfile)"
+    fi
+}
+trap cleanup_on_error EXIT
+
 # Check if running as admin user
 CURRENT_USER=$(whoami)
 if [ "$CURRENT_USER" != "admin" ]; then
@@ -195,13 +221,19 @@ cd "$PROJECT_ROOT"
 
 # Install dependencies
 echo "Installing dependencies..."
-pnpm install
+if ! pnpm install; then
+    echo "❌ Failed to install dependencies"
+    exit 1
+fi
 echo "✓ Dependencies installed"
 echo ""
 
 # Build core package
 echo "Building core package..."
-pnpm --filter @basket-bot/core build
+if ! pnpm --filter @basket-bot/core build; then
+    echo "❌ Failed to build core package"
+    exit 1
+fi
 echo "✓ Core package built"
 echo ""
 
@@ -238,9 +270,32 @@ echo ""
 read -p "Press Enter after you've updated the .env file..."
 echo ""
 
-# Build backend (after .env is configured)
+# Validate required .env fields
+echo "Validating .env configuration..."
+ADMIN_EMAIL=$(grep -E '^ADMIN_EMAIL=' "$BACKEND_DIR/.env" | cut -d '=' -f 2 | tr -d '"')
+ADMIN_PASSWORD=$(grep -E '^ADMIN_PASSWORD=' "$BACKEND_DIR/.env" | cut -d '=' -f 2 | tr -d '"')
+
+if [ "$ADMIN_EMAIL" = "admin@example.com" ] || [ -z "$ADMIN_EMAIL" ]; then
+    echo "❌ ADMIN_EMAIL is not configured in .env file"
+    echo "   Please edit $BACKEND_DIR/.env and set a valid admin email"
+    exit 1
+fi
+
+if [ "$ADMIN_PASSWORD" = "change-this-password" ] || [ -z "$ADMIN_PASSWORD" ]; then
+    echo "❌ ADMIN_PASSWORD is not configured in .env file"
+    echo "   Please edit $BACKEND_DIR/.env and set a secure admin password"
+    exit 1
+fi
+
+echo "✓ .env configuration validated"
+echo ""
+
+# Build backend (after .env is configured and validated)
 echo "Building backend..."
-pnpm build
+if ! pnpm build; then
+    echo "❌ Backend build failed"
+    exit 1
+fi
 echo "✓ Backend built"
 echo ""
 
@@ -270,19 +325,30 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     if [ -z "$DOMAIN_NAME" ]; then
         echo "❌ Domain name is required for HTTPS. Skipping HTTPS setup."
         ENABLE_HTTPS=false
+    else
+        # Validate domain name format (basic check)
+        if ! echo "$DOMAIN_NAME" | grep -qE '^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'; then
+            echo "❌ Invalid domain name format: $DOMAIN_NAME"
+            echo "   Domain should be like: example.com or subdomain.example.com"
+            ENABLE_HTTPS=false
+        fi
     fi
 fi
 echo ""
 
-# Initialize database
+# Initialize database (before service creation)
 echo "Initializing database..."
-pnpm db:init
+if ! pnpm db:init; then
+    echo "❌ Database initialization failed"
+    exit 1
+fi
 echo "✓ Database initialized"
 echo ""
 
 # Create systemd service file
 SERVICE_NAME="basket-bot-backend"
 SERVICE_FILE="/etc/systemd/system/$SERVICE_NAME.service"
+SERVICE_CREATED=true
 
 echo "Creating systemd service..."
 sudo tee "$SERVICE_FILE" > /dev/null <<EOF
@@ -318,17 +384,30 @@ sudo systemctl start "$SERVICE_NAME"
 echo "✓ Service enabled and started"
 echo ""
 
-# Check service status
-echo "Checking service status..."
-sleep 2
-if sudo systemctl is-active --quiet "$SERVICE_NAME"; then
-    echo "✓ Service is running"
-    sudo systemctl status "$SERVICE_NAME" --no-pager -l
-else
-    echo "❌ Service failed to start. Checking logs..."
-    sudo journalctl -u "$SERVICE_NAME" -n 50 --no-pager
-    exit 1
-fi
+# Wait for service to start (with timeout)
+echo "Waiting for service to start..."
+MAX_WAIT=30
+COUNT=0
+while [ $COUNT -lt $MAX_WAIT ]; do
+    if sudo systemctl is-active --quiet "$SERVICE_NAME"; then
+        echo "✓ Service is running (started in ${COUNT}s)"
+        sudo systemctl status "$SERVICE_NAME" --no-pager -l
+        break
+    fi
+    sleep 1
+    COUNT=$((COUNT + 1))
+
+    if [ $COUNT -eq $MAX_WAIT ]; then
+        echo "❌ Service failed to start within ${MAX_WAIT} seconds"
+        echo ""
+        echo "Service status:"
+        sudo systemctl status "$SERVICE_NAME" --no-pager -l
+        echo ""
+        echo "Recent logs:"
+        sudo journalctl -u "$SERVICE_NAME" -n 50 --no-pager
+        exit 1
+    fi
+done
 echo ""
 
 # Get port from .env file
@@ -468,12 +547,28 @@ EOF
     sudo systemctl enable caddy
     sudo systemctl restart caddy
 
-    # Check Caddy status
-    sleep 2
-    if sudo systemctl is-active --quiet caddy; then
-        echo "✓ Caddy is running"
-    else
-        echo "❌ Caddy failed to start. Checking logs..."
+    # Wait for Caddy to start (with timeout)
+    echo "Waiting for Caddy to start..."
+    MAX_WAIT=10
+    COUNT=0
+    CADDY_STARTED=false
+    while [ $COUNT -lt $MAX_WAIT ]; do
+        if sudo systemctl is-active --quiet caddy; then
+            echo "✓ Caddy is running (started in ${COUNT}s)"
+            CADDY_STARTED=true
+            break
+        fi
+        sleep 1
+        COUNT=$((COUNT + 1))
+    done
+
+    if [ "$CADDY_STARTED" = false ]; then
+        echo "⚠️  Caddy failed to start within ${MAX_WAIT} seconds"
+        echo ""
+        echo "Caddy status:"
+        sudo systemctl status caddy --no-pager -l
+        echo ""
+        echo "Recent logs:"
         sudo journalctl -u caddy -n 50 --no-pager
         echo ""
         echo "⚠️  HTTPS setup incomplete. Backend is still accessible on port $PORT."
@@ -556,12 +651,11 @@ EOF
         echo "✓ logs share already exists"
     fi
 
-    # Share 3: Caddy config (if HTTPS enabled)
+    # Share 3: Caddy config (if HTTPS enabled) - configuration only, permissions set after password
+    CONFIGURE_CADDY_SHARE=false
     if [ "$ENABLE_HTTPS" = true ]; then
         if ! grep -q "\[caddy-config\]" "$SAMBA_CONF"; then
-            # Adjust Caddy directory permissions
-            sudo chown -R caddy:"$CURRENT_USER" /etc/caddy 2>/dev/null || true
-            sudo chmod -R g+w /etc/caddy 2>/dev/null || true
+            CONFIGURE_CADDY_SHARE=true
 
             sudo tee -a "$SAMBA_CONF" > /dev/null <<EOF
 
@@ -605,6 +699,13 @@ EOF
     sudo smbpasswd -e "$CURRENT_USER"
     echo ""
     echo "✓ Samba user configured"
+
+    # Now that password is set successfully, adjust Caddy permissions if needed
+    if [ "$CONFIGURE_CADDY_SHARE" = true ]; then
+        sudo chown -R caddy:"$CURRENT_USER" /etc/caddy 2>/dev/null || true
+        sudo chmod -R g+w /etc/caddy 2>/dev/null || true
+        echo "✓ Caddy directory permissions updated for Samba access"
+    fi
 
     # Restart Samba services
     sudo systemctl restart smbd
@@ -816,3 +917,6 @@ echo "   sqlite3 $BACKEND_DIR/database.db 'SELECT email, name FROM User;'"
 echo ""
 echo "================================================"
 echo ""
+
+# Disable cleanup trap on successful completion
+trap - EXIT
