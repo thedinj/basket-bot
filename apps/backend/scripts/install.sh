@@ -122,6 +122,74 @@ else
 fi
 echo ""
 
+# Install and configure UFW firewall
+echo "Checking and configuring firewall (UFW)..."
+if ! command -v ufw &> /dev/null; then
+    echo "UFW not found. Installing UFW..."
+    sudo apt-get update
+    sudo apt-get install -y ufw
+    echo "✓ UFW installed"
+else
+    echo "✓ UFW is already installed"
+fi
+
+# Check if UFW is enabled
+if ! sudo ufw status | grep -q "Status: active"; then
+    echo ""
+    echo "================================================"
+    echo "Firewall Security Configuration"
+    echo "================================================"
+    echo ""
+    echo "⚠️  CRITICAL: UFW firewall is not enabled."
+    echo ""
+    echo "Before enabling UFW, SSH access (port 22) will be allowed"
+    echo "to prevent being locked out of your server."
+    echo ""
+    echo "The following ports will be configured:"
+    echo "  - Port 22  (SSH - for remote access)"
+    echo "  - Port 80  (HTTP - required for Let's Encrypt)"
+    echo "  - Port 443 (HTTPS)"
+    echo ""
+    echo "Your backend application port will be added automatically"
+    echo "based on your configuration choices."
+    echo ""
+    read -p "Enable UFW firewall now? (Y/n): " -n 1 -r
+    echo ""
+
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+        # Allow SSH first (critical to prevent lockout!)
+        sudo ufw allow 22/tcp
+        echo "✓ SSH access allowed (port 22)"
+
+        # Allow common HTTPS ports
+        sudo ufw allow 80/tcp
+        sudo ufw allow 443/tcp
+        echo "✓ HTTP/HTTPS ports allowed (80, 443)"
+
+        # Set defaults
+        sudo ufw default deny incoming
+        sudo ufw default allow outgoing
+        echo "✓ Default policies set (deny incoming, allow outgoing)"
+
+        # Enable UFW
+        echo ""
+        echo "Enabling UFW firewall..."
+        sudo ufw --force enable
+        echo "✓ UFW firewall enabled"
+        echo ""
+        sudo ufw status numbered
+    else
+        echo "⚠️  Skipping UFW setup. You will need to configure firewall manually."
+        echo "   For security, this is NOT recommended for production servers."
+    fi
+else
+    echo "✓ UFW firewall is already enabled"
+    echo ""
+    echo "Current firewall status:"
+    sudo ufw status numbered
+fi
+echo ""
+
 # Navigate to project root
 cd "$PROJECT_ROOT"
 
@@ -266,25 +334,43 @@ echo ""
 # Get port from .env file
 PORT=$(grep -E '^PORT=' "$BACKEND_DIR/.env" | cut -d '=' -f 2 | tr -d '"' || echo "3000")
 
-# Configure firewall to allow access from network
-if [ "$ENABLE_HTTPS" = true ]; then
-    echo "Configuring firewall for HTTPS (ports 80, 443)..."
-    FIREWALL_PORTS="80 443"
-else
-    echo "Configuring firewall for port $PORT..."
-    FIREWALL_PORTS="$PORT"
-fi
+# Configure firewall to allow application access
+echo "Configuring firewall for application access..."
 
-if command -v ufw &> /dev/null; then
-    echo "Detected ufw firewall"
-    for port in $FIREWALL_PORTS; do
-        sudo ufw allow $port/tcp
-        echo "✓ Firewall rule added (ufw allow $port/tcp)"
-    done
+if command -v ufw &> /dev/null && sudo ufw status | grep -q "Status: active"; then
+    echo "Detected active UFW firewall"
+
+    # Always allow backend port for flexibility (direct access, debugging)
+    echo "Allowing backend port $PORT..."
+
+    # Check if rule already exists
+    if ! sudo ufw status | grep -q "$PORT/tcp"; then
+        sudo ufw allow $PORT/tcp
+        echo "✓ Firewall rule added (ufw allow $PORT/tcp)"
+    else
+        echo "✓ Firewall rule already exists for port $PORT"
+    fi
+
+    if [ "$ENABLE_HTTPS" = true ]; then
+        echo "✓ HTTPS mode: Backend accessible via reverse proxy and directly on port $PORT"
+    else
+        echo "✓ Direct access mode: Backend accessible on port $PORT"
+    fi
+
+    echo ""
+    echo "Current firewall status:"
+    sudo ufw status numbered
 elif command -v iptables &> /dev/null; then
-    echo "Detected iptables firewall"
-    for port in $FIREWALL_PORTS; do
-        # Check if rule already exists
+    echo "⚠️  UFW not active. Falling back to iptables configuration."
+
+    # Determine which ports to open
+    if [ "$ENABLE_HTTPS" = true ]; then
+        PORTS="80 443"
+    else
+        PORTS="$PORT"
+    fi
+
+    for port in $PORTS; do
         if ! sudo iptables -C INPUT -p tcp --dport $port -j ACCEPT 2>/dev/null; then
             sudo iptables -A INPUT -p tcp --dport $port -j ACCEPT
             echo "✓ Firewall rule added (iptables -A INPUT -p tcp --dport $port -j ACCEPT)"
@@ -292,13 +378,18 @@ elif command -v iptables &> /dev/null; then
             echo "✓ Firewall rule already exists for port $port"
         fi
     done
-    # Save iptables rules (method varies by distro)
+
+    # Save iptables rules
     if command -v iptables-save &> /dev/null; then
         sudo sh -c "iptables-save > /etc/iptables/rules.v4" 2>/dev/null || true
+        echo "✓ iptables rules saved"
     fi
 else
-    echo "⚠️  No supported firewall detected (ufw/iptables)"
-    echo "   If you need network access, manually allow port(s): $FIREWALL_PORTS"
+    echo "⚠️  No firewall detected or configured."
+    echo "   For security, consider enabling UFW:"
+    echo "   1. Allow SSH: sudo ufw allow 22/tcp"
+    echo "   2. Allow app port: sudo ufw allow $PORT/tcp"
+    echo "   3. Enable firewall: sudo ufw enable"
 fi
 echo ""
 
@@ -391,6 +482,170 @@ EOF
     echo ""
 fi
 
+# Optional Samba installation for network file access
+echo ""
+read -p "Install Samba for network file access from Windows? (y/N): " -n 1 -r
+echo ""
+INSTALL_SAMBA=false
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    INSTALL_SAMBA=true
+
+    echo "================================================"
+    echo "Installing Samba"
+    echo "================================================"
+    echo ""
+
+    if command -v smbd &> /dev/null; then
+        echo "✓ Samba is already installed"
+    else
+        echo "Installing Samba..."
+        sudo apt-get update
+        sudo apt-get install -y samba samba-common-bin
+        echo "✓ Samba installed"
+    fi
+
+    # Configure shares
+    SAMBA_CONF="/etc/samba/smb.conf"
+
+    # Backup existing config if this is first time
+    if [ ! -f "$SAMBA_CONF.backup" ]; then
+        sudo cp "$SAMBA_CONF" "$SAMBA_CONF.backup"
+        echo "✓ Samba config backed up"
+    fi
+
+    echo ""
+    echo "Configuring Samba shares..."
+
+    # Share 1: Basket Bot project (read-write)
+    if ! grep -q "\[basket-bot\]" "$SAMBA_CONF"; then
+        sudo tee -a "$SAMBA_CONF" > /dev/null <<EOF
+
+# Basket Bot Backend Files (read-write)
+[basket-bot]
+    comment = Basket Bot Application Files
+    path = $PROJECT_ROOT
+    browseable = yes
+    read only = no
+    create mask = 0644
+    directory mask = 0755
+    valid users = $CURRENT_USER
+EOF
+        echo "✓ basket-bot share configured (read-write)"
+    else
+        echo "✓ basket-bot share already exists"
+    fi
+
+    # Share 2: System logs (read-only)
+    if ! grep -q "\[logs\]" "$SAMBA_CONF"; then
+        # Add admin user to adm group for log access
+        sudo usermod -a -G adm "$CURRENT_USER"
+
+        sudo tee -a "$SAMBA_CONF" > /dev/null <<EOF
+
+# System and Application Logs (read-only)
+[logs]
+    comment = System and Application Logs
+    path = /var/log
+    browseable = yes
+    read only = yes
+    valid users = $CURRENT_USER
+EOF
+        echo "✓ logs share configured (read-only)"
+        echo "  Note: Log out and back in for group permissions to take effect"
+    else
+        echo "✓ logs share already exists"
+    fi
+
+    # Share 3: Caddy config (if HTTPS enabled)
+    if [ "$ENABLE_HTTPS" = true ]; then
+        if ! grep -q "\[caddy-config\]" "$SAMBA_CONF"; then
+            # Adjust Caddy directory permissions
+            sudo chown -R caddy:"$CURRENT_USER" /etc/caddy 2>/dev/null || true
+            sudo chmod -R g+w /etc/caddy 2>/dev/null || true
+
+            sudo tee -a "$SAMBA_CONF" > /dev/null <<EOF
+
+# Caddy Configuration Files (read-write)
+[caddy-config]
+    comment = Caddy Reverse Proxy Configuration
+    path = /etc/caddy
+    browseable = yes
+    read only = no
+    create mask = 0644
+    directory mask = 0755
+    valid users = $CURRENT_USER
+EOF
+            echo "✓ caddy-config share configured (read-write)"
+        else
+            echo "✓ caddy-config share already exists"
+        fi
+    fi
+
+    # Set Samba password
+    echo ""
+    echo "Set Samba password for user '$CURRENT_USER':"
+    echo "(This can be the same as your Linux password for convenience)"
+    echo ""
+
+    # Check if user exists in Samba database
+    if ! sudo pdbedit -L | grep -q "^$CURRENT_USER:"; then
+        # User doesn't exist, add and set password interactively
+        sudo smbpasswd -a "$CURRENT_USER"
+    else
+        # User already exists
+        echo "Samba user '$CURRENT_USER' already exists."
+        read -p "Reset Samba password? (y/N): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            sudo smbpasswd "$CURRENT_USER"
+        fi
+    fi
+
+    # Ensure user is enabled
+    sudo smbpasswd -e "$CURRENT_USER"
+    echo ""
+    echo "✓ Samba user configured"
+
+    # Restart Samba services
+    sudo systemctl restart smbd
+    sudo systemctl enable smbd
+    sudo systemctl restart nmbd 2>/dev/null || true
+    sudo systemctl enable nmbd 2>/dev/null || true
+    echo "✓ Samba services started"
+
+    # Configure firewall for Samba
+    if command -v ufw &> /dev/null && sudo ufw status | grep -q "Status: active"; then
+        if ! sudo ufw status | grep -q "Samba"; then
+            sudo ufw allow Samba
+            echo "✓ Firewall configured for Samba"
+        else
+            echo "✓ Samba firewall rules already exist"
+        fi
+    fi
+
+    # Get IP address
+    SERVER_IP=$(hostname -I | awk '{print $1}')
+
+    echo ""
+    echo "================================================"
+    echo "Samba Network Access Configured"
+    echo "================================================"
+    echo ""
+    echo "From Windows File Explorer, access:"
+    echo "  \\\\$SERVER_IP\\basket-bot       (Application files - read/write)"
+    echo "  \\\\$SERVER_IP\\logs              (System logs - read-only)"
+    if [ "$ENABLE_HTTPS" = true ]; then
+        echo "  \\\\$SERVER_IP\\caddy-config      (Caddy config - read/write)"
+    fi
+    echo ""
+    echo "Username: $CURRENT_USER"
+    echo "Password: (the Samba password you just set)"
+    echo ""
+    echo "Tip: In Windows, you can map these as network drives for"
+    echo "     easy access. Right-click 'This PC' → 'Map network drive'"
+    echo ""
+fi
+
 # Display useful commands
 echo "================================================"
 echo "Installation Complete!"
@@ -463,6 +718,63 @@ if [ "$ENABLE_HTTPS" = true ]; then
     echo ""
     echo "For detailed HTTPS setup documentation, see:"
     echo "  $PROJECT_ROOT/docs/HTTPS_SETUP.md"
+fi
+
+echo ""
+echo "================================================"
+echo "Firewall Configuration"
+echo "================================================"
+echo ""
+
+if command -v ufw &> /dev/null && sudo ufw status | grep -q "Status: active"; then
+    echo "UFW Firewall Status:"
+    sudo ufw status numbered | head -n 10
+    echo ""
+    echo "UFW commands:"
+    echo "  sudo ufw status numbered         # View all firewall rules"
+    echo "  sudo ufw allow <port>/tcp        # Allow a port"
+    echo "  sudo ufw delete <rule-number>    # Remove a rule"
+    echo "  sudo ufw disable                 # Disable firewall (not recommended)"
+    echo "  sudo ufw enable                  # Enable firewall"
+    echo ""
+    echo "⚠️  Important: Port 22 (SSH) is allowed to prevent lockout."
+    echo "   Do not remove this rule unless using another access method."
+else
+    echo "⚠️  UFW firewall is not active."
+    echo "   For security, consider enabling it:"
+    echo "   1. sudo ufw allow 22/tcp"
+    echo "   2. sudo ufw enable"
+fi
+
+if [ "$INSTALL_SAMBA" = true ]; then
+    echo ""
+    echo "================================================"
+    echo "Network File Access (Samba)"
+    echo "================================================"
+    echo ""
+    echo "From Windows:"
+    echo "  1. Open File Explorer"
+    echo "  2. In address bar: \\\\$SERVER_IP"
+    echo "  3. Enter credentials when prompted"
+    echo ""
+    echo "Available shares:"
+    echo "  \\\\$SERVER_IP\\basket-bot       (read/write)"
+    echo "  \\\\$SERVER_IP\\logs              (read-only)"
+    if [ "$ENABLE_HTTPS" = true ]; then
+        echo "  \\\\$SERVER_IP\\caddy-config      (read/write)"
+    fi
+    echo ""
+    echo "Username: $CURRENT_USER"
+    echo ""
+    echo "Samba commands:"
+    echo "  sudo systemctl status smbd       # Check Samba status"
+    echo "  sudo systemctl restart smbd      # Restart Samba"
+    echo "  sudo smbpasswd $CURRENT_USER     # Change Samba password"
+    echo "  sudo nano /etc/samba/smb.conf    # Edit Samba config"
+    echo ""
+    echo "To edit files remotely:"
+    echo "  - Use Notepad++ or VS Code to open files directly from network share"
+    echo "  - Or map network drive: Right-click 'This PC' → 'Map network drive'"
 fi
 
 echo ""
