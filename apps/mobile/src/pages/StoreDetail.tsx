@@ -40,6 +40,7 @@ import {
     useStoreCollaborators,
     useUpdateStore,
 } from "../db/hooks";
+import { useToast } from "../hooks/useToast";
 import {
     transformStoreScanResult,
     validateStoreScanResult,
@@ -68,6 +69,7 @@ const StoreDetail: React.FC = () => {
     const deleteStore = useDeleteStore();
     const { replaceAislesAndSections } = useBulkReplaceAislesAndSections();
     const { openModal } = useLLMModal();
+    const { showError } = useToast();
     const [presentAlert] = useIonAlert();
     const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
     const [showCollaboratorsModal, setShowCollaboratorsModal] = useState(false);
@@ -203,6 +205,13 @@ const StoreDetail: React.FC = () => {
             },
         });
     }, [id, openModal, replaceAislesAndSections]);
+
+    // Handle deleted/non-existent store
+    if (!isLoading && !store) {
+        showError("Store not found or no longer available.");
+        history.replace("/stores");
+        return null;
+    }
 
     return (
         <IonPage>

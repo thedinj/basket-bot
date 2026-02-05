@@ -30,6 +30,11 @@ export const formatErrorMessage = (error: unknown, operation?: string): string =
             return `Server error. Please try again later. (${error.code || error.status})`;
         }
 
+        // Not found errors
+        if (error.status === 404) {
+            return "Resource not found or no longer available.";
+        }
+
         // Validation or business logic errors (use server message)
         return error.message;
     }

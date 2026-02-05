@@ -15,7 +15,7 @@ import {
 } from "@ionic/react";
 import { add, cart, cartOutline, star, starOutline } from "ionicons/icons";
 import { useCallback, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useHistory, useParams } from "react-router-dom";
 import { useDebounce } from "use-debounce";
 import { AppHeader } from "../components/layout/AppHeader";
 import { FabSpacer } from "../components/shared/FabSpacer";
@@ -37,7 +37,8 @@ import { useToast } from "../hooks/useToast";
 const StoreItemsPage: React.FC = () => {
     useRenderStormDetector("StoreItemsPage");
     const { id: storeId } = useParams<{ id: string }>();
-    const { data: store } = useStore(storeId);
+    const history = useHistory();
+    const { data: store, isLoading: storeLoading } = useStore(storeId);
     const { data: items, isLoading } = useStoreItemsWithDetails(storeId);
     const { data: shoppingListItems } = useShoppingListItems(storeId);
     const toggleFavorite = useToggleFavorite();
@@ -107,20 +108,20 @@ const StoreItemsPage: React.FC = () => {
         return { favoriteGroups, regularGroups };
     }, [items, debouncedSearchTerm]);
 
-    const openCreateModal = () => {
+    const openCreateModal = useCallback(() => {
         setEditingItem(null);
         setIsModalOpen(true);
-    };
+    }, []);
 
     const openEditModal = useCallback((item: StoreItemWithDetails) => {
         setEditingItem(item);
         setIsModalOpen(true);
     }, []);
 
-    const closeModal = () => {
+    const closeModal = useCallback(() => {
         setIsModalOpen(false);
         setEditingItem(null);
-    };
+    }, []);
 
     const handleToggleFavorite = useCallback(
         async (item: StoreItemWithDetails) => {
@@ -165,7 +166,7 @@ const StoreItemsPage: React.FC = () => {
         [shoppingListItemMap]
     );
 
-    const executeRemoveFromShoppingList = async () => {
+    const executeRemoveFromShoppingList = useCallback(async () => {
         if (!removeFromListAlert) return;
 
         try {
@@ -178,53 +179,69 @@ const StoreItemsPage: React.FC = () => {
         } catch {
             showError("Failed to remove from shopping list");
         }
-    };
+    }, [removeFromListAlert, removeShoppingListItem, showError, showSuccess, storeId]);
 
-    const renderItem = (item: StoreItemWithDetails) => {
-        const isInShoppingList = shoppingListItemMap.has(item.id);
-        const isFavorite = item.isFavorite;
+    const renderItem = useCallback(
+        (item: StoreItemWithDetails) => {
+            const isInShoppingList = shoppingListItemMap.has(item.id);
+            const isFavorite = item.isFavorite;
 
-        return (
-            <IonItem key={item.id}>
-                <div
-                    slot="start"
-                    style={{
-                        cursor: "pointer",
-                    }}
-                    onClick={() => handleToggleFavorite(item)}
-                >
-                    <IonIcon
-                        icon={isFavorite ? star : starOutline}
-                        color={isFavorite ? "warning" : "medium"}
-                    />
-                </div>
-                <IonLabel style={{ cursor: "pointer" }} onClick={() => openEditModal(item)}>
-                    {item.name}
-                </IonLabel>
-                <IonButton
-                    slot="end"
-                    fill="clear"
-                    onClick={() =>
-                        isInShoppingList
-                            ? confirmRemoveFromShoppingList(item)
-                            : handleAddToShoppingList(item)
-                    }
-                >
-                    <IonIcon
-                        icon={isInShoppingList ? cart : cartOutline}
-                        color={isInShoppingList ? "primary" : "medium"}
-                    />
-                </IonButton>
-                {/* <IonButton
+            return (
+                <IonItem key={item.id}>
+                    <div
+                        slot="start"
+                        style={{
+                            cursor: "pointer",
+                        }}
+                        onClick={() => handleToggleFavorite(item)}
+                    >
+                        <IonIcon
+                            icon={isFavorite ? star : starOutline}
+                            color={isFavorite ? "warning" : "medium"}
+                        />
+                    </div>
+                    <IonLabel style={{ cursor: "pointer" }} onClick={() => openEditModal(item)}>
+                        {item.name}
+                    </IonLabel>
+                    <IonButton
+                        slot="end"
+                        fill="clear"
+                        onClick={() =>
+                            isInShoppingList
+                                ? confirmRemoveFromShoppingList(item)
+                                : handleAddToShoppingList(item)
+                        }
+                    >
+                        <IonIcon
+                            icon={isInShoppingList ? cart : cartOutline}
+                            color={isInShoppingList ? "primary" : "medium"}
+                        />
+                    </IonButton>
+                    {/* <IonButton
                     slot="end"
                     fill="clear"
                     onClick={() => openEditModal(item)}
                 >
                     <IonIcon icon={create} color="medium" />
                 </IonButton> */}
-            </IonItem>
-        );
-    };
+                </IonItem>
+            );
+        },
+        [
+            confirmRemoveFromShoppingList,
+            handleAddToShoppingList,
+            handleToggleFavorite,
+            openEditModal,
+            shoppingListItemMap,
+        ]
+    );
+
+    // Handle deleted/non-existent store
+    if (!storeLoading && !store) {
+        showError("Store not found or no longer available.");
+        history.replace("/stores");
+        return null;
+    }
 
     return (
         <IonPage>

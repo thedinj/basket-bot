@@ -88,8 +88,13 @@ export class RemoteDatabase extends BaseDatabase {
         try {
             const response = await apiClient.get<{ store: Store }>(`/api/stores/${id}`);
             return response.store;
-        } catch {
-            return null;
+        } catch (error: unknown) {
+            // Only return null for 404 (resource doesn't exist)
+            // Re-throw other errors (403, 500, network) so error boundaries can handle them
+            if (error instanceof ApiError && error.status === 404) {
+                return null;
+            }
+            throw error;
         }
     }
 

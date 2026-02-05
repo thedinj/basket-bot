@@ -62,19 +62,6 @@ export function useAutoCategorize() {
                 // First check if there is an exact match in the aisle or section names (case insensitive, singular)
                 const normalizedItemName = pluralize.singular(itemName.trim().toLowerCase());
 
-                // Check for exact aisle match
-                for (const aisle of fullAisles) {
-                    const normalizedAisleName = pluralize.singular(aisle.name.trim().toLowerCase());
-                    if (normalizedAisleName === normalizedItemName) {
-                        return {
-                            aisleId: aisle.id,
-                            sectionId: null,
-                            aisleName: aisle.name,
-                            sectionName: undefined,
-                        };
-                    }
-                }
-
                 // Check for exact section match
                 for (const section of fullSections) {
                     const normalizedSectionName = pluralize.singular(
@@ -87,6 +74,19 @@ export function useAutoCategorize() {
                             sectionId: section.id,
                             aisleName: aisle?.name,
                             sectionName: section.name,
+                        };
+                    }
+                }
+
+                // Check for exact aisle match
+                for (const aisle of fullAisles) {
+                    const normalizedAisleName = pluralize.singular(aisle.name.trim().toLowerCase());
+                    if (normalizedAisleName === normalizedItemName) {
+                        return {
+                            aisleId: aisle.id,
+                            sectionId: null,
+                            aisleName: aisle.name,
+                            sectionName: undefined,
                         };
                     }
                 }
