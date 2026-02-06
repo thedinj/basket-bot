@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Hook that triggers a state update at midnight every day.
@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
  */
 export const useMidnightUpdate = (enabled: boolean = true): string => {
     const [currentDate, setCurrentDate] = useState(() => new Date().toDateString());
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         if (!enabled) return;
@@ -20,16 +21,19 @@ export const useMidnightUpdate = (enabled: boolean = true): string => {
             tomorrow.setHours(0, 0, 0, 0);
             const msUntilMidnight = tomorrow.getTime() - now.getTime();
 
-            const timeout = setTimeout(() => {
+            timeoutRef.current = setTimeout(() => {
                 setCurrentDate(new Date().toDateString());
                 scheduleNextUpdate();
             }, msUntilMidnight);
-
-            return timeout;
         };
 
-        const timeout = scheduleNextUpdate();
-        return () => clearTimeout(timeout);
+        scheduleNextUpdate();
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+            }
+        };
     }, [enabled]);
 
     return currentDate;
