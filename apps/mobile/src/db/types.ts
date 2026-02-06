@@ -74,6 +74,15 @@ export interface EntityDatabase {
      */
     deleteStore(id: string): Promise<void>;
 
+    /**
+     * Duplicate a store with its layout (aisles/sections) and optionally items
+     */
+    duplicateStore(params: {
+        sourceStoreId: string;
+        newStoreName: string;
+        includeItems: boolean;
+    }): Promise<Store>;
+
     // ========== App Settings Operations ==========
     /**
      * Get an app setting by key

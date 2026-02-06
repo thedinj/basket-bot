@@ -61,6 +61,19 @@ export const updateStoreRequestSchema = z.object({
 
 export type UpdateStoreRequest = z.infer<typeof updateStoreRequestSchema>;
 
+export const duplicateStoreRequestSchema = z.object({
+    newStoreName: minMaxLengthString(1, MAX_NAME_LENGTH, "Store name"),
+    includeItems: z.boolean().optional().default(false),
+});
+
+export type DuplicateStoreRequest = z.infer<typeof duplicateStoreRequestSchema>;
+
+export const duplicateStoreResponseSchema = z.object({
+    store: storeSchema,
+});
+
+export type DuplicateStoreResponse = z.infer<typeof duplicateStoreResponseSchema>;
+
 // ========== StoreCollaborator ==========
 export const storeCollaboratorRoleSchema = z.enum(["owner", "editor"]);
 

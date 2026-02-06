@@ -236,6 +236,30 @@ export function useDeleteStore() {
 }
 
 /**
+ * Hook to duplicate a store with its layout and optionally items
+ */
+export function useDuplicateStore() {
+    const database = useDatabase();
+    const queryClient = useQueryClient();
+    const { showError, showSuccess } = useToast();
+
+    return useTanstackMutation({
+        mutationFn: (params: {
+            sourceStoreId: string;
+            newStoreName: string;
+            includeItems: boolean;
+        }) => database.duplicateStore(params),
+        onSuccess: (newStore) => {
+            queryClient.invalidateQueries({ queryKey: ["stores"] });
+            showSuccess(`Store "${newStore.name}" created successfully`);
+        },
+        onError: (error: Error) => {
+            showError(`Failed to duplicate store: ${error.message}`);
+        },
+    });
+}
+
+/**
  * Hook to save an app setting
  */
 export function useSaveAppSetting() {

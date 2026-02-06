@@ -119,6 +119,29 @@ export class RemoteDatabase extends BaseDatabase {
         });
     }
 
+    async duplicateStore(params: {
+        sourceStoreId: string;
+        newStoreName: string;
+        includeItems: boolean;
+    }): Promise<Store> {
+        return this.executeMutation(
+            "duplicateStore",
+            `/api/stores/${params.sourceStoreId}/duplicate`,
+            "POST",
+            async () => {
+                const response = await apiClient.post<{ store: Store }>(
+                    `/api/stores/${params.sourceStoreId}/duplicate`,
+                    {
+                        newStoreName: params.newStoreName,
+                        includeItems: params.includeItems,
+                    }
+                );
+                return response.store;
+            },
+            { newStoreName: params.newStoreName, includeItems: params.includeItems }
+        );
+    }
+
     // ========== App Settings Operations ==========
     async getAppSetting(_key: string): Promise<AppSetting | null> {
         // App settings are not yet implemented in backend API

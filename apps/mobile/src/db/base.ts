@@ -47,6 +47,11 @@ export abstract class BaseDatabase implements Database {
     abstract getStoreById(id: string): Promise<Store | null>;
     abstract updateStore(id: string, name: string): Promise<Store>;
     abstract deleteStore(id: string): Promise<void>;
+    abstract duplicateStore(params: {
+        sourceStoreId: string;
+        newStoreName: string;
+        includeItems: boolean;
+    }): Promise<Store>;
 
     // ========== App Settings Operations (Abstract) ==========
     abstract getAppSetting(key: string): Promise<AppSetting | null>;

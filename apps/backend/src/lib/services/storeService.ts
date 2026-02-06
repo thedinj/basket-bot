@@ -85,3 +85,26 @@ export function deleteStore(id: string, userId: string): boolean {
 
     return storeRepo.deleteStore(id);
 }
+
+/**
+ * Duplicate a store with its layout (aisles/sections) and optionally items.
+ * User must have access to source store. New store is owned only by duplicating user.
+ */
+export function duplicateStore(params: {
+    sourceStoreId: string;
+    newStoreName: string;
+    userId: string;
+    includeItems: boolean;
+}): Store {
+    // Verify user has access to source store
+    if (!storeRepo.userHasAccessToStore(params.userId, params.sourceStoreId)) {
+        throw new Error("Access denied");
+    }
+
+    return storeRepo.duplicateStore({
+        sourceStoreId: params.sourceStoreId,
+        newStoreName: params.newStoreName,
+        userId: params.userId,
+        includeItems: params.includeItems,
+    });
+}

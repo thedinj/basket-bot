@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonButton,
     IonButtons,
+    IonCheckbox,
     IonContent,
     IonHeader,
     IonIcon,
@@ -20,6 +21,7 @@ import {
 } from "@ionic/react";
 import {
     closeOutline,
+    copy,
     create,
     gridOutline,
     listOutline,
@@ -32,10 +34,12 @@ import { useHistory, useParams } from "react-router-dom";
 import { z } from "zod";
 import { useAuth } from "../auth/useAuth";
 import { AppHeader } from "../components/layout/AppHeader";
+import { useShield } from "../components/shield/useShield";
 import { StoreCollaboratorsModal } from "../components/store/StoreCollaboratorsModal";
 import {
     useBulkReplaceAislesAndSections,
     useDeleteStore,
+    useDuplicateStore,
     useStore,
     useStoreCollaborators,
     useUpdateStore,
@@ -58,6 +62,16 @@ const storeFormSchema = z.object({
 
 type StoreFormData = z.infer<typeof storeFormSchema>;
 
+const duplicateStoreFormSchema = z.object({
+    name: z
+        .string()
+        .min(1, "Name is required")
+        .transform((val) => val.trim()),
+    includeItems: z.boolean(),
+});
+
+type DuplicateStoreFormData = z.infer<typeof duplicateStoreFormSchema>;
+
 const StoreDetail: React.FC = () => {
     useRenderStormDetector("StoreDetail");
     const { id } = useParams<{ id: string }>();
@@ -67,11 +81,14 @@ const StoreDetail: React.FC = () => {
     const { data: collaborators } = useStoreCollaborators(id);
     const updateStore = useUpdateStore();
     const deleteStore = useDeleteStore();
+    const duplicateStore = useDuplicateStore();
     const { replaceAislesAndSections } = useBulkReplaceAislesAndSections();
     const { openModal } = useLLMModal();
     const { showError } = useToast();
+    const { raiseShield, lowerShield } = useShield();
     const [presentAlert] = useIonAlert();
     const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+    const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
     const [showCollaboratorsModal, setShowCollaboratorsModal] = useState(false);
 
     // Determine current user's role
@@ -87,6 +104,20 @@ const StoreDetail: React.FC = () => {
         mode: "onChange",
     });
 
+    const {
+        control: duplicateControl,
+        handleSubmit: handleDuplicateSubmit,
+        reset: duplicateReset,
+        formState: { errors: duplicateErrors, isValid: isDuplicateValid },
+    } = useForm<DuplicateStoreFormData>({
+        resolver: zodResolver(duplicateStoreFormSchema),
+        mode: "onChange",
+        defaultValues: {
+            name: "",
+            includeItems: true,
+        },
+    });
+
     const openRenameModal = useCallback(() => {
         if (store) {
             reset({ name: store.name });
@@ -98,6 +129,40 @@ const StoreDetail: React.FC = () => {
         setIsRenameModalOpen(false);
         reset({ name: "" });
     }, [reset]);
+
+    const openDuplicateModal = useCallback(() => {
+        if (store) {
+            duplicateReset({
+                name: `${store.name} (Copy)`,
+                includeItems: true,
+            });
+            setIsDuplicateModalOpen(true);
+        }
+    }, [duplicateReset, store]);
+
+    const closeDuplicateModal = useCallback(() => {
+        setIsDuplicateModalOpen(false);
+        duplicateReset({ name: "", includeItems: false });
+    }, [duplicateReset]);
+
+    const onSubmitDuplicate = useCallback(
+        async (data: DuplicateStoreFormData) => {
+            const shieldId = "duplicate-store";
+            try {
+                raiseShield(shieldId, "Duplicating store...");
+                closeDuplicateModal();
+                const newStore = await duplicateStore.mutateAsync({
+                    sourceStoreId: id,
+                    newStoreName: data.name,
+                    includeItems: data.includeItems,
+                });
+                history.replace(`/stores/${encodeURIComponent(newStore.id)}`);
+            } finally {
+                lowerShield(shieldId);
+            }
+        },
+        [closeDuplicateModal, duplicateStore, history, id, lowerShield, raiseShield]
+    );
 
     const onSubmitRename = useCallback(
         async (data: StoreFormData) => {
@@ -253,6 +318,13 @@ const StoreDetail: React.FC = () => {
                             <p>Manage collaborators and invitations</p>
                         </IonLabel>
                     </IonItem>
+                    <IonItem button detail={true} onClick={openDuplicateModal}>
+                        <IonIcon icon={copy} slot="start" />
+                        <IonLabel>
+                            <h2>Duplicate Store</h2>
+                            <p>Copy layout and optionally items</p>
+                        </IonLabel>
+                    </IonItem>
                     <IonItem
                         button
                         detail={true}
@@ -340,6 +412,87 @@ const StoreDetail: React.FC = () => {
                         userRole={currentUserRole}
                     />
                 )}
+
+                {/* Duplicate Store Modal */}
+                <IonModal isOpen={isDuplicateModalOpen} onDidDismiss={closeDuplicateModal}>
+                    <IonHeader>
+                        <IonToolbar>
+                            <IonTitle>Duplicate Store</IonTitle>
+                            <IonButtons slot="end">
+                                <IonButton onClick={closeDuplicateModal}>
+                                    <IonIcon icon={closeOutline} />
+                                </IonButton>
+                            </IonButtons>
+                        </IonToolbar>
+                    </IonHeader>
+                    <IonContent className="ion-padding">
+                        <form onSubmit={handleDuplicateSubmit(onSubmitDuplicate)}>
+                            <Controller
+                                name="name"
+                                control={duplicateControl}
+                                render={({ field }) => (
+                                    <IonItem>
+                                        <IonLabel position="stacked">New Store Name</IonLabel>
+                                        <IonInput
+                                            value={field.value}
+                                            placeholder="Enter store name"
+                                            onIonInput={(e) => field.onChange(e.detail.value)}
+                                            autocapitalize="sentences"
+                                        />
+                                    </IonItem>
+                                )}
+                            />
+                            {duplicateErrors.name && (
+                                <IonText color="danger">
+                                    <p
+                                        style={{
+                                            fontSize: "12px",
+                                            marginLeft: "16px",
+                                        }}
+                                    >
+                                        {duplicateErrors.name.message}
+                                    </p>
+                                </IonText>
+                            )}
+
+                            <Controller
+                                name="includeItems"
+                                control={duplicateControl}
+                                render={({ field }) => (
+                                    <IonItem style={{ marginTop: "16px" }}>
+                                        <IonCheckbox
+                                            checked={field.value}
+                                            onIonChange={(e) => field.onChange(e.detail.checked)}
+                                        >
+                                            Include store items
+                                        </IonCheckbox>
+                                    </IonItem>
+                                )}
+                            />
+                            <IonText color="medium">
+                                <p
+                                    style={{
+                                        fontSize: "12px",
+                                        marginLeft: "16px",
+                                        marginTop: "8px",
+                                    }}
+                                >
+                                    Copies the product catalog with aisle/section locations.
+                                    Shopping list items are never copied.
+                                </p>
+                            </IonText>
+
+                            <IonButton
+                                expand="block"
+                                type="submit"
+                                disabled={!isDuplicateValid || duplicateStore.isPending}
+                                style={{ marginTop: "20px" }}
+                            >
+                                Duplicate
+                            </IonButton>
+                        </form>
+                    </IonContent>
+                </IonModal>
             </IonContent>
         </IonPage>
     );

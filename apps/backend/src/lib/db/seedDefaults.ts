@@ -1,12 +1,6 @@
 import { randomUUID } from "crypto";
+import { normalizeItemName } from "../utils/stringUtils";
 import { db } from "./db";
-
-/**
- * Helper to normalize item names (lowercase, trim whitespace)
- */
-function normalizeItemName(name: string): string {
-    return name.toLowerCase().trim();
-}
 
 /**
  * Creates a default store with sample data for a user.

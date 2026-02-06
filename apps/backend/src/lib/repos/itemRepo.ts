@@ -1,5 +1,6 @@
 import type { StoreItem, StoreItemWithDetails } from "@basket-bot/core";
 import { db } from "../db/db";
+import { normalizeItemName } from "../utils/stringUtils";
 
 /**
  * Repository for StoreItem entity operations.
@@ -16,10 +17,6 @@ import { db } from "../db/db";
 function intToBool(value: number | null | undefined): boolean {
     if (value == null) return false;
     return value !== 0;
-}
-
-function normalizeItemName(name: string): string {
-    return name.toLowerCase().trim();
 }
 
 export function createItem(params: {
