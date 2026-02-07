@@ -87,17 +87,6 @@ export const AppMenu: React.FC = () => {
                     )}
                     <IonList>
                         <IonMenuToggle autoHide={false}>
-                            <IonItem button onClick={openHouseholds} lines="none">
-                                <IonIcon icon={homeOutline} slot="start" />
-                                <IonLabel>Households</IonLabel>
-                                {pendingInvitations && pendingInvitations.length > 0 ? (
-                                    <IonBadge color="primary" slot="end">
-                                        {pendingInvitations.length}
-                                    </IonBadge>
-                                ) : null}
-                            </IonItem>
-                        </IonMenuToggle>
-                        <IonMenuToggle autoHide={false}>
                             <IonItem button onClick={openSettings} lines="none">
                                 <IonIcon icon={settings} slot="start" />
                                 <IonLabel>Settings</IonLabel>
@@ -116,6 +105,17 @@ export const AppMenu: React.FC = () => {
                             </IonItem>
                         </IonMenuToggle>
                     </IonList>
+                    <IonMenuToggle autoHide={false}>
+                        <IonItem button onClick={openHouseholds} lines="none">
+                            <IonIcon icon={homeOutline} slot="start" />
+                            <IonLabel>Households</IonLabel>
+                            {pendingInvitations && pendingInvitations.length > 0 ? (
+                                <IonBadge color="primary" slot="end">
+                                    {pendingInvitations.length}
+                                </IonBadge>
+                            ) : null}
+                        </IonItem>
+                    </IonMenuToggle>
                     <div style={{ padding: "16px", marginTop: "auto" }}>
                         <IonButton expand="block" color="danger" onClick={handleLogout}>
                             <IonIcon icon={logOut} slot="start" />
