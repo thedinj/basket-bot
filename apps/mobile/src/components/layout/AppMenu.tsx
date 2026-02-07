@@ -16,7 +16,7 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { keyOutline, logOut, peopleOutline, person, settings } from "ionicons/icons";
+import { homeOutline, keyOutline, logOut, person, settings } from "ionicons/icons";
 import { useAuth } from "../../auth/useAuth";
 import { usePendingInvitations } from "../../db/hooks";
 import { useAppHeader } from "./useAppHeader";
@@ -87,6 +87,17 @@ export const AppMenu: React.FC = () => {
                     )}
                     <IonList>
                         <IonMenuToggle autoHide={false}>
+                            <IonItem button onClick={openHouseholds} lines="none">
+                                <IonIcon icon={homeOutline} slot="start" />
+                                <IonLabel>Households</IonLabel>
+                                {pendingInvitations && pendingInvitations.length > 0 ? (
+                                    <IonBadge color="primary" slot="end">
+                                        {pendingInvitations.length}
+                                    </IonBadge>
+                                ) : null}
+                            </IonItem>
+                        </IonMenuToggle>
+                        <IonMenuToggle autoHide={false}>
                             <IonItem button onClick={openSettings} lines="none">
                                 <IonIcon icon={settings} slot="start" />
                                 <IonLabel>Settings</IonLabel>
@@ -102,17 +113,6 @@ export const AppMenu: React.FC = () => {
                             <IonItem button onClick={openPassword} lines="none">
                                 <IonIcon icon={keyOutline} slot="start" />
                                 <IonLabel>Change Password</IonLabel>
-                            </IonItem>
-                        </IonMenuToggle>
-                        <IonMenuToggle autoHide={false}>
-                            <IonItem button onClick={openHouseholds} lines="none">
-                                <IonIcon icon={peopleOutline} slot="start" />
-                                <IonLabel>Households</IonLabel>
-                                {pendingInvitations && pendingInvitations.length > 0 ? (
-                                    <IonBadge color="primary" slot="end">
-                                        {pendingInvitations.length}
-                                    </IonBadge>
-                                ) : null}
                             </IonItem>
                         </IonMenuToggle>
                     </IonList>

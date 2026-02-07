@@ -4,11 +4,14 @@ import { add } from "ionicons/icons";
 import { useCallback } from "react";
 import { useHistory, useParams } from "react-router-dom";
 import { AppHeader } from "../components/layout/AppHeader";
+import GlobalActions from "../components/layout/GlobalActions";
 import { FabSpacer } from "../components/shared/FabSpacer";
+import PullToRefresh from "../components/shared/PullToRefresh";
 import AisleSectionList from "../components/store/AisleSectionList";
 import { useStoreManagement } from "../components/store/StoreManagementContext";
 import { StoreManagementProvider } from "../components/store/StoreManagementProvider";
 import { useStore } from "../db/hooks";
+import RefreshConfig from "../hooks/refresh/RefreshConfig";
 import { useToast } from "../hooks/useToast";
 
 const StoreAislesPageContent: React.FC<{ storeId: string }> = ({ storeId }) => {
@@ -35,20 +38,31 @@ const StoreAislesPageContent: React.FC<{ storeId: string }> = ({ storeId }) => {
 
     return (
         <IonPage>
-            <AppHeader
-                title={`${store?.name || "Store"} Aisles & Sections`}
-                showBackButton
-                backButtonHref={`/stores/${encodeURIComponent(storeId)}`}
-            />
-            <IonContent fullscreen>
-                <AisleSectionList storeId={storeId} />
-                <FabSpacer />
-                <IonFab slot="fixed" vertical="bottom" horizontal="end">
-                    <IonFabButton onClick={handleFabClick}>
-                        <IonIcon icon={add} />
-                    </IonFabButton>
-                </IonFab>
-            </IonContent>
+            <RefreshConfig
+                queryKeys={[
+                    ["stores", storeId],
+                    ["aisles", storeId],
+                    ["sections", storeId],
+                ]}
+            >
+                <AppHeader
+                    title={`${store?.name || "Store"} Aisles & Sections`}
+                    showBackButton
+                    backButtonHref={`/stores/${encodeURIComponent(storeId)}`}
+                >
+                    <GlobalActions />
+                </AppHeader>
+                <IonContent fullscreen>
+                    <PullToRefresh />
+                    <AisleSectionList storeId={storeId} />
+                    <FabSpacer />
+                    <IonFab slot="fixed" vertical="bottom" horizontal="end">
+                        <IonFabButton onClick={handleFabClick}>
+                            <IonIcon icon={add} />
+                        </IonFabButton>
+                    </IonFab>
+                </IonContent>
+            </RefreshConfig>
         </IonPage>
     );
 };

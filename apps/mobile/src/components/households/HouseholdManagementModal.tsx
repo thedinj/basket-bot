@@ -16,7 +16,7 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { addOutline, checkmarkOutline, closeOutline, peopleOutline } from "ionicons/icons";
+import { addOutline, checkmarkOutline, closeOutline, homeOutline } from "ionicons/icons";
 import React, { useState } from "react";
 import {
     useAcceptInvitation,
@@ -179,7 +179,7 @@ export const HouseholdManagementModal: React.FC = () => {
                                     button
                                     onClick={() => handleHouseholdClick(household.id)}
                                 >
-                                    <IonIcon icon={peopleOutline} slot="start" />
+                                    <IonIcon icon={homeOutline} slot="start" />
                                     <IonLabel>
                                         <h3>{household.name}</h3>
                                     </IonLabel>

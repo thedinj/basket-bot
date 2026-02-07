@@ -24,8 +24,8 @@ import {
     copy,
     create,
     gridOutline,
+    homeOutline,
     listOutline,
-    peopleOutline,
     trash,
 } from "ionicons/icons";
 import { useCallback, useState } from "react";
@@ -308,7 +308,7 @@ const StoreDetail: React.FC = () => {
                                 </IonLabel>
                             </IonItem>
                             <IonItem>
-                                <IonIcon icon={peopleOutline} slot="start" />
+                                <IonIcon icon={homeOutline} slot="start" />
                                 <IonLabel>
                                     <IonSkeletonText animated style={{ width: "160px" }} />
                                     <IonSkeletonText animated style={{ width: "220px" }} />
@@ -356,13 +356,12 @@ const StoreDetail: React.FC = () => {
                                     detail={true}
                                     onClick={() => setIsHouseholdSharingModalOpen(true)}
                                 >
-                                    <IonIcon icon={peopleOutline} slot="start" />
+                                    <IonIcon icon={homeOutline} slot="start" />
                                     <IonLabel>
                                         <h2>Share with Household</h2>
                                         <p>
-                                            {store.householdId
-                                                ? "Shared with household"
-                                                : "Private (only you)"}
+                                            Determine if this store is available to everyone in your
+                                            household or only you.
                                         </p>
                                     </IonLabel>
                                 </IonItem>
