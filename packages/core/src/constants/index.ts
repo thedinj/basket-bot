@@ -6,13 +6,6 @@ export const MIN_PASSWORD_LENGTH = 6;
 // Text field length limits
 export * from "./textLimits";
 
-// Role hierarchy
-export const ROLE_HIERARCHY = {
-    owner: 3,
-    editor: 2,
-    viewer: 1,
-} as const;
-
 // Scopes
 export const ADMIN_SCOPE = "admin";
 

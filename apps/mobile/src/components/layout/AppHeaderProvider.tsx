@@ -5,6 +5,7 @@ export const AppHeaderProvider: React.FC<PropsWithChildren> = ({ children }) => 
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+    const [isHouseholdsOpen, setIsHouseholdsOpen] = useState(false);
 
     const openSettings = useCallback(() => setIsSettingsOpen(true), []);
     const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
@@ -14,6 +15,9 @@ export const AppHeaderProvider: React.FC<PropsWithChildren> = ({ children }) => 
 
     const openPassword = useCallback(() => setIsPasswordOpen(true), []);
     const closePassword = useCallback(() => setIsPasswordOpen(false), []);
+
+    const openHouseholds = useCallback(() => setIsHouseholdsOpen(true), []);
+    const closeHouseholds = useCallback(() => setIsHouseholdsOpen(false), []);
 
     const value = useMemo(
         () => ({
@@ -26,6 +30,9 @@ export const AppHeaderProvider: React.FC<PropsWithChildren> = ({ children }) => 
             isPasswordOpen,
             openPassword,
             closePassword,
+            isHouseholdsOpen,
+            openHouseholds,
+            closeHouseholds,
         }),
         [
             isSettingsOpen,
@@ -37,6 +44,9 @@ export const AppHeaderProvider: React.FC<PropsWithChildren> = ({ children }) => 
             isPasswordOpen,
             openPassword,
             closePassword,
+            isHouseholdsOpen,
+            openHouseholds,
+            closeHouseholds,
         ]
     );
 

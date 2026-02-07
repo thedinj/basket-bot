@@ -14,7 +14,6 @@ export const MAX_EMAIL_LENGTH = 255; // Email addresses
 export const MAX_NOTES_LENGTH = 1000; // Shopping list item notes and descriptions
 
 // System field limits
-export const MAX_ROLE_LENGTH = 50; // Role enums (owner/editor)
 export const MAX_TOKEN_LENGTH = 255; // Refresh tokens, invitation tokens
 export const MAX_PASSWORD_HASH_LENGTH = 255; // Bcrypt hashes (~60 chars, buffer for future algorithms)
 export const MAX_SCOPES_LENGTH = 500; // JSON array of scope strings

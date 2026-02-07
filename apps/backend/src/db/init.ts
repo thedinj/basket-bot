@@ -34,7 +34,6 @@ export function initializeDatabase() {
             "id" TEXT NOT NULL PRIMARY KEY,
             "householdId" TEXT NOT NULL,
             "userId" TEXT NOT NULL,
-            "role" TEXT NOT NULL CHECK(length("role") <= 50),
             "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY ("householdId") REFERENCES "Household" ("id") ON DELETE CASCADE,
             FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE,
@@ -47,7 +46,6 @@ export function initializeDatabase() {
             "householdId" TEXT NOT NULL,
             "invitedEmail" TEXT NOT NULL COLLATE NOCASE CHECK(length("invitedEmail") <= 255),
             "invitedById" TEXT NOT NULL,
-            "role" TEXT NOT NULL CHECK(length("role") <= 50),
             "token" TEXT NOT NULL UNIQUE CHECK(length("token") <= 255),
             "status" TEXT NOT NULL DEFAULT 'pending' CHECK(length("status") <= 50),
             "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -76,38 +74,14 @@ export function initializeDatabase() {
         CREATE TABLE IF NOT EXISTS "Store" (
             "id" TEXT NOT NULL PRIMARY KEY,
             "name" TEXT NOT NULL CHECK(length("name") >= 1 AND length("name") <= 100),
+            "householdId" TEXT,
             "createdById" TEXT NOT NULL,
             "updatedById" TEXT NOT NULL,
             "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "updatedAt" DATETIME NOT NULL,
+            FOREIGN KEY ("householdId") REFERENCES "Household" ("id") ON DELETE SET NULL,
             FOREIGN KEY ("createdById") REFERENCES "User" ("id") ON DELETE RESTRICT,
             FOREIGN KEY ("updatedById") REFERENCES "User" ("id") ON DELETE RESTRICT
-        );
-
-        -- StoreCollaborator table
-        CREATE TABLE IF NOT EXISTS "StoreCollaborator" (
-            "id" TEXT NOT NULL PRIMARY KEY,
-            "storeId" TEXT NOT NULL,
-            "userId" TEXT NOT NULL,
-            "role" TEXT NOT NULL CHECK(length("role") <= 50),
-            "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY ("storeId") REFERENCES "Store" ("id") ON DELETE CASCADE,
-            FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE,
-            UNIQUE ("storeId", "userId")
-        );
-
-        -- StoreInvitation table
-        CREATE TABLE IF NOT EXISTS "StoreInvitation" (
-            "id" TEXT NOT NULL PRIMARY KEY,
-            "storeId" TEXT NOT NULL,
-            "invitedEmail" TEXT NOT NULL COLLATE NOCASE CHECK(length("invitedEmail") <= 255),
-            "invitedById" TEXT NOT NULL,
-            "role" TEXT NOT NULL CHECK(length("role") <= 50),
-            "token" TEXT NOT NULL UNIQUE CHECK(length("token") <= 255),
-            "status" TEXT NOT NULL DEFAULT 'pending' CHECK(length("status") <= 50),
-            "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY ("storeId") REFERENCES "Store" ("id") ON DELETE CASCADE,
-            FOREIGN KEY ("invitedById") REFERENCES "User" ("id") ON DELETE CASCADE
         );
 
         -- StoreAisle table
@@ -214,11 +188,8 @@ export function initializeDatabase() {
         CREATE INDEX IF NOT EXISTS "HouseholdInvitation_invitedEmail_status_idx"
             ON "HouseholdInvitation"("invitedEmail", "status");
 
-        CREATE INDEX IF NOT EXISTS "StoreInvitation_token_idx"
-            ON "StoreInvitation"("token");
-
-        CREATE INDEX IF NOT EXISTS "StoreInvitation_invitedEmail_status_idx"
-            ON "StoreInvitation"("invitedEmail", "status");
+        CREATE INDEX IF NOT EXISTS "Store_householdId_idx"
+            ON "Store"("householdId");
 
         CREATE INDEX IF NOT EXISTS "User_email_idx"
             ON "User"("email" COLLATE NOCASE);

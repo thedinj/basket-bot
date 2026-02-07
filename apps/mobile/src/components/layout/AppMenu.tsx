@@ -1,7 +1,9 @@
+import HouseholdManagementModal from "@/components/households/HouseholdManagementModal";
 import PasswordChangeModal from "@/components/settings/PasswordChangeModal";
 import ProfileEditorModal from "@/components/settings/ProfileEditorModal";
 import Settings from "@/components/settings/Settings";
 import {
+    IonBadge,
     IonButton,
     IonContent,
     IonHeader,
@@ -14,13 +16,15 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { keyOutline, logOut, person, settings } from "ionicons/icons";
+import { keyOutline, logOut, peopleOutline, person, settings } from "ionicons/icons";
 import { useAuth } from "../../auth/useAuth";
+import { usePendingInvitations } from "../../db/hooks";
 import { useAppHeader } from "./useAppHeader";
 
 export const AppMenu: React.FC = () => {
-    const { openSettings, openProfile, openPassword } = useAppHeader();
+    const { openSettings, openProfile, openPassword, openHouseholds } = useAppHeader();
     const { user, logout } = useAuth();
+    const { data: pendingInvitations } = usePendingInvitations();
 
     const handleLogout = async () => {
         try {
@@ -100,6 +104,17 @@ export const AppMenu: React.FC = () => {
                                 <IonLabel>Change Password</IonLabel>
                             </IonItem>
                         </IonMenuToggle>
+                        <IonMenuToggle autoHide={false}>
+                            <IonItem button onClick={openHouseholds} lines="none">
+                                <IonIcon icon={peopleOutline} slot="start" />
+                                <IonLabel>Households</IonLabel>
+                                {pendingInvitations && pendingInvitations.length > 0 ? (
+                                    <IonBadge color="primary" slot="end">
+                                        {pendingInvitations.length}
+                                    </IonBadge>
+                                ) : null}
+                            </IonItem>
+                        </IonMenuToggle>
                     </IonList>
                     <div style={{ padding: "16px", marginTop: "auto" }}>
                         <IonButton expand="block" color="danger" onClick={handleLogout}>
@@ -112,6 +127,7 @@ export const AppMenu: React.FC = () => {
             <Settings />
             <ProfileEditorModal />
             <PasswordChangeModal />
+            <HouseholdManagementModal />
         </>
     );
 };

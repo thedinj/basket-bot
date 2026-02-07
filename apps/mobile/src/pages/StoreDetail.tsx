@@ -32,16 +32,14 @@ import { useCallback, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useHistory, useParams } from "react-router-dom";
 import { z } from "zod";
-import { useAuth } from "../auth/useAuth";
 import { AppHeader } from "../components/layout/AppHeader";
 import { useShield } from "../components/shield/useShield";
-import { StoreCollaboratorsModal } from "../components/store/StoreCollaboratorsModal";
+import StoreHouseholdSharingModal from "../components/store/StoreHouseholdSharingModal";
 import {
     useBulkReplaceAislesAndSections,
     useDeleteStore,
     useDuplicateStore,
     useStore,
-    useStoreCollaborators,
     useUpdateStore,
 } from "../db/hooks";
 import { useToast } from "../hooks/useToast";
@@ -76,9 +74,7 @@ const StoreDetail: React.FC = () => {
     useRenderStormDetector("StoreDetail");
     const { id } = useParams<{ id: string }>();
     const history = useHistory();
-    const { user } = useAuth();
     const { data: store, isLoading } = useStore(id);
-    const { data: collaborators } = useStoreCollaborators(id);
     const updateStore = useUpdateStore();
     const deleteStore = useDeleteStore();
     const duplicateStore = useDuplicateStore();
@@ -89,10 +85,7 @@ const StoreDetail: React.FC = () => {
     const [presentAlert] = useIonAlert();
     const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
     const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
-    const [showCollaboratorsModal, setShowCollaboratorsModal] = useState(false);
-
-    // Determine current user's role
-    const currentUserRole = collaborators?.find((c) => c.userId === user?.id)?.role;
+    const [isHouseholdSharingModalOpen, setIsHouseholdSharingModalOpen] = useState(false);
 
     const {
         control,
@@ -305,48 +298,107 @@ const StoreDetail: React.FC = () => {
             </AppHeader>
             <IonContent fullscreen>
                 <IonList>
-                    <LLMItem button detail={true} onClick={handleAutoScan} requireApiKey={false}>
-                        <IonLabel>
-                            <h2>Auto-Scan Aisles/Sections</h2>
-                            <p>Import from store directory photo</p>
-                        </IonLabel>
-                    </LLMItem>
-                    <IonItem button detail={true} onClick={() => setShowCollaboratorsModal(true)}>
-                        <IonIcon icon={peopleOutline} slot="start" />
-                        <IonLabel>
-                            <h2>Share Store</h2>
-                            <p>Manage collaborators and invitations</p>
-                        </IonLabel>
-                    </IonItem>
-                    <IonItem button detail={true} onClick={openDuplicateModal}>
-                        <IonIcon icon={copy} slot="start" />
-                        <IonLabel>
-                            <h2>Duplicate Store</h2>
-                            <p>Copy layout and optionally items</p>
-                        </IonLabel>
-                    </IonItem>
-                    <IonItem
-                        button
-                        detail={true}
-                        routerLink={`/stores/${encodeURIComponent(id)}/aisles`}
-                    >
-                        <IonIcon icon={gridOutline} slot="start" />
-                        <IonLabel>
-                            <h2>Edit Aisles/Sections</h2>
-                            <p>Organize store layout</p>
-                        </IonLabel>
-                    </IonItem>
-                    <IonItem
-                        button
-                        detail={true}
-                        routerLink={`/stores/${encodeURIComponent(id)}/items`}
-                    >
-                        <IonIcon icon={listOutline} slot="start" />
-                        <IonLabel>
-                            <h2>Edit Store Items</h2>
-                            <p>Manage products and their locations</p>
-                        </IonLabel>
-                    </IonItem>
+                    {isLoading ? (
+                        <>
+                            <IonItem>
+                                <IonIcon icon={listOutline} slot="start" />
+                                <IonLabel>
+                                    <IonSkeletonText animated style={{ width: "180px" }} />
+                                    <IonSkeletonText animated style={{ width: "240px" }} />
+                                </IonLabel>
+                            </IonItem>
+                            <IonItem>
+                                <IonIcon icon={peopleOutline} slot="start" />
+                                <IonLabel>
+                                    <IonSkeletonText animated style={{ width: "160px" }} />
+                                    <IonSkeletonText animated style={{ width: "220px" }} />
+                                </IonLabel>
+                            </IonItem>
+                            <IonItem>
+                                <IonIcon icon={copy} slot="start" />
+                                <IonLabel>
+                                    <IonSkeletonText animated style={{ width: "170px" }} />
+                                    <IonSkeletonText animated style={{ width: "230px" }} />
+                                </IonLabel>
+                            </IonItem>
+                            <IonItem>
+                                <IonIcon icon={gridOutline} slot="start" />
+                                <IonLabel>
+                                    <IonSkeletonText animated style={{ width: "190px" }} />
+                                    <IonSkeletonText animated style={{ width: "210px" }} />
+                                </IonLabel>
+                            </IonItem>
+                            <IonItem>
+                                <IonIcon icon={listOutline} slot="start" />
+                                <IonLabel>
+                                    <IonSkeletonText animated style={{ width: "160px" }} />
+                                    <IonSkeletonText animated style={{ width: "220px" }} />
+                                </IonLabel>
+                            </IonItem>
+                        </>
+                    ) : (
+                        <>
+                            <LLMItem
+                                button
+                                detail={true}
+                                onClick={handleAutoScan}
+                                requireApiKey={false}
+                            >
+                                <IonLabel>
+                                    <h2>Auto-Scan Aisles/Sections</h2>
+                                    <p>Import from store directory photo</p>
+                                </IonLabel>
+                            </LLMItem>
+
+                            {store ? (
+                                <IonItem
+                                    button
+                                    detail={true}
+                                    onClick={() => setIsHouseholdSharingModalOpen(true)}
+                                >
+                                    <IonIcon icon={peopleOutline} slot="start" />
+                                    <IonLabel>
+                                        <h2>Share with Household</h2>
+                                        <p>
+                                            {store.householdId
+                                                ? "Shared with household"
+                                                : "Private (only you)"}
+                                        </p>
+                                    </IonLabel>
+                                </IonItem>
+                            ) : null}
+
+                            <IonItem button detail={true} onClick={openDuplicateModal}>
+                                <IonIcon icon={copy} slot="start" />
+                                <IonLabel>
+                                    <h2>Duplicate Store</h2>
+                                    <p>Copy layout and optionally items</p>
+                                </IonLabel>
+                            </IonItem>
+                            <IonItem
+                                button
+                                detail={true}
+                                routerLink={`/stores/${encodeURIComponent(id)}/aisles`}
+                            >
+                                <IonIcon icon={gridOutline} slot="start" />
+                                <IonLabel>
+                                    <h2>Edit Aisles/Sections</h2>
+                                    <p>Organize store layout</p>
+                                </IonLabel>
+                            </IonItem>
+                            <IonItem
+                                button
+                                detail={true}
+                                routerLink={`/stores/${encodeURIComponent(id)}/items`}
+                            >
+                                <IonIcon icon={listOutline} slot="start" />
+                                <IonLabel>
+                                    <h2>Edit Store Items</h2>
+                                    <p>Manage products and their locations</p>
+                                </IonLabel>
+                            </IonItem>
+                        </>
+                    )}
                 </IonList>
 
                 {/* Rename Store Modal */}
@@ -402,16 +454,6 @@ const StoreDetail: React.FC = () => {
                         </form>
                     </IonContent>
                 </IonModal>
-
-                {/* Store Collaborators Modal */}
-                {currentUserRole && (
-                    <StoreCollaboratorsModal
-                        isOpen={showCollaboratorsModal}
-                        onDismiss={() => setShowCollaboratorsModal(false)}
-                        storeId={id}
-                        userRole={currentUserRole}
-                    />
-                )}
 
                 {/* Duplicate Store Modal */}
                 <IonModal isOpen={isDuplicateModalOpen} onDidDismiss={closeDuplicateModal}>
@@ -493,6 +535,13 @@ const StoreDetail: React.FC = () => {
                         </form>
                     </IonContent>
                 </IonModal>
+
+                {/* Household Sharing Modal */}
+                <StoreHouseholdSharingModal
+                    store={store || null}
+                    isOpen={isHouseholdSharingModalOpen}
+                    onClose={() => setIsHouseholdSharingModalOpen(false)}
+                />
             </IonContent>
         </IonPage>
     );

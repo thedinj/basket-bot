@@ -2,10 +2,6 @@ import { z } from "zod";
 import { MAX_EMAIL_LENGTH, MAX_NAME_LENGTH } from "../constants/index.js";
 import { minMaxLengthString } from "./zodHelpers.js";
 
-// Household member roles
-export const householdRoleSchema = z.enum(["owner", "editor", "viewer"]);
-export type HouseholdRole = z.infer<typeof householdRoleSchema>;
-
 // Household schemas
 export const householdSchema = z.object({
     id: z.string().uuid(),
@@ -22,7 +18,6 @@ export const householdMemberSchema = z.object({
     id: z.string().uuid(),
     householdId: z.string().uuid(),
     userId: z.string().uuid(),
-    role: householdRoleSchema,
     createdAt: z.date(),
 });
 
@@ -42,7 +37,6 @@ export type UpdateHouseholdRequest = z.infer<typeof updateHouseholdRequestSchema
 
 export const addHouseholdMemberRequestSchema = z.object({
     userId: z.string().uuid(),
-    role: householdRoleSchema,
 });
 
 export type AddHouseholdMemberRequest = z.infer<typeof addHouseholdMemberRequestSchema>;
@@ -60,7 +54,6 @@ export const householdInvitationSchema = z.object({
         .email()
         .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` }),
     invitedById: z.string().uuid(),
-    role: householdRoleSchema,
     token: z.string().uuid(),
     status: invitationStatusSchema,
     createdAt: z.date(),
@@ -73,7 +66,6 @@ export const createInvitationRequestSchema = z.object({
         .string()
         .email()
         .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` }),
-    role: householdRoleSchema,
 });
 
 export type CreateInvitationRequest = z.infer<typeof createInvitationRequestSchema>;
@@ -95,7 +87,6 @@ export const householdMemberDetailSchema = z.object({
         .string()
         .email()
         .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` }),
-    role: householdRoleSchema,
     createdAt: z.date(),
 });
 
@@ -106,13 +97,6 @@ export const householdWithMembersSchema = householdSchema.extend({
 });
 
 export type HouseholdWithMembers = z.infer<typeof householdWithMembersSchema>;
-
-// Update member role request
-export const updateMemberRoleRequestSchema = z.object({
-    role: householdRoleSchema,
-});
-
-export type UpdateMemberRoleRequest = z.infer<typeof updateMemberRoleRequestSchema>;
 
 // Invitation detail (with household name and inviter name)
 export const invitationDetailSchema = householdInvitationSchema.extend({

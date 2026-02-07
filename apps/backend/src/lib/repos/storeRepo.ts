@@ -1,4 +1,4 @@
-import type { Store, StoreCollaborator, StoreCollaboratorDetail } from "@basket-bot/core";
+import type { Store } from "@basket-bot/core";
 import { db } from "../db/db";
 import { normalizeItemName } from "../utils/stringUtils";
 
@@ -7,14 +7,26 @@ import { normalizeItemName } from "../utils/stringUtils";
  * Handles all database access for stores.
  */
 
-export function createStore(params: { name: string; createdById: string }): Store {
+export function createStore(params: {
+    name: string;
+    createdById: string;
+    householdId?: string | null;
+}): Store {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
 
     db.prepare(
-        `INSERT INTO Store (id, name, createdById, updatedById, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?)`
-    ).run(id, params.name, params.createdById, params.createdById, now, now);
+        `INSERT INTO Store (id, name, householdId, createdById, updatedById, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+        id,
+        params.name,
+        params.householdId ?? null,
+        params.createdById,
+        params.createdById,
+        now,
+        now
+    );
 
     return getStoreById(id)!;
 }
@@ -22,7 +34,7 @@ export function createStore(params: { name: string; createdById: string }): Stor
 export function getStoreById(id: string): Store | null {
     const row = db
         .prepare(
-            `SELECT id, name, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, name, householdId, createdById, updatedById, createdAt, updatedAt
              FROM Store
              WHERE id = ?`
         )
@@ -34,13 +46,13 @@ export function getStoreById(id: string): Store | null {
 export function getStoresByUser(userId: string): Store[] {
     return db
         .prepare(
-            `SELECT s.id, s.name, s.createdById, s.updatedById, s.createdAt, s.updatedAt
+            `SELECT DISTINCT s.id, s.name, s.householdId, s.createdById, s.updatedById, s.createdAt, s.updatedAt
              FROM Store s
-             JOIN StoreCollaborator sc ON s.id = sc.storeId
-             WHERE sc.userId = ?
+             LEFT JOIN HouseholdMember hm ON s.householdId = hm.householdId AND hm.userId = ?
+             WHERE s.createdById = ? OR hm.userId IS NOT NULL
              ORDER BY s.name ASC`
         )
-        .all(userId) as Store[];
+        .all(userId, userId) as Store[];
 }
 
 export function updateStore(params: {
@@ -73,7 +85,8 @@ export function deleteStore(id: string): boolean {
 /**
  * Duplicate a store with its aisles, sections, and optionally items.
  * Creates a new store owned by the specified user with copied layout.
- * Does not copy collaborators or shopping list items.
+ * The new store is private (householdId = null) by default.
+ * Does not copy shopping list items.
  * @throws Error if source store doesn't exist or user lacks access
  * @throws Error if ID mappings fail (data integrity issue)
  */
@@ -88,20 +101,13 @@ export function duplicateStore(params: {
 
     // Execute all operations in a transaction for atomicity
     db.transaction(() => {
-        // 1. Create the new store
+        // 1. Create the new store (private by default)
         db.prepare(
-            `INSERT INTO Store (id, name, createdById, updatedById, createdAt, updatedAt)
-             VALUES (?, ?, ?, ?, ?, ?)`
+            `INSERT INTO Store (id, name, householdId, createdById, updatedById, createdAt, updatedAt)
+             VALUES (?, ?, NULL, ?, ?, ?, ?)`
         ).run(newStoreId, params.newStoreName, params.userId, params.userId, now, now);
 
-        // 2. Add user as owner collaborator
-        const collaboratorId = crypto.randomUUID();
-        db.prepare(
-            `INSERT INTO StoreCollaborator (id, storeId, userId, role, createdAt)
-             VALUES (?, ?, ?, 'owner', ?)`
-        ).run(collaboratorId, newStoreId, params.userId, now);
-
-        // 3. Copy aisles and build ID mapping
+        // 2. Copy aisles and build ID mapping
         const aisleIdMap = new Map<string, string>();
         const sourceAisles = db
             .prepare(
@@ -132,7 +138,7 @@ export function duplicateStore(params: {
             );
         }
 
-        // 4. Copy sections with mapped aisle IDs
+        // 3. Copy sections with mapped aisle IDs
         const sourceSections = db
             .prepare(
                 `SELECT id, aisleId, name, sortOrder
@@ -178,7 +184,7 @@ export function duplicateStore(params: {
             );
         }
 
-        // 5. Optionally copy items with mapped aisle/section IDs
+        // 4. Optionally copy items with mapped aisle/section IDs
         if (params.includeItems) {
             const sourceItems = db
                 .prepare(
@@ -247,160 +253,42 @@ export function duplicateStore(params: {
 }
 
 /**
- * Check if a user has access to a store (via collaborator relationship)
+ * Check if a user has access to a store (creator or household member)
  */
 export function userHasAccessToStore(userId: string, storeId: string): boolean {
     const row = db
         .prepare(
             `SELECT 1
-             FROM StoreCollaborator
-             WHERE storeId = ? AND userId = ?`
+             FROM Store s
+             LEFT JOIN HouseholdMember hm ON s.householdId = hm.householdId AND hm.userId = ?
+             WHERE s.id = ? AND (s.createdById = ? OR hm.userId IS NOT NULL)`
         )
-        .get(storeId, userId);
+        .get(userId, storeId, userId);
 
     return !!row;
 }
 
 /**
- * Get user's role for a store (owner, editor, or null if not a collaborator)
+ * Update a store's household association (set or clear)
  */
-export function getUserStoreRole(userId: string, storeId: string): "owner" | "editor" | null {
-    const row = db
-        .prepare(
-            `SELECT role
-             FROM StoreCollaborator
-             WHERE storeId = ? AND userId = ?`
-        )
-        .get(storeId, userId) as { role: "owner" | "editor" } | undefined;
-
-    return row?.role ?? null;
-}
-
-/**
- * Check if user is the owner of a store
- */
-export function userIsStoreOwner(userId: string, storeId: string): boolean {
-    return getUserStoreRole(userId, storeId) === "owner";
-}
-
-/**
- * Add a collaborator to a store
- */
-export function addStoreCollaborator(params: {
+export function updateStoreHousehold(params: {
     storeId: string;
-    userId: string;
-    role: "owner" | "editor";
-}): StoreCollaborator {
-    const id = crypto.randomUUID();
+    householdId: string | null;
+    updatedById: string;
+}): Store | null {
     const now = new Date().toISOString();
 
-    db.prepare(
-        `INSERT INTO StoreCollaborator (id, storeId, userId, role, createdAt)
-         VALUES (?, ?, ?, ?, ?)`
-    ).run(id, params.storeId, params.userId, params.role, now);
-
-    return getStoreCollaboratorById(id)!;
-}
-
-/**
- * Get a collaborator by ID
- */
-export function getStoreCollaboratorById(id: string): StoreCollaborator | null {
-    const row = db
+    const result = db
         .prepare(
-            `SELECT id, storeId, userId, role, createdAt
-             FROM StoreCollaborator
+            `UPDATE Store
+             SET householdId = ?, updatedById = ?, updatedAt = ?
              WHERE id = ?`
         )
-        .get(id) as StoreCollaborator | undefined;
+        .run(params.householdId, params.updatedById, now, params.storeId);
 
-    return row ?? null;
-}
+    if (result.changes === 0) {
+        return null;
+    }
 
-/**
- * Get all collaborators for a store with user details
- */
-export function getStoreCollaborators(storeId: string): StoreCollaboratorDetail[] {
-    return db
-        .prepare(
-            `SELECT
-                sc.id, sc.storeId, sc.userId, sc.role, sc.createdAt,
-                u.email as userEmail, u.name as userName
-             FROM StoreCollaborator sc
-             JOIN User u ON sc.userId = u.id
-             WHERE sc.storeId = ?
-             ORDER BY sc.role DESC, u.name ASC`
-        )
-        .all(storeId) as StoreCollaboratorDetail[];
-}
-
-/**
- * Remove a collaborator from a store
- */
-export function removeStoreCollaborator(storeId: string, userId: string): boolean {
-    const result = db
-        .prepare(
-            `DELETE FROM StoreCollaborator
-             WHERE storeId = ? AND userId = ?`
-        )
-        .run(storeId, userId);
-
-    return result.changes > 0;
-}
-
-/**
- * Update a collaborator's role
- */
-export function updateStoreCollaboratorRole(params: {
-    storeId: string;
-    userId: string;
-    role: "owner" | "editor";
-}): boolean {
-    const result = db
-        .prepare(
-            `UPDATE StoreCollaborator
-             SET role = ?
-             WHERE storeId = ? AND userId = ?`
-        )
-        .run(params.role, params.storeId, params.userId);
-
-    return result.changes > 0;
-}
-
-/**
- * Count the number of owners for a store
- */
-export function countStoreOwners(storeId: string): number {
-    const row = db
-        .prepare(
-            `SELECT COUNT(*) as count
-             FROM StoreCollaborator
-             WHERE storeId = ? AND role = 'owner'`
-        )
-        .get(storeId) as { count: number };
-
-    return row.count;
-}
-
-/**
- * Check if an email is already a collaborator or has a pending invitation
- */
-export function isEmailStoreCollaboratorOrInvited(email: string, storeId: string): boolean {
-    const row = db
-        .prepare(
-            `SELECT 1 FROM (
-                SELECT 1
-                FROM StoreCollaborator sc
-                JOIN User u ON sc.userId = u.id
-                WHERE sc.storeId = ? AND LOWER(u.email) = LOWER(?)
-                UNION
-                SELECT 1
-                FROM StoreInvitation si
-                WHERE si.storeId = ? AND LOWER(si.invitedEmail) = LOWER(?) AND si.status = 'pending'
-            ) AS combined
-            LIMIT 1`
-        )
-        .get(storeId, email, storeId, email);
-
-    return !!row;
+    return getStoreById(params.storeId);
 }

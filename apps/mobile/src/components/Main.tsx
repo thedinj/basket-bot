@@ -1,23 +1,14 @@
 import { LLMModalProvider } from "@/llm/shared";
-import {
-    IonBadge,
-    IonIcon,
-    IonLabel,
-    IonRouterOutlet,
-    IonTabBar,
-    IonTabButton,
-    IonTabs,
-} from "@ionic/react";
+import { IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } from "@ionic/react";
 import { cartOutline, storefrontOutline } from "ionicons/icons";
 import { useEffect, useRef } from "react";
 import { Route } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
-import { useNotificationCounts, usePreloadCoreData } from "../db/hooks";
+import { usePreloadCoreData } from "../db/hooks";
 import RefreshProvider from "../hooks/refresh/RefreshProvider";
 import ShoppingList from "../pages/ShoppingList";
 import StoreAislesPage from "../pages/StoreAislesPage";
 import StoreDetail from "../pages/StoreDetail";
-import StoreInvitations from "../pages/StoreInvitations";
 import StoreItemsPage from "../pages/StoreItemsPage";
 import StoresList from "../pages/StoresList";
 import { AppHeaderProvider } from "./layout/AppHeaderProvider";
@@ -31,7 +22,6 @@ import ShieldProvider from "./shield/ShieldProvider";
  */
 const Main: React.FC = () => {
     const { isAuthReady } = useAuth();
-    const { data: notificationCounts } = useNotificationCounts();
     const { prefetchCoreData } = usePreloadCoreData();
     const hasPrefetched = useRef(false);
 
@@ -67,7 +57,6 @@ const Main: React.FC = () => {
                                 {/* Tab routes */}
                                 <Route exact path="/shoppinglist" component={ShoppingList} />
                                 <Route exact path="/stores" component={StoresList} />
-                                <Route exact path="/invitations" component={StoreInvitations} />
 
                                 {/* Store detail - must come after nested routes */}
                                 <Route exact path="/stores/:id" component={StoreDetail} />
@@ -80,12 +69,6 @@ const Main: React.FC = () => {
                                 <IonTabButton tab="stores" href="/stores">
                                     <IonIcon aria-hidden="true" icon={storefrontOutline} />
                                     <IonLabel>Stores</IonLabel>
-                                    {notificationCounts &&
-                                        notificationCounts.storeInvitations > 0 && (
-                                            <IonBadge color="danger">
-                                                {notificationCounts.storeInvitations}
-                                            </IonBadge>
-                                        )}
                                 </IonTabButton>
                             </IonTabBar>
                         </IonTabs>

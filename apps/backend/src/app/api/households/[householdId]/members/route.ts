@@ -39,14 +39,9 @@ export const POST = withAuth(async (req: AuthenticatedRequest, context) => {
     try {
         const { householdId } = await context.params;
         const body = await req.json();
-        const { email, role } = createInvitationRequestSchema.parse(body);
+        const { email } = createInvitationRequestSchema.parse(body);
 
-        const invitation = invitationService.createInvitation(
-            householdId,
-            email,
-            role,
-            req.auth.sub
-        );
+        const invitation = invitationService.createInvitation(householdId, email, req.auth.sub);
 
         return NextResponse.json({ invitation }, { status: 201 });
     } catch (error: any) {

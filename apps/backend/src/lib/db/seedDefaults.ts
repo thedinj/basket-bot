@@ -16,22 +16,13 @@ export function createDefaultStoreForUser(userId: string, userName: string): str
     // Determine the new store's name
     const storeName = `${userName}'s Example Store`;
 
-    // Create the store
+    // Create the store (private by default, householdId = NULL)
     db.prepare(
         `
-        INSERT INTO Store (id, name, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
+        INSERT INTO Store (id, name, householdId, createdById, updatedById, createdAt, updatedAt)
+        VALUES (?, ?, NULL, ?, ?, datetime('now'), datetime('now'))
     `
     ).run(storeId, storeName, userId, userId);
-
-    // Add user as owner collaborator
-    const collaboratorId = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO StoreCollaborator (id, storeId, userId, role, createdAt)
-        VALUES (?, ?, ?, ?, datetime('now'))
-    `
-    ).run(collaboratorId, storeId, userId, "owner");
 
     // Create sample aisles
     const deliAisleId = randomUUID();

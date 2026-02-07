@@ -2,7 +2,6 @@ import type {
     Household,
     HouseholdMember,
     HouseholdMemberDetail,
-    HouseholdRole,
     HouseholdWithMembers,
 } from "@basket-bot/core";
 import { randomUUID } from "crypto";
@@ -65,17 +64,11 @@ export function getHouseholdWithMembers(householdId: string): HouseholdWithMembe
 
     const memberRows = db
         .prepare(
-            `SELECT hm.id, hm.userId, hm.role, hm.createdAt, u.name as userName, u.email as userEmail
+            `SELECT hm.id, hm.userId, hm.createdAt, u.name as userName, u.email as userEmail
              FROM HouseholdMember hm
              JOIN User u ON hm.userId = u.id
              WHERE hm.householdId = ?
-             ORDER BY
-                CASE hm.role
-                    WHEN 'owner' THEN 1
-                    WHEN 'editor' THEN 2
-                    WHEN 'viewer' THEN 3
-                END,
-                hm.createdAt ASC`
+             ORDER BY hm.createdAt ASC`
         )
         .all(householdId) as any[];
 
@@ -84,7 +77,6 @@ export function getHouseholdWithMembers(householdId: string): HouseholdWithMembe
         userId: row.userId,
         userName: row.userName,
         userEmail: row.userEmail,
-        role: row.role as HouseholdRole,
         createdAt: new Date(row.createdAt),
     }));
 
@@ -106,12 +98,12 @@ export function createHousehold(params: { name: string; userId: string }): House
          VALUES (?, ?, ?, ?, ?, ?)`
     ).run(householdId, params.name, params.userId, params.userId, now, now);
 
-    // Add creator as owner
+    // Add creator as household member
     const memberId = randomUUID();
     db.prepare(
-        `INSERT INTO HouseholdMember (id, householdId, userId, role, createdAt)
-         VALUES (?, ?, ?, ?, ?)`
-    ).run(memberId, householdId, params.userId, "owner", now);
+        `INSERT INTO HouseholdMember (id, householdId, userId, createdAt)
+         VALUES (?, ?, ?, ?)`
+    ).run(memberId, householdId, params.userId, now);
 
     return {
         id: householdId,
@@ -157,24 +149,19 @@ export function deleteHousehold(householdId: string): boolean {
 /**
  * Add a member to a household
  */
-export function addMember(params: {
-    householdId: string;
-    userId: string;
-    role: HouseholdRole;
-}): HouseholdMember {
+export function addMember(params: { householdId: string; userId: string }): HouseholdMember {
     const memberId = randomUUID();
     const now = new Date().toISOString();
 
     db.prepare(
-        `INSERT INTO HouseholdMember (id, householdId, userId, role, createdAt)
-         VALUES (?, ?, ?, ?, ?)`
-    ).run(memberId, params.householdId, params.userId, params.role, now);
+        `INSERT INTO HouseholdMember (id, householdId, userId, createdAt)
+         VALUES (?, ?, ?, ?)`
+    ).run(memberId, params.householdId, params.userId, now);
 
     return {
         id: memberId,
         householdId: params.householdId,
         userId: params.userId,
-        role: params.role,
         createdAt: new Date(now),
     };
 }
@@ -192,55 +179,17 @@ export function removeMember(householdId: string, userId: string): boolean {
 /**
  * Update a member's role
  */
-export function updateMemberRole(params: {
-    householdId: string;
-    userId: string;
-    role: HouseholdRole;
-}): HouseholdMember | null {
-    const result = db
-        .prepare(
-            `UPDATE HouseholdMember
-             SET role = ?
-             WHERE householdId = ? AND userId = ?`
-        )
-        .run(params.role, params.householdId, params.userId);
-
-    if (result.changes === 0) return null;
-
-    const row = db
-        .prepare(
-            `SELECT id, householdId, userId, role, createdAt
-             FROM HouseholdMember
-             WHERE householdId = ? AND userId = ?`
-        )
-        .get(params.householdId, params.userId) as any;
-
-    return {
-        id: row.id,
-        householdId: row.householdId,
-        userId: row.userId,
-        role: row.role,
-        createdAt: new Date(row.createdAt),
-    };
-}
-
 /**
  * Get household members
  */
 export function getHouseholdMembers(householdId: string): HouseholdMemberDetail[] {
     const rows = db
         .prepare(
-            `SELECT hm.id, hm.userId, hm.role, hm.createdAt, u.name as userName, u.email as userEmail
+            `SELECT hm.id, hm.userId, hm.createdAt, u.name as userName, u.email as userEmail
              FROM HouseholdMember hm
              JOIN User u ON hm.userId = u.id
              WHERE hm.householdId = ?
-             ORDER BY
-                CASE hm.role
-                    WHEN 'owner' THEN 1
-                    WHEN 'editor' THEN 2
-                    WHEN 'viewer' THEN 3
-                END,
-                hm.createdAt ASC`
+             ORDER BY hm.createdAt ASC`
         )
         .all(householdId) as any[];
 
@@ -249,24 +198,8 @@ export function getHouseholdMembers(householdId: string): HouseholdMemberDetail[
         userId: row.userId,
         userName: row.userName,
         userEmail: row.userEmail,
-        role: row.role as HouseholdRole,
         createdAt: new Date(row.createdAt),
     }));
-}
-
-/**
- * Get a user's role in a household
- */
-export function getUserRole(householdId: string, userId: string): HouseholdRole | null {
-    const row = db
-        .prepare(
-            `SELECT role
-             FROM HouseholdMember
-             WHERE householdId = ? AND userId = ?`
-        )
-        .get(householdId, userId) as any;
-
-    return row ? (row.role as HouseholdRole) : null;
 }
 
 /**
@@ -285,14 +218,14 @@ export function userIsMember(householdId: string, userId: string): boolean {
 }
 
 /**
- * Count owners in a household
+ * Count members in a household
  */
-export function countOwners(householdId: string): number {
+export function countMembers(householdId: string): number {
     const row = db
         .prepare(
             `SELECT COUNT(*) as count
              FROM HouseholdMember
-             WHERE householdId = ? AND role = 'owner'`
+             WHERE householdId = ?`
         )
         .get(householdId) as any;
 

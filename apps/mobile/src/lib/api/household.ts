@@ -2,7 +2,6 @@ import type {
     Household,
     HouseholdInvitation,
     HouseholdMemberDetail,
-    HouseholdRole,
     HouseholdWithMembers,
     InvitationDetail,
 } from "@basket-bot/core";
@@ -71,27 +70,12 @@ export const householdApi = {
     /**
      * Create an invitation to join the household
      */
-    async createInvitation(
-        householdId: string,
-        email: string,
-        role: HouseholdRole
-    ): Promise<HouseholdInvitation> {
+    async createInvitation(householdId: string, email: string): Promise<HouseholdInvitation> {
         const response = await apiClient.post<{ invitation: HouseholdInvitation }>(
             `/api/households/${householdId}/members`,
-            { email, role }
+            { email }
         );
         return response.invitation;
-    },
-
-    /**
-     * Update a member's role
-     */
-    async updateMemberRole(
-        householdId: string,
-        userId: string,
-        role: HouseholdRole
-    ): Promise<void> {
-        await apiClient.put(`/api/households/${householdId}/members/${userId}`, { role });
     },
 
     /**
@@ -99,6 +83,23 @@ export const householdApi = {
      */
     async removeMember(householdId: string, userId: string): Promise<void> {
         await apiClient.delete(`/api/households/${householdId}/members/${userId}`);
+    },
+
+    /**
+     * Get pending invitations for a household
+     */
+    async getHouseholdInvitations(householdId: string): Promise<HouseholdInvitation[]> {
+        const response = await apiClient.get<{ invitations: HouseholdInvitation[] }>(
+            `/api/households/${householdId}/invitations`
+        );
+        return response.invitations;
+    },
+
+    /**
+     * Cancel/retract a pending invitation
+     */
+    async cancelInvitation(householdId: string, invitationId: string): Promise<void> {
+        await apiClient.delete(`/api/households/${householdId}/invitations/${invitationId}`);
     },
 };
 

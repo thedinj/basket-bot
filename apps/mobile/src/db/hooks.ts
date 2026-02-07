@@ -19,6 +19,7 @@ import { use, useCallback, useMemo } from "react";
 import { useShield } from "../components/shield/useShield";
 import { useRefreshContext } from "../hooks/refresh/useRefreshContext";
 import { useToast } from "../hooks/useToast";
+import { householdApi, invitationApi } from "../lib/api/household";
 import * as storeSharingApi from "../lib/api/storeSharing";
 import { formatErrorMessage } from "../utils/errorUtils";
 import { DatabaseContext } from "./context";
@@ -1303,167 +1304,281 @@ export function useNotificationCounts() {
 }
 
 /**
- * Hook to fetch store invitations for the current user
+ * Hook to update a store's household association
  */
-export function useStoreInvitations() {
-    return useTanstackQuery({
-        queryKey: ["storeInvitations"],
-        queryFn: storeSharingApi.getStoreInvitations,
-    });
-}
-
-/**
- * Hook to fetch collaborators for a store
- */
-export function useStoreCollaborators(storeId: string) {
-    return useTanstackQuery({
-        queryKey: ["storeCollaborators", storeId],
-        queryFn: () => storeSharingApi.getStoreCollaborators(storeId),
-        enabled: !!storeId,
-    });
-}
-
-/**
- * Hook to accept a store invitation
- */
-export function useAcceptStoreInvitation() {
+export function useUpdateStoreHousehold() {
     const queryClient = useQueryClient();
     const { showSuccess, showError } = useToast();
 
     return useTanstackMutation({
-        mutationFn: (token: string) => storeSharingApi.acceptStoreInvitation(token),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["storeInvitations"] });
+        mutationFn: (params: { storeId: string; householdId: string | null }) =>
+            storeSharingApi.updateStoreHousehold(params.storeId, params.householdId),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["store", variables.storeId] });
             queryClient.invalidateQueries({ queryKey: ["stores"] });
-            queryClient.invalidateQueries({ queryKey: ["notifications", "counts"] });
+            if (variables.householdId) {
+                showSuccess("Store shared with household!");
+            } else {
+                showSuccess("Store is now private");
+            }
+        },
+        onError: (error: Error) => {
+            showError(`Failed to update store sharing: ${error.message}`);
+        },
+    });
+}
+
+// ============================================================================
+// Household Management Hooks
+// ============================================================================
+
+/**
+ * Hook to get all households the current user is a member of
+ */
+export function useHouseholds() {
+    return useTanstackQuery({
+        queryKey: ["households"],
+        queryFn: householdApi.getUserHouseholds,
+        staleTime: 2 * 60 * 1000, // 2 minutes
+        retry: (failureCount, error: unknown) => {
+            if (error instanceof ApiError && error.status) {
+                // Don't retry 4xx errors except timeout/rate-limit
+                if (error.status >= 400 && error.status < 500) {
+                    return error.status === 408 || error.status === 429;
+                }
+            }
+            return failureCount < 3;
+        },
+    });
+}
+
+/**
+ * Hook to get household details with members
+ */
+export function useHouseholdDetail(householdId: string | null) {
+    return useTanstackQuery({
+        queryKey: ["household", householdId],
+        queryFn: () => {
+            if (!householdId) throw new Error("Household ID is required");
+            return householdApi.getHouseholdWithMembers(householdId);
+        },
+        enabled: !!householdId,
+        staleTime: 2 * 60 * 1000, // 2 minutes
+        retry: (failureCount, error: unknown) => {
+            if (error instanceof ApiError && error.status === 404) {
+                // Don't retry 404s - household was deleted
+                return false;
+            }
+            if (error instanceof ApiError && error.status) {
+                if (error.status >= 400 && error.status < 500) {
+                    return error.status === 408 || error.status === 429;
+                }
+            }
+            return failureCount < 3;
+        },
+    });
+}
+
+/**
+ * Hook to get pending invitations for the current user
+ */
+export function usePendingInvitations() {
+    return useTanstackQuery({
+        queryKey: ["invitations"],
+        queryFn: invitationApi.getUserPendingInvitations,
+        staleTime: 2 * 60 * 1000, // 2 minutes
+        retry: (failureCount, error: unknown) => {
+            if (error instanceof ApiError && error.status) {
+                if (error.status >= 400 && error.status < 500) {
+                    return error.status === 408 || error.status === 429;
+                }
+            }
+            return failureCount < 3;
+        },
+    });
+}
+
+/**
+ * Hook to create a new household
+ */
+export function useCreateHousehold() {
+    const queryClient = useQueryClient();
+    const { showSuccess, showError } = useToast();
+
+    return useTanstackMutation({
+        mutationFn: (name: string) => householdApi.createHousehold(name),
+        onSuccess: (household) => {
+            queryClient.invalidateQueries({ queryKey: ["households"] });
+            showSuccess(`Household "${household.name}" created!`);
+        },
+        onError: (error: Error) => {
+            showError(formatErrorMessage(error));
+        },
+    });
+}
+
+/**
+ * Hook to update a household's name
+ */
+export function useUpdateHousehold() {
+    const queryClient = useQueryClient();
+    const { showSuccess, showError } = useToast();
+
+    return useTanstackMutation({
+        mutationFn: (params: { householdId: string; name: string }) =>
+            householdApi.updateHousehold(params.householdId, params.name),
+        onSuccess: (household) => {
+            queryClient.invalidateQueries({ queryKey: ["household", household.id] });
+            queryClient.invalidateQueries({ queryKey: ["households"] });
+            showSuccess("Household updated!");
+        },
+        onError: (error: Error) => {
+            showError(formatErrorMessage(error));
+        },
+    });
+}
+
+/**
+ * Hook to delete a household
+ */
+export function useDeleteHousehold() {
+    const queryClient = useQueryClient();
+    const { showSuccess, showError } = useToast();
+
+    return useTanstackMutation({
+        mutationFn: (householdId: string) => householdApi.deleteHousehold(householdId),
+        onSuccess: (_, householdId) => {
+            queryClient.invalidateQueries({ queryKey: ["household", householdId] });
+            queryClient.invalidateQueries({ queryKey: ["households"] });
+            queryClient.invalidateQueries({ queryKey: ["stores"] }); // Stores may be affected
+            showSuccess("Household deleted");
+        },
+        onError: (error: Error) => {
+            showError(formatErrorMessage(error));
+        },
+    });
+}
+
+/**
+ * Hook to invite a member to a household
+ */
+export function useInviteMember() {
+    const queryClient = useQueryClient();
+    const { showSuccess, showError } = useToast();
+
+    return useTanstackMutation({
+        mutationFn: (params: { householdId: string; email: string }) =>
+            householdApi.createInvitation(params.householdId, params.email),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["household", variables.householdId] });
+            showSuccess(`Invitation sent to ${variables.email}`);
+        },
+        onError: (error: Error) => {
+            showError(formatErrorMessage(error));
+        },
+    });
+}
+
+/**
+ * Hook to remove a member from a household
+ */
+export function useRemoveMember() {
+    const queryClient = useQueryClient();
+    const { showSuccess, showError } = useToast();
+
+    return useTanstackMutation({
+        mutationFn: (params: { householdId: string; userId: string }) =>
+            householdApi.removeMember(params.householdId, params.userId),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["household", variables.householdId] });
+            showSuccess("Member removed");
+        },
+        onError: (error: Error) => {
+            showError(formatErrorMessage(error));
+        },
+    });
+}
+
+/**
+ * Hook to accept a household invitation
+ */
+export function useAcceptInvitation() {
+    const queryClient = useQueryClient();
+    const { showSuccess, showError } = useToast();
+
+    return useTanstackMutation({
+        mutationFn: (token: string) => invitationApi.acceptInvitation(token),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["invitations"] });
+            queryClient.invalidateQueries({ queryKey: ["households"] });
             showSuccess("Invitation accepted!");
         },
         onError: (error: Error) => {
-            showError(`Failed to accept invitation: ${error.message}`);
+            showError(formatErrorMessage(error));
         },
     });
 }
 
 /**
- * Hook to decline a store invitation
+ * Hook to decline a household invitation
  */
-export function useDeclineStoreInvitation() {
+export function useDeclineInvitation() {
     const queryClient = useQueryClient();
     const { showSuccess, showError } = useToast();
 
     return useTanstackMutation({
-        mutationFn: (token: string) => storeSharingApi.declineStoreInvitation(token),
+        mutationFn: (token: string) => invitationApi.declineInvitation(token),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["storeInvitations"] });
-            queryClient.invalidateQueries({ queryKey: ["notifications", "counts"] });
+            queryClient.invalidateQueries({ queryKey: ["invitations"] });
             showSuccess("Invitation declined");
         },
         onError: (error: Error) => {
-            showError(`Failed to decline invitation: ${error.message}`);
+            showError(formatErrorMessage(error));
         },
     });
 }
 
 /**
- * Hook to invite a collaborator to a store
+ * Hook to get pending invitations for a household
  */
-export function useInviteStoreCollaborator() {
-    const { showSuccess, showError } = useToast();
-
-    return useTanstackMutation({
-        mutationFn: (params: { storeId: string; email: string; role: "owner" | "editor" }) =>
-            storeSharingApi.inviteStoreCollaborator(params.storeId, params.email, params.role),
-        onSuccess: () => {
-            showSuccess("Invitation sent!");
-        },
-        onError: (error: Error) => {
-            showError(`Failed to send invitation: ${error.message}`);
-        },
-    });
-}
-
-/**
- * Hook to update a store collaborator's role
- */
-export function useUpdateStoreCollaboratorRole() {
-    const queryClient = useQueryClient();
-    const { showSuccess, showError } = useToast();
-
-    return useTanstackMutation({
-        mutationFn: (params: {
-            storeId: string;
-            collaboratorUserId: string;
-            role: "owner" | "editor";
-        }) =>
-            storeSharingApi.updateStoreCollaboratorRole(
-                params.storeId,
-                params.collaboratorUserId,
-                params.role
-            ),
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ["storeCollaborators", variables.storeId] });
-            showSuccess("Role updated successfully");
-        },
-        onError: (error: Error) => {
-            showError(`Failed to update role: ${error.message}`);
-        },
-    });
-}
-
-/**
- * Hook to remove a collaborator from a store
- */
-export function useRemoveStoreCollaborator() {
-    const queryClient = useQueryClient();
-    const { showSuccess, showError } = useToast();
-
-    return useTanstackMutation({
-        mutationFn: (params: { storeId: string; collaboratorUserId: string }) =>
-            storeSharingApi.removeStoreCollaborator(params.storeId, params.collaboratorUserId),
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ["storeCollaborators", variables.storeId] });
-            showSuccess("Collaborator removed");
-        },
-        onError: (error: Error) => {
-            showError(`Failed to remove collaborator: ${error.message}`);
-        },
-    });
-}
-
-/**
- * Hook to get outgoing store invitations (pending invitations sent from this store)
- */
-export function useOutgoingStoreInvitations(storeId: string) {
+export function useHouseholdInvitations(householdId: string | null) {
     return useTanstackQuery({
-        queryKey: ["outgoingStoreInvitations", storeId],
-        queryFn: () => storeSharingApi.getOutgoingStoreInvitations(storeId),
+        queryKey: ["household", householdId, "invitations"],
+        queryFn: () => {
+            if (!householdId) throw new Error("Household ID is required");
+            return householdApi.getHouseholdInvitations(householdId);
+        },
+        enabled: !!householdId,
+        staleTime: 2 * 60 * 1000, // 2 minutes
+        retry: (failureCount, error: unknown) => {
+            if (error instanceof ApiError && error.status) {
+                if (error.status >= 400 && error.status < 500) {
+                    return error.status === 408 || error.status === 429;
+                }
+            }
+            return failureCount < 3;
+        },
     });
 }
 
 /**
- * Hook to retract (cancel) a pending store invitation
+ * Hook to cancel/retract a pending invitation
  */
-export function useRetractStoreInvitation() {
+export function useCancelInvitation() {
     const queryClient = useQueryClient();
     const { showSuccess, showError } = useToast();
 
     return useTanstackMutation({
-        mutationFn: (params: { storeId: string; invitationId: string }) =>
-            storeSharingApi.retractStoreInvitation(params.invitationId),
+        mutationFn: (params: { householdId: string; invitationId: string }) =>
+            householdApi.cancelInvitation(params.householdId, params.invitationId),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["outgoingStoreInvitations", variables.storeId],
+                queryKey: ["household", variables.householdId, "invitations"],
             });
             showSuccess("Invitation cancelled");
         },
-        onError: (error: unknown) => {
-            // Gracefully handle 404 - invitation already accepted/declined
-            if (error instanceof Error && error.message.includes("not found")) {
-                // Silently refresh - the invitation is already gone
-                queryClient.invalidateQueries({ queryKey: ["outgoingStoreInvitations"] });
-                return;
-            }
-            showError(formatErrorMessage(error, "cancel invitation"));
+        onError: (error: Error) => {
+            showError(formatErrorMessage(error));
         },
     });
 }

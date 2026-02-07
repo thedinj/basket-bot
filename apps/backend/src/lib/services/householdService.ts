@@ -1,9 +1,4 @@
-import type {
-    Household,
-    HouseholdMemberDetail,
-    HouseholdRole,
-    HouseholdWithMembers,
-} from "@basket-bot/core";
+import type { Household, HouseholdMemberDetail, HouseholdWithMembers } from "@basket-bot/core";
 import * as householdRepo from "../repos/householdRepo";
 
 /**
@@ -31,24 +26,18 @@ export function getHouseholdWithMembers(householdId: string, userId: string): Ho
 }
 
 /**
- * Create a new household (user becomes owner)
+ * Create a new household (user becomes a member)
  */
 export function createHousehold(name: string, userId: string): Household {
     return householdRepo.createHousehold({ name, userId });
 }
 
 /**
- * Update household name (requires owner role)
+ * Update household name (requires membership)
  */
 export function updateHousehold(householdId: string, name: string, userId: string): Household {
-    const role = householdRepo.getUserRole(householdId, userId);
-
-    if (!role) {
+    if (!householdRepo.userIsMember(householdId, userId)) {
         throw new Error("FORBIDDEN: User is not a member of this household");
-    }
-
-    if (role !== "owner") {
-        throw new Error("FORBIDDEN: Only owners can update household details");
     }
 
     const updated = householdRepo.updateHousehold({
@@ -65,17 +54,11 @@ export function updateHousehold(householdId: string, name: string, userId: strin
 }
 
 /**
- * Delete a household (requires owner role)
+ * Delete a household (requires membership)
  */
 export function deleteHousehold(householdId: string, userId: string): void {
-    const role = householdRepo.getUserRole(householdId, userId);
-
-    if (!role) {
+    if (!householdRepo.userIsMember(householdId, userId)) {
         throw new Error("FORBIDDEN: User is not a member of this household");
-    }
-
-    if (role !== "owner") {
-        throw new Error("FORBIDDEN: Only owners can delete the household");
     }
 
     const deleted = householdRepo.deleteHousehold(householdId);
@@ -97,84 +80,27 @@ export function getHouseholdMembers(householdId: string, userId: string): Househ
 }
 
 /**
- * Update a member's role (requires owner role)
- * Cannot downgrade the last owner
- */
-export function updateMemberRole(
-    householdId: string,
-    targetUserId: string,
-    newRole: HouseholdRole,
-    requestingUserId: string
-): void {
-    const requestingRole = householdRepo.getUserRole(householdId, requestingUserId);
-
-    if (!requestingRole) {
-        throw new Error("FORBIDDEN: User is not a member of this household");
-    }
-
-    if (requestingRole !== "owner") {
-        throw new Error("FORBIDDEN: Only owners can change member roles");
-    }
-
-    // Check if target user is a member
-    const targetRole = householdRepo.getUserRole(householdId, targetUserId);
-    if (!targetRole) {
-        throw new Error("NOT_FOUND: Target user is not a member of this household");
-    }
-
-    // Prevent downgrading the last owner
-    if (targetRole === "owner" && newRole !== "owner") {
-        const ownerCount = householdRepo.countOwners(householdId);
-        if (ownerCount <= 1) {
-            throw new Error(
-                "FORBIDDEN: Cannot downgrade the last owner. Promote another member to owner first."
-            );
-        }
-    }
-
-    householdRepo.updateMemberRole({
-        householdId,
-        userId: targetUserId,
-        role: newRole,
-    });
-}
-
-/**
- * Remove a member from household (requires owner role or removing self)
- * Cannot remove the last owner
+ * Remove a member from household (requires membership)
+ * Deletes the household when the last member is removed
  */
 export function removeMember(
     householdId: string,
     targetUserId: string,
     requestingUserId: string
 ): void {
-    const requestingRole = householdRepo.getUserRole(householdId, requestingUserId);
-
-    if (!requestingRole) {
+    if (!householdRepo.userIsMember(householdId, requestingUserId)) {
         throw new Error("FORBIDDEN: User is not a member of this household");
     }
 
-    // Allow users to remove themselves, otherwise require owner role
-    const isSelf = targetUserId === requestingUserId;
-    if (!isSelf && requestingRole !== "owner") {
-        throw new Error("FORBIDDEN: Only owners can remove other members");
-    }
-
     // Check if target user is a member
-    const targetRole = householdRepo.getUserRole(householdId, targetUserId);
-    if (!targetRole) {
+    if (!householdRepo.userIsMember(householdId, targetUserId)) {
         throw new Error("NOT_FOUND: Target user is not a member of this household");
     }
 
-    // Prevent removing the last owner
-    if (targetRole === "owner") {
-        const ownerCount = householdRepo.countOwners(householdId);
-        if (ownerCount <= 1) {
-            throw new Error(
-                "FORBIDDEN: Cannot remove the last owner. Transfer ownership first or delete the household."
-            );
-        }
-    }
-
     householdRepo.removeMember(householdId, targetUserId);
+
+    const remainingMembers = householdRepo.countMembers(householdId);
+    if (remainingMembers === 0) {
+        householdRepo.deleteHousehold(householdId);
+    }
 }

@@ -39,7 +39,7 @@ export const GET = withAuth(async (req: AuthenticatedRequest, context) => {
 
 /**
  * PUT /api/households/[householdId]
- * Update household name (requires owner role)
+ * Update household name (requires membership)
  */
 export const PUT = withAuth(async (req: AuthenticatedRequest, context) => {
     try {
@@ -94,7 +94,7 @@ export const PUT = withAuth(async (req: AuthenticatedRequest, context) => {
 
 /**
  * DELETE /api/households/[householdId]
- * Delete a household (requires owner role)
+ * Delete a household (requires membership)
  */
 export const DELETE = withAuth(async (req: AuthenticatedRequest, context) => {
     try {

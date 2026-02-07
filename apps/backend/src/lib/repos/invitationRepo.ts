@@ -1,9 +1,4 @@
-import type {
-    HouseholdInvitation,
-    HouseholdRole,
-    InvitationDetail,
-    InvitationStatus,
-} from "@basket-bot/core";
+import type { HouseholdInvitation, InvitationDetail, InvitationStatus } from "@basket-bot/core";
 import { randomUUID } from "crypto";
 import { db } from "../db/db";
 
@@ -14,21 +9,19 @@ export function createInvitation(params: {
     householdId: string;
     invitedEmail: string;
     invitedById: string;
-    role: HouseholdRole;
 }): HouseholdInvitation {
     const invitationId = randomUUID();
     const token = randomUUID();
     const now = new Date().toISOString();
 
     db.prepare(
-        `INSERT INTO HouseholdInvitation (id, householdId, invitedEmail, invitedById, role, token, status, createdAt)
-         VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)`
+        `INSERT INTO HouseholdInvitation (id, householdId, invitedEmail, invitedById, token, status, createdAt)
+         VALUES (?, ?, ?, ?, ?, 'pending', ?)`
     ).run(
         invitationId,
         params.householdId,
         params.invitedEmail.toLowerCase(),
         params.invitedById,
-        params.role,
         token,
         now
     );
@@ -38,7 +31,6 @@ export function createInvitation(params: {
         householdId: params.householdId,
         invitedEmail: params.invitedEmail.toLowerCase(),
         invitedById: params.invitedById,
-        role: params.role,
         token,
         status: "pending",
         createdAt: new Date(now),
@@ -51,7 +43,7 @@ export function createInvitation(params: {
 export function getInvitationByToken(token: string): HouseholdInvitation | null {
     const row = db
         .prepare(
-            `SELECT id, householdId, invitedEmail, invitedById, role, token, status, createdAt
+            `SELECT id, householdId, invitedEmail, invitedById, token, status, createdAt
              FROM HouseholdInvitation
              WHERE token = ?`
         )
@@ -64,7 +56,6 @@ export function getInvitationByToken(token: string): HouseholdInvitation | null 
         householdId: row.householdId,
         invitedEmail: row.invitedEmail,
         invitedById: row.invitedById,
-        role: row.role,
         token: row.token,
         status: row.status,
         createdAt: new Date(row.createdAt),
@@ -82,7 +73,6 @@ export function getUserPendingInvitations(email: string): InvitationDetail[] {
                 i.householdId,
                 i.invitedEmail,
                 i.invitedById,
-                i.role,
                 i.token,
                 i.status,
                 i.createdAt,
@@ -101,7 +91,6 @@ export function getUserPendingInvitations(email: string): InvitationDetail[] {
         householdId: row.householdId,
         invitedEmail: row.invitedEmail,
         invitedById: row.invitedById,
-        role: row.role,
         token: row.token,
         status: row.status as InvitationStatus,
         createdAt: new Date(row.createdAt),
@@ -116,7 +105,7 @@ export function getUserPendingInvitations(email: string): InvitationDetail[] {
 export function getHouseholdPendingInvitations(householdId: string): HouseholdInvitation[] {
     const rows = db
         .prepare(
-            `SELECT id, householdId, invitedEmail, invitedById, role, token, status, createdAt
+            `SELECT id, householdId, invitedEmail, invitedById, token, status, createdAt
              FROM HouseholdInvitation
              WHERE householdId = ? AND status = 'pending'
              ORDER BY createdAt DESC`
@@ -128,7 +117,6 @@ export function getHouseholdPendingInvitations(householdId: string): HouseholdIn
         householdId: row.householdId,
         invitedEmail: row.invitedEmail,
         invitedById: row.invitedById,
-        role: row.role,
         token: row.token,
         status: row.status as InvitationStatus,
         createdAt: new Date(row.createdAt),
@@ -154,7 +142,7 @@ export function updateInvitationStatus(
 
     const row = db
         .prepare(
-            `SELECT id, householdId, invitedEmail, invitedById, role, token, status, createdAt
+            `SELECT id, householdId, invitedEmail, invitedById, token, status, createdAt
              FROM HouseholdInvitation
              WHERE id = ?`
         )
@@ -165,7 +153,6 @@ export function updateInvitationStatus(
         householdId: row.householdId,
         invitedEmail: row.invitedEmail,
         invitedById: row.invitedById,
-        role: row.role,
         token: row.token,
         status: row.status,
         createdAt: new Date(row.createdAt),

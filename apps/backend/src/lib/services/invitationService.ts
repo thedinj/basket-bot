@@ -1,15 +1,14 @@
-import type { HouseholdInvitation, HouseholdRole, InvitationDetail } from "@basket-bot/core";
+import type { HouseholdInvitation, InvitationDetail } from "@basket-bot/core";
 import * as householdRepo from "../repos/householdRepo";
 import * as invitationRepo from "../repos/invitationRepo";
 
 /**
  * Create an invitation to join a household
- * Requires owner or editor role
+ * Requires household membership
  */
 export function createInvitation(
     householdId: string,
     invitedEmail: string,
-    role: HouseholdRole,
     invitedById: string
 ): HouseholdInvitation {
     // Verify household exists
@@ -18,14 +17,9 @@ export function createInvitation(
         throw new Error("NOT_FOUND: Household not found");
     }
 
-    // Verify inviter is a member with appropriate permissions
-    const inviterRole = householdRepo.getUserRole(householdId, invitedById);
-    if (!inviterRole) {
+    // Verify inviter is a member
+    if (!householdRepo.userIsMember(householdId, invitedById)) {
         throw new Error("FORBIDDEN: User is not a member of this household");
-    }
-
-    if (inviterRole !== "owner" && inviterRole !== "editor") {
-        throw new Error("FORBIDDEN: Only owners and editors can invite members");
     }
 
     // Check if email is already invited or is already a member
@@ -37,7 +31,6 @@ export function createInvitation(
         householdId,
         invitedEmail,
         invitedById,
-        role,
     });
 }
 
@@ -79,7 +72,6 @@ export function acceptInvitation(token: string, userId: string, userEmail: strin
         householdRepo.addMember({
             householdId: invitation.householdId,
             userId,
-            role: invitation.role,
         });
 
         // Delete invitation after successful acceptance
@@ -114,17 +106,12 @@ export function declineInvitation(token: string, userEmail: string): void {
 }
 
 /**
- * Cancel/delete an invitation (requires owner or editor who created it)
+ * Cancel/delete an invitation (requires membership)
  */
 export function deleteInvitation(invitationId: string, householdId: string, userId: string): void {
     // Verify user has permission
-    const role = householdRepo.getUserRole(householdId, userId);
-    if (!role) {
+    if (!householdRepo.userIsMember(householdId, userId)) {
         throw new Error("FORBIDDEN: User is not a member of this household");
-    }
-
-    if (role !== "owner" && role !== "editor") {
-        throw new Error("FORBIDDEN: Only owners and editors can cancel invitations");
     }
 
     const deleted = invitationRepo.deleteInvitation(invitationId);

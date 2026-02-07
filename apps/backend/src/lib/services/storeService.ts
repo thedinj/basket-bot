@@ -1,5 +1,6 @@
 import type { Store } from "@basket-bot/core";
 import { createDefaultStoreForUser } from "../db/seedDefaults";
+import * as householdRepo from "../repos/householdRepo";
 import * as storeRepo from "../repos/storeRepo";
 
 /**
@@ -8,22 +9,19 @@ import * as storeRepo from "../repos/storeRepo";
  */
 
 /**
- * Create a new store. Automatically adds the creator as owner collaborator.
+ * Create a new store. Creator has access automatically.
+ * Store is private (householdId = null) by default.
  */
-export function createStore(params: { name: string; userId: string }): Store {
-    const store = storeRepo.createStore({
+export function createStore(params: {
+    name: string;
+    userId: string;
+    householdId?: string | null;
+}): Store {
+    return storeRepo.createStore({
         name: params.name,
         createdById: params.userId,
+        householdId: params.householdId ?? null,
     });
-
-    // Add creator as owner collaborator
-    storeRepo.addStoreCollaborator({
-        storeId: store.id,
-        userId: params.userId,
-        role: "owner",
-    });
-
-    return store;
 }
 
 /**
@@ -59,12 +57,12 @@ export function getStoreById(id: string, userId: string): Store | null {
 }
 
 /**
- * Update a store name (requires owner role)
+ * Update a store name (requires access)
  */
 export function updateStore(params: { id: string; name: string; userId: string }): Store | null {
-    // Verify user is owner
-    if (!storeRepo.userIsStoreOwner(params.userId, params.id)) {
-        throw new Error("Only store owners can update store details");
+    // Verify user has access
+    if (!storeRepo.userHasAccessToStore(params.userId, params.id)) {
+        throw new Error("Access denied");
     }
 
     return storeRepo.updateStore({
@@ -75,12 +73,12 @@ export function updateStore(params: { id: string; name: string; userId: string }
 }
 
 /**
- * Delete a store (requires owner role)
+ * Delete a store (requires access)
  */
 export function deleteStore(id: string, userId: string): boolean {
-    // Verify user is owner
-    if (!storeRepo.userIsStoreOwner(userId, id)) {
-        throw new Error("Only store owners can delete stores");
+    // Verify user has access
+    if (!storeRepo.userHasAccessToStore(userId, id)) {
+        throw new Error("Access denied");
     }
 
     return storeRepo.deleteStore(id);
@@ -106,5 +104,39 @@ export function duplicateStore(params: {
         newStoreName: params.newStoreName,
         userId: params.userId,
         includeItems: params.includeItems,
+    });
+}
+
+/**
+ * Update a store's household association (share with household or make private).
+ * Requires access to the store.
+ */
+export function updateStoreHousehold(params: {
+    storeId: string;
+    householdId: string | null;
+    userId: string;
+}): Store | null {
+    const store = storeRepo.getStoreById(params.storeId);
+
+    if (!store) {
+        return null;
+    }
+
+    // Verify user has access to the store
+    if (!storeRepo.userHasAccessToStore(params.userId, params.storeId)) {
+        throw new Error("Access denied");
+    }
+
+    // If setting a householdId, verify user is a member of that household
+    if (params.householdId) {
+        if (!householdRepo.userIsMember(params.householdId, params.userId)) {
+            throw new Error("You must be a member of the household to share the store with it");
+        }
+    }
+
+    return storeRepo.updateStoreHousehold({
+        storeId: params.storeId,
+        householdId: params.householdId,
+        updatedById: params.userId,
     });
 }

@@ -1,7 +1,6 @@
 import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-    IonBadge,
     IonButton,
     IonButtons,
     IonContent,
@@ -20,7 +19,7 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { add, closeOutline, mailOutline, storefrontOutline } from "ionicons/icons";
+import { add, closeOutline, storefrontOutline } from "ionicons/icons";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -28,7 +27,7 @@ import { AppHeader } from "../components/layout/AppHeader";
 import GlobalActions from "../components/layout/GlobalActions";
 import { FabSpacer } from "../components/shared/FabSpacer";
 import PullToRefresh from "../components/shared/PullToRefresh";
-import { useCreateStore, useNotificationCounts, useStores, useUpdateStore } from "../db/hooks";
+import { useCreateStore, useStores, useUpdateStore } from "../db/hooks";
 import RefreshConfig from "../hooks/refresh/RefreshConfig";
 
 const storeFormSchema = z.object({
@@ -43,7 +42,6 @@ type StoreFormData = z.infer<typeof storeFormSchema>;
 const StoresList: React.FC = () => {
     useRenderStormDetector("StoresList");
     const { data: stores, isLoading } = useStores();
-    const { data: notificationCounts } = useNotificationCounts();
     const createStore = useCreateStore();
     const updateStore = useUpdateStore();
 
@@ -92,19 +90,6 @@ const StoresList: React.FC = () => {
             <RefreshConfig queryKeys={[["stores"]]}>
                 <AppHeader title="Stores">
                     <GlobalActions />
-                    <IonButtons slot="end">
-                        <IonButton routerLink="/invitations">
-                            <IonIcon slot="icon-only" icon={mailOutline} />
-                            {notificationCounts && notificationCounts.storeInvitations > 0 && (
-                                <IonBadge
-                                    color="danger"
-                                    style={{ position: "absolute", top: "4px", right: "4px" }}
-                                >
-                                    {notificationCounts.storeInvitations}
-                                </IonBadge>
-                            )}
-                        </IonButton>
-                    </IonButtons>
                 </AppHeader>
                 <IonContent fullscreen>
                     <PullToRefresh />

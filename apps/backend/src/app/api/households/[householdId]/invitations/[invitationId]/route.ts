@@ -1,19 +1,19 @@
 import { withAuth, type AuthenticatedRequest } from "@/lib/auth/withAuth";
-import * as householdService from "@/lib/services/householdService";
+import * as invitationService from "@/lib/services/invitationService";
 import { NextResponse } from "next/server";
 
 /**
- * DELETE /api/households/[householdId]/members/[userId]
- * Remove a member from the household
+ * DELETE /api/households/[householdId]/invitations/[invitationId]
+ * Cancel/retract a pending invitation (requires membership)
  */
 export const DELETE = withAuth(async (req: AuthenticatedRequest, context) => {
     try {
-        const { householdId, userId } = await context.params;
-        householdService.removeMember(householdId, userId, req.auth.sub);
+        const { householdId, invitationId } = await context.params;
+        invitationService.deleteInvitation(invitationId, householdId, req.auth.sub);
 
-        return NextResponse.json({ success: true }, { status: 200 });
+        return NextResponse.json({ message: "Invitation cancelled" }, { status: 200 });
     } catch (error: any) {
-        console.error("Error removing member:", error);
+        console.error("Error deleting invitation:", error);
 
         if (error.message?.startsWith("FORBIDDEN")) {
             return NextResponse.json(
@@ -30,7 +30,7 @@ export const DELETE = withAuth(async (req: AuthenticatedRequest, context) => {
         }
 
         return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Failed to remove member" },
+            { code: "INTERNAL_ERROR", message: "Failed to cancel invitation" },
             { status: 500 }
         );
     }

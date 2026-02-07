@@ -1,4 +1,3 @@
-import type { HouseholdRole } from "@basket-bot/core";
 import {
     IonButton,
     IonButtons,
@@ -9,8 +8,6 @@ import {
     IonItem,
     IonLabel,
     IonModal,
-    IonSelect,
-    IonSelectOption,
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
@@ -31,7 +28,6 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
     householdId,
 }) => {
     const [email, setEmail] = useState("");
-    const [role, setRole] = useState<HouseholdRole>("viewer");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const { showSuccess, showError } = useToast();
@@ -46,11 +42,11 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
 
         setIsSubmitting(true);
         try {
-            await householdApi.createInvitation(householdId, email.trim(), role);
+            await householdApi.createInvitation(householdId, email.trim());
             showSuccess("Invitation sent successfully");
             setEmail("");
-            setRole("viewer");
             onClose();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error("Error creating invitation:", error);
             showError(error.message || "Failed to send invitation");
@@ -62,7 +58,6 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
     const handleClose = () => {
         if (!isSubmitting) {
             setEmail("");
-            setRole("viewer");
             onClose();
         }
     };
@@ -92,35 +87,6 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
                             disabled={isSubmitting}
                         />
                     </IonItem>
-
-                    <IonItem>
-                        <IonLabel position="stacked">Role</IonLabel>
-                        <IonSelect
-                            value={role}
-                            onIonChange={(e) => setRole(e.detail.value)}
-                            disabled={isSubmitting}
-                        >
-                            <IonSelectOption value="viewer">Viewer</IonSelectOption>
-                            <IonSelectOption value="editor">Editor</IonSelectOption>
-                            <IonSelectOption value="owner">Owner</IonSelectOption>
-                        </IonSelect>
-                    </IonItem>
-
-                    <div style={{ marginTop: "16px" }}>
-                        <p
-                            style={{
-                                fontSize: "14px",
-                                color: "var(--ion-color-medium)",
-                                marginBottom: "16px",
-                            }}
-                        >
-                            <strong>Viewer:</strong> Can view lists and items
-                            <br />
-                            <strong>Editor:</strong> Can edit items and invite others
-                            <br />
-                            <strong>Owner:</strong> Full control including managing members
-                        </p>
-                    </div>
 
                     <div style={{ marginTop: "24px" }}>
                         <IonButton

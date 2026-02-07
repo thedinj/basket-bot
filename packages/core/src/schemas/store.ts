@@ -1,6 +1,5 @@
 import { z } from "zod";
 import {
-    MAX_EMAIL_LENGTH,
     MAX_NAME_LENGTH,
     MAX_NOTES_LENGTH,
     MAX_SETTING_KEY_LENGTH,
@@ -44,6 +43,7 @@ export type QuantityUnit = z.infer<typeof quantityUnitSchema>;
 export const storeSchema = z.object({
     id: z.string().uuid(),
     name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
+    householdId: z.string().uuid().nullable(),
     ...auditFields,
 });
 
@@ -74,88 +74,11 @@ export const duplicateStoreResponseSchema = z.object({
 
 export type DuplicateStoreResponse = z.infer<typeof duplicateStoreResponseSchema>;
 
-// ========== StoreCollaborator ==========
-export const storeCollaboratorRoleSchema = z.enum(["owner", "editor"]);
-
-export type StoreCollaboratorRole = z.infer<typeof storeCollaboratorRoleSchema>;
-
-export const storeCollaboratorSchema = z.object({
-    id: z.string().uuid(),
-    storeId: z.string().uuid(),
-    userId: z.string().uuid(),
-    role: storeCollaboratorRoleSchema,
-    createdAt: z.string().datetime(),
+export const updateStoreHouseholdRequestSchema = z.object({
+    householdId: z.string().uuid().nullable(),
 });
 
-export type StoreCollaborator = z.infer<typeof storeCollaboratorSchema>;
-
-export const storeCollaboratorDetailSchema = storeCollaboratorSchema.extend({
-    userEmail: z
-        .string()
-        .email()
-        .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` }),
-    userName: maxLengthString(MAX_NAME_LENGTH, "Name"),
-});
-
-export type StoreCollaboratorDetail = z.infer<typeof storeCollaboratorDetailSchema>;
-
-export const createStoreCollaboratorRequestSchema = z.object({
-    email: z
-        .string()
-        .email()
-        .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` }),
-    role: storeCollaboratorRoleSchema,
-});
-
-export type CreateStoreCollaboratorRequest = z.infer<typeof createStoreCollaboratorRequestSchema>;
-
-export const updateStoreCollaboratorRequestSchema = z.object({
-    role: storeCollaboratorRoleSchema,
-});
-
-export type UpdateStoreCollaboratorRequest = z.infer<typeof updateStoreCollaboratorRequestSchema>;
-
-// ========== StoreInvitation ==========
-export const storeInvitationStatusSchema = z.enum(["pending", "accepted"]);
-
-export type StoreInvitationStatus = z.infer<typeof storeInvitationStatusSchema>;
-
-export const storeInvitationSchema = z.object({
-    id: z.string().uuid(),
-    storeId: z.string().uuid(),
-    invitedEmail: z
-        .string()
-        .email()
-        .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` }),
-    invitedById: z.string().uuid(),
-    role: storeCollaboratorRoleSchema,
-    token: z.string().uuid(),
-    status: storeInvitationStatusSchema,
-    createdAt: z.string().datetime(),
-});
-
-export type StoreInvitation = z.infer<typeof storeInvitationSchema>;
-
-export const storeInvitationDetailSchema = storeInvitationSchema.extend({
-    inviterName: maxLengthString(MAX_NAME_LENGTH, "Name"),
-    inviterEmail: z
-        .string()
-        .email()
-        .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` }),
-    storeName: maxLengthString(MAX_NAME_LENGTH, "Store name"),
-});
-
-export type StoreInvitationDetail = z.infer<typeof storeInvitationDetailSchema>;
-
-export const createStoreInvitationRequestSchema = z.object({
-    email: z
-        .string()
-        .email()
-        .max(MAX_EMAIL_LENGTH, { message: `Email must be ${MAX_EMAIL_LENGTH} characters or less` }),
-    role: storeCollaboratorRoleSchema,
-});
-
-export type CreateStoreInvitationRequest = z.infer<typeof createStoreInvitationRequestSchema>;
+export type UpdateStoreHouseholdRequest = z.infer<typeof updateStoreHouseholdRequestSchema>;
 
 // ========== StoreAisle / StoreSection reordering ==========
 const reorderItemsSchema = z.object({
