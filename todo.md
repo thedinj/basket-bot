@@ -1,12 +1,13 @@
+The WiFi adapter is often the first thing to suffer from undervoltage.
+WiFi power management - Raspberry Pi OS sometimes enables WiFi power saving, which can cause the adapter to sleep and not wake up properly. You can disable it:
+bashsudo iwconfig wlan0 power off
+To make it permanent, add this to /etc/rc.local (before exit 0):
+bash/sbin/iwconfig wlan0 power off
+
 Test with production database
-We keep owners on the records but other members as rows in databases. Any conflict between these two?
-Test keeping screen on until "Successfully imported" aisles/sections
-move pi to its permanent home
 remove route.ts bad code smell where exception text is tested for strings
 
 ---
-
-Household tables??? I thought we got rid of those.
 
 background job to clean up the database:
 

@@ -4,6 +4,7 @@ import pluralize from "pluralize";
 import { useCallback } from "react";
 import {
     useGetOrCreateStoreItem,
+    useQuantityUnits,
     useStoreAisles,
     useStoreItems,
     useStoreSections,
@@ -17,6 +18,36 @@ import { useShield } from "../shield/useShield";
 import { useShoppingListContext } from "./useShoppingListContext";
 
 /**
+ * Process and validate a unit string against known units.
+ * Returns normalized unit ID and quantity, or nulls if unit not recognized.
+ */
+function processUnit(
+    parsedUnit: string | null,
+    parsedQuantity: number | null,
+    units: Array<{ id: string; abbreviation: string }> | undefined
+): { unitId: string | null; quantity: number | null } {
+    if (!parsedUnit || !units) {
+        return { unitId: null, quantity: parsedQuantity };
+    }
+
+    // Normalize: remove punctuation, singularize, lowercase
+    const normalizedUnit = pluralize
+        .singular(parsedUnit.replace(/[^\w\s]/g, ""))
+        .toLowerCase()
+        .trim();
+
+    // Find matching unit (case-insensitive)
+    const matchingUnit = units.find((u) => u.abbreviation.toLowerCase() === normalizedUnit);
+
+    if (matchingUnit) {
+        return { unitId: matchingUnit.id, quantity: parsedQuantity };
+    }
+
+    // Unit not recognized, nullify both unit and quantity
+    return { unitId: null, quantity: null };
+}
+
+/**
  * Hook to handle bulk import of shopping list items
  * - Checks for existing items by name match
  * - Auto-categorizes new items
@@ -28,6 +59,7 @@ export function useBulkImport(storeId: string) {
     const { data: storeItems } = useStoreItems(storeId);
     const { data: aisles } = useStoreAisles(storeId);
     const { data: sections } = useStoreSections(storeId);
+    const { data: units } = useQuantityUnits();
     const autoCategorize = useAutoCategorize();
     const { showError, showSuccess } = useToast();
     const { markAsNewlyImported } = useShoppingListContext();
@@ -94,12 +126,19 @@ export function useBulkImport(storeId: string) {
                             itemId = newItem.id;
                         }
 
+                        // Process and validate unit
+                        const { unitId: processedUnitId, quantity: processedQty } = processUnit(
+                            parsed.unit,
+                            parsed.quantity,
+                            units
+                        );
+
                         // Create shopping list item
                         const shoppingListItem: ShoppingListItemInput = {
                             storeItemId: itemId,
                             storeId: storeId,
-                            qty: parsed.quantity,
-                            unitId: parsed.unit,
+                            qty: processedQty,
+                            unitId: processedUnitId,
                             notes: parsed.notes,
                         };
 
@@ -150,6 +189,7 @@ export function useBulkImport(storeId: string) {
             showSuccess,
             storeId,
             storeItems,
+            units,
             upsertItem,
         ]
     );

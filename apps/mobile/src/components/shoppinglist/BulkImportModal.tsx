@@ -1,5 +1,5 @@
 import { IonText } from "@ionic/react";
-import React from "react";
+import { useCallback } from "react";
 import { validateBulkImportResult, type BulkImportResponse } from "../../llm/features/bulkImport";
 import { BULK_IMPORT_PROMPT } from "../../llm/features/bulkImportPrompt";
 import type { LLMResponse } from "../../llm/shared/types";
@@ -14,7 +14,7 @@ export function useBulkImportModal(storeId: string) {
     const { openModal } = useLLMModal();
     const { importItems } = useBulkImport(storeId);
 
-    const openBulkImport = React.useCallback(() => {
+    const openBulkImport = useCallback(() => {
         openModal({
             title: "Import Shopping List",
             prompt: BULK_IMPORT_PROMPT,
