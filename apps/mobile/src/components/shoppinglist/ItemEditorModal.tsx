@@ -21,6 +21,7 @@ import { useForm } from "react-hook-form";
 import {
     useDeleteShoppingListItem,
     useGetOrCreateStoreItem,
+    useToggleFavorite,
     useUpdateItem,
     useUpsertShoppingListItem,
 } from "../../db/hooks";
@@ -44,7 +45,9 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
     const getOrCreateStoreItem = useGetOrCreateStoreItem();
     const updateItem = useUpdateItem();
     const deleteItem = useDeleteShoppingListItem();
+    const toggleFavorite = useToggleFavorite();
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+    const [desiredFavorite, setDesiredFavorite] = useState(false);
 
     const {
         control,
@@ -88,6 +91,8 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 // Clear snoozedUntil if item is checked (checked items cannot be snoozed)
                 snoozedUntil: editingItem.isChecked ? null : editingItem.snoozedUntil,
             });
+            // Initialize favorite state from editing item
+            setDesiredFavorite(editingItem.isFavorite ?? false);
         } else if (isItemModalOpen) {
             reset({
                 storeId,
@@ -100,6 +105,8 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 isIdea: false,
                 snoozedUntil: null,
             });
+            // Reset favorite state for new items
+            setDesiredFavorite(false);
         }
     }, [isItemModalOpen, editingItem, reset, storeId]);
 
@@ -171,6 +178,15 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 notes: data.notes || null,
                 snoozedUntil,
             });
+
+            // Toggle favorite if it changed
+            const originalFavorite = editingItem?.isFavorite ?? false;
+            if (desiredFavorite !== originalFavorite) {
+                await toggleFavorite.mutateAsync({
+                    id: storeItemId,
+                    storeId,
+                });
+            }
         }
         closeItemModal();
     };
@@ -260,6 +276,9 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                     errors={errors}
                     setValue={setValue}
                     watch={watch}
+                    editingItem={editingItem}
+                    desiredFavorite={desiredFavorite}
+                    setDesiredFavorite={setDesiredFavorite}
                 >
                     <form onSubmit={handleSubmit(onSubmit)}>
                         {isIdea ? (

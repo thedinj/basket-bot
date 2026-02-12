@@ -16,7 +16,7 @@ export const NotesInput = () => {
                     <IonInput
                         value={field.value || ""}
                         autocapitalize="sentences"
-                        placeholder={isIdea ? "Enter your idea" : "Enter any notes"}
+                        placeholder={isIdea ? "Enter your idea" : "Enter notes"}
                         onIonInput={(e) => field.onChange(e.detail.value || null)}
                     />
                     {errors.notes && (

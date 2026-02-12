@@ -222,6 +222,7 @@ export const shoppingListItemWithDetailsSchema = shoppingListItemSchema.extend({
     aisleName: z.string().max(MAX_NAME_LENGTH).nullable(),
     aisleSortOrder: z.number().int().nullable(),
     checkedByName: z.string().max(MAX_NAME_LENGTH).nullable(),
+    isFavorite: z.boolean().nullable(),
 });
 
 export type ShoppingListItemWithDetails = z.infer<typeof shoppingListItemWithDetailsSchema>;

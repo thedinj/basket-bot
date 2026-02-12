@@ -1,5 +1,6 @@
 import type { StoreItem } from "@basket-bot/core";
-import { IonInput, IonItem, IonLabel, IonList, IonText } from "@ionic/react";
+import { IonButton, IonIcon, IonInput, IonItem, IonLabel, IonList, IonText } from "@ionic/react";
+import { star, starOutline } from "ionicons/icons";
 import { useCallback, useEffect, useState } from "react";
 import { Controller } from "react-hook-form";
 import { useDebounce } from "use-debounce";
@@ -7,7 +8,18 @@ import { useStoreItemAutocomplete } from "../../db/hooks";
 import { useItemEditorContext } from "./useItemEditorContext";
 
 export const NameAutocomplete: React.FC = () => {
-    const { control, errors, setValue, storeId, aisles, sections, watch } = useItemEditorContext();
+    const {
+        control,
+        errors,
+        setValue,
+        storeId,
+        aisles,
+        sections,
+        watch,
+        editingItem,
+        desiredFavorite,
+        setDesiredFavorite,
+    } = useItemEditorContext();
 
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
@@ -70,6 +82,20 @@ export const NameAutocomplete: React.FC = () => {
                             onIonFocus={() => setShowAutocomplete(searchTerm.length >= 2)}
                             autocapitalize="sentences"
                         />
+                        {editingItem && editingItem.storeItemId && (
+                            <IonButton
+                                slot="end"
+                                fill="clear"
+                                onClick={() => setDesiredFavorite(!desiredFavorite)}
+                                style={{ marginTop: "20px" }}
+                            >
+                                <IonIcon
+                                    slot="icon-only"
+                                    icon={desiredFavorite ? star : starOutline}
+                                    color={desiredFavorite ? "warning" : "medium"}
+                                />
+                            </IonButton>
+                        )}
                     </IonItem>
                     {errors.name && (
                         <IonText color="danger">

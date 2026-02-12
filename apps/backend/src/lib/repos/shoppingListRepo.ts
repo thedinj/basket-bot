@@ -39,6 +39,7 @@ export function getShoppingListItems(storeId: string): ShoppingListItemWithDetai
                 sli.isChecked, sli.checkedAt, sli.checkedBy, sli.checkedUpdatedAt, sli.isSample, sli.isUnsure, sli.isIdea, sli.snoozedUntil,
                 sli.createdById, sli.updatedById, sli.createdAt, sli.updatedAt,
                 si.name as itemName,
+                si.isFavorite as isFavorite,
                 qu.abbreviation as unitAbbreviation,
                 s.id as sectionId,
                 COALESCE(s.aisleId, si.aisleId) as aisleId,
@@ -68,6 +69,7 @@ export function getShoppingListItems(storeId: string): ShoppingListItemWithDetai
         isSample: row.isSample != null ? intToBool(row.isSample) : null,
         isUnsure: row.isUnsure != null ? intToBool(row.isUnsure) : null,
         isIdea: intToBool(row.isIdea),
+        isFavorite: row.isFavorite != null ? intToBool(row.isFavorite) : null,
     }));
 }
 
