@@ -1,3 +1,4 @@
+import StoreItemsManagementModal from "@/components/store/StoreItemsManagementModal";
 import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
 import {
     IonContent,
@@ -9,7 +10,7 @@ import {
     IonToolbar,
     useIonAlert,
 } from "@ionic/react";
-import { add, starOutline } from "ionicons/icons";
+import { add, addOutline } from "ionicons/icons";
 import { Suspense, useCallback, useMemo, useState } from "react";
 import { ANIMATION_EFFECTS } from "../animations/effects";
 import { AppHeader } from "../components/layout/AppHeader";
@@ -22,7 +23,6 @@ import { OverlayAnimation } from "../components/shared/OverlayAnimation";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { useBulkImportModal } from "../components/shoppinglist/BulkImportModal";
 import { CheckedItems } from "../components/shoppinglist/CheckedItems";
-import FavoritesModal from "../components/shoppinglist/FavoritesModal";
 import { ItemEditorModal } from "../components/shoppinglist/ItemEditorModal";
 import { ShoppingListProvider } from "../components/shoppinglist/ShoppingListProvider";
 import { StoreSelector } from "../components/shoppinglist/StoreSelector";
@@ -42,7 +42,7 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     const { data: items } = useShoppingListItems(storeId);
     const clearChecked = useClearCheckedItems();
     const [presentAlert] = useIonAlert();
-    const [isFavoritesModalOpen, setIsFavoritesModalOpen] = useState(false);
+    const [isStoreItemsModalOpen, setIsStoreItemsModalOpen] = useState(false);
 
     // Laser obliteration animation
     const {
@@ -119,13 +119,13 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     const customActions = useMemo<GlobalActionConfig[]>(() => {
         const actions: GlobalActionConfig[] = [];
 
-        // Favorites quick-add
+        // Store Items quick-add
         actions.push({
-            id: "quick-add-favorites",
-            icon: starOutline,
-            title: "Quick add favorites",
-            ariaLabel: "Open favorites quick-add modal",
-            onClick: () => setIsFavoritesModalOpen(true),
+            id: "quick-add-store-items",
+            icon: addOutline,
+            title: "Quick add store items",
+            ariaLabel: "Open store items quick-add modal",
+            onClick: () => setIsStoreItemsModalOpen(true),
         });
 
         // Snoozed items toggle (conditional)
@@ -218,9 +218,9 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
                 <ItemEditorModal storeId={storeId} />
 
                 {/* Favorites Quick Add Modal */}
-                <FavoritesModal
-                    isOpen={isFavoritesModalOpen}
-                    onClose={() => setIsFavoritesModalOpen(false)}
+                <StoreItemsManagementModal
+                    isOpen={isStoreItemsModalOpen}
+                    onClose={() => setIsStoreItemsModalOpen(false)}
                     storeId={storeId}
                 />
             </IonContent>

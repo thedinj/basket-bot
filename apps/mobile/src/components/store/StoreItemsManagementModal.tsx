@@ -7,16 +7,19 @@ import {
     IonFabButton,
     IonHeader,
     IonIcon,
+    IonItem,
     IonItemDivider,
     IonLabel,
+    IonList,
     IonModal,
     IonSearchbar,
+    IonSkeletonText,
     IonText,
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
 import { add, closeOutline } from "ionicons/icons";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { useStore, useStoreItemsWithDetails } from "../../db/hooks";
 import { StoreItemWithDetails } from "../../db/types";
@@ -39,8 +42,12 @@ interface StoreItemsManagementModalProps {
     storeId: string;
 }
 
-const StoreItemsManagementModal: React.FC<StoreItemsManagementModalProps> = ({
-    isOpen,
+interface StoreItemsManagementModalContentProps {
+    onClose: () => void;
+    storeId: string;
+}
+
+const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalContentProps> = ({
     onClose,
     storeId,
 }) => {
@@ -168,7 +175,7 @@ const StoreItemsManagementModal: React.FC<StoreItemsManagementModalProps> = ({
     }
 
     return (
-        <IonModal isOpen={isOpen} onDidDismiss={onClose}>
+        <>
             <RefreshConfig
                 queryKeys={[
                     ["stores", storeId],
@@ -287,6 +294,52 @@ const StoreItemsManagementModal: React.FC<StoreItemsManagementModalProps> = ({
                     />
                 </IonContent>
             </RefreshConfig>
+        </>
+    );
+};
+
+const LoadingFallback: React.FC = () => (
+    <>
+        <IonHeader>
+            <IonToolbar>
+                <IonTitle>
+                    <IonSkeletonText animated style={{ width: "140px" }} />
+                </IonTitle>
+            </IonToolbar>
+        </IonHeader>
+        <IonContent fullscreen>
+            <IonSearchbar disabled value="" placeholder="Search items..." />
+            <IonItemDivider>
+                <IonLabel>
+                    <IonSkeletonText animated style={{ width: "80px" }} />
+                </IonLabel>
+            </IonItemDivider>
+            <IonList>
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <IonItem key={i}>
+                        <IonLabel>
+                            <IonSkeletonText animated style={{ width: "70%" }} />
+                            <IonSkeletonText animated style={{ width: "40%" }} />
+                        </IonLabel>
+                    </IonItem>
+                ))}
+            </IonList>
+        </IonContent>
+    </>
+);
+
+const StoreItemsManagementModal: React.FC<StoreItemsManagementModalProps> = ({
+    isOpen,
+    onClose,
+    storeId,
+}) => {
+    return (
+        <IonModal isOpen={isOpen} onDidDismiss={onClose}>
+            {storeId && (
+                <Suspense fallback={<LoadingFallback />}>
+                    <StoreItemsManagementModalContent storeId={storeId} onClose={onClose} />
+                </Suspense>
+            )}
         </IonModal>
     );
 };
