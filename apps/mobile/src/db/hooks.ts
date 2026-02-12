@@ -158,6 +158,17 @@ export function useStore(id: string) {
 }
 
 /**
+ * Hook to fetch a single store by ID with Suspense
+ */
+export function useStoreSuspense(id: string) {
+    const database = useDatabase();
+    return useTanstackSuspenseQuery({
+        queryKey: ["stores", id],
+        queryFn: () => database.getStoreById(id),
+    });
+}
+
+/**
  * Hook to fetch a single app setting by key
  * Infrequently modified settings cached for 5 minutes
  */

@@ -29,19 +29,13 @@ export interface GlobalActionConfig {
     messageGenerator?: MessageGenerator;
 }
 
+export type ModalName = 'settings' | 'profile' | 'password' | 'households' | 'stores';
+
 export interface AppHeaderContextValue {
-    isSettingsOpen: boolean;
-    openSettings: () => void;
-    closeSettings: () => void;
-    isProfileOpen: boolean;
-    openProfile: () => void;
-    closeProfile: () => void;
-    isPasswordOpen: boolean;
-    openPassword: () => void;
-    closePassword: () => void;
-    isHouseholdsOpen: boolean;
-    openHouseholds: () => void;
-    closeHouseholds: () => void;
+    currentModal: ModalName | null;
+    openModal: (name: ModalName) => void;
+    closeModal: () => void;
+    isModalOpen: (name: ModalName) => boolean;
 }
 
 export const AppHeaderContext = createContext<AppHeaderContextValue | undefined>(undefined);

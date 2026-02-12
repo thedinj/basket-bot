@@ -1,53 +1,26 @@
 import { PropsWithChildren, useCallback, useMemo, useState } from "react";
-import { AppHeaderContext } from "./AppHeaderContext";
+import { AppHeaderContext, type ModalName } from "./AppHeaderContext";
 
 export const AppHeaderProvider: React.FC<PropsWithChildren> = ({ children }) => {
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const [isPasswordOpen, setIsPasswordOpen] = useState(false);
-    const [isHouseholdsOpen, setIsHouseholdsOpen] = useState(false);
+    const [currentModal, setCurrentModal] = useState<ModalName | null>(null);
+    const openModal = useCallback((name: ModalName) => {
+        setCurrentModal(name);
+    }, []);
 
-    const openSettings = useCallback(() => setIsSettingsOpen(true), []);
-    const closeSettings = useCallback(() => setIsSettingsOpen(false), []);
+    const closeModal = useCallback(() => {
+        setCurrentModal(null);
+    }, []);
 
-    const openProfile = useCallback(() => setIsProfileOpen(true), []);
-    const closeProfile = useCallback(() => setIsProfileOpen(false), []);
-
-    const openPassword = useCallback(() => setIsPasswordOpen(true), []);
-    const closePassword = useCallback(() => setIsPasswordOpen(false), []);
-
-    const openHouseholds = useCallback(() => setIsHouseholdsOpen(true), []);
-    const closeHouseholds = useCallback(() => setIsHouseholdsOpen(false), []);
+    const isModalOpen = useCallback((name: ModalName) => currentModal === name, [currentModal]);
 
     const value = useMemo(
         () => ({
-            isSettingsOpen,
-            openSettings,
-            closeSettings,
-            isProfileOpen,
-            openProfile,
-            closeProfile,
-            isPasswordOpen,
-            openPassword,
-            closePassword,
-            isHouseholdsOpen,
-            openHouseholds,
-            closeHouseholds,
+            currentModal,
+            openModal,
+            closeModal,
+            isModalOpen,
         }),
-        [
-            isSettingsOpen,
-            openSettings,
-            closeSettings,
-            isProfileOpen,
-            openProfile,
-            closeProfile,
-            isPasswordOpen,
-            openPassword,
-            closePassword,
-            isHouseholdsOpen,
-            openHouseholds,
-            closeHouseholds,
-        ]
+        [currentModal, openModal, closeModal, isModalOpen]
     );
 
     return <AppHeaderContext.Provider value={value}>{children}</AppHeaderContext.Provider>;

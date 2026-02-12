@@ -1,20 +1,23 @@
 import { LLMModalProvider } from "@/llm/shared";
 import { IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } from "@ionic/react";
-import { cartOutline, storefrontOutline } from "ionicons/icons";
+import { cartOutline } from "ionicons/icons";
 import { useEffect, useRef } from "react";
 import { Route } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { usePreloadCoreData } from "../db/hooks";
 import RefreshProvider from "../hooks/refresh/RefreshProvider";
 import ShoppingList from "../pages/ShoppingList";
-import StoreAislesPage from "../pages/StoreAislesPage";
-import StoreDetail from "../pages/StoreDetail";
-import StoreItemsPage from "../pages/StoreItemsPage";
-import StoresList from "../pages/StoresList";
 import { AppHeaderProvider } from "./layout/AppHeaderProvider";
 import { AppMenu } from "./layout/AppMenu";
 import NetworkStatusBanner from "./shared/NetworkStatusBanner";
 import ShieldProvider from "./shield/ShieldProvider";
+
+interface AppTab {
+    tab: string;
+    href: string;
+    icon: string;
+    label: string;
+}
 
 /**
  * Main app component with authenticated routes and tabs
@@ -37,6 +40,15 @@ const Main: React.FC = () => {
         }
     }, [isAuthReady, prefetchCoreData]);
 
+    const tabs: AppTab[] = [
+        {
+            tab: "shoppinglist",
+            href: "/shoppinglist",
+            icon: cartOutline,
+            label: "Shopping List",
+        },
+    ];
+
     return (
         <ShieldProvider>
             <RefreshProvider>
@@ -46,31 +58,20 @@ const Main: React.FC = () => {
                         <NetworkStatusBanner />
                         <IonTabs>
                             <IonRouterOutlet id="main-content" animated={false}>
-                                {/* Most specific routes first - nested store pages */}
-                                <Route exact path="/stores/:id/items" component={StoreItemsPage} />
-                                <Route
-                                    exact
-                                    path="/stores/:id/aisles"
-                                    component={StoreAislesPage}
-                                />
-
-                                {/* Tab routes */}
+                                {/* REMEMBER: Most specific routes first */}
                                 <Route exact path="/shoppinglist" component={ShoppingList} />
-                                <Route exact path="/stores" component={StoresList} />
-
-                                {/* Store detail - must come after nested routes */}
-                                <Route exact path="/stores/:id" component={StoreDetail} />
                             </IonRouterOutlet>
-                            <IonTabBar slot="bottom">
-                                <IonTabButton tab="shoppinglist" href="/shoppinglist">
-                                    <IonIcon aria-hidden="true" icon={cartOutline} />
-                                    <IonLabel>Shopping List</IonLabel>
-                                </IonTabButton>
-                                <IonTabButton tab="stores" href="/stores">
-                                    <IonIcon aria-hidden="true" icon={storefrontOutline} />
-                                    <IonLabel>Stores</IonLabel>
-                                </IonTabButton>
-                            </IonTabBar>
+
+                            {tabs.length > 1 && (
+                                <IonTabBar slot="bottom">
+                                    {tabs.map(({ tab, href, icon, label }) => (
+                                        <IonTabButton key={tab} tab={tab} href={href}>
+                                            <IonIcon aria-hidden="true" icon={icon} />
+                                            <IonLabel>{label}</IonLabel>
+                                        </IonTabButton>
+                                    ))}
+                                </IonTabBar>
+                            )}
                         </IonTabs>
                     </AppHeaderProvider>
                 </LLMModalProvider>

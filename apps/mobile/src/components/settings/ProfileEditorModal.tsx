@@ -24,17 +24,17 @@ import { FormTextInput } from "../form/FormTextInput";
 import { useAppHeader } from "../layout/useAppHeader";
 
 const ProfileEditorModal: React.FC = () => {
-    const { isProfileOpen, closeProfile } = useAppHeader();
+    const { isModalOpen, closeModal } = useAppHeader();
     const { user } = useAuth();
     const { showSuccess } = useToast();
     const { profileForm, onSubmitProfile, isSubmittingProfile } = useProfileForm();
 
     // Reset form when modal opens
     useEffect(() => {
-        if (isProfileOpen) {
+        if (isModalOpen("profile")) {
             profileForm.reset();
         }
-    }, [isProfileOpen, profileForm]);
+    }, [isModalOpen, profileForm]);
 
     const handleProfileSubmit = profileForm.handleSubmit(async (data: UpdateProfileRequest) => {
         const success = await onSubmitProfile(data);
@@ -44,12 +44,12 @@ const ProfileEditorModal: React.FC = () => {
     });
 
     return (
-        <IonModal isOpen={isProfileOpen} onDidDismiss={closeProfile}>
+        <IonModal isOpen={isModalOpen("profile")} onDidDismiss={closeModal}>
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>Edit Profile</IonTitle>
                     <IonButtons slot="end">
-                        <IonButton onClick={closeProfile}>
+                        <IonButton onClick={closeModal}>
                             <IonIcon icon={closeOutline} />
                         </IonButton>
                     </IonButtons>

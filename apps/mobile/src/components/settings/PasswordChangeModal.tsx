@@ -18,32 +18,32 @@ import { useAppHeader } from "../layout/useAppHeader";
 import { usePasswordForm } from "./usePasswordForm";
 
 const PasswordChangeModal: React.FC = () => {
-    const { isPasswordOpen, closePassword } = useAppHeader();
+    const { isModalOpen, closeModal } = useAppHeader();
     const { showSuccess } = useToast();
     const { passwordForm, onSubmitPassword, isSubmittingPassword } = usePasswordForm();
 
     // Reset form when modal opens
     useEffect(() => {
-        if (isPasswordOpen) {
+        if (isModalOpen("password")) {
             passwordForm.reset();
         }
-    }, [isPasswordOpen, passwordForm]);
+    }, [isModalOpen, passwordForm]);
 
     const handlePasswordSubmit = passwordForm.handleSubmit(async (data: ChangePasswordRequest) => {
         const success = await onSubmitPassword(data);
         if (success) {
             showSuccess("Password changed successfully");
-            closePassword();
+            closeModal();
         }
     });
 
     return (
-        <IonModal isOpen={isPasswordOpen} onDidDismiss={closePassword}>
+        <IonModal isOpen={isModalOpen("password")} onDidDismiss={closeModal}>
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>Change Password</IonTitle>
                     <IonButtons slot="end">
-                        <IonButton onClick={closePassword}>
+                        <IonButton onClick={closeModal}>
                             <IonIcon icon={closeOutline} />
                         </IonButton>
                     </IonButtons>

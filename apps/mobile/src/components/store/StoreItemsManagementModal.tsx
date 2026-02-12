@@ -1,55 +1,56 @@
-import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
 import {
     IonAlert,
     IonButton,
+    IonButtons,
     IonContent,
     IonFab,
     IonFabButton,
+    IonHeader,
     IonIcon,
-    IonItem,
     IonItemDivider,
     IonLabel,
-    IonPage,
+    IonModal,
     IonSearchbar,
     IonText,
+    IonTitle,
+    IonToolbar,
 } from "@ionic/react";
-import { add, cart, cartOutline, star, starOutline } from "ionicons/icons";
-import { useCallback, useMemo, useState } from "react";
-import { useHistory, useParams } from "react-router-dom";
+import { add, closeOutline } from "ionicons/icons";
+import React, { useCallback, useMemo, useState } from "react";
 import { useDebounce } from "use-debounce";
-import { AppHeader } from "../components/layout/AppHeader";
-import GlobalActions from "../components/layout/GlobalActions";
-import { FabSpacer } from "../components/shared/FabSpacer";
-import { GroupedItemList } from "../components/shared/GroupedItemList";
-import { ItemGroup } from "../components/shared/grouping.types";
-import { createAisleSectionGroups } from "../components/shared/grouping.utils";
-import PullToRefresh from "../components/shared/PullToRefresh";
-import { StoreItemEditorModal } from "../components/storeitem/StoreItemEditorModal";
-import {
-    useRemoveShoppingListItem,
-    useShoppingListItems,
-    useStore,
-    useStoreItemsWithDetails,
-    useToggleFavorite,
-    useUpsertShoppingListItem,
-} from "../db/hooks";
-import { StoreItemWithDetails } from "../db/types";
-import RefreshConfig from "../hooks/refresh/RefreshConfig";
-import { useToast } from "../hooks/useToast";
+import { useStore, useStoreItemsWithDetails } from "../../db/hooks";
+import { StoreItemWithDetails } from "../../db/types";
+import RefreshConfig from "../../hooks/refresh/RefreshConfig";
+import { useToast } from "../../hooks/useToast";
+import { FabSpacer } from "../shared/FabSpacer";
+import { GroupedItemList } from "../shared/GroupedItemList";
+import { ItemGroup } from "../shared/grouping.types";
+import { createAisleSectionGroups } from "../shared/grouping.utils";
+import PullToRefresh from "../shared/PullToRefresh";
+import { StoreItemEditorModal } from "../storeitem/StoreItemEditorModal";
+import StoreItemRow from "../storeitem/StoreItemRow";
+import { useShoppingListItemMap } from "../storeitem/useShoppingListItemMap";
+import { useStoreItemOperations } from "../storeitem/useStoreItemOperations";
 
-const StoreItemsPage: React.FC = () => {
-    useRenderStormDetector("StoreItemsPage");
-    const { id: storeId } = useParams<{ id: string }>();
-    const history = useHistory();
+interface StoreItemsManagementModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    storeId: string;
+}
+
+const StoreItemsManagementModal: React.FC<StoreItemsManagementModalProps> = ({
+    isOpen,
+    onClose,
+    storeId,
+}) => {
     const { data: store, isLoading: storeLoading } = useStore(storeId);
     const { data: items, isLoading } = useStoreItemsWithDetails(storeId);
-    const { data: shoppingListItems } = useShoppingListItems(storeId);
-    const toggleFavorite = useToggleFavorite();
-    const upsertShoppingListItem = useUpsertShoppingListItem();
-    const removeShoppingListItem = useRemoveShoppingListItem();
-    const { showSuccess, showError } = useToast();
+    const shoppingListItemMap = useShoppingListItemMap(storeId);
+    const { handleToggleFavorite, handleAddToShoppingList, handleRemoveFromShoppingList } =
+        useStoreItemOperations(storeId);
+    const { showError } = useToast();
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditorModalOpen, setIsEditorModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<StoreItemWithDetails | null>(null);
     const [removeFromListAlert, setRemoveFromListAlert] = useState<{
         itemId: string;
@@ -58,20 +59,6 @@ const StoreItemsPage: React.FC = () => {
     } | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
-
-    // Create a map of storeItemId -> shopping_list_item for quick lookups
-    const shoppingListItemMap = useMemo(() => {
-        const map = new Map<string, string>();
-        if (shoppingListItems) {
-            for (const item of shoppingListItems) {
-                // Skip ideas (they have null storeItemId)
-                if (item.storeItemId) {
-                    map.set(item.storeItemId, item.id);
-                }
-            }
-        }
-        return map;
-    }, [shoppingListItems]);
 
     // Filter and split items into favorites and regular, then create groups
     const { favoriteGroups, regularGroups } = useMemo(() => {
@@ -113,47 +100,18 @@ const StoreItemsPage: React.FC = () => {
 
     const openCreateModal = useCallback(() => {
         setEditingItem(null);
-        setIsModalOpen(true);
+        setIsEditorModalOpen(true);
     }, []);
 
     const openEditModal = useCallback((item: StoreItemWithDetails) => {
         setEditingItem(item);
-        setIsModalOpen(true);
+        setIsEditorModalOpen(true);
     }, []);
 
-    const closeModal = useCallback(() => {
-        setIsModalOpen(false);
+    const closeEditorModal = useCallback(() => {
+        setIsEditorModalOpen(false);
         setEditingItem(null);
     }, []);
-
-    const handleToggleFavorite = useCallback(
-        async (item: StoreItemWithDetails) => {
-            try {
-                await toggleFavorite.mutateAsync({
-                    id: item.id,
-                    storeId: storeId,
-                });
-            } catch {
-                showError("Failed to update favorite");
-            }
-        },
-        [storeId, showError, toggleFavorite]
-    );
-
-    const handleAddToShoppingList = useCallback(
-        async (item: StoreItemWithDetails) => {
-            try {
-                await upsertShoppingListItem.mutateAsync({
-                    storeId: storeId,
-                    storeItemId: item.id,
-                });
-                showSuccess("Added to shopping list");
-            } catch {
-                showError("Failed to add to shopping list");
-            }
-        },
-        [storeId, upsertShoppingListItem, showSuccess, showError]
-    );
 
     const confirmRemoveFromShoppingList = useCallback(
         (item: StoreItemWithDetails) => {
@@ -172,75 +130,44 @@ const StoreItemsPage: React.FC = () => {
     const executeRemoveFromShoppingList = useCallback(async () => {
         if (!removeFromListAlert) return;
 
-        try {
-            await removeShoppingListItem.mutateAsync({
-                id: removeFromListAlert.shoppingListItemId,
-                storeId: storeId,
-            });
-            showSuccess("Removed from shopping list");
-            setRemoveFromListAlert(null);
-        } catch {
-            showError("Failed to remove from shopping list");
-        }
-    }, [removeFromListAlert, removeShoppingListItem, showError, showSuccess, storeId]);
+        await handleRemoveFromShoppingList(removeFromListAlert.shoppingListItemId);
+        setRemoveFromListAlert(null);
+    }, [removeFromListAlert, handleRemoveFromShoppingList]);
 
     const renderItem = useCallback(
         (item: StoreItemWithDetails) => {
             const isInShoppingList = shoppingListItemMap.has(item.id);
-            const isFavorite = item.isFavorite;
 
             return (
-                <IonItem key={item.id}>
-                    <div
-                        slot="start"
-                        style={{
-                            cursor: "pointer",
-                        }}
-                        onClick={() => handleToggleFavorite(item)}
-                    >
-                        <IonIcon
-                            icon={isFavorite ? star : starOutline}
-                            color={isFavorite ? "warning" : "medium"}
-                        />
-                    </div>
-                    <IonLabel style={{ cursor: "pointer" }} onClick={() => openEditModal(item)}>
-                        {item.name}
-                    </IonLabel>
-                    <IonButton
-                        slot="end"
-                        fill="clear"
-                        onClick={() =>
-                            isInShoppingList
-                                ? confirmRemoveFromShoppingList(item)
-                                : handleAddToShoppingList(item)
-                        }
-                    >
-                        <IonIcon
-                            icon={isInShoppingList ? cart : cartOutline}
-                            color={isInShoppingList ? "primary" : "medium"}
-                        />
-                    </IonButton>
-                </IonItem>
+                <StoreItemRow
+                    key={item.id}
+                    item={item}
+                    isInShoppingList={isInShoppingList}
+                    onToggleFavorite={handleToggleFavorite}
+                    onAddToShoppingList={handleAddToShoppingList}
+                    onRemoveFromShoppingList={(item) => confirmRemoveFromShoppingList(item)}
+                    onEditItem={openEditModal}
+                />
             );
         },
         [
-            confirmRemoveFromShoppingList,
-            handleAddToShoppingList,
-            handleToggleFavorite,
-            openEditModal,
             shoppingListItemMap,
+            handleToggleFavorite,
+            handleAddToShoppingList,
+            confirmRemoveFromShoppingList,
+            openEditModal,
         ]
     );
 
     // Handle deleted/non-existent store
     if (!storeLoading && !store) {
         showError("Store not found or no longer available.");
-        history.replace("/stores");
+        onClose();
         return null;
     }
 
     return (
-        <IonPage>
+        <IonModal isOpen={isOpen} onDidDismiss={onClose}>
             <RefreshConfig
                 queryKeys={[
                     ["stores", storeId],
@@ -248,13 +175,16 @@ const StoreItemsPage: React.FC = () => {
                     ["shopping-list-items", storeId],
                 ]}
             >
-                <AppHeader
-                    title={`${store?.name || "Store"} Items`}
-                    showBackButton
-                    backButtonHref={`/stores/${encodeURIComponent(storeId)}`}
-                >
-                    <GlobalActions />
-                </AppHeader>
+                <IonHeader>
+                    <IonToolbar>
+                        <IonTitle>{store?.name || "Store"} Items</IonTitle>
+                        <IonButtons slot="end">
+                            <IonButton onClick={onClose}>
+                                <IonIcon icon={closeOutline} />
+                            </IonButton>
+                        </IonButtons>
+                    </IonToolbar>
+                </IonHeader>
                 <IonContent fullscreen>
                     <PullToRefresh />
                     <IonSearchbar
@@ -272,8 +202,8 @@ const StoreItemsPage: React.FC = () => {
                             <IonText color="medium">
                                 {items?.length === 0 ? (
                                     <>
-                                        No items yet. Add items to track products and their locations
-                                        in this store.
+                                        No items yet. Add items to track products and their
+                                        locations in this store.
                                     </>
                                 ) : (
                                     <>No items match your search.</>
@@ -326,8 +256,8 @@ const StoreItemsPage: React.FC = () => {
                     </IonFab>
 
                     <StoreItemEditorModal
-                        isOpen={isModalOpen}
-                        onClose={closeModal}
+                        isOpen={isEditorModalOpen}
+                        onClose={closeEditorModal}
                         storeId={storeId}
                         editingItem={editingItem}
                     />
@@ -355,8 +285,8 @@ const StoreItemsPage: React.FC = () => {
                     />
                 </IonContent>
             </RefreshConfig>
-        </IonPage>
+        </IonModal>
     );
 };
 
-export default StoreItemsPage;
+export default StoreItemsManagementModal;

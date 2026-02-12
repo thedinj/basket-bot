@@ -17,29 +17,29 @@ import { useSettingsForm } from "../../settings/useSettingsForm";
 import { FormPasswordInput } from "../form/FormPasswordInput";
 import { useAppHeader } from "../layout/useAppHeader";
 
-const Settings: React.FC = () => {
+const SettingsModal: React.FC = () => {
     const { form, onSubmit, isSubmitting } = useSettingsForm();
-    const { isSettingsOpen, closeSettings } = useAppHeader();
+    const { isModalOpen, closeModal } = useAppHeader();
 
     // Reset form to original values when modal opens
     useEffect(() => {
-        if (isSettingsOpen) {
+        if (isModalOpen("settings")) {
             form.reset();
         }
-    }, [isSettingsOpen, form]);
+    }, [isModalOpen, form]);
 
     const handleSubmit = form.handleSubmit(async () => {
         await onSubmit();
-        closeSettings();
+        closeModal();
     });
 
     return (
-        <IonModal isOpen={isSettingsOpen} onDidDismiss={closeSettings}>
+        <IonModal isOpen={isModalOpen("settings")} onDidDismiss={closeModal}>
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>Settings</IonTitle>
                     <IonButtons slot="end">
-                        <IonButton onClick={closeSettings}>
+                        <IonButton onClick={closeModal}>
                             <IonIcon icon={closeOutline} />
                         </IonButton>
                     </IonButtons>
@@ -85,4 +85,4 @@ const Settings: React.FC = () => {
     );
 };
 
-export default Settings;
+export default SettingsModal;

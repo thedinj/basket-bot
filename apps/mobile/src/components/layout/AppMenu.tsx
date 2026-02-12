@@ -1,7 +1,8 @@
 import HouseholdManagementModal from "@/components/households/HouseholdManagementModal";
 import PasswordChangeModal from "@/components/settings/PasswordChangeModal";
 import ProfileEditorModal from "@/components/settings/ProfileEditorModal";
-import Settings from "@/components/settings/Settings";
+import SettingsModal from "@/components/settings/SettingsModal";
+import StoreListModal from "@/components/store/StoreListModal";
 import {
     IonBadge,
     IonButton,
@@ -16,15 +17,29 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { homeOutline, keyOutline, logOut, person, settings } from "ionicons/icons";
+import {
+    homeOutline,
+    keyOutline,
+    logOut,
+    person,
+    settings,
+    storefrontOutline,
+} from "ionicons/icons";
+import { useCallback } from "react";
 import { useAuth } from "../../auth/useAuth";
 import { usePendingInvitations } from "../../db/hooks";
 import { useAppHeader } from "./useAppHeader";
 
 export const AppMenu: React.FC = () => {
-    const { openSettings, openProfile, openPassword, openHouseholds } = useAppHeader();
+    const { openModal } = useAppHeader();
     const { user, logout } = useAuth();
     const { data: pendingInvitations } = usePendingInvitations();
+
+    const handleOpenSettings = useCallback(() => openModal("settings"), [openModal]);
+    const handleOpenProfile = useCallback(() => openModal("profile"), [openModal]);
+    const handleOpenPassword = useCallback(() => openModal("password"), [openModal]);
+    const handleOpenHouseholds = useCallback(() => openModal("households"), [openModal]);
+    const handleOpenStores = useCallback(() => openModal("stores"), [openModal]);
 
     const handleLogout = async () => {
         try {
@@ -87,26 +102,26 @@ export const AppMenu: React.FC = () => {
                     )}
                     <IonList>
                         <IonMenuToggle autoHide={false}>
-                            <IonItem button onClick={openSettings} lines="none">
+                            <IonItem button onClick={handleOpenSettings} lines="none">
                                 <IonIcon icon={settings} slot="start" />
                                 <IonLabel>Settings</IonLabel>
                             </IonItem>
                         </IonMenuToggle>
                         <IonMenuToggle autoHide={false}>
-                            <IonItem button onClick={openProfile} lines="none">
+                            <IonItem button onClick={handleOpenProfile} lines="none">
                                 <IonIcon icon={person} slot="start" />
                                 <IonLabel>Profile</IonLabel>
                             </IonItem>
                         </IonMenuToggle>
                         <IonMenuToggle autoHide={false}>
-                            <IonItem button onClick={openPassword} lines="none">
+                            <IonItem button onClick={handleOpenPassword} lines="none">
                                 <IonIcon icon={keyOutline} slot="start" />
                                 <IonLabel>Change Password</IonLabel>
                             </IonItem>
                         </IonMenuToggle>
                     </IonList>
                     <IonMenuToggle autoHide={false}>
-                        <IonItem button onClick={openHouseholds} lines="none">
+                        <IonItem button onClick={handleOpenHouseholds} lines="none">
                             <IonIcon icon={homeOutline} slot="start" />
                             <IonLabel>Households</IonLabel>
                             {pendingInvitations && pendingInvitations.length > 0 ? (
@@ -114,6 +129,12 @@ export const AppMenu: React.FC = () => {
                                     {pendingInvitations.length}
                                 </IonBadge>
                             ) : null}
+                        </IonItem>
+                    </IonMenuToggle>
+                    <IonMenuToggle autoHide={false}>
+                        <IonItem button onClick={handleOpenStores} lines="none">
+                            <IonIcon icon={storefrontOutline} slot="start" />
+                            <IonLabel>Stores</IonLabel>
                         </IonItem>
                     </IonMenuToggle>
                     <div style={{ padding: "16px", marginTop: "auto" }}>
@@ -124,9 +145,10 @@ export const AppMenu: React.FC = () => {
                     </div>
                 </IonContent>
             </IonMenu>
-            <Settings />
+            <SettingsModal />
             <ProfileEditorModal />
             <PasswordChangeModal />
+            <StoreListModal />
             <HouseholdManagementModal />
         </>
     );

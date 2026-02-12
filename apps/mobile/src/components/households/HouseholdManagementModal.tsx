@@ -29,7 +29,7 @@ import CreateHouseholdModal from "./CreateHouseholdModal";
 import HouseholdDetailModal from "./HouseholdDetailModal";
 
 export const HouseholdManagementModal: React.FC = () => {
-    const { isHouseholdsOpen, closeHouseholds } = useAppHeader();
+    const { isModalOpen, closeModal } = useAppHeader();
     const {
         data: households,
         isLoading: householdsLoading,
@@ -60,12 +60,12 @@ export const HouseholdManagementModal: React.FC = () => {
 
     return (
         <>
-            <IonModal isOpen={isHouseholdsOpen} onDidDismiss={closeHouseholds}>
+            <IonModal isOpen={isModalOpen("households")} onDidDismiss={closeModal}>
                 <IonHeader>
                     <IonToolbar>
                         <IonTitle>Households</IonTitle>
                         <IonButtons slot="end">
-                            <IonButton onClick={closeHouseholds}>
+                            <IonButton onClick={closeModal}>
                                 <IonIcon icon={closeOutline} />
                             </IonButton>
                         </IonButtons>
