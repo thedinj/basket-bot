@@ -10,7 +10,7 @@ import {
     IonToolbar,
     useIonAlert,
 } from "@ionic/react";
-import { add, addOutline } from "ionicons/icons";
+import { add, listOutline } from "ionicons/icons";
 import { Suspense, useCallback, useMemo, useState } from "react";
 import { ANIMATION_EFFECTS } from "../animations/effects";
 import { AppHeader } from "../components/layout/AppHeader";
@@ -119,15 +119,6 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     const customActions = useMemo<GlobalActionConfig[]>(() => {
         const actions: GlobalActionConfig[] = [];
 
-        // Store Items quick-add
-        actions.push({
-            id: "quick-add-store-items",
-            icon: addOutline,
-            title: "Quick add store items",
-            ariaLabel: "Open store items quick-add modal",
-            onClick: () => setIsStoreItemsModalOpen(true),
-        });
-
         // Snoozed items toggle (conditional)
         if (currentlySnoozedItemCount > 0) {
             actions.push({
@@ -145,6 +136,15 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
                 },
             });
         }
+
+        // Store Items quick-add
+        actions.push({
+            id: "quick-add-store-items",
+            icon: listOutline,
+            title: "Quick add store items",
+            ariaLabel: "Open store items quick-add modal",
+            onClick: () => setIsStoreItemsModalOpen(true),
+        });
 
         return actions;
     }, [currentlySnoozedItemCount, showSnoozed, toggleShowSnoozed]);
