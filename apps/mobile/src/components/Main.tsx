@@ -5,7 +5,6 @@ import { useEffect, useRef } from "react";
 import { Route } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { usePreloadCoreData } from "../db/hooks";
-import RefreshProvider from "../hooks/refresh/RefreshProvider";
 import ShoppingList from "../pages/ShoppingList";
 import { AppHeaderProvider } from "./layout/AppHeaderProvider";
 import { AppMenu } from "./layout/AppMenu";
@@ -51,31 +50,29 @@ const Main: React.FC = () => {
 
     return (
         <ShieldProvider>
-            <RefreshProvider>
-                <LLMModalProvider>
-                    <AppHeaderProvider>
-                        <AppMenu />
-                        <NetworkStatusBanner />
-                        <IonTabs>
-                            <IonRouterOutlet id="main-content" animated={false}>
-                                {/* REMEMBER: Most specific routes first */}
-                                <Route exact path="/shoppinglist" component={ShoppingList} />
-                            </IonRouterOutlet>
+            <LLMModalProvider>
+                <AppHeaderProvider>
+                    <AppMenu />
+                    <NetworkStatusBanner />
+                    <IonTabs>
+                        <IonRouterOutlet id="main-content" animated={false}>
+                            {/* REMEMBER: Most specific routes first */}
+                            <Route exact path="/shoppinglist" component={ShoppingList} />
+                        </IonRouterOutlet>
 
-                            {tabs.length > 1 && (
-                                <IonTabBar slot="bottom">
-                                    {tabs.map(({ tab, href, icon, label }) => (
-                                        <IonTabButton key={tab} tab={tab} href={href}>
-                                            <IonIcon aria-hidden="true" icon={icon} />
-                                            <IonLabel>{label}</IonLabel>
-                                        </IonTabButton>
-                                    ))}
-                                </IonTabBar>
-                            )}
-                        </IonTabs>
-                    </AppHeaderProvider>
-                </LLMModalProvider>
-            </RefreshProvider>
+                        {tabs.length > 1 && (
+                            <IonTabBar slot="bottom">
+                                {tabs.map(({ tab, href, icon, label }) => (
+                                    <IonTabButton key={tab} tab={tab} href={href}>
+                                        <IonIcon aria-hidden="true" icon={icon} />
+                                        <IonLabel>{label}</IonLabel>
+                                    </IonTabButton>
+                                ))}
+                            </IonTabBar>
+                        )}
+                    </IonTabs>
+                </AppHeaderProvider>
+            </LLMModalProvider>
         </ShieldProvider>
     );
 };

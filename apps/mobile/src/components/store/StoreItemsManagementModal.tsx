@@ -22,6 +22,7 @@ import { useStore, useStoreItemsWithDetails } from "../../db/hooks";
 import { StoreItemWithDetails } from "../../db/types";
 import RefreshConfig from "../../hooks/refresh/RefreshConfig";
 import { useToast } from "../../hooks/useToast";
+import { GlobalActions } from "../layout/GlobalActions";
 import { FabSpacer } from "../shared/FabSpacer";
 import { GroupedItemList } from "../shared/GroupedItemList";
 import { ItemGroup } from "../shared/grouping.types";
@@ -179,6 +180,7 @@ const StoreItemsManagementModal: React.FC<StoreItemsManagementModalProps> = ({
                     <IonToolbar>
                         <IonTitle>{store?.name || "Store"} Items</IonTitle>
                         <IonButtons slot="end">
+                            <GlobalActions />
                             <IonButton onClick={onClose}>
                                 <IonIcon icon={closeOutline} />
                             </IonButton>

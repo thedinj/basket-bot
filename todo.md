@@ -1,4 +1,3 @@
-Delete some routes/components?
 Test new user/household/store scan/items/list
 
 The WiFi adapter is often the first thing to suffer from undervoltage.

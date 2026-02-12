@@ -14,7 +14,7 @@ import { usePreference } from "./usePreference";
 export const useKeepAwake = () => {
     const { value, savePreference } = usePreference("keep_screen_awake");
     const isEnabled = value === "true";
-    const showKeepAwake = Capacitor.isNativePlatform();
+    const showKeepAwake = true; //Capacitor.isNativePlatform();
 
     useEffect(() => {
         if (!Capacitor.isNativePlatform()) return;

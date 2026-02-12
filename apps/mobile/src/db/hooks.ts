@@ -976,7 +976,7 @@ export function useDeleteItem() {
 export function useToggleFavorite() {
     const database = useDatabase();
     const { showError } = useToast();
-    const { refresh } = useRefreshContext();
+    const refreshContext = useRefreshContext();
 
     return useOptimisticMutation({
         mutationFn: ({ id, storeId }: { id: string; storeId: string }) =>
@@ -1012,10 +1012,12 @@ export function useToggleFavorite() {
             // Gracefully handle 404 - item was deleted
             if (error instanceof ApiError && error.status === 404) {
                 // Silently refresh to sync with server state
-                await refresh([
-                    ["items", vars.storeId],
-                    ["items", "with-details", vars.storeId],
-                ]);
+                if (refreshContext) {
+                    await refreshContext?.refresh([
+                        ["items", vars.storeId],
+                        ["items", "with-details", vars.storeId],
+                    ]);
+                }
                 return;
             }
             showError(
@@ -1094,7 +1096,7 @@ export function useToggleItemChecked() {
     const database = useDatabase();
     const { showError } = useToast();
     const [presentAlert] = useIonAlert();
-    const { refresh } = useRefreshContext();
+    const refreshContext = useRefreshContext();
 
     return useOptimisticMutation({
         mutationFn: (params: { id: string; isChecked: boolean; storeId: string }) =>
@@ -1130,7 +1132,9 @@ export function useToggleItemChecked() {
             // Gracefully handle 404 - item was already deleted
             if (error instanceof ApiError && error.status === 404) {
                 // Silently refresh to sync with server state
-                await refresh([["shopping-list-items", vars.storeId]]);
+                if (refreshContext) {
+                    await refreshContext.refresh([["shopping-list-items", vars.storeId]]);
+                }
                 return;
             }
             showError(formatErrorMessage(error, "update item"));
@@ -1145,7 +1149,7 @@ export function useDeleteShoppingListItem() {
     const database = useDatabase();
     const queryClient = useQueryClient();
     const { showError } = useToast();
-    const { refresh } = useRefreshContext();
+    const refreshContext = useRefreshContext();
 
     return useTanstackMutation({
         mutationFn: (params: { id: string; storeId: string }) =>
@@ -1159,7 +1163,9 @@ export function useDeleteShoppingListItem() {
             // Gracefully handle 404 - item was already deleted
             if (error instanceof ApiError && error.status === 404) {
                 // Silently refresh to sync with server state
-                await refresh([["shopping-list-items", variables.storeId]]);
+                if (refreshContext) {
+                    await refreshContext.refresh([["shopping-list-items", variables.storeId]]);
+                }
                 return;
             }
             showError(formatErrorMessage(error, "delete item"));
@@ -1175,7 +1181,7 @@ export function useRemoveShoppingListItem() {
     const database = useDatabase();
     const queryClient = useQueryClient();
     const { showError } = useToast();
-    const { refresh } = useRefreshContext();
+    const refreshContext = useRefreshContext();
 
     return useTanstackMutation({
         mutationFn: (params: { id: string; storeId: string }) =>
@@ -1189,7 +1195,9 @@ export function useRemoveShoppingListItem() {
             // Gracefully handle 404 - item was already removed
             if (error instanceof ApiError && error.status === 404) {
                 // Silently refresh to sync with server state
-                await refresh([["shopping-list-items", variables.storeId]]);
+                if (refreshContext) {
+                    await refreshContext.refresh([["shopping-list-items", variables.storeId]]);
+                }
                 return;
             }
             showError(

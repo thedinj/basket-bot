@@ -15,6 +15,7 @@ import React, { useCallback } from "react";
 import { useStore } from "../../db/hooks";
 import RefreshConfig from "../../hooks/refresh/RefreshConfig";
 import { useToast } from "../../hooks/useToast";
+import { GlobalActions } from "../layout/GlobalActions";
 import { FabSpacer } from "../shared/FabSpacer";
 import PullToRefresh from "../shared/PullToRefresh";
 import AisleSectionList from "./AisleSectionList";
@@ -61,6 +62,7 @@ const AislesSectionsManagementModalContent: React.FC<AislesSectionsManagementMod
                 <IonToolbar>
                     <IonTitle>{store?.name || "Store"} Aisles & Sections</IonTitle>
                     <IonButtons slot="end">
+                        <GlobalActions />
                         <IonButton onClick={onClose}>
                             <IonIcon icon={closeOutline} />
                         </IonButton>

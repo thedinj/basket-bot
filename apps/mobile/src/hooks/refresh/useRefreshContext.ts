@@ -1,16 +1,10 @@
 import { useContext } from "react";
-import { RefreshContext } from "./RefreshContext";
+import { RefreshContext, RefreshContextValue } from "./RefreshContext";
 
 /**
- * Hook to access the shared refresh context
- * Throws if used outside of RefreshProvider
+ * Hook to access the refresh context
+ * Returns null if used outside of RefreshConfig (allows graceful handling)
  */
-export const useRefreshContext = () => {
-    const context = useContext(RefreshContext);
-
-    if (!context) {
-        throw new Error("useRefreshContext must be used within RefreshProvider");
-    }
-
-    return context;
+export const useRefreshContext = (): RefreshContextValue | null => {
+    return useContext(RefreshContext);
 };

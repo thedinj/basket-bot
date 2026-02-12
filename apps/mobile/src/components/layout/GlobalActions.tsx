@@ -18,10 +18,10 @@ interface GlobalActionsProps {
 /**
  * Global action buttons for refresh and sync
  * To be used in AppHeader children slot
- * Uses configured query keys from RefreshContext
+ * Gracefully handles cases where no RefreshConfig is present
  */
 export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = false, actions }) => {
-    const { refresh, isRefreshing, configuredQueryKeys } = useRefreshContext();
+    const refreshContext = useRefreshContext();
     const { sync, isSyncing } = useSync();
     const { hasQueuedMutations } = useMutationQueue();
     const {
@@ -32,8 +32,8 @@ export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = fa
     const { showToast } = useToast();
 
     const handleRefresh = useCallback(async () => {
-        await refresh();
-    }, [refresh]);
+        await refreshContext?.refresh();
+    }, [refreshContext]);
 
     const handleSync = useCallback(async () => {
         await sync();
@@ -122,14 +122,14 @@ export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = fa
                     <IonIcon slot="icon-only" icon={keepAwakeEnabled ? sunny : sunnyOutline} />
                 </IonButton>
             )}
-            {configuredQueryKeys && (
+            {refreshContext?.configuredQueryKeys && (
                 <IonButton
                     onClick={handleRefresh}
-                    disabled={isRefreshing}
+                    disabled={refreshContext.isRefreshing}
                     title="Refresh data"
                     aria-label="Refresh data"
                 >
-                    {isRefreshing ? (
+                    {refreshContext.isRefreshing ? (
                         <IonSpinner name="circular" />
                     ) : (
                         <IonIcon slot="icon-only" icon={refreshOutline} />
