@@ -119,24 +119,24 @@ export const AppMenu: React.FC = () => {
                                 <IonLabel>Change Password</IonLabel>
                             </IonItem>
                         </IonMenuToggle>
+                        <IonMenuToggle autoHide={false}>
+                            <IonItem button onClick={handleOpenHouseholds} lines="none">
+                                <IonIcon icon={homeOutline} slot="start" />
+                                <IonLabel>Households</IonLabel>
+                                {pendingInvitations && pendingInvitations.length > 0 ? (
+                                    <IonBadge color="primary" slot="end">
+                                        {pendingInvitations.length}
+                                    </IonBadge>
+                                ) : null}
+                            </IonItem>
+                        </IonMenuToggle>
+                        <IonMenuToggle autoHide={false}>
+                            <IonItem button onClick={handleOpenStores} lines="none">
+                                <IonIcon icon={storefrontOutline} slot="start" />
+                                <IonLabel>Stores</IonLabel>
+                            </IonItem>
+                        </IonMenuToggle>
                     </IonList>
-                    <IonMenuToggle autoHide={false}>
-                        <IonItem button onClick={handleOpenHouseholds} lines="none">
-                            <IonIcon icon={homeOutline} slot="start" />
-                            <IonLabel>Households</IonLabel>
-                            {pendingInvitations && pendingInvitations.length > 0 ? (
-                                <IonBadge color="primary" slot="end">
-                                    {pendingInvitations.length}
-                                </IonBadge>
-                            ) : null}
-                        </IonItem>
-                    </IonMenuToggle>
-                    <IonMenuToggle autoHide={false}>
-                        <IonItem button onClick={handleOpenStores} lines="none">
-                            <IonIcon icon={storefrontOutline} slot="start" />
-                            <IonLabel>Stores</IonLabel>
-                        </IonItem>
-                    </IonMenuToggle>
                     <div style={{ padding: "16px", marginTop: "auto" }}>
                         <IonButton expand="block" color="danger" onClick={handleLogout}>
                             <IonIcon icon={logOut} slot="start" />

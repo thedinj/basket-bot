@@ -46,7 +46,26 @@ const Main: React.FC = () => {
             icon: cartOutline,
             label: "Shopping List",
         },
+        /*         {
+            tab: "placeholder",
+            href: "/placeholder",
+            icon: cartOutline,
+            label: "Placeholder",
+        }, */
     ];
+
+    // Add body class when tab bar is present for conditional FAB positioning
+    useEffect(() => {
+        if (tabs.length > 1) {
+            document.body.classList.add("has-tabs");
+        } else {
+            document.body.classList.remove("has-tabs");
+        }
+
+        return () => {
+            document.body.classList.remove("has-tabs");
+        };
+    }, [tabs.length]);
 
     return (
         <ShieldProvider>
