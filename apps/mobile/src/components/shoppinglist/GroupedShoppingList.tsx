@@ -1,7 +1,7 @@
 import type { ShoppingListItemWithDetails } from "@basket-bot/core";
 import { IonButton, IonIcon } from "@ionic/react";
 import { bulbOutline, checkmarkDone } from "ionicons/icons";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { GroupedItemList } from "../shared/GroupedItemList";
 import { ItemGroup } from "../shared/grouping.types";
 import { createAisleSectionGroups } from "../shared/grouping.utils";
@@ -105,6 +105,8 @@ export const GroupedShoppingList = ({
         return itemGroups;
     }, [items, onClearChecked, isClearing]);
 
+    const getItemKey = useCallback((item: ShoppingListItemWithDetails) => item.id, []);
+
     if (items.length === 0) {
         return null;
     }
@@ -112,9 +114,8 @@ export const GroupedShoppingList = ({
     return (
         <GroupedItemList<ShoppingListItemWithDetails>
             groups={groups}
-            renderItem={(item) => (
-                <ShoppingListItem key={item.id} item={item} isChecked={item.isChecked} />
-            )}
+            renderItem={(item) => <ShoppingListItem item={item} isChecked={item.isChecked} />}
+            getItemKey={getItemKey}
         />
     );
 };

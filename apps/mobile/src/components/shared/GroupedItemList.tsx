@@ -1,17 +1,37 @@
 import { IonIcon, IonItemDivider, IonLabel, IonList } from "@ionic/react";
-import { Fragment, ReactNode, useMemo } from "react";
+import { Fragment, ReactNode, useCallback, useMemo } from "react";
+import { AnimatedGroup } from "./AnimatedGroup";
 import { ItemGroup } from "./grouping.types";
 
 interface RenderedGroupProps<T> {
     group: ItemGroup<T>;
     renderItem: (item: T, groupId: string) => ReactNode;
+    getItemKey: (item: T) => string;
 }
 
-const RenderedGroup = <T,>({ group, renderItem }: RenderedGroupProps<T>) => {
+const RenderedGroup = <T,>({ group, renderItem, getItemKey }: RenderedGroupProps<T>) => {
     const sortedChildren = useMemo(
         () => (group.children ? [...group.children].sort((a, b) => a.sortOrder - b.sortOrder) : []),
         [group.children]
     );
+
+    const renderHeader = useCallback(
+        (header: NonNullable<(typeof group)["header"]>) => (
+            <IonItemDivider sticky={header.sticky} color={header.color} style={header.style}>
+                {header.icon && <IonIcon icon={header.icon} slot="start" />}
+                <IonLabel style={header.labelStyle}>{header.label}</IonLabel>
+                {header.actionSlot && <div slot="end">{header.actionSlot}</div>}
+            </IonItemDivider>
+        ),
+        []
+    );
+
+    const renderGroupItem = useCallback(
+        (item: T) => renderItem(item, group.id),
+        [renderItem, group.id]
+    );
+
+    const getHeaderKey = useCallback(() => `header-${group.id}`, [group.id]);
 
     const hasContent = group.items.length > 0 || (group.children && group.children.length > 0);
     if (!hasContent) return null;
@@ -19,20 +39,21 @@ const RenderedGroup = <T,>({ group, renderItem }: RenderedGroupProps<T>) => {
     return (
         <Fragment key={group.id}>
             {!!group.header && (
-                <IonItemDivider
-                    sticky={group.header.sticky}
-                    color={group.header.color}
-                    style={group.header.style}
-                >
-                    {group.header.icon && <IonIcon icon={group.header.icon} slot="start" />}
-                    <IonLabel style={group.header.labelStyle}>{group.header.label}</IonLabel>
-                    {group.header.actionSlot && <div slot="end">{group.header.actionSlot}</div>}
-                </IonItemDivider>
+                <AnimatedGroup
+                    items={[group.header]}
+                    getKey={getHeaderKey}
+                    renderItem={renderHeader}
+                />
             )}
             <div style={{ paddingLeft: group.indentLevel || 0 }}>
-                {group.items.map((item) => renderItem(item, group.id))}
+                <AnimatedGroup items={group.items} getKey={getItemKey} renderItem={renderGroupItem} />
                 {sortedChildren.map((child) => (
-                    <RenderedGroup key={child.id} group={child} renderItem={renderItem} />
+                    <RenderedGroup
+                        key={child.id}
+                        group={child}
+                        renderItem={renderItem}
+                        getItemKey={getItemKey}
+                    />
                 ))}
             </div>
         </Fragment>
@@ -43,6 +64,7 @@ interface GroupedItemListProps<T> {
     groups: ItemGroup<T>[];
     renderItem: (item: T, groupId: string) => ReactNode;
     emptyMessage?: string;
+    getItemKey: (item: T) => string;
 }
 
 /**
@@ -53,6 +75,7 @@ export function GroupedItemList<T>({
     groups,
     renderItem,
     emptyMessage = "No items",
+    getItemKey,
 }: GroupedItemListProps<T>) {
     // Sort groups by sortOrder
     const sortedGroups = useMemo(
@@ -85,7 +108,12 @@ export function GroupedItemList<T>({
     return (
         <IonList>
             {sortedGroups.map((group) => (
-                <RenderedGroup key={group.id} group={group} renderItem={renderItem} />
+                <RenderedGroup
+                    key={group.id}
+                    group={group}
+                    renderItem={renderItem}
+                    getItemKey={getItemKey}
+                />
             ))}
         </IonList>
     );

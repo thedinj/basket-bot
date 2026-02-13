@@ -167,6 +167,8 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
         ]
     );
 
+    const getItemKey = useCallback((item: StoreItemWithDetails) => item.id, []);
+
     // Handle deleted/non-existent store
     if (!storeLoading && !store) {
         showError("Store not found or no longer available.");
@@ -231,6 +233,7 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                                     <GroupedItemList<StoreItemWithDetails>
                                         groups={favoriteGroups}
                                         renderItem={renderItem}
+                                        getItemKey={getItemKey}
                                     />
                                 </>
                             )}
@@ -250,6 +253,7 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                                     <GroupedItemList<StoreItemWithDetails>
                                         groups={regularGroups}
                                         renderItem={renderItem}
+                                        getItemKey={getItemKey}
                                     />
                                 </>
                             )}

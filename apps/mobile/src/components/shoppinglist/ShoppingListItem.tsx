@@ -35,14 +35,12 @@ const useSnoozeStatus = (snoozedUntil: string | null) => {
 export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => {
     const toast = useToast();
     const { user } = useAuth();
-    const { openEditModal, newlyImportedItemIds } = useShoppingListContext();
+    const { openEditModal } = useShoppingListContext();
     const [presentAlert] = useIonAlert();
     const toggleChecked = useToggleItemChecked();
     const moveItemToStore = useMoveItemToStore();
     const { data: stores } = useStores();
     const [isMoveToStoreModalOpen, setIsMoveToStoreModalOpen] = useState(false);
-
-    const isNewlyImported = newlyImportedItemIds.has(item.id);
 
     const storeItems: SelectableItem[] = useMemo(() => {
         if (!stores) return [];
@@ -157,7 +155,6 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                     <h2
                         className={clsx(
                             "item-title",
-                            isNewlyImported && "shimmer-text",
                             isChecked && "item-text--checked",
                             isSnoozed && "item-text--snoozed"
                         )}

@@ -15,7 +15,6 @@ import type { ParsedShoppingItem } from "../../llm/features/bulkImport";
 import { useAutoCategorize } from "../../llm/features/useAutoCategorize";
 import { normalizeItemName, toSentenceCase } from "../../utils/stringUtils";
 import { useShield } from "../shield/useShield";
-import { useShoppingListContext } from "./useShoppingListContext";
 
 /**
  * Process and validate a unit string against known units.
@@ -62,7 +61,6 @@ export function useBulkImport(storeId: string) {
     const { data: units } = useQuantityUnits();
     const autoCategorize = useAutoCategorize();
     const { showError, showSuccess } = useToast();
-    const { markAsNewlyImported } = useShoppingListContext();
     const queryClient = useQueryClient();
     const { raiseShield, lowerShield } = useShield();
 
@@ -156,11 +154,6 @@ export function useBulkImport(storeId: string) {
                     queryKey: ["shopping-list-items", storeId],
                 });
 
-                // Mark imported items for shimmer animation
-                if (importedItemIds.length > 0) {
-                    markAsNewlyImported(importedItemIds);
-                }
-
                 if (successCount > 0) {
                     showSuccess(
                         `Added ${successCount} item${successCount > 1 ? "s" : ""} to your cart`
@@ -180,7 +173,6 @@ export function useBulkImport(storeId: string) {
             aisles,
             autoCategorize,
             getOrCreateStoreItem,
-            markAsNewlyImported,
             queryClient,
             raiseShield,
             lowerShield,

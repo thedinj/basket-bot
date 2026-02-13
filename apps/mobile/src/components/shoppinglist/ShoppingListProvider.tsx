@@ -17,8 +17,6 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
         name: string;
     } | null>(null);
 
-    const [newlyImportedItemIds, setNewlyImportedItemIds] = useState<Set<string>>(new Set());
-
     const deleteItemMutation = useDeleteShoppingListItem();
 
     const { data: stores } = useStores();
@@ -90,14 +88,6 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
         }
     }, [deleteAlert, deleteItemMutation, selectedStoreId]);
 
-    const markAsNewlyImported = useCallback((itemIds: string[]) => {
-        setNewlyImportedItemIds(new Set(itemIds));
-        // Clear the set after animation completes (2 seconds)
-        setTimeout(() => {
-            setNewlyImportedItemIds(new Set());
-        }, 2000);
-    }, []);
-
     // Wrap setSelectedStoreId to also save preference
     const handleSetSelectedStoreId = useCallback((storeId: string | null) => {
         setUserSelectedStoreId(storeId);
@@ -117,8 +107,6 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
             confirmDelete,
             cancelDelete,
             executeDelete,
-            newlyImportedItemIds,
-            markAsNewlyImported,
         };
     }, [
         cancelDelete,
@@ -129,8 +117,6 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
         executeDelete,
         handleSetSelectedStoreId,
         isItemModalOpen,
-        markAsNewlyImported,
-        newlyImportedItemIds,
         openCreateModal,
         openEditModal,
         selectedStoreId,
