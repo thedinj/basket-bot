@@ -20,7 +20,7 @@ export type MessageGenerator = () => MessageGeneratorResult | null | undefined;
 export interface GlobalActionConfig {
     id: string;
     icon?: string;
-    customIcon?: React.ReactNode;
+    customIconSrc?: string;
     title: string;
     ariaLabel: string;
     onClick: () => void;
@@ -29,7 +29,7 @@ export interface GlobalActionConfig {
     messageGenerator?: MessageGenerator;
 }
 
-export type ModalName = 'settings' | 'profile' | 'password' | 'households' | 'stores';
+export type ModalName = "settings" | "profile" | "password" | "households" | "stores";
 
 export interface AppHeaderContextValue {
     currentModal: ModalName | null;

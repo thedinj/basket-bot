@@ -18,7 +18,6 @@ import { GlobalActionConfig } from "../components/layout/AppHeaderContext";
 import { GlobalActions } from "../components/layout/GlobalActions";
 import LoadingFallback from "../components/LoadingFallback";
 import { FabSpacer } from "../components/shared/FabSpacer";
-import ZzzIcon from "../components/shared/icons/ZzzIcon.svg?react";
 import { OverlayAnimation } from "../components/shared/OverlayAnimation";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { useBulkImportModal } from "../components/shoppinglist/BulkImportModal";
@@ -123,7 +122,7 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
         if (currentlySnoozedItemCount > 0) {
             actions.push({
                 id: "toggle-snoozed",
-                customIcon: <ZzzIcon />,
+                customIconSrc: "/img/ZzzIcon.svg",
                 title: `${showSnoozed ? "Hide" : "Show"} snoozed items (${currentlySnoozedItemCount})`,
                 ariaLabel: `${showSnoozed ? "Hide" : "Show"} snoozed items`,
                 onClick: toggleShowSnoozed,

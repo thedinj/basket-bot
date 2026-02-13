@@ -15,7 +15,7 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { add, closeOutline, storefrontOutline } from "ionicons/icons";
+import { add, closeOutline } from "ionicons/icons";
 import { useCallback, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -106,7 +106,7 @@ const StoreListModal: React.FC = () => {
                         <IonList>
                             {[1, 2, 3].map((i) => (
                                 <IonItem key={i}>
-                                    <IonIcon icon={storefrontOutline} slot="start" />
+                                    <IonIcon src={"/img/Store.svg"} slot="start" />
                                     <IonLabel>
                                         <IonSkeletonText animated style={{ width: "60%" }} />
                                     </IonLabel>
@@ -143,7 +143,7 @@ const StoreListModal: React.FC = () => {
                                             handleManageStore(store.id);
                                         }}
                                     >
-                                        <IonIcon icon={storefrontOutline} slot="start" />
+                                        <IonIcon src={"/img/Store.svg"} slot="start" />
                                         <IonLabel>
                                             <h2>{store.name}</h2>
                                         </IonLabel>

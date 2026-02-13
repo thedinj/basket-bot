@@ -17,14 +17,7 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import {
-    homeOutline,
-    keyOutline,
-    logOut,
-    person,
-    settings,
-    storefrontOutline,
-} from "ionicons/icons";
+import { homeOutline, keyOutline, logOut, person, settings } from "ionicons/icons";
 import { useCallback } from "react";
 import { useAuth } from "../../auth/useAuth";
 import { usePendingInvitations } from "../../db/hooks";
@@ -132,7 +125,7 @@ export const AppMenu: React.FC = () => {
                         </IonMenuToggle>
                         <IonMenuToggle autoHide={false}>
                             <IonItem button onClick={handleOpenStores} lines="none">
-                                <IonIcon icon={storefrontOutline} slot="start" />
+                                <IonIcon src={"/img/Store.svg"} slot="start" />
                                 <IonLabel>Stores</IonLabel>
                             </IonItem>
                         </IonMenuToggle>
