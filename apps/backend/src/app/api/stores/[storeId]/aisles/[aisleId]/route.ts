@@ -78,6 +78,51 @@ async function handlePut(
     }
 }
 
+async function handlePatch(
+    req: AuthenticatedRequest,
+    { params }: { params: Promise<Record<string, string>> }
+) {
+    try {
+        const { storeId, aisleId } = await params;
+        const body = await req.json();
+        const { sortOrder } = body;
+
+        if (typeof sortOrder !== "number") {
+            return NextResponse.json(
+                { code: "INVALID_INPUT", message: "sortOrder is required and must be a number" },
+                { status: 400 }
+            );
+        }
+
+        const aisle = storeEntityService.updateAisleSortOrder({
+            id: aisleId,
+            storeId,
+            sortOrder,
+            userId: req.auth.sub,
+        });
+
+        if (!aisle) {
+            return NextResponse.json(
+                { code: "NOT_FOUND", message: "Aisle not found" },
+                { status: 404 }
+            );
+        }
+
+        return NextResponse.json({ aisle });
+    } catch (error: any) {
+        if (error.message === "Access denied") {
+            return NextResponse.json(
+                { code: "ACCESS_DENIED", message: "Access denied" },
+                { status: 403 }
+            );
+        }
+        return NextResponse.json(
+            { code: "INTERNAL_ERROR", message: "Internal server error" },
+            { status: 500 }
+        );
+    }
+}
+
 async function handleDelete(
     req: AuthenticatedRequest,
     { params }: { params: Promise<Record<string, string>> }
@@ -102,4 +147,5 @@ async function handleDelete(
 
 export const GET = withAuth(handleGet);
 export const PUT = withAuth(handlePut);
+export const PATCH = withAuth(handlePatch);
 export const DELETE = withAuth(handleDelete);

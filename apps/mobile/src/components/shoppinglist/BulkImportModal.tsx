@@ -1,9 +1,9 @@
-import { IonText } from "@ionic/react";
-import { useCallback } from "react";
+import { useCallback, useRef, useState } from "react";
 import { validateBulkImportResult, type BulkImportResponse } from "../../llm/features/bulkImport";
 import { BULK_IMPORT_PROMPT } from "../../llm/features/bulkImportPrompt";
 import type { LLMResponse } from "../../llm/shared/types";
 import { useLLMModal } from "../../llm/shared/useLLMModal";
+import BulkImportItemList from "./BulkImportItemList";
 import { useBulkImport } from "./useBulkImport";
 
 /**
@@ -13,8 +13,27 @@ import { useBulkImport } from "./useBulkImport";
 export function useBulkImportModal(storeId: string) {
     const { openModal } = useLLMModal();
     const { importItems } = useBulkImport(storeId);
+    const [uncheckedIds, setUncheckedIds] = useState<Set<number>>(new Set());
+    const uncheckedIdsRef = useRef<Set<number>>(new Set());
+
+    const toggleItem = useCallback((id: number, _totalCount: number, newCheckedState: boolean) => {
+        setUncheckedIds((prev) => {
+            const next = new Set(prev);
+            if (newCheckedState) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            uncheckedIdsRef.current = next;
+            return next;
+        });
+    }, []);
 
     const openBulkImport = useCallback(() => {
+        // Reset unchecked items when modal opens
+        setUncheckedIds(new Set());
+        uncheckedIdsRef.current = new Set();
+
         openModal({
             title: "Import Shopping List",
             prompt: BULK_IMPORT_PROMPT,
@@ -33,37 +52,34 @@ export function useBulkImportModal(storeId: string) {
             },
             renderOutput: (response: LLMResponse) => {
                 const result = response.data as BulkImportResponse;
-                const items = result.items;
                 return (
-                    <div>
-                        <IonText>
-                            <h4>Found {items.length} items:</h4>
-                        </IonText>
-                        <ul style={{ paddingLeft: "20px" }}>
-                            {items.map((item, idx) => (
-                                <li key={idx}>
-                                    {item.quantity && item.unit
-                                        ? `${item.quantity} ${item.unit} `
-                                        : item.quantity
-                                          ? `${item.quantity} `
-                                          : ""}
-                                    {item.name}
-                                    {item.notes ? ` (${item.notes})` : ""}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                    <BulkImportItemList
+                        items={result.items}
+                        uncheckedIds={uncheckedIds}
+                        onToggle={toggleItem}
+                    />
                 );
             },
             onAccept: (response: LLMResponse) => {
                 const result = response.data as BulkImportResponse;
-                importItems(result.items);
+
+                // Filter out unchecked items (use ref to get current value)
+                const selectedItems = result.items.filter(
+                    (_, idx) => !uncheckedIdsRef.current.has(idx)
+                );
+
+                if (selectedItems.length === 0) {
+                    // User unchecked all items, nothing to import
+                    return;
+                }
+
+                importItems(selectedItems);
             },
             onCancel: () => {
                 // Nothing to do
             },
         });
-    }, [openModal, importItems]);
+    }, [openModal, importItems, uncheckedIds, toggleItem]);
 
     return { openBulkImport };
 }

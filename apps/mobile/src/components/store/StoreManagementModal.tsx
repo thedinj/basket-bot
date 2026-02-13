@@ -32,6 +32,7 @@ import { z } from "zod";
 
 import {
     useBulkReplaceAislesAndSections,
+    useDatabase,
     useDeleteStore,
     useDuplicateStore,
     useStoreSuspense,
@@ -41,9 +42,14 @@ import { useToast } from "../../hooks/useToast";
 import {
     transformStoreScanResult,
     validateStoreScanResult,
+    type ExistingAisle,
+    type ExistingSection,
     type StoreScanResult,
 } from "../../llm/features/storeScan";
-import { STORE_SCAN_PROMPT } from "../../llm/features/storeScanPrompt";
+import {
+    generateStoreScanPrompt,
+    type ExistingStoreLayout,
+} from "../../llm/features/storeScanPrompt";
 import { LLMItem, useLLMModal } from "../../llm/shared";
 import { useShield } from "../shield/useShield";
 import AislesSectionsManagementModal from "./AislesSectionsManagementModal";
@@ -81,6 +87,7 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
 }) => {
     const [presentAlert] = useIonAlert();
     const { data: store } = useStoreSuspense(storeId);
+    const database = useDatabase();
     const updateStore = useUpdateStore();
     const deleteStore = useDeleteStore();
     const duplicateStore = useDuplicateStore();
@@ -255,10 +262,32 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
     }, [deleteStore, handleClose, presentAlert, showError, showSuccess, store, storeId]);
 
     // LLM auto-scan handler
-    const handleAutoScan = useCallback(() => {
+    const handleAutoScan = useCallback(async () => {
+        // Fetch existing aisles and sections for ID preservation
+        const existingAisles = await database.getAislesByStore(storeId!);
+        const existingSections = await database.getSectionsByStore(storeId!);
+
+        // Prepare data for prompt (group sections by aisle)
+        const existingLayout: ExistingStoreLayout[] = existingAisles.map((aisle) => ({
+            name: aisle.name,
+            sections: existingSections
+                .filter((section) => section.aisleId === aisle.id)
+                .map((section) => section.name),
+        }));
+
+        // Prepare data for transformer (keep IDs for matching)
+        const existingAislesForMatching: ExistingAisle[] = existingAisles.map((a) => ({
+            id: a.id,
+            name: a.name,
+        }));
+        const existingSectionsForMatching: ExistingSection[] = existingSections.map((s) => ({
+            id: s.id,
+            name: s.name,
+        }));
+
         openModal<StoreScanResult>({
             title: "Scan Store Directory",
-            prompt: STORE_SCAN_PROMPT,
+            prompt: generateStoreScanPrompt(existingLayout),
             userInstructions:
                 "Take a photo of the store directory showing aisle numbers and their sections/categories.",
             model: "gpt-5.2",
@@ -311,7 +340,11 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
                 );
             },
             onAccept: (response: { data: StoreScanResult }) => {
-                const transformed = transformStoreScanResult(response.data);
+                const transformed = transformStoreScanResult(
+                    response.data,
+                    existingAislesForMatching,
+                    existingSectionsForMatching
+                );
                 // Don't await - let shield take over for background work
                 replaceAislesAndSections({
                     storeId: storeId!,
@@ -320,7 +353,7 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
                 });
             },
         });
-    }, [storeId, openModal, replaceAislesAndSections]);
+    }, [storeId, database, openModal, replaceAislesAndSections]);
 
     // Don't render if no storeId provided
     if (!storeId) {

@@ -42,16 +42,24 @@ async function handlePut(
         const body = await req.json();
         const { name, aisleId } = body;
 
-        if (!name || typeof name !== "string") {
+        // At least one field must be provided
+        if (!name && !aisleId) {
             return NextResponse.json(
-                { code: "INVALID_INPUT", message: "Name is required" },
+                { code: "INVALID_INPUT", message: "Name or aisleId is required" },
                 { status: 400 }
             );
         }
 
-        if (!aisleId || typeof aisleId !== "string") {
+        if (name !== undefined && typeof name !== "string") {
             return NextResponse.json(
-                { code: "INVALID_INPUT", message: "Aisle ID is required" },
+                { code: "INVALID_INPUT", message: "Name must be a string" },
+                { status: 400 }
+            );
+        }
+
+        if (aisleId !== undefined && typeof aisleId !== "string") {
+            return NextResponse.json(
+                { code: "INVALID_INPUT", message: "Aisle ID must be a string" },
                 { status: 400 }
             );
         }
@@ -61,6 +69,59 @@ async function handlePut(
             storeId,
             name,
             aisleId,
+            userId: req.auth.sub,
+        });
+
+        if (!section) {
+            return NextResponse.json(
+                { code: "NOT_FOUND", message: "Section not found" },
+                { status: 404 }
+            );
+        }
+
+        return NextResponse.json({ section });
+    } catch (error: any) {
+        if (error.message === "Access denied") {
+            return NextResponse.json(
+                { code: "ACCESS_DENIED", message: "Access denied" },
+                { status: 403 }
+            );
+        }
+        return NextResponse.json(
+            { code: "INTERNAL_ERROR", message: "Internal server error" },
+            { status: 500 }
+        );
+    }
+}
+
+async function handlePatch(
+    req: AuthenticatedRequest,
+    { params }: { params: Promise<Record<string, string>> }
+) {
+    try {
+        const { storeId, sectionId } = await params;
+        const body = await req.json();
+        const { aisleId, sortOrder } = body;
+
+        if (typeof aisleId !== "string") {
+            return NextResponse.json(
+                { code: "INVALID_INPUT", message: "aisleId is required and must be a string" },
+                { status: 400 }
+            );
+        }
+
+        if (typeof sortOrder !== "number") {
+            return NextResponse.json(
+                { code: "INVALID_INPUT", message: "sortOrder is required and must be a number" },
+                { status: 400 }
+            );
+        }
+
+        const section = storeEntityService.updateSectionLocation({
+            id: sectionId,
+            storeId,
+            aisleId,
+            sortOrder,
             userId: req.auth.sub,
         });
 
@@ -110,4 +171,5 @@ async function handleDelete(
 
 export const GET = withAuth(handleGet);
 export const PUT = withAuth(handlePut);
+export const PATCH = withAuth(handlePatch);
 export const DELETE = withAuth(handleDelete);

@@ -60,6 +60,21 @@ export function updateAisle(params: {
     });
 }
 
+export function updateAisleSortOrder(params: {
+    id: string;
+    storeId: string;
+    sortOrder: number;
+    userId: string;
+}): StoreAisle | null {
+    verifyStoreAccess(params.storeId, params.userId);
+
+    return aisleRepo.updateAisleSortOrder({
+        id: params.id,
+        sortOrder: params.sortOrder,
+        updatedById: params.userId,
+    });
+}
+
 export function reorderAisles(params: {
     storeId: string;
     updates: Array<{ id: string; sortOrder: number }>;
@@ -103,8 +118,8 @@ export function getSectionsByStore(storeId: string, userId: string): StoreSectio
 export function updateSection(params: {
     id: string;
     storeId: string;
-    name: string;
-    aisleId: string;
+    name?: string;
+    aisleId?: string;
     userId: string;
 }): StoreSection | null {
     verifyStoreAccess(params.storeId, params.userId);
@@ -113,6 +128,23 @@ export function updateSection(params: {
         id: params.id,
         name: params.name,
         aisleId: params.aisleId,
+        updatedById: params.userId,
+    });
+}
+
+export function updateSectionLocation(params: {
+    id: string;
+    storeId: string;
+    aisleId: string;
+    sortOrder: number;
+    userId: string;
+}): StoreSection | null {
+    verifyStoreAccess(params.storeId, params.userId);
+
+    return sectionRepo.updateSectionLocation({
+        id: params.id,
+        aisleId: params.aisleId,
+        sortOrder: params.sortOrder,
         updatedById: params.userId,
     });
 }

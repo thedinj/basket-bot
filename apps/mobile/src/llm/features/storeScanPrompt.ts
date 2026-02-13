@@ -2,7 +2,51 @@
  * LLM Prompt for Store Directory Scanning
  */
 
-export const STORE_SCAN_PROMPT = `You are analyzing a store directory image. Complete the following steps in order, and output ONLY the final JSON described in Step 3 (do not include the raw text dump or any explanation):
+/**
+ * Existing aisle/section data to preserve during scan
+ */
+export interface ExistingStoreLayout {
+    name: string;
+    sections: string[];
+}
+
+/**
+ * Generate the store scan prompt, optionally including existing aisles/sections
+ * to preserve during the scan.
+ */
+export function generateStoreScanPrompt(existingAisles?: ExistingStoreLayout[]): string {
+    const hasExisting = existingAisles && existingAisles.length > 0;
+
+    let existingDataSection = "";
+    if (hasExisting) {
+        const aisleList = existingAisles!
+            .map((aisle) => {
+                const sectionsList =
+                    aisle.sections.length > 0 ? aisle.sections.join(", ") : "(no sections)";
+                return `  - ${aisle.name}: ${sectionsList}`;
+            })
+            .join("\n");
+
+        existingDataSection = `
+
+**IMPORTANT: PRESERVE EXISTING AISLES/SECTIONS**
+This store already has aisles and sections defined. When you identify aisles/sections in the photo, check if they match any existing names below. If they match, use the EXACT existing name (preserving capitalization and spacing).
+
+**Existing aisles and sections:**
+${aisleList}
+
+**Rules for existing data:**
+- If an aisle/section in the photo matches an existing name (even if slightly different, e.g., "Dairy Products" matches "Dairy"), use the EXACT existing name
+- You may add new aisles/sections not in the existing list
+- You may reorder aisles/sections based on what you see in the photo
+- Do NOT include existing aisles/sections that you don't see in the photo
+- Existing names take precedence - use them exactly as shown above when they match
+
+`;
+    }
+
+    return `You are analyzing a store directory image. Complete the following steps in order, and output ONLY the final JSON described in Step 3 (do not include the raw text dump or any explanation):
+${existingDataSection}
 
 ---
 **Step 1: Text Extraction**
@@ -104,3 +148,4 @@ storeType": "grocery",
 - When in doubt, leave it out—do not guess or infer, except for the mandatory sections above.
 
 Analyze the text carefully and extract all store layout information. Output ONLY the JSON object as specified above.`;
+}

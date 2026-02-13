@@ -200,6 +200,22 @@ export class RemoteDatabase extends BaseDatabase {
         );
     }
 
+    async updateAisleSortOrder(storeId: string, id: string, sortOrder: number): Promise<StoreAisle> {
+        return this.executeMutation(
+            "updateAisleSortOrder",
+            `/api/stores/${storeId}/aisles/${id}`,
+            "PATCH",
+            async () => {
+                const response = await apiClient.patch<{ aisle: StoreAisle }>(
+                    `/api/stores/${storeId}/aisles/${id}`,
+                    { sortOrder }
+                );
+                return response.aisle;
+            },
+            { sortOrder }
+        );
+    }
+
     async deleteAisle(storeId: string, id: string): Promise<void> {
         return this.executeMutation(
             "deleteAisle",
@@ -273,6 +289,27 @@ export class RemoteDatabase extends BaseDatabase {
                 return response.section;
             },
             { name, aisleId }
+        );
+    }
+
+    async updateSectionLocation(
+        storeId: string,
+        id: string,
+        aisleId: string,
+        sortOrder: number
+    ): Promise<StoreSection> {
+        return this.executeMutation(
+            "updateSectionLocation",
+            `/api/stores/${storeId}/sections/${id}`,
+            "PATCH",
+            async () => {
+                const response = await apiClient.patch<{ section: StoreSection }>(
+                    `/api/stores/${storeId}/sections/${id}`,
+                    { aisleId, sortOrder }
+                );
+                return response.section;
+            },
+            { aisleId, sortOrder }
         );
     }
 

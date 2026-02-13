@@ -64,6 +64,7 @@ export abstract class BaseDatabase implements Database {
     abstract insertAisle(storeId: string, name: string): Promise<StoreAisle>;
     abstract getAislesByStore(storeId: string): Promise<StoreAisle[]>;
     abstract updateAisle(storeId: string, id: string, name: string): Promise<StoreAisle>;
+    abstract updateAisleSortOrder(storeId: string, id: string, sortOrder: number): Promise<StoreAisle>;
     abstract deleteAisle(storeId: string, id: string): Promise<void>;
     abstract reorderAisles(
         storeId: string,
@@ -79,6 +80,12 @@ export abstract class BaseDatabase implements Database {
         id: string,
         name: string,
         aisleId: string
+    ): Promise<StoreSection>;
+    abstract updateSectionLocation(
+        storeId: string,
+        id: string,
+        aisleId: string,
+        sortOrder: number
     ): Promise<StoreSection>;
     abstract deleteSection(storeId: string, id: string): Promise<void>;
     abstract reorderSections(

@@ -58,8 +58,48 @@ export function getSectionsByStore(storeId: string): StoreSection[] {
 
 export function updateSection(params: {
     id: string;
-    name: string;
+    name?: string;
+    aisleId?: string;
+    updatedById: string;
+}): StoreSection | null {
+    const now = new Date().toISOString();
+    const updates: string[] = [];
+    const values: unknown[] = [];
+
+    if (params.name !== undefined) {
+        updates.push("name = ?");
+        values.push(params.name);
+    }
+
+    if (params.aisleId !== undefined) {
+        updates.push("aisleId = ?");
+        values.push(params.aisleId);
+    }
+
+    if (updates.length === 0) {
+        // No updates specified
+        return getSectionById(params.id);
+    }
+
+    updates.push("updatedById = ?", "updatedAt = ?");
+    values.push(params.updatedById, now);
+
+    const sql = `UPDATE StoreSection SET ${updates.join(", ")} WHERE id = ?`;
+    values.push(params.id);
+
+    const result = db.prepare(sql).run(...values);
+
+    if (result.changes === 0) {
+        return null;
+    }
+
+    return getSectionById(params.id);
+}
+
+export function updateSectionLocation(params: {
+    id: string;
     aisleId: string;
+    sortOrder: number;
     updatedById: string;
 }): StoreSection | null {
     const now = new Date().toISOString();
@@ -67,10 +107,10 @@ export function updateSection(params: {
     const result = db
         .prepare(
             `UPDATE StoreSection
-             SET name = ?, aisleId = ?, updatedById = ?, updatedAt = ?
+             SET aisleId = ?, sortOrder = ?, updatedById = ?, updatedAt = ?
              WHERE id = ?`
         )
-        .run(params.name, params.aisleId, params.updatedById, now, params.id);
+        .run(params.aisleId, params.sortOrder, params.updatedById, now, params.id);
 
     if (result.changes === 0) {
         return null;

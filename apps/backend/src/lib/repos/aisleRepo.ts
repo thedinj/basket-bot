@@ -76,6 +76,28 @@ export function updateAisle(params: {
     return getAisleById(params.id);
 }
 
+export function updateAisleSortOrder(params: {
+    id: string;
+    sortOrder: number;
+    updatedById: string;
+}): StoreAisle | null {
+    const now = new Date().toISOString();
+
+    const result = db
+        .prepare(
+            `UPDATE StoreAisle
+             SET sortOrder = ?, updatedById = ?, updatedAt = ?
+             WHERE id = ?`
+        )
+        .run(params.sortOrder, params.updatedById, now, params.id);
+
+    if (result.changes === 0) {
+        return null;
+    }
+
+    return getAisleById(params.id);
+}
+
 export function reorderAisles(updates: Array<{ id: string; sortOrder: number }>): void {
     const stmt = db.prepare(`UPDATE StoreAisle SET sortOrder = ? WHERE id = ?`);
 

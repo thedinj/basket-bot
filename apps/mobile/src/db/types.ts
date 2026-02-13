@@ -117,6 +117,11 @@ export interface EntityDatabase {
     updateAisle(storeId: string, id: string, name: string): Promise<StoreAisle>;
 
     /**
+     * Update an aisle's sort order only
+     */
+    updateAisleSortOrder(storeId: string, id: string, sortOrder: number): Promise<StoreAisle>;
+
+    /**
      * Soft delete an aisle
      */
     deleteAisle(storeId: string, id: string): Promise<void>;
@@ -153,6 +158,16 @@ export interface EntityDatabase {
         id: string,
         name: string,
         aisleId: string
+    ): Promise<StoreSection>;
+
+    /**
+     * Update a section's aisle and sort order (for store scan preservation)
+     */
+    updateSectionLocation(
+        storeId: string,
+        id: string,
+        aisleId: string,
+        sortOrder: number
     ): Promise<StoreSection>;
 
     /**

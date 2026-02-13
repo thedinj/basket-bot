@@ -114,6 +114,14 @@ export const updateStoreAisleRequestSchema = z.object({
 
 export type UpdateStoreAisleRequest = z.infer<typeof updateStoreAisleRequestSchema>;
 
+export const updateStoreAisleSortOrderRequestSchema = z.object({
+    sortOrder: z.number().int().min(0),
+});
+
+export type UpdateStoreAisleSortOrderRequest = z.infer<
+    typeof updateStoreAisleSortOrderRequestSchema
+>;
+
 export const reorderStoreAislesRequestSchema = reorderItemsSchema;
 export type ReorderStoreAislesRequest = z.infer<typeof reorderStoreAislesRequestSchema>;
 
@@ -138,11 +146,20 @@ export const createStoreSectionRequestSchema = z.object({
 export type CreateStoreSectionRequest = z.infer<typeof createStoreSectionRequestSchema>;
 
 export const updateStoreSectionRequestSchema = z.object({
-    name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
-    aisleId: z.string().uuid(),
+    name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name").optional(),
+    aisleId: z.string().uuid().optional(),
 });
 
 export type UpdateStoreSectionRequest = z.infer<typeof updateStoreSectionRequestSchema>;
+
+export const updateStoreSectionLocationRequestSchema = z.object({
+    aisleId: z.string().uuid(),
+    sortOrder: z.number().int().min(0),
+});
+
+export type UpdateStoreSectionLocationRequest = z.infer<
+    typeof updateStoreSectionLocationRequestSchema
+>;
 
 export const reorderStoreSectionsRequestSchema = reorderItemsSchema;
 export type ReorderStoreSectionsRequest = z.infer<typeof reorderStoreSectionsRequestSchema>;
