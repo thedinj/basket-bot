@@ -8,12 +8,17 @@ interface RenderedGroupProps<T> {
 }
 
 const RenderedGroup = <T,>({ group, renderItem }: RenderedGroupProps<T>) => {
+    const sortedChildren = useMemo(
+        () => (group.children ? [...group.children].sort((a, b) => a.sortOrder - b.sortOrder) : []),
+        [group.children]
+    );
+
     const hasContent = group.items.length > 0 || (group.children && group.children.length > 0);
     if (!hasContent) return null;
 
     return (
         <Fragment key={group.id}>
-            {group.header && (
+            {!!group.header && (
                 <IonItemDivider
                     sticky={group.header.sticky}
                     color={group.header.color}
@@ -26,12 +31,9 @@ const RenderedGroup = <T,>({ group, renderItem }: RenderedGroupProps<T>) => {
             )}
             <div style={{ paddingLeft: group.indentLevel || 0 }}>
                 {group.items.map((item) => renderItem(item, group.id))}
-                {group.children &&
-                    group.children
-                        .sort((a, b) => a.sortOrder - b.sortOrder)
-                        .map((child) => (
-                            <RenderedGroup key={child.id} group={child} renderItem={renderItem} />
-                        ))}
+                {sortedChildren.map((child) => (
+                    <RenderedGroup key={child.id} group={child} renderItem={renderItem} />
+                ))}
             </div>
         </Fragment>
     );
