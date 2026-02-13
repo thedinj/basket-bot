@@ -1,21 +1,45 @@
 import { IonIcon, IonItemDivider, IonLabel, IonList } from "@ionic/react";
-import { ReactNode, useMemo } from "react";
+import { Fragment, ReactNode, useMemo } from "react";
 import { ItemGroup } from "./grouping.types";
 
-interface GroupedItemListProps<T> {
-    /**
-     * Array of groups to display, each with its own items and configuration
-     */
-    groups: ItemGroup<T>[];
-
-    /**
-     * Render function for individual items
-     */
+interface RenderedGroupProps<T> {
+    group: ItemGroup<T>;
     renderItem: (item: T, groupId: string) => ReactNode;
+}
 
-    /**
-     * Optional empty state message (shown when no groups or all groups empty)
-     */
+const RenderedGroup = <T,>({ group, renderItem }: RenderedGroupProps<T>) => {
+    const hasContent = group.items.length > 0 || (group.children && group.children.length > 0);
+    if (!hasContent) return null;
+
+    return (
+        <Fragment key={group.id}>
+            {group.header && (
+                <IonItemDivider
+                    sticky={group.header.sticky}
+                    color={group.header.color}
+                    style={group.header.style}
+                >
+                    {group.header.icon && <IonIcon icon={group.header.icon} slot="start" />}
+                    <IonLabel style={group.header.labelStyle}>{group.header.label}</IonLabel>
+                    {group.header.actionSlot && <div slot="end">{group.header.actionSlot}</div>}
+                </IonItemDivider>
+            )}
+            <div style={{ paddingLeft: group.indentLevel || 0 }}>
+                {group.items.map((item) => renderItem(item, group.id))}
+                {group.children &&
+                    group.children
+                        .sort((a, b) => a.sortOrder - b.sortOrder)
+                        .map((child) => (
+                            <RenderedGroup key={child.id} group={child} renderItem={renderItem} />
+                        ))}
+            </div>
+        </Fragment>
+    );
+};
+
+interface GroupedItemListProps<T> {
+    groups: ItemGroup<T>[];
+    renderItem: (item: T, groupId: string) => ReactNode;
     emptyMessage?: string;
 }
 
@@ -56,41 +80,11 @@ export function GroupedItemList<T>({
         );
     }
 
-    const renderGroup = (group: ItemGroup<T>) => {
-        const hasContent =
-            group.items.length > 0 ||
-            (group.children && group.children.length > 0);
-        if (!hasContent) return null;
-
-        return (
-            <div key={group.id}>
-                {group.header && (
-                    <IonItemDivider
-                        sticky={group.header.sticky}
-                        color={group.header.color}
-                        style={group.header.style}
-                    >
-                        {group.header.icon && (
-                            <IonIcon icon={group.header.icon} slot="start" />
-                        )}
-                        <IonLabel style={group.header.labelStyle}>
-                            {group.header.label}
-                        </IonLabel>
-                        {group.header.actionSlot && (
-                            <div slot="end">{group.header.actionSlot}</div>
-                        )}
-                    </IonItemDivider>
-                )}
-                <div style={{ paddingLeft: group.indentLevel || 0 }}>
-                    {group.items.map((item) => renderItem(item, group.id))}
-                    {group.children &&
-                        group.children
-                            .sort((a, b) => a.sortOrder - b.sortOrder)
-                            .map((child) => renderGroup(child))}
-                </div>
-            </div>
-        );
-    };
-
-    return <IonList>{sortedGroups.map((group) => renderGroup(group))}</IonList>;
+    return (
+        <IonList>
+            {sortedGroups.map((group) => (
+                <RenderedGroup key={group.id} group={group} renderItem={renderItem} />
+            ))}
+        </IonList>
+    );
 }
