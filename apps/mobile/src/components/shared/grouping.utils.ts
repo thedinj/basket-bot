@@ -72,8 +72,8 @@ export function createAisleSectionGroups<T extends GroupableItem>(
     for (const item of items) {
         const aisleId = item.aisleId;
         const sectionId = item.sectionId;
-        const aisleName = item.aisleName || "Uncategorized";
-        const sectionName = item.sectionName || "Uncategorized";
+        const aisleName = aisleId ? item.aisleName || "Unknown Aisle" : "Uncategorized";
+        const sectionName = sectionId ? item.sectionName || "Unknown Section" : "Uncategorized";
         const aisleSortOrder = aisleId === null ? -1 : (item.aisleSortOrder ?? 0);
         const sectionSortOrder = sectionId === null ? -1 : (item.sectionSortOrder ?? 0);
 

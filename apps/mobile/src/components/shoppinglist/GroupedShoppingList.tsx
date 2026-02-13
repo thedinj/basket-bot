@@ -1,7 +1,15 @@
+import { useSecureApiKey } from "@/hooks/useSecureStorage";
 import type { ShoppingListItemWithDetails } from "@basket-bot/core";
-import { IonButton, IonIcon } from "@ionic/react";
+import { IonIcon } from "@ionic/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { bulbOutline, checkmarkDone } from "ionicons/icons";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useStoreAisles, useStoreSections } from "../../db/hooks";
+import { useToast } from "../../hooks/useToast";
+import { useBatchAutoCategorize } from "../../llm/features/useBatchAutoCategorize";
+import { LLM_ICON_SRC } from "../../llm/shared/constants";
+import { formatErrorMessage } from "../../utils/errorUtils";
+import ActionSlotButton from "../shared/ActionSlotButton";
 import { GroupedItemList } from "../shared/GroupedItemList";
 import { ItemGroup } from "../shared/grouping.types";
 import { createAisleSectionGroups } from "../shared/grouping.utils";
@@ -37,10 +45,12 @@ const createCheckedItemsGroup = (
         sticky: true,
         labelStyle: HEADER_STYLE,
         actionSlot: onClearChecked && (
-            <IonButton fill="clear" size="small" onClick={onClearChecked} disabled={isClearing}>
-                <IonIcon slot="start" icon={checkmarkDone} />
-                Obliterate
-            </IonButton>
+            <ActionSlotButton
+                label="Obliterate"
+                icon={checkmarkDone}
+                onClick={onClearChecked}
+                disabled={isClearing}
+            />
         ),
     },
     sortOrder: 0,
@@ -71,6 +81,97 @@ export const GroupedShoppingList = ({
     onClearChecked,
     isClearing,
 }: GroupedShoppingListProps) => {
+    const queryClient = useQueryClient();
+    const apiKeyValue = useSecureApiKey();
+    const { showToast } = useToast();
+    const batchAutoCategorize = useBatchAutoCategorize();
+    const [isAutoCategorizing, setIsAutoCategorizing] = useState(false);
+
+    // Get storeId from first item (all items in list belong to same store)
+    const storeId = items[0]?.storeId;
+
+    // Fetch aisles and sections for auto-categorization
+    const { data: aisles = [] } = useStoreAisles(storeId || "");
+    const { data: sections = [] } = useStoreSections(storeId || "");
+
+    // Extract uncategorized items that can be categorized
+    const getUncategorizedItems = useCallback(() => {
+        return items
+            .filter((item) => !item.isChecked && !item.isIdea && item.aisleId === null)
+            .filter((item) => item.storeItemId !== null && item.itemName?.trim())
+            .map((item) => ({
+                id: item.storeItemId!,
+                name: item.itemName!,
+            }));
+    }, [items]);
+
+    // Show appropriate toast based on categorization results
+    const showResultToast = useCallback(
+        (result: { successCount: number; failureCount: number; errors: Error[] }) => {
+            if (result.failureCount === 0) {
+                showToast({
+                    message: `Successfully categorized ${result.successCount} items`,
+                    type: "success",
+                });
+            } else if (result.successCount > 0) {
+                showToast({
+                    message: `Categorized ${result.successCount} items (${result.failureCount} failed)`,
+                    type: "warning",
+                });
+            } else {
+                const uniqueMessages = [...new Set(result.errors.map((e) => e.message))];
+                const errorMessage =
+                    uniqueMessages.length === 1
+                        ? `Failed to categorize items: ${uniqueMessages[0]}`
+                        : "Failed to categorize items. Please try again.";
+                showToast({ message: errorMessage, type: "error" });
+            }
+        },
+        [showToast]
+    );
+
+    // Refresh queries after successful categorization
+    const refreshAfterCategorization = useCallback(async () => {
+        if (!storeId) return;
+        await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["shopping-list-items", storeId] }),
+            queryClient.invalidateQueries({ queryKey: ["items", storeId] }),
+            queryClient.invalidateQueries({ queryKey: ["items", "with-details", storeId] }),
+        ]);
+        await queryClient.refetchQueries({ queryKey: ["shopping-list-items", storeId] });
+    }, [storeId, queryClient]);
+
+    // Handler for auto-categorizing all uncategorized items
+    const handleAutoCategorizeAll = useCallback(async () => {
+        if (!storeId) return;
+
+        const uncategorizedItems = getUncategorizedItems();
+        if (uncategorizedItems.length === 0) {
+            showToast({ message: "No uncategorized items to process", type: "info" });
+            return;
+        }
+
+        setIsAutoCategorizing(true);
+        try {
+            const result = await batchAutoCategorize(uncategorizedItems, storeId, aisles, sections);
+            await refreshAfterCategorization();
+            showResultToast(result);
+        } catch (error: unknown) {
+            showToast({ message: `Error: ${formatErrorMessage(error)}`, type: "error" });
+        } finally {
+            setIsAutoCategorizing(false);
+        }
+    }, [
+        storeId,
+        aisles,
+        sections,
+        getUncategorizedItems,
+        batchAutoCategorize,
+        refreshAfterCategorization,
+        showResultToast,
+        showToast,
+    ]);
+
     const groups = useMemo(() => {
         const itemGroups: ItemGroup<ShoppingListItemWithDetails>[] = [];
 
@@ -99,11 +200,47 @@ export const GroupedShoppingList = ({
                 showSectionHeaders: true,
                 sortOrderOffset: AISLE_SORT_ORDER_OFFSET,
             });
+
+            // Inject auto-categorize button for uncategorized aisle
+            const uncategorizedGroup = aisleGroups.find((g) => g.id === "aisle-null");
+            const hasUncategorizedItems = uncategorizedGroup && uncategorizedGroup.children;
+            const uncategorizedCount = hasUncategorizedItems
+                ? uncategorizedGroup.children!.reduce(
+                      (sum, section) => sum + section.items.length,
+                      0
+                  )
+                : 0;
+
+            if (
+                apiKeyValue &&
+                aisles.length > 0 &&
+                uncategorizedGroup &&
+                uncategorizedCount > 0 &&
+                uncategorizedGroup.header
+            ) {
+                uncategorizedGroup.header.actionSlot = (
+                    <ActionSlotButton
+                        label="Auto-Categorize"
+                        iconSrc={LLM_ICON_SRC}
+                        onClick={handleAutoCategorizeAll}
+                        disabled={isAutoCategorizing}
+                    />
+                );
+            }
+
             itemGroups.push(...aisleGroups);
         }
 
         return itemGroups;
-    }, [items, onClearChecked, isClearing]);
+    }, [
+        aisles,
+        apiKeyValue,
+        handleAutoCategorizeAll,
+        isAutoCategorizing,
+        isClearing,
+        items,
+        onClearChecked,
+    ]);
 
     const getItemKey = useCallback((item: ShoppingListItemWithDetails) => item.id, []);
 

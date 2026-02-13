@@ -28,6 +28,34 @@ import { useOptimisticMutation } from "./optimisticUpdates";
 import { type Database } from "./types";
 
 // ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Sort items alphabetically by a key extraction function (case-insensitive)
+ */
+function sortByKey<T>(items: T[], getKey: (item: T) => string): T[] {
+    return items.sort((a, b) =>
+        getKey(a).localeCompare(getKey(b), undefined, { sensitivity: "base" })
+    );
+}
+
+/**
+ * Sort items alphabetically by name property (case-insensitive)
+ */
+function sortItemsByName<T extends { name: string }>(items: T[]): T[] {
+    return sortByKey(items, (item) => item.name);
+}
+
+/**
+ * Sort shopping list items alphabetically by display name (case-insensitive)
+ * Uses itemName for regular items, notes for ideas
+ */
+function sortNamedItems(items: ShoppingListItemWithDetails[]): ShoppingListItemWithDetails[] {
+    return sortByKey(items, (item) => item.itemName || item.notes || "");
+}
+
+// ============================================================================
 // Core Data Caching Configuration
 // ============================================================================
 
@@ -803,7 +831,10 @@ export function useStoreItems(storeId: string) {
     const database = useDatabase();
     return useTanstackQuery({
         queryKey: ["items", storeId],
-        queryFn: () => database.getItemsByStore(storeId),
+        queryFn: async () => {
+            const items = await database.getItemsByStore(storeId);
+            return sortItemsByName(items);
+        },
         enabled: !!storeId,
     });
 }
@@ -815,7 +846,10 @@ export function useStoreItemsWithDetails(storeId: string) {
     const database = useDatabase();
     return useTanstackQuery({
         queryKey: ["items", "with-details", storeId],
-        queryFn: () => database.getItemsByStoreWithDetails(storeId),
+        queryFn: async () => {
+            const items = await database.getItemsByStoreWithDetails(storeId);
+            return sortItemsByName(items);
+        },
         enabled: !!storeId,
     });
 }
@@ -1039,7 +1073,7 @@ export function useShoppingListItems(storeId: string) {
         queryKey: ["shopping-list-items", storeId],
         queryFn: async () => {
             const items = await database.getShoppingListItems(storeId);
-            return items;
+            return sortNamedItems(items);
         },
     });
 }
