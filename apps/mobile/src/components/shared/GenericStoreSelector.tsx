@@ -34,8 +34,15 @@ export const GenericStoreSelector: React.FC<GenericStoreSelectorProps> = ({
 
     const filteredStores = useMemo(() => {
         if (!stores) return [];
-        return stores.filter((store) => !excludeStoreIds?.includes(store.id));
-    }, [stores, excludeStoreIds]);
+        return stores.filter((store) => {
+            // Exclude explicitly excluded stores
+            if (excludeStoreIds?.includes(store.id)) return false;
+            // Include if this is the currently selected store (keep hidden stores visible when selected)
+            if (selectedStoreId && store.id === selectedStoreId) return true;
+            // Otherwise exclude hidden stores
+            return !store.isHidden;
+        });
+    }, [stores, excludeStoreIds, selectedStoreId]);
 
     const storeItems: SelectableItem[] = useMemo(() => {
         return filteredStores.map((store) => ({

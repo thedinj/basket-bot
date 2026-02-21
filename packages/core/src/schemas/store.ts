@@ -44,6 +44,7 @@ export const storeSchema = z.object({
     id: z.string().uuid(),
     name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
     householdId: z.string().uuid().nullable(),
+    isHidden: z.boolean(),
     ...auditFields,
 });
 
@@ -79,6 +80,12 @@ export const updateStoreHouseholdRequestSchema = z.object({
 });
 
 export type UpdateStoreHouseholdRequest = z.infer<typeof updateStoreHouseholdRequestSchema>;
+
+export const updateStoreVisibilityRequestSchema = z.object({
+    isHidden: z.boolean(),
+});
+
+export type UpdateStoreVisibilityRequest = z.infer<typeof updateStoreVisibilityRequestSchema>;
 
 // ========== StoreAisle / StoreSection reordering ==========
 const reorderItemsSchema = z.object({
@@ -352,7 +359,7 @@ export const shoppingListItemInputSchema = z
             if (!hasName && !hasStoreItemId) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: "Name or store item reference is required.",
+                    message: "Name is required.",
                     path: ["name"],
                 });
             }

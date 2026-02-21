@@ -7,6 +7,25 @@ import { normalizeItemName } from "../utils/stringUtils";
  * Handles all database access for stores.
  */
 
+// Boolean conversion helpers for SQLite
+// We use null for false to save space and make intent clearer
+
+/**
+ * Convert a boolean to SQLite value (1 for true, null for false)
+ */
+function boolToInt(value: boolean | null | undefined): number | null {
+    if (value == null || !value) return null;
+    return 1;
+}
+
+/**
+ * Convert SQLite value to boolean (1 → true, null/0 → false)
+ */
+function intToBool(value: number | null | undefined): boolean {
+    if (value == null) return false;
+    return value !== 0;
+}
+
 export function createStore(params: {
     name: string;
     createdById: string;
@@ -16,12 +35,13 @@ export function createStore(params: {
     const now = new Date().toISOString();
 
     db.prepare(
-        `INSERT INTO Store (id, name, householdId, createdById, updatedById, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO Store (id, name, householdId, isHidden, createdById, updatedById, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
         id,
         params.name,
         params.householdId ?? null,
+        null, // isHidden defaults to false (NULL)
         params.createdById,
         params.createdById,
         now,
@@ -34,25 +54,35 @@ export function createStore(params: {
 export function getStoreById(id: string): Store | null {
     const row = db
         .prepare(
-            `SELECT id, name, householdId, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, name, householdId, isHidden, createdById, updatedById, createdAt, updatedAt
              FROM Store
              WHERE id = ?`
         )
-        .get(id) as Store | undefined;
+        .get(id) as (Omit<Store, "isHidden"> & { isHidden: number | null }) | undefined;
 
-    return row ?? null;
+    if (!row) return null;
+
+    return {
+        ...row,
+        isHidden: intToBool(row.isHidden),
+    };
 }
 
 export function getStoresByUser(userId: string): Store[] {
-    return db
+    const rows = db
         .prepare(
-            `SELECT DISTINCT s.id, s.name, s.householdId, s.createdById, s.updatedById, s.createdAt, s.updatedAt
+            `SELECT DISTINCT s.id, s.name, s.householdId, s.isHidden, s.createdById, s.updatedById, s.createdAt, s.updatedAt
              FROM Store s
              LEFT JOIN HouseholdMember hm ON s.householdId = hm.householdId AND hm.userId = ?
              WHERE s.createdById = ? OR hm.userId IS NOT NULL
              ORDER BY s.name ASC`
         )
-        .all(userId, userId) as Store[];
+        .all(userId, userId) as Array<Omit<Store, "isHidden"> & { isHidden: number | null }>;
+
+    return rows.map((row) => ({
+        ...row,
+        isHidden: intToBool(row.isHidden),
+    }));
 }
 
 export function updateStore(params: {
@@ -101,10 +131,10 @@ export function duplicateStore(params: {
 
     // Execute all operations in a transaction for atomicity
     db.transaction(() => {
-        // 1. Create the new store (private by default)
+        // 1. Create the new store (private by default, visible)
         db.prepare(
-            `INSERT INTO Store (id, name, householdId, createdById, updatedById, createdAt, updatedAt)
-             VALUES (?, ?, NULL, ?, ?, ?, ?)`
+            `INSERT INTO Store (id, name, householdId, isHidden, createdById, updatedById, createdAt, updatedAt)
+             VALUES (?, ?, NULL, NULL, ?, ?, ?, ?)`
         ).run(newStoreId, params.newStoreName, params.userId, params.userId, now, now);
 
         // 2. Copy aisles and build ID mapping
@@ -285,6 +315,31 @@ export function updateStoreHousehold(params: {
              WHERE id = ?`
         )
         .run(params.householdId, params.updatedById, now, params.storeId);
+
+    if (result.changes === 0) {
+        return null;
+    }
+
+    return getStoreById(params.storeId);
+}
+
+/**
+ * Update a store's visibility (hide/show)
+ */
+export function updateStoreVisibility(params: {
+    storeId: string;
+    isHidden: boolean;
+    updatedById: string;
+}): Store | null {
+    const now = new Date().toISOString();
+
+    const result = db
+        .prepare(
+            `UPDATE Store
+             SET isHidden = ?, updatedById = ?, updatedAt = ?
+             WHERE id = ?`
+        )
+        .run(boolToInt(params.isHidden), params.updatedById, now, params.storeId);
 
     if (result.changes === 0) {
         return null;

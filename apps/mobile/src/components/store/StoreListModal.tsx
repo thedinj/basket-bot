@@ -15,8 +15,8 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { add, closeOutline } from "ionicons/icons";
-import { useCallback, useState } from "react";
+import { add, closeOutline, eyeOffOutline } from "ionicons/icons";
+import { useCallback, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useCreateStore, useStores } from "../../db/hooks";
@@ -88,6 +88,19 @@ const StoreListModal: React.FC = () => {
         closeModal();
     }, [closeModal]);
 
+    // Sort stores: visible first, hidden last, then alphabetically by name
+    const sortedStores = useMemo(() => {
+        if (!stores) return [];
+        return [...stores].sort((a, b) => {
+            // Hidden stores go to bottom
+            if (a.isHidden !== b.isHidden) {
+                return a.isHidden ? 1 : -1;
+            }
+            // Within each group, sort alphabetically (case-insensitive)
+            return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+        });
+    }, [stores]);
+
     return (
         <>
             <IonModal isOpen={isOpen} onDidDismiss={handleModalDismiss}>
@@ -134,7 +147,7 @@ const StoreListModal: React.FC = () => {
                     ) : (
                         <>
                             <IonList>
-                                {stores.map((store) => (
+                                {sortedStores.map((store) => (
                                     <IonItem
                                         key={store.id}
                                         button
@@ -143,9 +156,25 @@ const StoreListModal: React.FC = () => {
                                             handleManageStore(store.id);
                                         }}
                                     >
-                                        <IonIcon src={"/img/Store.svg"} slot="start" />
-                                        <IonLabel>
-                                            <h2>{store.name}</h2>
+                                        <IonIcon src="/img/Store.svg" slot="start" />
+                                        <IonLabel
+                                            style={{
+                                                opacity: store.isHidden ? 0.5 : 1,
+                                            }}
+                                        >
+                                            <h2>
+                                                {store.name}
+                                                {store.isHidden && (
+                                                    <IonIcon
+                                                        icon={eyeOffOutline}
+                                                        style={{
+                                                            fontSize: "16px",
+                                                            marginLeft: "8px",
+                                                            verticalAlign: "middle",
+                                                        }}
+                                                    />
+                                                )}
+                                            </h2>
                                         </IonLabel>
                                     </IonItem>
                                 ))}

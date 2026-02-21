@@ -75,6 +75,7 @@ export function initializeDatabase() {
             "id" TEXT NOT NULL PRIMARY KEY,
             "name" TEXT NOT NULL CHECK(length("name") >= 1 AND length("name") <= 100),
             "householdId" TEXT,
+            "isHidden" INTEGER,
             "createdById" TEXT NOT NULL,
             "updatedById" TEXT NOT NULL,
             "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

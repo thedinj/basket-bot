@@ -140,3 +140,30 @@ export function updateStoreHousehold(params: {
         updatedById: params.userId,
     });
 }
+
+/**
+ * Update a store's visibility (hide/show in dropdowns).
+ * Requires access to the store.
+ */
+export function updateStoreVisibility(params: {
+    storeId: string;
+    isHidden: boolean;
+    userId: string;
+}): Store | null {
+    const store = storeRepo.getStoreById(params.storeId);
+
+    if (!store) {
+        return null;
+    }
+
+    // Verify user has access to the store
+    if (!storeRepo.userHasAccessToStore(params.userId, params.storeId)) {
+        throw new Error("Access denied");
+    }
+
+    return storeRepo.updateStoreVisibility({
+        storeId: params.storeId,
+        isHidden: params.isHidden,
+        updatedById: params.userId,
+    });
+}

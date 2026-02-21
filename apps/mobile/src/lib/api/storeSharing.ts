@@ -22,3 +22,10 @@ export async function updateStoreHousehold(
 ): Promise<Store> {
     return apiClient.patch<Store>(`/api/stores/${storeId}/household`, { householdId });
 }
+
+/**
+ * Update a store's visibility (hide/show in dropdowns)
+ */
+export async function updateStoreVisibility(storeId: string, isHidden: boolean): Promise<Store> {
+    return apiClient.patch<Store>(`/api/stores/${storeId}/visibility`, { isHidden });
+}

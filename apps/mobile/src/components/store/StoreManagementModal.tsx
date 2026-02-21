@@ -14,6 +14,7 @@ import {
     IonSkeletonText,
     IonText,
     IonTitle,
+    IonToggle,
     IonToolbar,
     useIonAlert,
 } from "@ionic/react";
@@ -21,6 +22,8 @@ import {
     closeOutline,
     copy,
     create,
+    eyeOffOutline,
+    eyeOutline,
     gridOutline,
     homeOutline,
     listOutline,
@@ -37,6 +40,7 @@ import {
     useDuplicateStore,
     useStoreSuspense,
     useUpdateStore,
+    useUpdateStoreVisibility,
 } from "../../db/hooks";
 import { useToast } from "../../hooks/useToast";
 import {
@@ -91,6 +95,7 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
     const updateStore = useUpdateStore();
     const deleteStore = useDeleteStore();
     const duplicateStore = useDuplicateStore();
+    const updateStoreVisibility = useUpdateStoreVisibility();
     const { replaceAislesAndSections } = useBulkReplaceAislesAndSections();
     const { openModal } = useLLMModal();
     const { raiseShield, lowerShield } = useShield();
@@ -261,6 +266,21 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
         });
     }, [deleteStore, handleClose, presentAlert, showError, showSuccess, store, storeId]);
 
+    // Visibility toggle handler
+    const handleToggleVisibility = useCallback(
+        async (isHidden: boolean) => {
+            try {
+                await updateStoreVisibility.mutateAsync({
+                    storeId: storeId!,
+                    isHidden,
+                });
+            } catch (_error) {
+                // Error handling is done by the hook
+            }
+        },
+        [storeId, updateStoreVisibility]
+    );
+
     // LLM auto-scan handler
     const handleAutoScan = useCallback(async () => {
         // Fetch existing aisles and sections for ID preservation
@@ -403,6 +423,20 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
                                 or only you.
                             </p>
                         </IonLabel>
+                    </IonItem>
+
+                    <IonItem>
+                        <IonIcon icon={store.isHidden ? eyeOffOutline : eyeOutline} slot="start" />
+                        <IonLabel>
+                            <h2>Hidden from Store Lists</h2>
+                            <p>Hides this store from dropdowns.</p>
+                        </IonLabel>
+                        <IonToggle
+                            slot="end"
+                            checked={store.isHidden}
+                            onIonChange={(e) => handleToggleVisibility(e.detail.checked)}
+                            disabled={updateStoreVisibility.isPending}
+                        />
                     </IonItem>
 
                     <IonItem button detail={true} onClick={openDuplicateModal}>

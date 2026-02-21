@@ -1476,6 +1476,31 @@ export function useUpdateStoreHousehold() {
     });
 }
 
+/**
+ * Hook to update a store's visibility (hide/show)
+ */
+export function useUpdateStoreVisibility() {
+    const queryClient = useQueryClient();
+    const { showSuccess, showError } = useToast();
+
+    return useTanstackMutation({
+        mutationFn: (params: { storeId: string; isHidden: boolean }) =>
+            storeSharingApi.updateStoreVisibility(params.storeId, params.isHidden),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["store", variables.storeId] });
+            queryClient.invalidateQueries({ queryKey: ["stores"] });
+            if (variables.isHidden) {
+                showSuccess("Store hidden from lists");
+            } else {
+                showSuccess("Store is now visible");
+            }
+        },
+        onError: (error: Error) => {
+            showError(`Failed to update store visibility: ${error.message}`);
+        },
+    });
+}
+
 // ============================================================================
 // Household Management Hooks
 // ============================================================================
