@@ -38,7 +38,7 @@ export const SnoozeDateSelector: React.FC = () => {
                             style={{ flex: 1 }}
                         />
                         <IonButton size="small" fill="clear" onClick={() => setShowModal(true)}>
-                            Update
+                            Change
                         </IonButton>
                         <IonButton size="small" fill="clear" onClick={clearSnooze}>
                             Clear
