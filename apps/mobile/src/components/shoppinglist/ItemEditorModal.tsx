@@ -32,6 +32,7 @@ import { NotesInput } from "./NotesInput";
 import { QuantityInput } from "./QuantityInput";
 import { SnoozeDateSelector } from "./SnoozeDateSelector";
 import { UnitSelector } from "./UnitSelector";
+import { UnsureToggle } from "./UnsureToggle";
 import { useShoppingListContext } from "./useShoppingListContext";
 
 interface ItemEditorModalProps {
@@ -64,6 +65,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
             aisleId: null,
             sectionId: null,
             isIdea: false,
+            isUnsure: false,
             snoozedUntil: null,
         },
     });
@@ -85,6 +87,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 aisleId: editingItem.aisleId,
                 sectionId: editingItem.sectionId,
                 isIdea: editingItem.isIdea,
+                isUnsure: editingItem.isUnsure ?? false,
                 // Clear snoozedUntil if item is checked (checked items cannot be snoozed) or if date is in the past
                 snoozedUntil:
                     editingItem.isChecked || !isCurrentlySnoozed(editingItem.snoozedUntil)
@@ -101,6 +104,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 aisleId: null,
                 sectionId: null,
                 isIdea: false,
+                isUnsure: false,
                 snoozedUntil: null,
             });
         }
@@ -139,6 +143,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 storeItemId: null,
                 notes: data.notes || null,
                 isIdea: true,
+                isUnsure: data.isUnsure ?? false,
                 snoozedUntil,
             });
         } else {
@@ -174,6 +179,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 qty: data.qty ?? null,
                 unitId: data.unitId || null,
                 notes: data.notes || null,
+                isUnsure: data.isUnsure ?? false,
                 snoozedUntil,
             });
         }
@@ -271,6 +277,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                             // Idea mode - only notes and snooze date
                             <>
                                 <NotesInput />
+                                <UnsureToggle />
                                 {/* Hide snooze selector if editing a checked idea */}
                                 {!editingItem?.isChecked && <SnoozeDateSelector />}
                             </>
@@ -282,6 +289,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                                 <UnitSelector />
                                 <LocationSelectors />
                                 <NotesInput />
+                                <UnsureToggle />
                                 {/* Hide snooze selector if editing a checked item */}
                                 {!editingItem?.isChecked && <SnoozeDateSelector />}
                             </>

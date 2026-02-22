@@ -1,7 +1,7 @@
 import type { ShoppingListItemWithDetails } from "@basket-bot/core";
 import { IonButton, IonCheckbox, IonIcon, IonItem, IonLabel, useIonAlert } from "@ionic/react";
 import clsx from "clsx";
-import { swapHorizontalOutline } from "ionicons/icons";
+import { arrowRedoOutline, helpCircleOutline } from "ionicons/icons";
 import { useCallback, useMemo, useState } from "react";
 import { useAuth } from "../../auth/useAuth";
 import { useMoveItemToStore, useStores, useToggleItemChecked } from "../../db/hooks";
@@ -45,7 +45,7 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
     const storeItems: SelectableItem[] = useMemo(() => {
         if (!stores) return [];
         return stores
-            .filter((s) => s.id !== item.storeId)
+            .filter((s) => s.id !== item.storeId && !s.isHidden)
             .map((store) => ({
                 id: store.id,
                 label: store.name,
@@ -113,7 +113,7 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
     const handleMoveIconClick = useCallback(() => {
         if (!stores || stores.length <= 1) return;
 
-        const otherStores = stores.filter((s) => s.id !== item.storeId);
+        const otherStores = stores.filter((s) => s.id !== item.storeId && !s.isHidden);
 
         // Special case: if exactly one other store, skip modal and go straight to confirmation
         if (otherStores.length === 1) {
@@ -122,6 +122,10 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
             setIsMoveToStoreModalOpen(true);
         }
     }, [handleStoreSelectedForMove, item.storeId, stores]);
+
+    const handleDismissMoveModal = useCallback(() => {
+        setIsMoveToStoreModalOpen(false);
+    }, []);
 
     const handleCheckboxChange = (checked: boolean) => {
         toggleChecked.mutate({
@@ -167,6 +171,13 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                             </span>
                         )}{" "}
                         {item.isSample ? <span className="sample-badge">[sample]</span> : null}
+                        {item.isUnsure ? (
+                            <IonIcon
+                                icon={helpCircleOutline}
+                                className="unsure-icon"
+                                title="Unsure if needed"
+                            />
+                        ) : null}
                     </h2>
 
                     {notesToUse && (
@@ -186,8 +197,13 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
             </IonLabel>
 
             {stores && stores.length > 1 && (
-                <IonButton slot="end" fill="clear" onClick={handleMoveIconClick}>
-                    <IonIcon icon={swapHorizontalOutline} color="medium" />
+                <IonButton
+                    slot="end"
+                    fill="clear"
+                    onClick={handleMoveIconClick}
+                    title="Move to another store"
+                >
+                    <IonIcon icon={arrowRedoOutline} color="medium" />
                 </IonButton>
             )}
 
@@ -196,7 +212,7 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                 value={undefined}
                 onSelect={handleStoreSelectedForMove}
                 isOpen={isMoveToStoreModalOpen}
-                onDismiss={() => setIsMoveToStoreModalOpen(false)}
+                onDismiss={handleDismissMoveModal}
                 title="Move to Store"
                 showSearch={false}
                 allowClear={false}

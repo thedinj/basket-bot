@@ -301,7 +301,7 @@
         {
             "label": "Copy: Debug APK to Dropbox",
             "type": "shell",
-            "command": "xcopy /Y \"${workspaceFolder}\\apps\\mobile\\android\\app\\build\\outputs\\apk\\debug\\*.apk\" \"C:\\Users\\thedinj\\Dropbox\\\"",
+            "command": "xcopy /Y \"${workspaceFolder}\\apps\\mobile\\android\\app\\build\\outputs\\apk\\debug\\*.apk\" \"%USERPROFILE%\\Dropbox\\\"",
             "options": {
                 "shell": {
                     "executable": "cmd.exe",

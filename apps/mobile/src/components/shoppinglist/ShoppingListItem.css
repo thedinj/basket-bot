@@ -63,3 +63,11 @@
     text-transform: uppercase;
     color: var(--ion-color-medium);
 }
+
+/* Unsure icon */
+.unsure-icon {
+    font-size: 0.9em;
+    color: var(--ion-color-warning);
+    margin-left: 4px;
+    vertical-align: middle;
+}
