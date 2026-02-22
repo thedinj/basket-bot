@@ -68,9 +68,9 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
 
-    // Filter and split items into favorites and regular, then create groups
-    const { favoriteGroups, regularGroups } = useMemo(() => {
-        if (!items) return { favoriteGroups: [], regularGroups: [] };
+    // Filter and split items into favorites and all, then create groups
+    const { favoriteGroups, allGroups } = useMemo(() => {
+        if (!items) return { favoriteGroups: [], allGroups: [] };
 
         let filtered = items;
         if (debouncedSearchTerm.trim()) {
@@ -79,7 +79,7 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
         }
 
         const favorites = filtered.filter((item) => item.isFavorite);
-        const regular = filtered.filter((item) => !item.isFavorite);
+        const all = filtered; // Used to be: filtered.filter((item) => !item.isFavorite);
 
         // Favorites groups organized by aisle/section
         const favoriteGroups: ItemGroup<StoreItemWithDetails>[] =
@@ -93,9 +93,9 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                 : [];
 
         // Regular items organized by aisle/section
-        const regularGroups: ItemGroup<StoreItemWithDetails>[] =
-            regular.length > 0
-                ? createAisleSectionGroups(regular, {
+        const allGroups: ItemGroup<StoreItemWithDetails>[] =
+            all.length > 0
+                ? createAisleSectionGroups(all, {
                       showAisleHeaders: true,
                       showSectionHeaders: true,
                       sortOrderOffset: 0,
@@ -103,7 +103,7 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                   })
                 : [];
 
-        return { favoriteGroups, regularGroups };
+        return { favoriteGroups, allGroups };
     }, [items, debouncedSearchTerm]);
 
     const openCreateModal = useCallback(() => {
@@ -208,7 +208,7 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                         <div style={{ padding: "20px", textAlign: "center" }}>
                             <IonText color="medium">Loading items...</IonText>
                         </div>
-                    ) : favoriteGroups.length === 0 && regularGroups.length === 0 ? (
+                    ) : favoriteGroups.length === 0 && allGroups.length === 0 ? (
                         <div style={{ padding: "20px", textAlign: "center" }}>
                             <IonText color="medium">
                                 {items?.length === 0 ? (
@@ -227,7 +227,7 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                                 <>
                                     <IonItemDivider sticky>
                                         <IonLabel>
-                                            <strong>Favorites</strong>
+                                            <strong>Favorite Items</strong>
                                         </IonLabel>
                                     </IonItemDivider>
                                     <GroupedItemList<StoreItemWithDetails>
@@ -238,20 +238,20 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                                 </>
                             )}
 
-                            {regularGroups.length > 0 && (
+                            {allGroups.length > 0 && (
                                 <>
                                     {favoriteGroups.length > 0 && (
                                         <>
                                             <div style={{ height: "16px" }} />
                                             <IonItemDivider sticky>
                                                 <IonLabel>
-                                                    <strong>Other Items</strong>
+                                                    <strong>All Items</strong>
                                                 </IonLabel>
                                             </IonItemDivider>
                                         </>
                                     )}
                                     <GroupedItemList<StoreItemWithDetails>
-                                        groups={regularGroups}
+                                        groups={allGroups}
                                         renderItem={renderItem}
                                         getItemKey={getItemKey}
                                     />

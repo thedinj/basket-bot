@@ -24,6 +24,7 @@ import {
     useUpdateItem,
     useUpsertShoppingListItem,
 } from "../../db/hooks";
+import { isCurrentlySnoozed } from "../../utils/dateUtils";
 import { ItemEditorProvider } from "./ItemEditorContext";
 import { LocationSelectors } from "./LocationSelectors";
 import { NameAutocomplete } from "./NameAutocomplete";
@@ -84,8 +85,11 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 aisleId: editingItem.aisleId,
                 sectionId: editingItem.sectionId,
                 isIdea: editingItem.isIdea,
-                // Clear snoozedUntil if item is checked (checked items cannot be snoozed)
-                snoozedUntil: editingItem.isChecked ? null : editingItem.snoozedUntil,
+                // Clear snoozedUntil if item is checked (checked items cannot be snoozed) or if date is in the past
+                snoozedUntil:
+                    editingItem.isChecked || !isCurrentlySnoozed(editingItem.snoozedUntil)
+                        ? null
+                        : editingItem.snoozedUntil,
             });
         } else if (isItemModalOpen) {
             reset({
@@ -122,8 +126,10 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
     };
 
     const onSubmit = async (data: ItemFormData) => {
-        // Defensive check: clear snoozedUntil if item is checked (checked items cannot be snoozed)
-        const snoozedUntil = editingItem?.isChecked ? null : data.snoozedUntil || null;
+        // Defensive check: clear snoozedUntil if item is checked (checked items cannot be snoozed) or if date is in the past
+        const shouldClearSnooze =
+            editingItem?.isChecked || (data.snoozedUntil && !isCurrentlySnoozed(data.snoozedUntil));
+        const snoozedUntil = shouldClearSnooze ? null : data.snoozedUntil || null;
 
         if (isIdea) {
             // Idea - no store item needed
