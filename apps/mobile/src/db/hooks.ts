@@ -1242,6 +1242,8 @@ export function useToggleItemChecked() {
                               ...item,
                               isChecked: vars.isChecked,
                               checkedAt: vars.isChecked ? new Date().toISOString() : null,
+                              // Clear snooze when checking (backend does this too)
+                              snoozedUntil: vars.isChecked ? null : item.snoozedUntil,
                           }
                         : item
                 );

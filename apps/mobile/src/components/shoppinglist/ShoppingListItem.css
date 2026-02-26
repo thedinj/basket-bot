@@ -9,7 +9,7 @@
 }
 
 .item-text--snoozed {
-    color: var(--ion-color-medium);
+    font-style: italic;
 }
 
 /* Checkbox container */
@@ -42,8 +42,6 @@
 /* Snoozed info */
 .item-snoozed-info {
     font-size: 0.7em;
-    color: var(--ion-color-medium);
-    font-style: italic;
     margin-top: 0;
     margin-bottom: 0;
 }
@@ -53,15 +51,12 @@
     font-size: 0.7em;
     margin-top: 0;
     margin-bottom: 0;
-    color: var(--ion-color-medium);
-    text-decoration: none;
 }
 
 /* Sample badge */
 .sample-badge {
     font-size: 0.6em;
     text-transform: uppercase;
-    color: var(--ion-color-medium);
 }
 
 /* Unsure icon */

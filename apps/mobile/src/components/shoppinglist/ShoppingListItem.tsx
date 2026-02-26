@@ -191,7 +191,9 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                         </p>
                     )}
                     {item.isChecked && item.checkedBy !== user?.id && item.checkedByName && (
-                        <p className="item-checked-by">Checked by {item.checkedByName}</p>
+                        <p className={clsx("item-checked-by", isChecked && "item-text--checked")}>
+                            Checked by {item.checkedByName}
+                        </p>
                     )}
                 </>
             </IonLabel>

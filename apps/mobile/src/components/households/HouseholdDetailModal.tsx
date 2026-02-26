@@ -138,6 +138,12 @@ const HouseholdDetailModal: React.FC<HouseholdDetailModalProps> = ({
                     <IonToolbar>
                         <IonTitle>Household Details</IonTitle>
                         <IonButtons slot="end">
+                            <IonButton
+                                onClick={handleDeleteHousehold}
+                                disabled={deleteHousehold.isPending}
+                            >
+                                <IonIcon icon={trashOutline} slot="icon-only" />
+                            </IonButton>
                             <IonButton onClick={onClose}>
                                 <IonIcon icon={closeOutline} />
                             </IonButton>
@@ -278,16 +284,6 @@ const HouseholdDetailModal: React.FC<HouseholdDetailModalProps> = ({
                                     disabled={removeMember.isPending}
                                 >
                                     Leave Household
-                                </IonButton>
-                                <IonButton
-                                    expand="block"
-                                    color="danger"
-                                    fill="outline"
-                                    onClick={handleDeleteHousehold}
-                                    disabled={deleteHousehold.isPending}
-                                >
-                                    <IonIcon icon={trashOutline} slot="start" />
-                                    Delete Household
                                 </IonButton>
                             </div>
                         </>

@@ -13,6 +13,16 @@ export const MAX_NAME_LENGTH = 100; // Names: users, households, stores, aisles,
 export const MAX_EMAIL_LENGTH = 255; // Email addresses
 export const MAX_NOTES_LENGTH = 1000; // Shopping list item notes and descriptions
 
+// Recipe content limits
+export const MAX_RECIPE_NAME_LENGTH = 200; // Recipe names
+export const MAX_RECIPE_DESCRIPTION_LENGTH = 2000; // Recipe descriptions
+export const MAX_RECIPE_STEPS_LENGTH = 50000; // Recipe steps (markdown)
+export const MAX_RECIPE_SOURCE_URL_LENGTH = 500; // Recipe source URLs
+export const MAX_RECIPE_TAG_NAME_LENGTH = 50; // Recipe tag names
+export const MAX_RECIPE_TAG_COLOR_LENGTH = 255; // Recipe tag colors (hex codes or CSS color names)
+export const MAX_RECIPE_INGREDIENT_NAME_LENGTH = 200; // Recipe ingredient names
+export const MAX_RECIPE_INGREDIENT_NOTES_LENGTH = 500; // Recipe ingredient notes
+
 // System field limits
 export const MAX_TOKEN_LENGTH = 255; // Refresh tokens, invitation tokens
 export const MAX_PASSWORD_HASH_LENGTH = 255; // Bcrypt hashes (~60 chars, buffer for future algorithms)
