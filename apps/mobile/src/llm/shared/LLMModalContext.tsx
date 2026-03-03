@@ -1,9 +1,6 @@
 import React, { useState, type PropsWithChildren } from "react";
 import { LLMModal } from "./LLMModal";
-import {
-    LLMModalContext,
-    type LLMModalContextValue,
-} from "./LLMModalContextDef";
+import { LLMModalContext, type LLMModalContextValue } from "./LLMModalContextDef";
 import type { LLMModalConfig, LLMResponse } from "./types";
 
 /**
@@ -11,11 +8,11 @@ import type { LLMModalConfig, LLMResponse } from "./types";
  */
 export const LLMModalProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [config, setConfig] = useState<LLMModalConfig | null>(null);
+    const [config, setConfig] = useState<LLMModalConfig<unknown, unknown> | null>(null);
     const [response, setResponse] = useState<LLMResponse | null>(null);
 
-    const openModal = <T = unknown,>(modalConfig: LLMModalConfig<T>) => {
-        setConfig(modalConfig as LLMModalConfig);
+    const openModal = <T = unknown, S = void>(modalConfig: LLMModalConfig<T, S>) => {
+        setConfig(modalConfig as LLMModalConfig<unknown, unknown>);
         setResponse(null);
         setIsOpen(true);
     };

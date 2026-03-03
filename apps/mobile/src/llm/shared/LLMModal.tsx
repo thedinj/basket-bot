@@ -39,6 +39,7 @@ export const LLMModal: React.FC = () => {
     const { raiseShield, lowerShield } = useShield();
     const [attachments, setAttachments] = useState<LLMAttachment[]>([]);
     const [userText, setUserText] = useState("");
+    const [interactionState, setInteractionState] = useState<unknown>(undefined);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const isAllowCamera = use(checkCameraAllowedAsync);
 
@@ -50,15 +51,18 @@ export const LLMModal: React.FC = () => {
         // Reset state
         setAttachments([]);
         setUserText("");
+        setInteractionState(undefined);
         closeModal();
     };
 
     const handleAccept = () => {
         if (!response || !config) return;
 
-        config.onAccept(response);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        config.onAccept(response, interactionState as any);
         setAttachments([]);
         setUserText("");
+        setInteractionState(undefined);
         closeModal();
     };
 
@@ -196,6 +200,7 @@ export const LLMModal: React.FC = () => {
             }
 
             setResponse(llmResponse);
+            setInteractionState(config.initialState ? config.initialState(llmResponse) : undefined);
         } catch (error) {
             showError(
                 error instanceof Error
@@ -355,7 +360,14 @@ export const LLMModal: React.FC = () => {
                                     <h3>Result</h3>
                                 </IonLabel>
                             </IonItem>
-                            <div style={{ padding: "0 16px" }}>{config.renderOutput(response)}</div>
+                            <div style={{ padding: "0 16px" }}>
+                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                {config.renderOutput(
+                                    response,
+                                    interactionState as any,
+                                    setInteractionState as any
+                                )}
+                            </div>
 
                             {/* Accept/Cancel Buttons */}
                             <div

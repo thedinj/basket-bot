@@ -8,9 +8,9 @@ export interface LLMModalContextValue {
     /** Whether the modal is currently open */
     isOpen: boolean;
     /** Current modal configuration */
-    config: LLMModalConfig | null;
+    config: LLMModalConfig<unknown, unknown> | null;
     /** Open the modal with given configuration */
-    openModal: <T = unknown>(config: LLMModalConfig<T>) => void;
+    openModal: <T = unknown, S = void>(config: LLMModalConfig<T, S>) => void;
     /** Close the modal */
     closeModal: () => void;
     /** Current LLM response (if any) */
@@ -22,6 +22,4 @@ export interface LLMModalContextValue {
 /**
  * Context for managing LLM modal state
  */
-export const LLMModalContext = createContext<LLMModalContextValue | undefined>(
-    undefined
-);
+export const LLMModalContext = createContext<LLMModalContextValue | undefined>(undefined);

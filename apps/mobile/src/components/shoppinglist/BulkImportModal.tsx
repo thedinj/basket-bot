@@ -1,7 +1,6 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback } from "react";
 import { validateBulkImportResult, type BulkImportResponse } from "../../llm/features/bulkImport";
 import { BULK_IMPORT_PROMPT } from "../../llm/features/bulkImportPrompt";
-import type { LLMResponse } from "../../llm/shared/types";
 import { useLLMModal } from "../../llm/shared/useLLMModal";
 import BulkImportItemList from "./BulkImportItemList";
 import { useBulkImport } from "./useBulkImport";
@@ -13,28 +12,9 @@ import { useBulkImport } from "./useBulkImport";
 export function useBulkImportModal(storeId: string) {
     const { openModal } = useLLMModal();
     const { importItems } = useBulkImport(storeId);
-    const [uncheckedIds, setUncheckedIds] = useState<Set<number>>(new Set());
-    const uncheckedIdsRef = useRef<Set<number>>(new Set());
-
-    const toggleItem = useCallback((id: number, _totalCount: number, newCheckedState: boolean) => {
-        setUncheckedIds((prev) => {
-            const next = new Set(prev);
-            if (newCheckedState) {
-                next.delete(id);
-            } else {
-                next.add(id);
-            }
-            uncheckedIdsRef.current = next;
-            return next;
-        });
-    }, []);
 
     const openBulkImport = useCallback(() => {
-        // Reset unchecked items when modal opens
-        setUncheckedIds(new Set());
-        uncheckedIdsRef.current = new Set();
-
-        openModal({
+        openModal<BulkImportResponse, Set<number>>({
             title: "Import Shopping List",
             prompt: BULK_IMPORT_PROMPT,
             model: "gpt-4o",
@@ -42,7 +22,7 @@ export function useBulkImportModal(storeId: string) {
                 "Paste your shopping list as text or upload a photo of a handwritten/printed list.",
             buttonText: "Scan List",
             shieldMessage: "Scanning list with AI...",
-            validateResponse: (response: LLMResponse) => {
+            validateResponse: (response) => {
                 if (!validateBulkImportResult(response.data)) {
                     throw new Error(
                         "Failed to parse shopping list. The response was not in the expected format."
@@ -50,26 +30,31 @@ export function useBulkImportModal(storeId: string) {
                 }
                 return true;
             },
-            renderOutput: (response: LLMResponse) => {
-                const result = response.data as BulkImportResponse;
-                return (
-                    <BulkImportItemList
-                        items={result.items}
-                        uncheckedIds={uncheckedIds}
-                        onToggle={toggleItem}
-                    />
-                );
-            },
-            onAccept: (response: LLMResponse) => {
-                const result = response.data as BulkImportResponse;
-
-                // Filter out unchecked items (use ref to get current value)
-                const selectedItems = result.items.filter(
-                    (_, idx) => !uncheckedIdsRef.current.has(idx)
+            // All items start checked; uncheckedIds is the set of deselected indices
+            initialState: () => new Set<number>(),
+            renderOutput: (response, uncheckedIds, setUncheckedIds) => (
+                <BulkImportItemList
+                    items={response.data.items}
+                    uncheckedIds={uncheckedIds}
+                    onToggle={(id, _total, checked) => {
+                        setUncheckedIds((prev) => {
+                            const next = new Set(prev);
+                            if (checked) {
+                                next.delete(id);
+                            } else {
+                                next.add(id);
+                            }
+                            return next;
+                        });
+                    }}
+                />
+            ),
+            onAccept: (response, uncheckedIds) => {
+                const selectedItems = response.data.items.filter(
+                    (_, idx) => !uncheckedIds.has(idx)
                 );
 
                 if (selectedItems.length === 0) {
-                    // User unchecked all items, nothing to import
                     return;
                 }
 
@@ -79,7 +64,7 @@ export function useBulkImportModal(storeId: string) {
                 // Nothing to do
             },
         });
-    }, [openModal, importItems, uncheckedIds, toggleItem]);
+    }, [openModal, importItems]);
 
     return { openBulkImport };
 }
