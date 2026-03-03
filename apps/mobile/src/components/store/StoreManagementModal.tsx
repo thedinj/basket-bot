@@ -75,6 +75,8 @@ type DuplicateStoreFormData = z.infer<typeof duplicateStoreFormSchema>;
 // Interaction state for the store scan LLM modal
 interface StoreScanState {
     mode: "append" | "replace";
+    uncheckedAisles: Set<number>;
+    uncheckedSections: Set<string>; // composite key "aisleIdx:sectionIdx"
 }
 
 // LLM store scan types imported from llm/features/storeScan
@@ -89,6 +91,116 @@ interface StoreManagementModalContentProps {
     storeId: string;
     onClose: () => void;
 }
+
+interface StoreScanOutputListProps {
+    result: StoreScanResult;
+    state: StoreScanState;
+    setState: React.Dispatch<React.SetStateAction<StoreScanState>>;
+}
+
+const StoreScanOutputList: React.FC<StoreScanOutputListProps> = ({ result, state, setState }) => {
+    const toggleAisle = (aisleIdx: number, checked: boolean): void => {
+        setState((prev) => {
+            const nextUncheckedAisles = new Set(prev.uncheckedAisles);
+            const nextUncheckedSections = new Set(prev.uncheckedSections);
+            if (!checked) {
+                nextUncheckedAisles.add(aisleIdx);
+                result.aisles[aisleIdx].sections.forEach((_, sectionIdx) => {
+                    nextUncheckedSections.add(`${aisleIdx}:${sectionIdx}`);
+                });
+            } else {
+                nextUncheckedAisles.delete(aisleIdx);
+                result.aisles[aisleIdx].sections.forEach((_, sectionIdx) => {
+                    nextUncheckedSections.delete(`${aisleIdx}:${sectionIdx}`);
+                });
+            }
+            return {
+                ...prev,
+                uncheckedAisles: nextUncheckedAisles,
+                uncheckedSections: nextUncheckedSections,
+            };
+        });
+    };
+
+    const toggleSection = (aisleIdx: number, sectionIdx: number, checked: boolean): void => {
+        setState((prev) => {
+            const nextUncheckedSections = new Set(prev.uncheckedSections);
+            const key = `${aisleIdx}:${sectionIdx}`;
+            if (!checked) {
+                nextUncheckedSections.add(key);
+            } else {
+                nextUncheckedSections.delete(key);
+            }
+            return { ...prev, uncheckedSections: nextUncheckedSections };
+        });
+    };
+
+    return (
+        <div>
+            <IonItem lines="none">
+                <IonLabel>Replace all aisles &amp; sections</IonLabel>
+                <IonToggle
+                    slot="end"
+                    checked={state.mode === "replace"}
+                    onIonChange={(e) =>
+                        setState((prev) => ({
+                            ...prev,
+                            mode: e.detail.checked ? "replace" : "append",
+                        }))
+                    }
+                />
+            </IonItem>
+            <IonList>
+                {result.aisles.map((aisle, aisleIdx) => {
+                    const aisleChecked = !state.uncheckedAisles.has(aisleIdx);
+                    return (
+                        <div key={aisleIdx}>
+                            <IonItem lines="none">
+                                <IonCheckbox
+                                    slot="start"
+                                    checked={aisleChecked}
+                                    onIonChange={(e) => toggleAisle(aisleIdx, e.detail.checked)}
+                                />
+                                <IonLabel>
+                                    <h3>
+                                        <strong>{aisle.name}</strong>
+                                    </h3>
+                                </IonLabel>
+                            </IonItem>
+                            {aisle.sections.map((section, sectionIdx) => {
+                                const sectionKey = `${aisleIdx}:${sectionIdx}`;
+                                const sectionChecked = !state.uncheckedSections.has(sectionKey);
+                                return (
+                                    <IonItem
+                                        key={sectionKey}
+                                        lines="none"
+                                        style={{ "--padding-start": "48px" } as React.CSSProperties}
+                                    >
+                                        <IonCheckbox
+                                            slot="start"
+                                            checked={sectionChecked}
+                                            disabled={!aisleChecked}
+                                            onIonChange={(e) =>
+                                                toggleSection(
+                                                    aisleIdx,
+                                                    sectionIdx,
+                                                    e.detail.checked
+                                                )
+                                            }
+                                        />
+                                        <IonLabel>
+                                            <p>{section}</p>
+                                        </IonLabel>
+                                    </IonItem>
+                                );
+                            })}
+                        </div>
+                    );
+                })}
+            </IonList>
+        </div>
+    );
+};
 
 const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = ({
     storeId,
@@ -318,7 +430,11 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
             model: "gpt-5.2",
             buttonText: "Scan Aisles & Sections",
             shieldMessage: "Scanning store directory...",
-            initialState: (): StoreScanState => ({ mode: "append" }),
+            initialState: (): StoreScanState => ({
+                mode: "append",
+                uncheckedAisles: new Set(),
+                uncheckedSections: new Set(),
+            }),
             validateResponse: (response: { data: unknown }) => {
                 if (!validateStoreScanResult(response.data)) {
                     throw new Error(
@@ -331,54 +447,22 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
                 response: { data: StoreScanResult },
                 state: StoreScanState,
                 setState: React.Dispatch<React.SetStateAction<StoreScanState>>
-            ) => {
-                const result = response.data;
-                return (
-                    <div>
-                        <IonItem lines="none">
-                            <IonLabel>Replace all aisles &amp; sections</IonLabel>
-                            <IonToggle
-                                slot="end"
-                                checked={state.mode === "replace"}
-                                onIonChange={(e) =>
-                                    setState((prev) => ({
-                                        ...prev,
-                                        mode: e.detail.checked ? "replace" : "append",
-                                    }))
-                                }
-                            />
-                        </IonItem>
-                        <IonList>
-                            {result.aisles.map(
-                                (aisle: { name: string; sections: string[] }, idx: number) => (
-                                    <div key={idx}>
-                                        <IonItem lines="none">
-                                            <IonLabel>
-                                                <h3>
-                                                    <strong>{aisle.name}</strong>
-                                                </h3>
-                                            </IonLabel>
-                                        </IonItem>
-                                        {aisle.sections.length > 0 && (
-                                            <IonItem>
-                                                <IonLabel
-                                                    className="ion-text-wrap"
-                                                    style={{ paddingLeft: "16px" }}
-                                                >
-                                                    <p>{aisle.sections.join(", ")}</p>
-                                                </IonLabel>
-                                            </IonItem>
-                                        )}
-                                    </div>
-                                )
-                            )}
-                        </IonList>
-                    </div>
-                );
-            },
+            ) => <StoreScanOutputList result={response.data} state={state} setState={setState} />,
             onAccept: (response: { data: StoreScanResult }, state: StoreScanState) => {
+                const filteredResult: StoreScanResult = {
+                    aisles: response.data.aisles
+                        .map((aisle, aisleIdx) => ({ aisle, aisleIdx }))
+                        .filter(({ aisleIdx }) => !state.uncheckedAisles.has(aisleIdx))
+                        .map(({ aisle, aisleIdx }) => ({
+                            name: aisle.name,
+                            sections: aisle.sections.filter(
+                                (_, sectionIdx) =>
+                                    !state.uncheckedSections.has(`${aisleIdx}:${sectionIdx}`)
+                            ),
+                        })),
+                };
                 const transformed = transformStoreScanResult(
-                    response.data,
+                    filteredResult,
                     existingAislesForMatching,
                     existingSectionsForMatching
                 );
