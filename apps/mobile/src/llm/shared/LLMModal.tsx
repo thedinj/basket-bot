@@ -58,8 +58,7 @@ export const LLMModal: React.FC = () => {
     const handleAccept = () => {
         if (!response || !config) return;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        config.onAccept(response, interactionState as any);
+        config.onAccept(response, interactionState);
         setAttachments([]);
         setUserText("");
         setInteractionState(undefined);
@@ -252,120 +251,19 @@ export const LLMModal: React.FC = () => {
                         </div>
                     )}
 
-                    {/* User Instructions Display */}
-                    {config.userInstructions && (
-                        <IonItem lines="none">
-                            <IonLabel className="ion-text-wrap">
-                                <IonText color="medium">
-                                    <p>{config.userInstructions}</p>
-                                </IonText>
-                            </IonLabel>
-                        </IonItem>
-                    )}
-
-                    {/* Text Input Section */}
-                    <div style={{ marginTop: "16px" }}>
-                        <IonItem>
-                            <IonLabel position="stacked">
-                                <h3>Text Input</h3>
-                            </IonLabel>
-                            <IonTextarea
-                                value={userText}
-                                onIonInput={(e) => setUserText(e.detail.value || "")}
-                                placeholder="Enter your text here..."
-                                rows={4}
-                            />
-                        </IonItem>
-                    </div>
-
-                    {/* File Attachments Section */}
-                    <div style={{ marginTop: "16px" }}>
-                        <IonItem lines="none">
-                            <IonLabel>
-                                <h3>Attachments</h3>
-                            </IonLabel>
-                            {isAllowCamera && (
-                                <IonButton
-                                    slot="end"
-                                    fill="outline"
-                                    size="small"
-                                    onClick={handleCapture}
-                                >
-                                    <IonIcon icon={camera} slot="start" />
-                                    Capture
-                                </IonButton>
-                            )}
-                            {!isAllowCamera && (
-                                <IonButton
-                                    slot="end"
-                                    fill="outline"
-                                    size="small"
-                                    onClick={handleAddAttachment}
-                                >
-                                    <IonIcon icon={attach} slot="start" />
-                                    Add
-                                </IonButton>
-                            )}
-                        </IonItem>
-
-                        {attachments.length > 0 && (
-                            <div
-                                style={{
-                                    padding: "0 16px",
-                                    display: "flex",
-                                    flexWrap: "wrap",
-                                    gap: "8px",
-                                }}
-                            >
-                                {attachments.map((attachment, index) => (
-                                    <IonChip
-                                        key={index}
-                                        onClick={() => handleRemoveAttachment(index)}
-                                    >
-                                        <IonLabel>{attachment.name}</IonLabel>
-                                        <IonIcon icon={close} />
-                                    </IonChip>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Hidden file input */}
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            style={{ display: "none" }}
-                            onChange={handleFileInputChange}
-                        />
-                    </div>
-
-                    {/* Run Button */}
-                    {!response && (
-                        <IonButton
-                            expand="block"
-                            onClick={handleRunLLM}
-                            disabled={!apiKeyValue}
-                            style={{ marginTop: "20px" }}
-                        >
-                            {config.buttonText || "Run LLM"}
-                        </IonButton>
-                    )}
-
-                    {/* Output Display */}
-                    {response && (
-                        <div style={{ marginTop: "20px" }}>
+                    {/* Text Input + Attachments + Run Button — hidden once results arrive */}
+                    {response ? (
+                        <div>
                             <IonItem lines="none">
                                 <IonLabel>
                                     <h3>Result</h3>
                                 </IonLabel>
                             </IonItem>
                             <div style={{ padding: "0 16px" }}>
-                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                 {config.renderOutput(
                                     response,
-                                    interactionState as any,
-                                    setInteractionState as any
+                                    interactionState,
+                                    setInteractionState
                                 )}
                             </div>
 
@@ -393,6 +291,105 @@ export const LLMModal: React.FC = () => {
                                     Accept
                                 </IonButton>
                             </div>
+                        </div>
+                    ) : (
+                        <div>
+                            {/* User Instructions Display */}
+                            {config.userInstructions && (
+                                <IonItem lines="none">
+                                    <IonLabel className="ion-text-wrap">
+                                        <IonText color="medium">
+                                            <p>{config.userInstructions}</p>
+                                        </IonText>
+                                    </IonLabel>
+                                </IonItem>
+                            )}
+                            {/* Text Input Section */}
+                            <div style={{ marginTop: "16px" }}>
+                                <IonItem>
+                                    <IonLabel position="stacked">
+                                        <h3>Text Input</h3>
+                                    </IonLabel>
+                                    <IonTextarea
+                                        value={userText}
+                                        onIonInput={(e) => setUserText(e.detail.value || "")}
+                                        placeholder="Enter your text here..."
+                                        rows={4}
+                                    />
+                                </IonItem>
+                            </div>
+
+                            {/* File Attachments Section */}
+                            <div style={{ marginTop: "16px" }}>
+                                <IonItem lines="none">
+                                    <IonLabel>
+                                        <h3>Attachments</h3>
+                                    </IonLabel>
+                                    {isAllowCamera && (
+                                        <IonButton
+                                            slot="end"
+                                            fill="outline"
+                                            size="small"
+                                            onClick={handleCapture}
+                                        >
+                                            <IonIcon icon={camera} slot="start" />
+                                            Capture
+                                        </IonButton>
+                                    )}
+                                    {!isAllowCamera && (
+                                        <IonButton
+                                            slot="end"
+                                            fill="outline"
+                                            size="small"
+                                            onClick={handleAddAttachment}
+                                        >
+                                            <IonIcon icon={attach} slot="start" />
+                                            Add
+                                        </IonButton>
+                                    )}
+                                </IonItem>
+
+                                {attachments.length > 0 && (
+                                    <div
+                                        style={{
+                                            padding: "0 16px",
+                                            display: "flex",
+                                            flexWrap: "wrap",
+                                            gap: "8px",
+                                        }}
+                                    >
+                                        {attachments.map((attachment, index) => (
+                                            <IonChip
+                                                key={index}
+                                                onClick={() => handleRemoveAttachment(index)}
+                                            >
+                                                <IonLabel>{attachment.name}</IonLabel>
+                                                <IonIcon icon={close} />
+                                            </IonChip>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Hidden file input */}
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    multiple
+                                    accept="image/*"
+                                    style={{ display: "none" }}
+                                    onChange={handleFileInputChange}
+                                />
+                            </div>
+
+                            {/* Run Button */}
+                            <IonButton
+                                expand="block"
+                                onClick={handleRunLLM}
+                                disabled={!apiKeyValue}
+                                style={{ marginTop: "20px" }}
+                            >
+                                {config.buttonText || "Run LLM"}
+                            </IonButton>
                         </div>
                     )}
                 </IonContent>

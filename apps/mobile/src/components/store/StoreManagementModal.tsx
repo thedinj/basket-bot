@@ -34,7 +34,7 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 import {
-    useBulkReplaceAislesAndSections,
+    useBulkApplyAislesAndSections,
     useDatabase,
     useDeleteStore,
     useDuplicateStore,
@@ -72,6 +72,11 @@ const duplicateStoreFormSchema = z.object({
 });
 type DuplicateStoreFormData = z.infer<typeof duplicateStoreFormSchema>;
 
+// Interaction state for the store scan LLM modal
+interface StoreScanState {
+    mode: "append" | "replace";
+}
+
 // LLM store scan types imported from llm/features/storeScan
 
 interface StoreManagementModalProps {
@@ -96,7 +101,7 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
     const deleteStore = useDeleteStore();
     const duplicateStore = useDuplicateStore();
     const updateStoreVisibility = useUpdateStoreVisibility();
-    const { replaceAislesAndSections } = useBulkReplaceAislesAndSections();
+    const { applyAislesAndSections } = useBulkApplyAislesAndSections();
     const { openModal } = useLLMModal();
     const { raiseShield, lowerShield } = useShield();
     const { showError, showSuccess } = useToast();
@@ -305,7 +310,7 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
             name: s.name,
         }));
 
-        openModal<StoreScanResult>({
+        openModal<StoreScanResult, StoreScanState>({
             title: "Scan Store Directory",
             prompt: generateStoreScanPrompt(existingLayout),
             userInstructions:
@@ -313,6 +318,7 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
             model: "gpt-5.2",
             buttonText: "Scan Aisles & Sections",
             shieldMessage: "Scanning store directory...",
+            initialState: (): StoreScanState => ({ mode: "append" }),
             validateResponse: (response: { data: unknown }) => {
                 if (!validateStoreScanResult(response.data)) {
                     throw new Error(
@@ -321,16 +327,27 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
                 }
                 return true;
             },
-            renderOutput: (response: { data: StoreScanResult }) => {
+            renderOutput: (
+                response: { data: StoreScanResult },
+                state: StoreScanState,
+                setState: React.Dispatch<React.SetStateAction<StoreScanState>>
+            ) => {
                 const result = response.data;
                 return (
                     <div>
-                        <IonText color="medium">
-                            <p>
-                                Found {result.aisles.length} aisle
-                                {result.aisles.length !== 1 ? "s" : ""}
-                            </p>
-                        </IonText>
+                        <IonItem lines="none">
+                            <IonLabel>Replace all aisles &amp; sections</IonLabel>
+                            <IonToggle
+                                slot="end"
+                                checked={state.mode === "replace"}
+                                onIonChange={(e) =>
+                                    setState((prev) => ({
+                                        ...prev,
+                                        mode: e.detail.checked ? "replace" : "append",
+                                    }))
+                                }
+                            />
+                        </IonItem>
                         <IonList>
                             {result.aisles.map(
                                 (aisle: { name: string; sections: string[] }, idx: number) => (
@@ -359,21 +376,22 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
                     </div>
                 );
             },
-            onAccept: (response: { data: StoreScanResult }) => {
+            onAccept: (response: { data: StoreScanResult }, state: StoreScanState) => {
                 const transformed = transformStoreScanResult(
                     response.data,
                     existingAislesForMatching,
                     existingSectionsForMatching
                 );
                 // Don't await - let shield take over for background work
-                replaceAislesAndSections({
+                applyAislesAndSections({
                     storeId: storeId!,
                     aisles: transformed.aisles,
                     sections: transformed.sections,
+                    mode: state.mode,
                 });
             },
         });
-    }, [storeId, database, openModal, replaceAislesAndSections]);
+    }, [storeId, database, openModal, applyAislesAndSections]);
 
     // Don't render if no storeId provided
     if (!storeId) {

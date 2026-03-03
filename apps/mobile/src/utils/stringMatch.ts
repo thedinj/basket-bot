@@ -36,6 +36,13 @@ export function fuzzyMatch(str1: string, str2: string, threshold: number): boole
         return true;
     }
 
+    // If either string contains digits, require exact match.
+    // Fuzzy matching numbered strings (e.g. "Aisle 1" vs "Aisle 2") produces
+    // misleadingly high scores because the shared prefix dominates the Dice coefficient.
+    if (/\d/.test(normalized1) || /\d/.test(normalized2)) {
+        return false;
+    }
+
     // Fuzzy match using Dice coefficient
     const similarity = compareTwoStrings(normalized1, normalized2);
     return similarity >= threshold;

@@ -16,6 +16,7 @@ export interface ExistingStoreLayout {
  */
 export function generateStoreScanPrompt(existingAisles?: ExistingStoreLayout[]): string {
     const hasExisting = existingAisles && existingAisles.length > 0;
+    const isNewStore = !hasExisting;
 
     let existingDataSection = "";
     if (hasExisting) {
@@ -70,7 +71,7 @@ Classify the store as one of:
 **Step 3: Aisle/Section Extraction and Formatting**
 Now, IGNORING the image and using ONLY the text you dumped in Step 1, extract ALL aisle numbers/names and sections that are EXPLICITLY LISTED in the text, with the following amendments:
 
-**MANDATORY SECTIONS (GROCERY STORES ONLY):**
+${isNewStore ? `**MANDATORY SECTIONS (GROCERY STORES ONLY):**
 If you classified the store as "grocery" in Step 2, AND any of the following departments (or their equivalents) are NOT listed anywhere in the text, you MUST add them as aisles with empty sections arrays:
 - Deli
 - Bakery
@@ -79,7 +80,7 @@ If you classified the store as "grocery" in Step 2, AND any of the following dep
 - Frozen Foods
 - Wine, Liquor, and Spirits
 
-**For wholesale or other store types:** Do NOT add any mandatory sections.
+**For wholesale or other store types:** Do NOT add any mandatory sections.` : `**No mandatory sections:** Extract only what is explicitly shown in the directory.`}
 
 **ORDERING & FORMATTING:**
 1. All non-numbered aisles (like Dairy, Deli, Bakery, etc.) must be listed FIRST, in the order they appear or as added above.

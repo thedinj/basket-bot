@@ -676,17 +676,18 @@ export function useReorderSections() {
  * Preserves existing aisle/section IDs when matched, updates sort order, creates new ones, and deletes orphans
  * Shows progress via shield and keeps screen awake during operation
  */
-export function useBulkReplaceAislesAndSections() {
+export function useBulkApplyAislesAndSections() {
     const database = useDatabase();
     const queryClient = useQueryClient();
     const { showError, showSuccess } = useToast();
     const { raiseShield, lowerShield } = useShield();
 
-    const replaceAislesAndSections = useCallback(
+    const applyAislesAndSections = useCallback(
         async ({
             storeId,
             aisles,
             sections,
+            mode,
         }: {
             storeId: string;
             aisles: Array<{ id?: string; name: string; sortOrder: number }>;
@@ -696,6 +697,7 @@ export function useBulkReplaceAislesAndSections() {
                 name: string;
                 sortOrder: number;
             }>;
+            mode: "append" | "replace";
         }) => {
             const shieldId = "bulk-replace-aisles";
             let aisleUpdatedCount = 0;
@@ -765,16 +767,18 @@ export function useBulkReplaceAislesAndSections() {
                     }
                 }
 
-                // Step 3: Delete orphaned aisles (not in transformed result)
-                raiseShield(shieldId, "Removing orphaned aisles...");
-                for (const existingAisle of existingAisles) {
-                    if (!processedAisleIds.has(existingAisle.id)) {
-                        try {
-                            await database.deleteAisle(storeId, existingAisle.id);
-                            aisleDeletedCount++;
-                        } catch (error) {
-                            console.error(`Failed to delete aisle "${existingAisle.name}":`, error);
-                            errorCount++;
+                // Step 3: Delete orphaned aisles (not in transformed result) — replace mode only
+                if (mode === "replace") {
+                    raiseShield(shieldId, "Removing orphaned aisles...");
+                    for (const existingAisle of existingAisles) {
+                        if (!processedAisleIds.has(existingAisle.id)) {
+                            try {
+                                await database.deleteAisle(storeId, existingAisle.id);
+                                aisleDeletedCount++;
+                            } catch (error) {
+                                console.error(`Failed to delete aisle "${existingAisle.name}":`, error);
+                                errorCount++;
+                            }
                         }
                     }
                 }
@@ -835,19 +839,21 @@ export function useBulkReplaceAislesAndSections() {
                     }
                 }
 
-                // Step 5: Delete orphaned sections (not in transformed result)
-                raiseShield(shieldId, "Removing orphaned sections...");
-                for (const existingSection of existingSections) {
-                    if (!processedSectionIds.has(existingSection.id)) {
-                        try {
-                            await database.deleteSection(storeId, existingSection.id);
-                            sectionDeletedCount++;
-                        } catch (error) {
-                            console.error(
-                                `Failed to delete section "${existingSection.name}":`,
-                                error
-                            );
-                            errorCount++;
+                // Step 5: Delete orphaned sections (not in transformed result) — replace mode only
+                if (mode === "replace") {
+                    raiseShield(shieldId, "Removing orphaned sections...");
+                    for (const existingSection of existingSections) {
+                        if (!processedSectionIds.has(existingSection.id)) {
+                            try {
+                                await database.deleteSection(storeId, existingSection.id);
+                                sectionDeletedCount++;
+                            } catch (error) {
+                                console.error(
+                                    `Failed to delete section "${existingSection.name}":`,
+                                    error
+                                );
+                                errorCount++;
+                            }
                         }
                     }
                 }
@@ -912,7 +918,7 @@ export function useBulkReplaceAislesAndSections() {
         [database, queryClient, showError, showSuccess, raiseShield, lowerShield]
     );
 
-    return { replaceAislesAndSections };
+    return { applyAislesAndSections };
 }
 
 // ============================================================================
