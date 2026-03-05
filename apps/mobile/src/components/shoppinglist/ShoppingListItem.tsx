@@ -152,17 +152,15 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                 <IonCheckbox checked={isChecked} style={{ pointerEvents: "none" }} />
             </div>
             <IonLabel
-                className="item-label"
+                className={clsx(
+                    "item-label",
+                    isChecked && "item-text--checked",
+                    isSnoozed && "item-text--snoozed"
+                )}
                 onClick={() => openEditModal(item as ShoppingListItemWithDetails)}
             >
                 <>
-                    <h2
-                        className={clsx(
-                            "item-title",
-                            isChecked && "item-text--checked",
-                            isSnoozed && "item-text--snoozed"
-                        )}
-                    >
+                    <h2 className={clsx("item-title")}>
                         {titleToUse}{" "}
                         {(item.qty !== null || item.unitAbbreviation) && (
                             <span>
