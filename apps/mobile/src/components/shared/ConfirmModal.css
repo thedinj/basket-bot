@@ -1,0 +1,19 @@
+.confirm-modal {
+    --height: auto;
+    --max-height: 80vh;
+    --border-radius: 12px;
+    align-items: center;
+}
+
+.confirm-modal ion-card {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(80vh - 32px);
+    margin: 0;
+    overflow: hidden;
+}
+
+.confirm-modal__message {
+    overflow-y: auto;
+    max-height: calc(80vh - 32px - 56px - 48px); /* modal - card margin - header - buttons */
+}

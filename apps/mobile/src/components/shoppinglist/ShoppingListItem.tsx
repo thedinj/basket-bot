@@ -1,17 +1,5 @@
 import type { ShoppingListItemWithDetails, Store } from "@basket-bot/core";
-import {
-    IonButton,
-    IonButtons,
-    IonCard,
-    IonCardContent,
-    IonCardHeader,
-    IonCardTitle,
-    IonCheckbox,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonModal,
-} from "@ionic/react";
+import { IonButton, IonCheckbox, IonIcon, IonItem, IonLabel } from "@ionic/react";
 import clsx from "clsx";
 import { arrowRedoOutline, helpCircleOutline } from "ionicons/icons";
 import { useCallback, useMemo, useState } from "react";
@@ -22,6 +10,7 @@ import { useToast } from "../../hooks/useToast";
 import { formatSnoozeDate, isCurrentlySnoozed } from "../../utils/dateUtils";
 import type { SelectableItem } from "../shared/ClickableSelectionModal";
 import { ClickableSelectionModal } from "../shared/ClickableSelectionModal";
+import ConfirmModal from "../shared/ConfirmModal";
 import { useShoppingListContext } from "./useShoppingListContext";
 
 import "./ShoppingListItem.css";
@@ -126,6 +115,10 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
         setIsMoveToStoreModalOpen(false);
     }, []);
 
+    const handleDismissConfirmModal = useCallback(() => {
+        setPendingMoveStore(null);
+    }, []);
+
     const handleCheckboxChange = (checked: boolean) => {
         toggleChecked.mutate({
             id: item.id,
@@ -216,39 +209,24 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                 showSearch={false}
                 allowClear={false}
             />
-            <IonModal
+            <ConfirmModal
                 isOpen={pendingMoveStore !== null}
-                onDidDismiss={() => setPendingMoveStore(null)}
-                className="move-to-store-modal"
-            >
-                <IonCard>
-                    <IonCardHeader>
-                        <IonCardTitle>Move to Store</IonCardTitle>
-                    </IonCardHeader>
-                    <IonCardContent>
-                        <p>
-                            Move this item to{" "}
-                            <strong className="move-to-store-modal__store-name">
-                                {pendingMoveStore?.name}
-                            </strong>
-                            ? The item will be removed from the current store and added to the
-                            selected store.
-                        </p>
-                        <IonButtons className="ion-justify-content-end">
-                            <IonButton onClick={() => setPendingMoveStore(null)}>Cancel</IonButton>
-                            <IonButton
-                                color="primary"
-                                onClick={async () => {
-                                    setPendingMoveStore(null);
-                                    await handleConfirmMove();
-                                }}
-                            >
-                                Move
-                            </IonButton>
-                        </IonButtons>
-                    </IonCardContent>
-                </IonCard>
-            </IonModal>
+                onDidDismiss={handleDismissConfirmModal}
+                title="Move to Store"
+                message={
+                    <p>
+                        Move this item to{" "}
+                        <strong style={{ color: "var(--ion-color-primary)" }}>
+                            {pendingMoveStore?.name}
+                        </strong>
+                        ? The item will be removed from the current store and added to the selected
+                        store.
+                    </p>
+                }
+                confirmText="Move"
+                onConfirm={handleConfirmMove}
+                onCancel={handleDismissConfirmModal}
+            />
         </IonItem>
     );
 };
