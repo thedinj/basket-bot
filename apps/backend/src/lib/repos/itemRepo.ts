@@ -99,10 +99,14 @@ export function getItemsByStoreWithDetails(storeId: string): StoreItemWithDetail
                 si.usageCount, si.lastUsedAt, si.isHidden, si.isFavorite,
                 si.createdById, si.updatedById, si.createdAt, si.updatedAt,
                 s.name as sectionName, s.sortOrder as sectionSortOrder,
-                a.name as aisleName, a.sortOrder as aisleSortOrder
+                a.name as aisleName, a.sortOrder as aisleSortOrder,
+                creator.name as createdByName,
+                updater.name as updatedByName
              FROM StoreItem si
              LEFT JOIN StoreSection s ON si.sectionId = s.id
              LEFT JOIN StoreAisle a ON COALESCE(s.aisleId, si.aisleId) = a.id
+             LEFT JOIN User creator ON si.createdById = creator.id
+             LEFT JOIN User updater ON si.updatedById = updater.id
              WHERE si.storeId = ? AND si.isHidden = 0
              ORDER BY
                 COALESCE(a.sortOrder, 999999) ASC,

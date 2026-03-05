@@ -40,6 +40,8 @@ export function getShoppingListItems(storeId: string): ShoppingListItemWithDetai
                 sli.createdById, sli.updatedById, sli.createdAt, sli.updatedAt,
                 si.name as itemName,
                 si.isFavorite as isFavorite,
+                si.createdAt as storeItemCreatedAt,
+                si.updatedAt as storeItemUpdatedAt,
                 qu.abbreviation as unitAbbreviation,
                 s.id as sectionId,
                 COALESCE(s.aisleId, si.aisleId) as aisleId,
@@ -47,13 +49,21 @@ export function getShoppingListItems(storeId: string): ShoppingListItemWithDetai
                 s.sortOrder as sectionSortOrder,
                 a.name as aisleName,
                 a.sortOrder as aisleSortOrder,
-                u.name as checkedByName
+                u.name as checkedByName,
+                sli_creator.name as createdByName,
+                sli_updater.name as updatedByName,
+                si_creator.name as storeItemCreatedByName,
+                si_updater.name as storeItemUpdatedByName
              FROM ShoppingListItem sli
              LEFT JOIN StoreItem si ON sli.storeItemId = si.id
              LEFT JOIN QuantityUnit qu ON sli.unitId = qu.id
              LEFT JOIN StoreSection s ON si.sectionId = s.id
              LEFT JOIN StoreAisle a ON COALESCE(s.aisleId, si.aisleId) = a.id
              LEFT JOIN User u ON sli.checkedBy = u.id
+             LEFT JOIN User sli_creator ON sli.createdById = sli_creator.id
+             LEFT JOIN User sli_updater ON sli.updatedById = sli_updater.id
+             LEFT JOIN User si_creator ON si.createdById = si_creator.id
+             LEFT JOIN User si_updater ON si.updatedById = si_updater.id
              WHERE sli.storeId = ?
              ORDER BY
                 COALESCE(a.sortOrder, 999999) ASC,

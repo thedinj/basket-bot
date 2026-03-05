@@ -192,6 +192,8 @@ export const storeItemWithDetailsSchema = storeItemSchema.extend({
     sectionSortOrder: z.number().int().nullable(),
     aisleName: z.string().max(MAX_NAME_LENGTH).nullable(),
     aisleSortOrder: z.number().int().nullable(),
+    createdByName: z.string().max(MAX_NAME_LENGTH).nullable(),
+    updatedByName: z.string().max(MAX_NAME_LENGTH).nullable(),
 });
 
 export type StoreItemWithDetails = z.infer<typeof storeItemWithDetailsSchema>;
@@ -247,6 +249,12 @@ export const shoppingListItemWithDetailsSchema = shoppingListItemSchema.extend({
     aisleSortOrder: z.number().int().nullable(),
     checkedByName: z.string().max(MAX_NAME_LENGTH).nullable(),
     isFavorite: z.boolean().nullable(),
+    createdByName: z.string().max(MAX_NAME_LENGTH).nullable(),
+    updatedByName: z.string().max(MAX_NAME_LENGTH).nullable(),
+    storeItemCreatedByName: z.string().max(MAX_NAME_LENGTH).nullable(),
+    storeItemUpdatedByName: z.string().max(MAX_NAME_LENGTH).nullable(),
+    storeItemCreatedAt: z.string().datetime().nullable(),
+    storeItemUpdatedAt: z.string().datetime().nullable(),
 });
 
 export type ShoppingListItemWithDetails = z.infer<typeof shoppingListItemWithDetailsSchema>;

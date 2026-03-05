@@ -15,7 +15,7 @@ import {
     IonToolbar,
 } from "@ionic/react";
 import { UseMutationResult } from "@tanstack/react-query";
-import { bulbOutline, cartOutline, closeOutline, trash } from "ionicons/icons";
+import { bulbOutline, cartOutline, closeOutline, informationCircleOutline, trash } from "ionicons/icons";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -25,6 +25,7 @@ import {
     useUpsertShoppingListItem,
 } from "../../db/hooks";
 import { isCurrentlySnoozed } from "../../utils/dateUtils";
+import ItemInfoModal from "../shared/ItemInfoModal";
 import { ItemEditorProvider } from "./ItemEditorContext";
 import { LocationSelectors } from "./LocationSelectors";
 import { NameAutocomplete } from "./NameAutocomplete";
@@ -46,6 +47,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
     const updateItem = useUpdateItem();
     const deleteItem = useDeleteShoppingListItem();
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+    const [isInfoOpen, setIsInfoOpen] = useState(false);
 
     const {
         control,
@@ -216,6 +218,11 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                     </IonTitle>
                     <IonButtons slot="end">
                         {editingItem && (
+                            <IonButton onClick={() => setIsInfoOpen(true)}>
+                                <IonIcon slot="icon-only" icon={informationCircleOutline} />
+                            </IonButton>
+                        )}
+                        {editingItem && (
                             <IonButton
                                 onClick={() => setShowDeleteAlert(true)}
                                 disabled={deleteItem.isPending}
@@ -288,10 +295,10 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                                 <QuantityInput />
                                 <UnitSelector />
                                 <LocationSelectors />
-                                <NotesInput />
                                 <UnsureToggle />
                                 {/* Hide snooze selector if editing a checked item */}
                                 {!editingItem?.isChecked && <SnoozeDateSelector />}
+                                <NotesInput />
                             </>
                         )}
 
@@ -324,6 +331,14 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                     ]}
                 />
             </IonContent>
+            {editingItem && (
+                <ItemInfoModal
+                    mode="shoppingListItem"
+                    isOpen={isInfoOpen}
+                    onClose={() => setIsInfoOpen(false)}
+                    item={editingItem}
+                />
+            )}
         </IonModal>
     );
 };

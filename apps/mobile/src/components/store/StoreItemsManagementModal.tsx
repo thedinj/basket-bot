@@ -118,6 +118,9 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
 
     const closeEditorModal = useCallback(() => {
         setIsEditorModalOpen(false);
+    }, []);
+
+    const handleEditorDismissed = useCallback(() => {
         setEditingItem(null);
     }, []);
 
@@ -271,6 +274,7 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                     <StoreItemEditorModal
                         isOpen={isEditorModalOpen}
                         onClose={closeEditorModal}
+                        onDismissed={handleEditorDismissed}
                         storeId={storeId}
                         editingItem={editingItem}
                     />
