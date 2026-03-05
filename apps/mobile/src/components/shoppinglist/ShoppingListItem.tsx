@@ -2,14 +2,15 @@ import type { ShoppingListItemWithDetails, Store } from "@basket-bot/core";
 import {
     IonButton,
     IonButtons,
+    IonCard,
+    IonCardContent,
+    IonCardHeader,
+    IonCardTitle,
     IonCheckbox,
-    IonHeader,
     IonIcon,
     IonItem,
     IonLabel,
     IonModal,
-    IonTitle,
-    IonToolbar,
 } from "@ionic/react";
 import clsx from "clsx";
 import { arrowRedoOutline, helpCircleOutline } from "ionicons/icons";
@@ -220,29 +221,33 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                 onDidDismiss={() => setPendingMoveStore(null)}
                 className="move-to-store-modal"
             >
-                <IonHeader>
-                    <IonToolbar>
-                        <IonTitle>Move to Store</IonTitle>
-                    </IonToolbar>
-                </IonHeader>
-                <div className="move-to-store-modal__body">
-                    <p>
-                        Move this item to <strong className="move-to-store-modal__store-name">{pendingMoveStore?.name}</strong>? The item will
-                        be removed from the current store and added to the selected store.
-                    </p>
-                    <IonButtons className="ion-justify-content-end">
-                        <IonButton onClick={() => setPendingMoveStore(null)}>Cancel</IonButton>
-                        <IonButton
-                            color="primary"
-                            onClick={async () => {
-                                setPendingMoveStore(null);
-                                await handleConfirmMove();
-                            }}
-                        >
-                            Move
-                        </IonButton>
-                    </IonButtons>
-                </div>
+                <IonCard>
+                    <IonCardHeader>
+                        <IonCardTitle>Move to Store</IonCardTitle>
+                    </IonCardHeader>
+                    <IonCardContent>
+                        <p>
+                            Move this item to{" "}
+                            <strong className="move-to-store-modal__store-name">
+                                {pendingMoveStore?.name}
+                            </strong>
+                            ? The item will be removed from the current store and added to the
+                            selected store.
+                        </p>
+                        <IonButtons className="ion-justify-content-end">
+                            <IonButton onClick={() => setPendingMoveStore(null)}>Cancel</IonButton>
+                            <IonButton
+                                color="primary"
+                                onClick={async () => {
+                                    setPendingMoveStore(null);
+                                    await handleConfirmMove();
+                                }}
+                            >
+                                Move
+                            </IonButton>
+                        </IonButtons>
+                    </IonCardContent>
+                </IonCard>
             </IonModal>
         </IonItem>
     );

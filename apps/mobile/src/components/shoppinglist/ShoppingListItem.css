@@ -6,8 +6,6 @@
 /* Move to store confirmation modal */
 .move-to-store-modal {
     --height: auto;
-    --border-radius: 12px;
-    align-items: center;
 }
 
 .move-to-store-modal__body {
