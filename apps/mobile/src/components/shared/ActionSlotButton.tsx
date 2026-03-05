@@ -26,11 +26,6 @@ interface ActionSlotButtonProps {
      * Whether the button is disabled
      */
     disabled?: boolean;
-
-    /**
-     * Optional test ID for testing
-     */
-    testId?: string;
 }
 
 /**
@@ -43,16 +38,9 @@ const ActionSlotButton: React.FC<ActionSlotButtonProps> = ({
     icon,
     iconSrc,
     disabled = false,
-    testId,
 }) => {
     return (
-        <IonButton
-            fill="clear"
-            size="small"
-            onClick={onClick}
-            disabled={disabled}
-            data-testid={testId}
-        >
+        <IonButton fill="clear" size="small" onClick={onClick} disabled={disabled}>
             {iconSrc ? (
                 <IonIcon slot="start" src={iconSrc} />
             ) : (

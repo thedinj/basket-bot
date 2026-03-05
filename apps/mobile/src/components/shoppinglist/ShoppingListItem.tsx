@@ -1,5 +1,16 @@
-import type { ShoppingListItemWithDetails } from "@basket-bot/core";
-import { IonButton, IonCheckbox, IonIcon, IonItem, IonLabel, useIonAlert } from "@ionic/react";
+import type { ShoppingListItemWithDetails, Store } from "@basket-bot/core";
+import {
+    IonButton,
+    IonButtons,
+    IonCheckbox,
+    IonHeader,
+    IonIcon,
+    IonItem,
+    IonLabel,
+    IonModal,
+    IonTitle,
+    IonToolbar,
+} from "@ionic/react";
 import clsx from "clsx";
 import { arrowRedoOutline, helpCircleOutline } from "ionicons/icons";
 import { useCallback, useMemo, useState } from "react";
@@ -36,7 +47,7 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
     const toast = useToast();
     const { user } = useAuth();
     const { openEditModal } = useShoppingListContext();
-    const [presentAlert] = useIonAlert();
+    const [pendingMoveStore, setPendingMoveStore] = useState<Store | null>(null);
     const toggleChecked = useToggleItemChecked();
     const moveItemToStore = useMoveItemToStore();
     const { data: stores } = useStores();
@@ -55,60 +66,47 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
     const handleStoreSelectedForMove = useCallback(
         (storeId: string | null) => {
             if (storeId && stores) {
-                const storeObj = stores.find((s) => s.id === storeId);
-                if (storeObj) {
-                    presentAlert({
-                        header: "Move to Store",
-                        message: `Move this item to ${storeObj.name}? The item will be removed from the current store and added to the selected store.`,
-                        buttons: [
-                            {
-                                text: "Cancel",
-                                role: "cancel",
-                            },
-                            {
-                                text: "Move",
-                                handler: async () => {
-                                    try {
-                                        const result = await moveItemToStore.mutateAsync({
-                                            item: {
-                                                id: item.id,
-                                                itemName: item.itemName,
-                                                notes: item.notes,
-                                                qty: item.qty,
-                                                unitId: item.unitId,
-                                                isIdea: item.isIdea,
-                                            },
-                                            sourceStoreId: item.storeId,
-                                            targetStoreId: storeObj.id,
-                                            targetStoreName: storeObj.name,
-                                        });
-                                        toast.showSuccess(
-                                            `Moved "${result.itemName}" to ${result.targetStoreName}`
-                                        );
-                                    } catch (_error) {
-                                        // Error already handled by mutation
-                                    }
-                                },
-                            },
-                        ],
-                    });
+                const store = stores.find((s) => s.id === storeId);
+                if (store) {
+                    setPendingMoveStore(store);
                 }
             }
         },
-        [
-            item.id,
-            item.isIdea,
-            item.itemName,
-            item.notes,
-            item.qty,
-            item.storeId,
-            item.unitId,
-            moveItemToStore,
-            presentAlert,
-            stores,
-            toast,
-        ]
+        [stores]
     );
+
+    const handleConfirmMove = useCallback(async () => {
+        if (!pendingMoveStore) return;
+        try {
+            const result = await moveItemToStore.mutateAsync({
+                item: {
+                    id: item.id,
+                    itemName: item.itemName,
+                    notes: item.notes,
+                    qty: item.qty,
+                    unitId: item.unitId,
+                    isIdea: item.isIdea,
+                },
+                sourceStoreId: item.storeId,
+                targetStoreId: pendingMoveStore.id,
+                targetStoreName: pendingMoveStore.name,
+            });
+            toast.showSuccess(`Moved "${result.itemName}" to ${result.targetStoreName}`);
+        } catch (_error) {
+            // Error already handled by mutation
+        }
+    }, [
+        pendingMoveStore,
+        moveItemToStore,
+        item.id,
+        item.isIdea,
+        item.itemName,
+        item.notes,
+        item.qty,
+        item.storeId,
+        item.unitId,
+        toast,
+    ]);
 
     const handleMoveIconClick = useCallback(() => {
         if (!stores || stores.length <= 1) return;
@@ -217,6 +215,35 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                 showSearch={false}
                 allowClear={false}
             />
+            <IonModal
+                isOpen={pendingMoveStore !== null}
+                onDidDismiss={() => setPendingMoveStore(null)}
+                className="move-to-store-modal"
+            >
+                <IonHeader>
+                    <IonToolbar>
+                        <IonTitle>Move to Store</IonTitle>
+                    </IonToolbar>
+                </IonHeader>
+                <div className="move-to-store-modal__body">
+                    <p>
+                        Move this item to <strong className="move-to-store-modal__store-name">{pendingMoveStore?.name}</strong>? The item will
+                        be removed from the current store and added to the selected store.
+                    </p>
+                    <IonButtons className="ion-justify-content-end">
+                        <IonButton onClick={() => setPendingMoveStore(null)}>Cancel</IonButton>
+                        <IonButton
+                            color="primary"
+                            onClick={async () => {
+                                setPendingMoveStore(null);
+                                await handleConfirmMove();
+                            }}
+                        >
+                            Move
+                        </IonButton>
+                    </IonButtons>
+                </div>
+            </IonModal>
         </IonItem>
     );
 };

@@ -3,6 +3,21 @@
     opacity: 0.6;
 }
 
+/* Move to store confirmation modal */
+.move-to-store-modal {
+    --height: auto;
+    --border-radius: 12px;
+    align-items: center;
+}
+
+.move-to-store-modal__body {
+    padding: 16px;
+}
+
+.move-to-store-modal__store-name {
+    color: var(--ion-color-primary);
+}
+
 /* Text states */
 .item-text--checked {
     text-decoration: line-through;
