@@ -37,6 +37,7 @@
     font-style: italic;
     margin-top: 0;
     margin-bottom: 0;
+    color: var(--ion-color-medium);
 }
 
 /* Snoozed info */
@@ -44,6 +45,7 @@
     font-size: 0.7em;
     margin-top: 0;
     margin-bottom: 0;
+    color: var(--ion-color-secondary);
 }
 
 /* Checked by info */
@@ -51,6 +53,13 @@
     font-size: 0.7em;
     margin-top: 0;
     margin-bottom: 0;
+    color: var(--ion-color-medium);
+}
+
+/* Quantity value */
+.item-qty {
+    color: var(--ion-color-secondary);
+    font-size: 0.9em;
 }
 
 /* Sample badge */
@@ -61,8 +70,23 @@
 
 /* Unsure icon */
 .unsure-icon {
-    font-size: 0.9em;
+    font-size: 1.05em;
     color: var(--ion-color-warning);
     margin-left: 4px;
     vertical-align: middle;
+}
+
+/* Unsure items: subtle amber background tint to prompt a pre-trip check */
+.shopping-list-item--unsure:not(.shopping-list-item--checked) {
+    --background: color-mix(in srgb, var(--ion-color-warning) 9%, var(--ion-background-color));
+}
+
+/* Move to store confirmation */
+.store-name-highlight {
+    color: var(--ion-color-primary);
+}
+
+/* Left accent border for idea items (connects visually to the amber Ideas header) */
+.shopping-list-item--idea:not(.shopping-list-item--checked)::part(native) {
+    box-shadow: inset 3px 0 0 var(--ion-color-warning);
 }

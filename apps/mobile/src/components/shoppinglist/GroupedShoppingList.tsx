@@ -43,7 +43,7 @@ const createCheckedItemsGroup = (
         label: "Checked Items",
         color: "light",
         sticky: true,
-        labelStyle: HEADER_STYLE,
+        labelStyle: { ...HEADER_STYLE, color: "var(--ion-color-success)" },
         actionSlot: onClearChecked && (
             <ActionSlotButton
                 label="Obliterate"
@@ -70,7 +70,7 @@ const createIdeasGroup = (
         ),
         color: "light",
         sticky: true,
-        labelStyle: HEADER_STYLE,
+        labelStyle: { ...HEADER_STYLE, color: "var(--ion-color-warning)" },
     },
     sortOrder: IDEAS_SORT_ORDER,
     indentLevel: INDENT_LEVEL,

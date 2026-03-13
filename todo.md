@@ -1,9 +1,3 @@
-The WiFi adapter is often the first thing to suffer from undervoltage.
-WiFi power management - Raspberry Pi OS sometimes enables WiFi power saving, which can cause the adapter to sleep and not wake up properly. You can disable it:
-bashsudo iwconfig wlan0 power off
-To make it permanent, add this to /etc/rc.local (before exit 0):
-bash/sbin/iwconfig wlan0 power off
-
 remove route.ts bad code smell where exception text is tested for strings
 
 ---

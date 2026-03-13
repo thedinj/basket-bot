@@ -22,6 +22,7 @@ interface AppHeaderProps {
     backButtonHref?: string;
     children?: React.ReactNode;
     menuItems?: PageMenuItemConfig[];
+    subToolbar?: React.ReactNode;
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
@@ -30,6 +31,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     backButtonHref,
     children,
     menuItems = [],
+    subToolbar,
 }) => {
     const [showPageMenu, setShowPageMenu] = useState(false);
     const [popoverEvent, setPopoverEvent] = useState<unknown>(undefined);
@@ -87,6 +89,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     )}
                 </IonButtons>
             </IonToolbar>
+            {subToolbar && <IonToolbar>{subToolbar}</IonToolbar>}
         </IonHeader>
     );
 };

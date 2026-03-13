@@ -1,7 +1,7 @@
 import type { ShoppingListItemWithDetails, Store } from "@basket-bot/core";
 import { IonButton, IonCheckbox, IonIcon, IonItem, IonLabel } from "@ionic/react";
 import clsx from "clsx";
-import { arrowRedoOutline, helpCircleOutline } from "ionicons/icons";
+import { arrowRedoOutline, helpCircle, helpCircleOutline } from "ionicons/icons";
 import { useCallback, useMemo, useState } from "react";
 import { useAuth } from "../../auth/useAuth";
 import { useMoveItemToStore, useStores, useToggleItemChecked } from "../../db/hooks";
@@ -139,7 +139,14 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
     const { isSnoozed, formattedSnoozeDate } = useSnoozeStatus(item.snoozedUntil);
 
     return (
-        <IonItem className={isChecked ? "shopping-list-item--checked" : ""} button={false}>
+        <IonItem
+            className={clsx(
+                isChecked && "shopping-list-item--checked",
+                item.isIdea && "shopping-list-item--idea",
+                item.isUnsure && "shopping-list-item--unsure"
+            )}
+            button={false}
+        >
             <div slot="start" className="checkbox-container" onClick={handleCheckboxClick}>
                 <IonCheckbox checked={isChecked} style={{ pointerEvents: "none" }} />
             </div>
@@ -155,7 +162,7 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                     <h2 className={clsx("item-title")}>
                         {titleToUse}{" "}
                         {(item.qty !== null || item.unitAbbreviation) && (
-                            <span>
+                            <span className="item-qty">
                                 ({item.qty !== null ? item.qty : ""}
                                 {item.unitAbbreviation && ` ${item.unitAbbreviation}`})
                             </span>
@@ -163,7 +170,7 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                         {item.isSample ? <span className="sample-badge">[sample]</span> : null}
                         {item.isUnsure ? (
                             <IonIcon
-                                icon={helpCircleOutline}
+                                icon={isChecked ? helpCircleOutline : helpCircle}
                                 className="unsure-icon"
                                 title="Unsure if needed"
                             />
@@ -216,10 +223,8 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                 message={
                     <p>
                         Move this item to{" "}
-                        <strong style={{ color: "var(--ion-color-primary)" }}>
-                            {pendingMoveStore?.name}
-                        </strong>
-                        ? The item will be removed from the current store and added to the selected
+                        <strong className="store-name-highlight">{pendingMoveStore?.name}</strong>?
+                        The item will be removed from the current store and added to the selected
                         store.
                     </p>
                 }

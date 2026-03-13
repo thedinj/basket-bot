@@ -1,5 +1,8 @@
 import type { ShoppingListItemWithDetails } from "@basket-bot/core";
+import clsx from "clsx";
 import { GroupedShoppingList } from "./GroupedShoppingList";
+
+import "./CheckedItems.scss";
 
 interface CheckedItemsProps {
     items: ShoppingListItemWithDetails[];
@@ -16,10 +19,10 @@ export const CheckedItems = ({
 }: CheckedItemsProps) => {
     return (
         <div
-            style={{
-                opacity: isFadingOut ? 0 : 1,
-                transition: "opacity 0.5s ease-out",
-            }}
+            className={clsx(
+                "checked-items-wrapper",
+                isFadingOut && "checked-items-wrapper--fading"
+            )}
         >
             <GroupedShoppingList
                 items={items}

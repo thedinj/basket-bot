@@ -7,7 +7,6 @@ import {
     IonIcon,
     IonPage,
     IonText,
-    IonToolbar,
     useIonAlert,
 } from "@ionic/react";
 import { add, listOutline } from "ionicons/icons";
@@ -34,6 +33,8 @@ import { useOverlayAnimation } from "../hooks/useOverlayAnimation";
 import { useShowSnoozedItems } from "../hooks/useShowSnoozedItems";
 import { LLMFabButton } from "../llm/shared";
 import { isCurrentlySnoozed } from "../utils/dateUtils";
+
+import "./ShoppingList.scss";
 
 const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     const { openCreateModal } = useShoppingListContext();
@@ -66,12 +67,9 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     }, [items, currentDate]);
 
     const activeItems = useMemo(() => {
+        if (!items) return [];
         if (showSnoozed) return items;
-
-        return items?.filter((item) => {
-            // Show items that are not snoozed or whose snooze has expired
-            return !isCurrentlySnoozed(item.snoozedUntil);
-        });
+        return items.filter((item) => !isCurrentlySnoozed(item.snoozedUntil));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [items, showSnoozed, currentDate]);
 
@@ -150,19 +148,13 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
 
     return (
         <RefreshConfig queryKeys={[["shopping-list-items", storeId]]}>
-            <AppHeader title="Shopping List">
+            <AppHeader title="Shopping List" subToolbar={<StoreSelector />}>
                 <GlobalActions showKeepAwake actions={customActions} />
             </AppHeader>
             <IonContent fullscreen>
                 <PullToRefresh />
                 {activeItems.length === 0 && (
-                    <div
-                        style={{
-                            textAlign: "center",
-                            marginTop: "40px",
-                            padding: "20px",
-                        }}
-                    >
+                    <div className="shopping-list-empty-state">
                         <IonText color="medium">
                             <p>
                                 Your list is empty. Tap + to add items, if your memory permits.
@@ -205,12 +197,7 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
                 </IonFab>
 
                 {/* Bulk Import FAB */}
-                <IonFab
-                    vertical="bottom"
-                    horizontal="end"
-                    slot="fixed"
-                    style={{ marginRight: "70px" }}
-                >
+                <IonFab vertical="bottom" horizontal="end" slot="fixed" className="bulk-import-fab">
                     <LLMFabButton onClick={openBulkImport} />
                 </IonFab>
 
@@ -233,18 +220,9 @@ const ShoppingListContent: React.FC = () => {
     if (!selectedStoreId) {
         return (
             <>
-                <AppHeader title="Shopping List" />
-                <IonToolbar>
-                    <StoreSelector />
-                </IonToolbar>
+                <AppHeader title="Shopping List" subToolbar={<StoreSelector />} />
                 <IonContent fullscreen>
-                    <div
-                        style={{
-                            textAlign: "center",
-                            marginTop: "40px",
-                            padding: "20px",
-                        }}
-                    >
+                    <div className="shopping-list-empty-state">
                         <IonText color="medium">
                             <p>Select a store, human. I cannot assist without data.</p>
                         </IonText>
@@ -254,14 +232,7 @@ const ShoppingListContent: React.FC = () => {
         );
     }
 
-    return (
-        <>
-            <IonToolbar>
-                <StoreSelector />
-            </IonToolbar>
-            <ShoppingListWithItems storeId={selectedStoreId} />
-        </>
-    );
+    return <ShoppingListWithItems storeId={selectedStoreId} />;
 };
 
 const ShoppingList: React.FC = () => {
