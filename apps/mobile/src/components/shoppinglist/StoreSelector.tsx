@@ -1,3 +1,4 @@
+import { storefrontOutline } from "ionicons/icons";
 import { GenericStoreSelector } from "../shared/GenericStoreSelector";
 import { useShoppingListContext } from "./useShoppingListContext";
 
@@ -11,8 +12,10 @@ export const StoreSelector: React.FC = () => {
             modalTitle="Select Store"
             showSearch={false}
             placeholderText="Select a Store"
-            inputStyle={{ fontSize: "1.15rem" }}
+            inputStyle={{ fontSize: "1.1rem" }}
             showChevron
+            startIcon={storefrontOutline}
+            lines="none"
         />
     );
 };

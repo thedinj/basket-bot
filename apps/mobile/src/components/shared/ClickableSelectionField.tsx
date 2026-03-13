@@ -1,9 +1,7 @@
-import { IonInput, IonItem, IonLabel, IonText } from "@ionic/react";
+import { IonIcon, IonInput, IonItem, IonLabel, IonText } from "@ionic/react";
+import { chevronDownOutline } from "ionicons/icons";
 import { useState } from "react";
-import {
-    ClickableSelectionModal,
-    SelectableItem,
-} from "./ClickableSelectionModal";
+import { ClickableSelectionModal, SelectableItem } from "./ClickableSelectionModal";
 
 interface ClickableSelectionFieldProps {
     /** Array of items to display in modal */
@@ -34,15 +32,17 @@ interface ClickableSelectionFieldProps {
     inputStyle?: React.CSSProperties;
     /** Whether to show chevron icon on the right side */
     showChevron?: boolean;
+    /** Optional icon to display at start of field */
+    startIcon?: string;
+    /** IonItem lines style (default: full) */
+    lines?: "none" | "full" | "inset";
 }
 
 /**
  * Reusable field component that combines IonItem with ClickableSelectionModal.
  * Provides consistent UX for selection fields across the app.
  */
-export const ClickableSelectionField: React.FC<
-    ClickableSelectionFieldProps
-> = ({
+export const ClickableSelectionField: React.FC<ClickableSelectionFieldProps> = ({
     items,
     value,
     onSelect,
@@ -57,6 +57,8 @@ export const ClickableSelectionField: React.FC<
     errorMessage,
     inputStyle,
     showChevron = false,
+    startIcon,
+    lines,
 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -74,11 +76,7 @@ export const ClickableSelectionField: React.FC<
     };
 
     // Determine what to display
-    const display = displayText
-        ? displayText
-        : value
-        ? selectedItem?.label
-        : placeholder;
+    const display = displayText ? displayText : value ? selectedItem?.label : placeholder;
 
     return (
         <>
@@ -86,26 +84,32 @@ export const ClickableSelectionField: React.FC<
                 button
                 onClick={handleClick}
                 disabled={disabled || items.length === 0}
+                lines={lines}
             >
+                {startIcon && <IonIcon icon={startIcon} slot="start" color="medium" />}
                 {label && <IonLabel position="stacked">{label}</IonLabel>}
                 <IonInput
-                    value={`${display}${showChevron ? " ▾" : ""}`}
+                    value={display}
                     style={{
-                        color: value
-                            ? "var(--ion-color-dark)"
-                            : "var(--ion-color-medium)",
+                        color: value ? "var(--ion-color-dark)" : "var(--ion-color-medium)",
                         cursor: disabled ? "not-allowed" : "pointer",
                         ...inputStyle,
                     }}
                     readonly
                 />
+                {showChevron && (
+                    <IonIcon
+                        icon={chevronDownOutline}
+                        slot="end"
+                        color="medium"
+                        style={{ fontSize: "0.9rem", flexShrink: 0 }}
+                    />
+                )}
             </IonItem>
 
             {errorMessage && (
                 <IonText color="danger">
-                    <div style={{ fontSize: "12px", marginLeft: "16px" }}>
-                        {errorMessage}
-                    </div>
+                    <div style={{ fontSize: "12px", marginLeft: "16px" }}>{errorMessage}</div>
                 </IonText>
             )}
 

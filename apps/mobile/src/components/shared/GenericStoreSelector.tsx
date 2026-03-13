@@ -15,6 +15,8 @@ interface GenericStoreSelectorProps {
     excludeStoreIds?: string[];
     inputStyle?: React.CSSProperties;
     showChevron?: boolean;
+    startIcon?: string;
+    lines?: "none" | "full" | "inset";
 }
 
 export const GenericStoreSelector: React.FC<GenericStoreSelectorProps> = ({
@@ -29,6 +31,8 @@ export const GenericStoreSelector: React.FC<GenericStoreSelectorProps> = ({
     excludeStoreIds,
     inputStyle,
     showChevron = false,
+    startIcon,
+    lines,
 }) => {
     const { data: stores } = useStores();
 
@@ -74,6 +78,8 @@ export const GenericStoreSelector: React.FC<GenericStoreSelectorProps> = ({
             disabled={disabled}
             inputStyle={inputStyle}
             showChevron={showChevron}
+            startIcon={startIcon}
+            lines={lines}
         />
     );
 };

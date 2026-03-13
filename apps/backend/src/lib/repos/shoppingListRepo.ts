@@ -31,6 +31,38 @@ function intToBool(value: number | null | undefined): boolean {
     return value !== 0;
 }
 
+function mapRowToShoppingListItem(row: any): ShoppingListItem {
+    const isIdea = intToBool(row.isIdea);
+    return {
+        ...row,
+        isIdea,
+        isChecked: intToBool(row.isChecked),
+        isSample: row.isSample != null ? intToBool(row.isSample) : null,
+        isUnsure: row.isUnsure != null ? intToBool(row.isUnsure) : null,
+        // Ideas have no store item, quantity, or unit
+        storeItemId: isIdea ? null : row.storeItemId,
+        qty: isIdea ? null : row.qty,
+        unitId: isIdea ? null : row.unitId,
+    };
+}
+
+function mapRowToShoppingListItemWithDetails(row: any): ShoppingListItemWithDetails {
+    const isIdea = intToBool(row.isIdea);
+    return {
+        ...row,
+        isIdea,
+        isChecked: intToBool(row.isChecked),
+        isSample: row.isSample != null ? intToBool(row.isSample) : null,
+        isUnsure: row.isUnsure != null ? intToBool(row.isUnsure) : null,
+        isFavorite: row.isFavorite != null ? intToBool(row.isFavorite) : null,
+        // Ideas have no store item, quantity, or unit
+        storeItemId: isIdea ? null : row.storeItemId,
+        qty: isIdea ? null : row.qty,
+        unitId: isIdea ? null : row.unitId,
+        unitAbbreviation: isIdea ? null : row.unitAbbreviation,
+    };
+}
+
 export function getShoppingListItems(storeId: string): ShoppingListItemWithDetails[] {
     const rows = db
         .prepare(
@@ -72,15 +104,7 @@ export function getShoppingListItems(storeId: string): ShoppingListItemWithDetai
         )
         .all(storeId) as any[];
 
-    // Convert SQLite integers to booleans
-    return rows.map((row) => ({
-        ...row,
-        isChecked: intToBool(row.isChecked),
-        isSample: row.isSample != null ? intToBool(row.isSample) : null,
-        isUnsure: row.isUnsure != null ? intToBool(row.isUnsure) : null,
-        isIdea: intToBool(row.isIdea),
-        isFavorite: row.isFavorite != null ? intToBool(row.isFavorite) : null,
-    }));
+    return rows.map(mapRowToShoppingListItemWithDetails);
 }
 
 export function upsertShoppingListItem(params: {
@@ -104,6 +128,11 @@ export function upsertShoppingListItem(params: {
     const isIdea = params.isIdea ?? false;
     const isSample = params.isSample ?? null;
     const isUnsure = params.isUnsure ?? null;
+
+    // Ideas have no store item, quantity, or unit
+    const storeItemId = isIdea ? null : (params.storeItemId ?? null);
+    const qty = isIdea ? null : (params.qty ?? null);
+    const unitId = isIdea ? null : (params.unitId ?? null);
 
     if (params.id) {
         // Update existing
@@ -138,9 +167,9 @@ export function upsertShoppingListItem(params: {
                  isSample = ?, isUnsure = ?, isIdea = ?, snoozedUntil = ?, updatedById = ?, updatedAt = ?
              WHERE id = ?`
         ).run(
-            params.storeItemId,
-            params.qty,
-            params.unitId,
+            storeItemId,
+            qty,
+            unitId,
             params.notes,
             boolToInt(isChecked),
             checkedAt,
@@ -166,12 +195,12 @@ export function upsertShoppingListItem(params: {
         const snoozedUntil = isChecked ? null : (params.snoozedUntil ?? null);
 
         // Increment usage count for the store item if provided
-        if (params.storeItemId) {
+        if (storeItemId) {
             db.prepare(
                 `UPDATE StoreItem
                  SET usageCount = usageCount + 1, lastUsedAt = ?, updatedById = ?, updatedAt = ?
                  WHERE id = ?`
-            ).run(now, params.userId, now, params.storeItemId);
+            ).run(now, params.userId, now, storeItemId);
         }
 
         db.prepare(
@@ -180,9 +209,9 @@ export function upsertShoppingListItem(params: {
         ).run(
             id,
             params.storeId,
-            params.storeItemId ?? null,
-            params.qty ?? null,
-            params.unitId ?? null,
+            storeItemId,
+            qty,
+            unitId,
             params.notes ?? null,
             boolToInt(isChecked),
             checkedAt,
@@ -212,15 +241,7 @@ export function getShoppingListItemById(id: string): ShoppingListItem | null {
         .get(id) as any | undefined;
 
     if (!row) return null;
-
-    // Convert SQLite integers to booleans
-    return {
-        ...row,
-        isChecked: intToBool(row.isChecked),
-        isSample: row.isSample != null ? intToBool(row.isSample) : null,
-        isUnsure: row.isUnsure != null ? intToBool(row.isUnsure) : null,
-        isIdea: intToBool(row.isIdea),
-    };
+    return mapRowToShoppingListItem(row);
 }
 
 export function toggleShoppingListItemChecked(
