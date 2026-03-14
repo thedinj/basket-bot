@@ -190,10 +190,18 @@ export const useOptimisticMutation = <TVariables, TData = void, TError = Error>(
 
         onSuccess: config.onSuccess,
 
-        onSettled: () => {
-            // IMPORTANT: Don't invalidate! We already have the optimistic update in cache.
-            // Invalidation triggers a refetch which is slow. Trust the optimistic update.
-            // Only invalidate on error (which happens in onError via rollback).
+        onSettled: (_data, _error, variables) => {
+            // Invalidate after mutation settles to sync with server truth.
+            // This corrects the cache if a manual refresh raced with the in-flight mutation
+            // and overwrote the optimistic update with stale server data.
+            // The optimistic update still gives instant feedback; this just ensures eventual consistency.
+            const keys =
+                typeof config.queryKeys === "function"
+                    ? config.queryKeys(variables)
+                    : config.queryKeys;
+            keys.forEach((key) => {
+                queryClient.invalidateQueries({ queryKey: key });
+            });
         },
     };
 
