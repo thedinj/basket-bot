@@ -1,6 +1,7 @@
 import { IonIcon, IonInput, IonItem, IonLabel, IonText } from "@ionic/react";
 import { chevronDownOutline } from "ionicons/icons";
 import { useState } from "react";
+import { naturalSort } from "../../utils/stringUtils";
 import { ClickableSelectionModal, SelectableItem } from "./ClickableSelectionModal";
 
 interface ClickableSelectionFieldProps {
@@ -62,7 +63,8 @@ export const ClickableSelectionField: React.FC<ClickableSelectionFieldProps> = (
 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const selectedItem = items.find((item) => item.id === value);
+    const sortedItems = [...items].sort(naturalSort((item) => item.label));
+    const selectedItem = sortedItems.find((item) => item.id === value);
 
     const handleSelect = (itemId: string | null) => {
         onSelect(itemId);
@@ -114,7 +116,7 @@ export const ClickableSelectionField: React.FC<ClickableSelectionFieldProps> = (
             )}
 
             <ClickableSelectionModal
-                items={items}
+                items={sortedItems}
                 value={value || undefined}
                 onSelect={handleSelect}
                 isOpen={isModalOpen}

@@ -15,7 +15,7 @@ import {
     IonToolbar,
 } from "@ionic/react";
 import { closeOutline } from "ionicons/icons";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useRef, useMemo, useState } from "react";
 import { normalizeItemName } from "../../utils/stringUtils";
 
 export interface SelectableItem {
@@ -72,6 +72,7 @@ export const ClickableSelectionModal: React.FC<
     allowClear = true,
 }) => {
     const [searchText, setSearchText] = useState("");
+    const searchbarRef = useRef<HTMLIonSearchbarElement>(null);
 
     // Filter and tier items based on search text
     const filteredItems = useMemo(() => {
@@ -140,6 +141,12 @@ export const ClickableSelectionModal: React.FC<
         onDismiss();
     };
 
+    const handleSearchInput = useCallback(
+        (e: CustomEvent<{ value?: string | null }>) =>
+            setSearchText(e.detail.value || ""),
+        []
+    );
+
     const handleClear = () => {
         onSelect(null);
         setSearchText(""); // Reset search for next time
@@ -150,6 +157,7 @@ export const ClickableSelectionModal: React.FC<
         <IonModal
             isOpen={isOpen}
             onDidDismiss={handleDismiss}
+            onDidPresent={() => showSearch && searchbarRef.current?.setFocus()}
             breakpoints={size === "small" ? [0, 0.5] : undefined}
             initialBreakpoint={size === "small" ? 0.5 : undefined}
             className={size === "small" ? "small-modal" : undefined}
@@ -166,10 +174,9 @@ export const ClickableSelectionModal: React.FC<
                 {showSearch && (
                     <IonToolbar>
                         <IonSearchbar
+                            ref={searchbarRef}
                             value={searchText}
-                            onIonInput={(e) =>
-                                setSearchText(e.detail.value || "")
-                            }
+                            onIonInput={handleSearchInput}
                             placeholder={searchPlaceholder}
                             debounce={300}
                         />
