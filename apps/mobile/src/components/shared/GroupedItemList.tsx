@@ -1,6 +1,7 @@
 import { IonIcon, IonItemDivider, IonLabel, IonList } from "@ionic/react";
 import { Fragment, ReactNode, useCallback, useMemo } from "react";
 import { AnimatedGroup } from "./AnimatedGroup";
+import "./GroupedItemList.scss";
 import { ItemGroup } from "./grouping.types";
 
 interface RenderedGroupProps<T> {
@@ -19,7 +20,9 @@ const RenderedGroup = <T,>({ group, renderItem, getItemKey }: RenderedGroupProps
         (header: NonNullable<(typeof group)["header"]>) => (
             <IonItemDivider sticky={header.sticky} color={header.color} style={header.style}>
                 {header.icon && <IonIcon icon={header.icon} slot="start" />}
-                <IonLabel style={header.labelStyle}>{header.label}</IonLabel>
+                <IonLabel style={header.labelStyle} className={header.labelClassName}>
+                    {header.label}
+                </IonLabel>
                 {header.actionSlot && <div slot="end">{header.actionSlot}</div>}
             </IonItemDivider>
         ),
@@ -46,7 +49,11 @@ const RenderedGroup = <T,>({ group, renderItem, getItemKey }: RenderedGroupProps
                 />
             )}
             <div style={{ paddingLeft: group.indentLevel || 0 }}>
-                <AnimatedGroup items={group.items} getKey={getItemKey} renderItem={renderGroupItem} />
+                <AnimatedGroup
+                    items={group.items}
+                    getKey={getItemKey}
+                    renderItem={renderGroupItem}
+                />
                 {sortedChildren.map((child) => (
                     <RenderedGroup
                         key={child.id}

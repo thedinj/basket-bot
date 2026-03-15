@@ -139,12 +139,7 @@ export function createAisleSectionGroups<T extends GroupableItem>(
                 label: aisle.aisleName,
                 color: "light",
                 sticky: true,
-                labelStyle: {
-                    fontSize: "0.9rem",
-                    fontWeight: "600",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
-                },
+                labelClassName: "group-header-label group-header-label--aisle",
             };
         }
 
@@ -162,11 +157,7 @@ export function createAisleSectionGroups<T extends GroupableItem>(
                 sectionGroup.header = {
                     label: section.sectionName,
                     color: "light",
-                    labelStyle: {
-                        fontSize: "0.85rem",
-                        fontWeight: "500",
-                        opacity: 0.9,
-                    },
+                    labelClassName: "group-header-label group-header-label--section",
                 };
             }
 

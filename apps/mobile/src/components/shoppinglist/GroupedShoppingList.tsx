@@ -21,12 +21,7 @@ interface GroupedShoppingListProps {
     isClearing?: boolean;
 }
 
-const HEADER_STYLE = {
-    fontSize: "0.9rem",
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-} as const;
+const HEADER_LABEL_CLASS = "group-header-label group-header-label--aisle";
 
 const INDENT_LEVEL = 16;
 const IDEAS_SORT_ORDER = 0;
@@ -43,7 +38,8 @@ const createCheckedItemsGroup = (
         label: "Checked Items",
         color: "light",
         sticky: true,
-        labelStyle: { ...HEADER_STYLE, color: "var(--ion-color-success)" },
+        labelClassName: HEADER_LABEL_CLASS,
+        labelStyle: { color: "var(--ion-color-success)" },
         actionSlot: onClearChecked && (
             <ActionSlotButton
                 label="Obliterate"
@@ -70,7 +66,8 @@ const createIdeasGroup = (
         ),
         color: "light",
         sticky: true,
-        labelStyle: { ...HEADER_STYLE, color: "var(--ion-color-warning)" },
+        labelClassName: HEADER_LABEL_CLASS,
+        labelStyle: { color: "var(--ion-color-warning)" },
     },
     sortOrder: IDEAS_SORT_ORDER,
     indentLevel: INDENT_LEVEL,

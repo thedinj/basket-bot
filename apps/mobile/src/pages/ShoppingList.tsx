@@ -10,12 +10,13 @@ import {
     useIonAlert,
 } from "@ionic/react";
 import { add, listOutline } from "ionicons/icons";
-import { Suspense, useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ANIMATION_EFFECTS } from "../animations/effects";
 import { AppHeader } from "../components/layout/AppHeader";
 import { GlobalActionConfig } from "../components/layout/AppHeaderContext";
 import { GlobalActions } from "../components/layout/GlobalActions";
 import LoadingFallback from "../components/LoadingFallback";
+import ConfirmModal from "../components/shared/ConfirmModal";
 import { FabSpacer } from "../components/shared/FabSpacer";
 import { OverlayAnimation } from "../components/shared/OverlayAnimation";
 import PullToRefresh from "../components/shared/PullToRefresh";
@@ -26,7 +27,7 @@ import { ShoppingListProvider } from "../components/shoppinglist/ShoppingListPro
 import { StoreSelector } from "../components/shoppinglist/StoreSelector";
 import { UncheckedItems } from "../components/shoppinglist/UncheckedItems";
 import { useShoppingListContext } from "../components/shoppinglist/useShoppingListContext";
-import { useClearCheckedItems, useShoppingListItems } from "../db/hooks";
+import { useClearCheckedItems, useShoppingListItems, useStores } from "../db/hooks";
 import RefreshConfig from "../hooks/refresh/RefreshConfig";
 import { useMidnightUpdate } from "../hooks/useMidnightUpdate";
 import { useOverlayAnimation } from "../hooks/useOverlayAnimation";
@@ -40,9 +41,15 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     const { openCreateModal } = useShoppingListContext();
     const { showSnoozed, toggleShowSnoozed } = useShowSnoozedItems();
     const { data: items } = useShoppingListItems(storeId);
+    const { data: stores } = useStores();
+    const multipleStores = stores && stores.length > 1;
     const clearChecked = useClearCheckedItems();
     const [presentAlert] = useIonAlert();
     const [isStoreItemsModalOpen, setIsStoreItemsModalOpen] = useState(false);
+    const [wasJustCleared, setWasJustCleared] = useState(false);
+    const [showMissionCompleteToast, setShowMissionCompleteToast] = useState(false);
+    const prevUncheckedCountRef = useRef<number | null>(null);
+    const prevItemCountRef = useRef<number>(0);
 
     // Laser obliteration animation
     const {
@@ -83,16 +90,35 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
         setHasTriggeredClear(false);
     }
 
+    // Fire "All targets acquired" toast when last unchecked item gets checked
+    useEffect(() => {
+        const prev = prevUncheckedCountRef.current;
+        prevUncheckedCountRef.current = uncheckedItems.length;
+        if (prev !== null && prev > 0 && uncheckedItems.length === 0 && checkedItems.length > 0) {
+            setShowMissionCompleteToast(true);
+        }
+    }, [uncheckedItems.length, checkedItems.length]);
+
+    // Reset wasJustCleared when new items are added
+    const itemCount = items?.length ?? 0;
+    useEffect(() => {
+        if (itemCount > prevItemCountRef.current) {
+            setWasJustCleared(false);
+        }
+        prevItemCountRef.current = itemCount;
+    }, [itemCount]);
+
     const confirmClearChecked = useCallback(async () => {
         // Trigger laser animation
         await triggerLaser();
 
-        // Wait for animation to complete, then clear items
+        // Clear items when forward beam finishes (~1s), independent of full animation duration
         setTimeout(() => {
             setHasTriggeredClear(true);
+            setWasJustCleared(true);
             clearChecked.mutate({ storeId });
-        }, ANIMATION_EFFECTS.LASER_OBLITERATION.duration);
-    }, [clearChecked, storeId, triggerLaser, setHasTriggeredClear]);
+        }, 1000);
+    }, [clearChecked, storeId, triggerLaser]);
 
     // Check if there are any snoozed items
     const handleClearChecked = useCallback(() => {
@@ -148,7 +174,10 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
 
     return (
         <RefreshConfig queryKeys={[["shopping-list-items", storeId]]}>
-            <AppHeader title="Shopping List" subToolbar={<StoreSelector />}>
+            <AppHeader
+                title="Shopping List"
+                subToolbar={multipleStores ? <StoreSelector /> : undefined}
+            >
                 <GlobalActions showKeepAwake actions={customActions} />
             </AppHeader>
             <IonContent fullscreen>
@@ -157,14 +186,21 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
                     <div className="shopping-list-empty-state">
                         <IonText color="medium">
                             <p>
-                                Your list is empty. Tap + to add items, if your memory permits.
-                                <br />
-                                <br />
-                                {currentlySnoozedItemCount > 0
-                                    ? `(${currentlySnoozedItemCount} item${
-                                          currentlySnoozedItemCount > 1 ? "s" : ""
-                                      } snoozed.)`
-                                    : ""}
+                                {wasJustCleared ? (
+                                    "Acquisition complete. No remaining targets detected."
+                                ) : (
+                                    <>
+                                        Your list is empty. Tap + to add items, if your memory
+                                        permits.
+                                        <br />
+                                        <br />
+                                        {currentlySnoozedItemCount > 0
+                                            ? `(${currentlySnoozedItemCount} item${
+                                                  currentlySnoozedItemCount > 1 ? "s" : ""
+                                              } snoozed.)`
+                                            : ""}
+                                    </>
+                                )}
                             </p>
                         </IonText>
                     </div>
@@ -209,6 +245,18 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
                     onClose={() => setIsStoreItemsModalOpen(false)}
                     storeId={storeId}
                 />
+
+                {/* Mission complete confirmation */}
+                <ConfirmModal
+                    isOpen={showMissionCompleteToast}
+                    onDidDismiss={() => setShowMissionCompleteToast(false)}
+                    title="All targets acquired."
+                    message="Ready to obliterate?"
+                    confirmText="Obliterate"
+                    cancelText="Not yet"
+                    onConfirm={confirmClearChecked}
+                    onCancel={() => setShowMissionCompleteToast(false)}
+                />
             </IonContent>
         </RefreshConfig>
     );
@@ -216,11 +264,16 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
 
 const ShoppingListContent: React.FC = () => {
     const { selectedStoreId } = useShoppingListContext();
+    const { data: stores } = useStores();
+    const multipleStores = stores && stores.length > 1;
 
     if (!selectedStoreId) {
         return (
             <>
-                <AppHeader title="Shopping List" subToolbar={<StoreSelector />} />
+                <AppHeader
+                    title="Shopping List"
+                    subToolbar={multipleStores ? <StoreSelector /> : undefined}
+                />
                 <IonContent fullscreen>
                     <div className="shopping-list-empty-state">
                         <IonText color="medium">

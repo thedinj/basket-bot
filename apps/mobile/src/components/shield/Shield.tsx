@@ -1,8 +1,7 @@
-import { IonIcon, IonText } from "@ionic/react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { LLM_COLOR_ACTIVATED, LLM_ICON_SRC } from "../../llm/shared/constants";
+import RobotLoadingContent from "../shared/RobotLoadingContent";
 import "./Shield.css";
 import { useShield } from "./useShield";
 
@@ -34,16 +33,7 @@ export const Shield: React.FC = () => {
     const shieldElement = (
         <div className={`shield-overlay ${showContent ? "show-content" : ""}`}>
             <div className="shield-content">
-                <IonIcon
-                    src={LLM_ICON_SRC}
-                    className="shield-icon"
-                    style={{ fontSize: 80, color: LLM_COLOR_ACTIVATED }}
-                />
-                {currentMessage && (
-                    <IonText color="medium" className="shield-message">
-                        <p>{currentMessage}</p>
-                    </IonText>
-                )}
+                <RobotLoadingContent message={currentMessage} />
             </div>
         </div>
     );

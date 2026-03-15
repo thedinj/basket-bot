@@ -1,8 +1,9 @@
 import type { ShoppingListItemWithDetails, Store } from "@basket-bot/core";
+import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import { IonButton, IonCheckbox, IonIcon, IonItem, IonLabel } from "@ionic/react";
 import clsx from "clsx";
 import { arrowRedoOutline, helpCircle, helpCircleOutline } from "ionicons/icons";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../auth/useAuth";
 import { useMoveItemToStore, useStores, useToggleItemChecked } from "../../db/hooks";
 import { useMidnightUpdate } from "../../hooks/useMidnightUpdate";
@@ -42,6 +43,9 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
     const moveItemToStore = useMoveItemToStore();
     const { data: stores } = useStores();
     const [isMoveToStoreModalOpen, setIsMoveToStoreModalOpen] = useState(false);
+    const [justChecked, setJustChecked] = useState(false);
+    const [showZzz, setShowZzz] = useState(false);
+    const prevSnoozedRef = useRef<boolean>(false);
 
     const storeItems: SelectableItem[] = useMemo(() => {
         if (!stores) return [];
@@ -125,6 +129,10 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
             isChecked: checked,
             storeId: item.storeId,
         });
+        // Light haptic + spring bounce animation
+        Haptics.impact({ style: ImpactStyle.Light }).catch(() => undefined);
+        setJustChecked(true);
+        setTimeout(() => setJustChecked(false), 350);
     };
 
     const handleCheckboxClick = (e: React.MouseEvent | React.TouchEvent) => {
@@ -138,17 +146,40 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
 
     const { isSnoozed, formattedSnoozeDate } = useSnoozeStatus(item.snoozedUntil);
 
+    // Trigger Zzz animation when item transitions into snoozed state
+    useEffect(() => {
+        if (isSnoozed && !prevSnoozedRef.current) {
+            setShowZzz(true);
+            const timer = setTimeout(() => setShowZzz(false), 1600);
+            prevSnoozedRef.current = isSnoozed;
+            return () => clearTimeout(timer);
+        }
+        prevSnoozedRef.current = isSnoozed;
+    }, [isSnoozed]);
+
     return (
         <IonItem
             className={clsx(
                 isChecked && "shopping-list-item--checked",
                 item.isIdea && "shopping-list-item--idea",
-                item.isUnsure && "shopping-list-item--unsure"
+                item.isUnsure && "shopping-list-item--unsure",
+                justChecked && "shopping-list-item--just-checked"
             )}
             button={false}
         >
-            <div slot="start" className="checkbox-container" onClick={handleCheckboxClick}>
+            <div
+                slot="start"
+                className={clsx("checkbox-container", justChecked && "checkbox-container--bounce")}
+                onClick={handleCheckboxClick}
+            >
                 <IonCheckbox checked={isChecked} style={{ pointerEvents: "none" }} />
+                {showZzz && (
+                    <div className="zzz-particles" aria-hidden="true">
+                        <span className="zzz-particle zzz-particle--1">z</span>
+                        <span className="zzz-particle zzz-particle--2">z</span>
+                        <span className="zzz-particle zzz-particle--3">Z</span>
+                    </div>
+                )}
             </div>
             <IonLabel
                 className={clsx(

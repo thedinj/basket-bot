@@ -1,0 +1,68 @@
+.store-selector-wrapper {
+    position: relative;
+}
+
+.store-selector-fade {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 32px;
+    pointer-events: none;
+    z-index: 1;
+
+    &--left {
+        left: 0;
+        background: linear-gradient(
+            to right,
+            var(--ion-toolbar-background, var(--ion-background-color)),
+            transparent
+        );
+    }
+
+    &--right {
+        right: 0;
+        background: linear-gradient(
+            to left,
+            var(--ion-toolbar-background, var(--ion-background-color)),
+            transparent
+        );
+    }
+}
+
+.store-selector-tabs {
+    display: flex;
+    overflow-x: auto;
+    padding: 0 8px 4px;
+    gap: 2px;
+    // Hide scrollbar — swipe to reveal hidden tabs
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+.store-selector-tab {
+    flex: 0 0 auto;
+    padding: 6px 16px;
+    border: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: var(--ion-color-medium);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition:
+        color 0.15s ease,
+        border-color 0.15s ease;
+
+    &--active {
+        color: var(--ion-color-primary);
+        border-bottom-color: var(--ion-color-primary);
+        font-weight: 600;
+    }
+}

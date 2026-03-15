@@ -1,6 +1,11 @@
-import { IonIcon, IonText } from "@ionic/react";
-import { LLM_COLOR_ACTIVATED, LLM_ICON_SRC } from "../llm/shared";
+import { ROBOT_LOADING_MESSAGES } from "../llm/shared/constants";
 import "./LoadingFallback.css";
+import RobotLoadingContent from "./shared/RobotLoadingContent";
+
+// Keyed to the current minute so all instances show the same message during startup,
+// but it rotates each time the user opens the app at a different minute.
+const SESSION_DEFAULT_MESSAGE =
+    ROBOT_LOADING_MESSAGES[new Date().getMinutes() % ROBOT_LOADING_MESSAGES.length];
 
 interface LoadingFallbackProps {
     message?: string;
@@ -9,14 +14,7 @@ interface LoadingFallbackProps {
 const LoadingFallback: React.FC<LoadingFallbackProps> = ({ message }) => {
     return (
         <div className="loading-fallback">
-            <IonIcon
-                src={LLM_ICON_SRC}
-                className="floating-icon"
-                style={{ fontSize: 80, color: LLM_COLOR_ACTIVATED }}
-            />
-            <IonText color="medium">
-                <p>{message || "Processing... Even you must wait."}</p>
-            </IonText>
+            <RobotLoadingContent message={message ?? SESSION_DEFAULT_MESSAGE} />
         </div>
     );
 };

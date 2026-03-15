@@ -90,3 +90,94 @@
 .shopping-list-item--idea:not(.shopping-list-item--checked)::part(native) {
     box-shadow: inset 3px 0 0 var(--ion-color-warning);
 }
+
+/* Checkbox container needs relative positioning for Zzz particles */
+.checkbox-container {
+    position: relative;
+}
+
+/* === Check delight animations (reduced-motion safe) === */
+@media (prefers-reduced-motion: no-preference) {
+    /* Spring bounce on the checkbox when checked/unchecked */
+    .checkbox-container--bounce {
+        animation: checkBounce 0.32s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    @keyframes checkBounce {
+        0% {
+            transform: scale(1);
+        }
+        35% {
+            transform: scale(1.35);
+        }
+        65% {
+            transform: scale(0.88);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    /* Brief green flash on the row background when checked */
+    .shopping-list-item--just-checked::part(native) {
+        animation: checkFlash 0.35s ease-out forwards;
+    }
+
+    @keyframes checkFlash {
+        0% {
+            background-color: rgba(46, 213, 115, 0.14);
+        }
+        100% {
+            background-color: transparent;
+        }
+    }
+
+    /* === Zzz floating particles when item is snoozed === */
+    .zzz-particles {
+        position: absolute;
+        top: -4px;
+        left: 14px;
+        pointer-events: none;
+        overflow: visible;
+    }
+
+    .zzz-particle {
+        position: absolute;
+        font-size: 0.78em;
+        font-weight: 700;
+        color: var(--ion-color-secondary);
+        opacity: 0;
+        line-height: 1;
+    }
+
+    .zzz-particle--1 {
+        left: 0px;
+        animation: zzzFloat 1.2s ease-out 0ms forwards;
+    }
+
+    .zzz-particle--2 {
+        left: 10px;
+        font-size: 0.9em;
+        animation: zzzFloat 1.2s ease-out 180ms forwards;
+    }
+
+    .zzz-particle--3 {
+        left: 22px;
+        font-size: 1.05em;
+        animation: zzzFloat 1.2s ease-out 360ms forwards;
+    }
+
+    @keyframes zzzFloat {
+        0% {
+            transform: translateY(0) rotate(-8deg);
+            opacity: 0;
+        }
+        18% {
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(-38px) rotate(12deg);
+            opacity: 0;
+        }
+    }
+}

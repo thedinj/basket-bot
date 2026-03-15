@@ -25,7 +25,7 @@ export const ANIMATION_EFFECTS = {
     LASER_OBLITERATION: {
         cssClass: "laser-obliteration",
         soundPath: "/sounds/laser-zap.mp3",
-        duration: 1000, // 1 second
+        duration: 1650, // forward beam (1s) + return scan beam (0.7s, starts at 0.9s)
         haptic: true,
     } as AnimationEffect,
 

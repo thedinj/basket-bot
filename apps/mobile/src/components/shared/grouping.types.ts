@@ -71,6 +71,11 @@ export interface GroupHeader {
     labelStyle?: React.CSSProperties;
 
     /**
+     * Optional CSS class for the label element
+     */
+    labelClassName?: string;
+
+    /**
      * Optional action button/element to display in header
      */
     actionSlot?: ReactNode;

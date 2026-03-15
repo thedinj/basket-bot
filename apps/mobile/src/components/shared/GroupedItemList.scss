@@ -1,0 +1,17 @@
+// Shared header label typography for grouped lists.
+// Color overrides are applied inline since they come from semantic design tokens.
+
+.group-header-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+
+    // Sub-group headers (sections within aisles): slightly smaller and dimmer
+    &--section {
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.6px;
+        opacity: 0.75;
+    }
+}
