@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useStores } from "../../db/hooks";
 import { useShoppingListContext } from "./useShoppingListContext";
 
@@ -10,6 +10,11 @@ export const StoreSelector: React.FC = () => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
+
+    const visibleStores = useMemo(
+        () => stores?.filter((s) => !s.isHidden || s.id === selectedStoreId) ?? [],
+        [stores, selectedStoreId]
+    );
 
     const updateScrollIndicators = () => {
         const el = containerRef.current;
@@ -43,7 +48,7 @@ export const StoreSelector: React.FC = () => {
         return () => cancelAnimationFrame(raf);
     }, [selectedStoreId]);
 
-    if (!stores || stores.length <= 1) {
+    if (!stores || visibleStores.length <= 1) {
         return null;
     }
 
@@ -55,7 +60,7 @@ export const StoreSelector: React.FC = () => {
                 className="store-selector-tabs"
                 onScroll={updateScrollIndicators}
             >
-                {stores.map((store) => (
+                {visibleStores.map((store) => (
                     <button
                         key={store.id}
                         className={`store-selector-tab${

@@ -10,13 +10,12 @@ import {
     useIonAlert,
 } from "@ionic/react";
 import { add, listOutline } from "ionicons/icons";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useMemo, useState } from "react";
 import { ANIMATION_EFFECTS } from "../animations/effects";
 import { AppHeader } from "../components/layout/AppHeader";
 import { GlobalActionConfig } from "../components/layout/AppHeaderContext";
 import { GlobalActions } from "../components/layout/GlobalActions";
 import LoadingFallback from "../components/LoadingFallback";
-import ConfirmModal from "../components/shared/ConfirmModal";
 import { FabSpacer } from "../components/shared/FabSpacer";
 import { OverlayAnimation } from "../components/shared/OverlayAnimation";
 import PullToRefresh from "../components/shared/PullToRefresh";
@@ -47,9 +46,6 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     const [presentAlert] = useIonAlert();
     const [isStoreItemsModalOpen, setIsStoreItemsModalOpen] = useState(false);
     const [wasJustCleared, setWasJustCleared] = useState(false);
-    const [showMissionCompleteToast, setShowMissionCompleteToast] = useState(false);
-    const prevUncheckedCountRef = useRef<number | null>(null);
-    const prevItemCountRef = useRef<number>(0);
 
     // Laser obliteration animation
     const {
@@ -89,24 +85,6 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     if (hasTriggeredClear && checkedItems.length === 0) {
         setHasTriggeredClear(false);
     }
-
-    // Fire "All targets acquired" toast when last unchecked item gets checked
-    useEffect(() => {
-        const prev = prevUncheckedCountRef.current;
-        prevUncheckedCountRef.current = uncheckedItems.length;
-        if (prev !== null && prev > 0 && uncheckedItems.length === 0 && checkedItems.length > 0) {
-            setShowMissionCompleteToast(true);
-        }
-    }, [uncheckedItems.length, checkedItems.length]);
-
-    // Reset wasJustCleared when new items are added
-    const itemCount = items?.length ?? 0;
-    useEffect(() => {
-        if (itemCount > prevItemCountRef.current) {
-            setWasJustCleared(false);
-        }
-        prevItemCountRef.current = itemCount;
-    }, [itemCount]);
 
     const confirmClearChecked = useCallback(async () => {
         // Trigger laser animation
@@ -244,18 +222,6 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
                     isOpen={isStoreItemsModalOpen}
                     onClose={() => setIsStoreItemsModalOpen(false)}
                     storeId={storeId}
-                />
-
-                {/* Mission complete confirmation */}
-                <ConfirmModal
-                    isOpen={showMissionCompleteToast}
-                    onDidDismiss={() => setShowMissionCompleteToast(false)}
-                    title="All targets acquired."
-                    message="Ready to obliterate?"
-                    confirmText="Obliterate"
-                    cancelText="Not yet"
-                    onConfirm={confirmClearChecked}
-                    onCancel={() => setShowMissionCompleteToast(false)}
                 />
             </IonContent>
         </RefreshConfig>
