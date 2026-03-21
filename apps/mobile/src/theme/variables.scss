@@ -7,6 +7,9 @@ http://ionicframework.com/docs/theming/ */
     /* Safe area for Android navigation buttons and iOS notches */
     --app-safe-bottom: max(env(safe-area-inset-bottom), 16px);
 
+    /* Ideas - vivid yellow (light mode) */
+    --app-color-ideas: oklch(65% 0.25 103);
+
     /* Royal Purple Primary Color */
     --ion-color-primary: #6b46c1;
     --ion-color-primary-rgb: 107, 70, 193;
@@ -132,6 +135,9 @@ http://ionicframework.com/docs/theming/ */
         --ion-color-step-850: #fafcfd;
         --ion-color-step-900: #fcfdfe;
         --ion-color-step-950: #fefefe;
+
+        /* Ideas - vivid yellow (dark mode) */
+        --app-color-ideas: oklch(88% 0.22 103);
 
         /* Better borders for dark mode */
         --ion-border-color: #2d3748;

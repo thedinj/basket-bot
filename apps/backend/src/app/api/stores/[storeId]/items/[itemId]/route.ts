@@ -73,6 +73,12 @@ async function handlePut(
                 { status: 403 }
             );
         }
+        if (error.message?.startsWith("ITEM_NAME_CONFLICT")) {
+            return NextResponse.json(
+                { code: "ITEM_NAME_CONFLICT", message: error.message.replace("ITEM_NAME_CONFLICT: ", "") },
+                { status: 409 }
+            );
+        }
         return NextResponse.json(
             { code: "INTERNAL_ERROR", message: "Internal server error" },
             { status: 500 }

@@ -15,7 +15,13 @@ import {
     IonToolbar,
 } from "@ionic/react";
 import { UseMutationResult } from "@tanstack/react-query";
-import { bulbOutline, cartOutline, closeOutline, informationCircleOutline, trash } from "ionicons/icons";
+import {
+    bulbOutline,
+    cartOutline,
+    closeOutline,
+    informationCircleOutline,
+    trash,
+} from "ionicons/icons";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -24,6 +30,7 @@ import {
     useUpdateItem,
     useUpsertShoppingListItem,
 } from "../../db/hooks";
+import { ApiError } from "../../lib/api/client";
 import { isCurrentlySnoozed } from "../../utils/dateUtils";
 import ItemInfoModal from "../shared/ItemInfoModal";
 import { ItemEditorProvider } from "./ItemEditorContext";
@@ -53,6 +60,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
         control,
         handleSubmit,
         reset,
+        setError,
         setValue,
         watch,
         formState: { errors, isValid },
@@ -154,13 +162,20 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
 
             if (editingItem) {
                 // Update existing store item
-                await updateItem.mutateAsync({
-                    id: editingItem.storeItemId!,
-                    name: data.name || "",
-                    aisleId: data.aisleId || null,
-                    sectionId: data.sectionId || null,
-                    storeId,
-                });
+                try {
+                    await updateItem.mutateAsync({
+                        id: editingItem.storeItemId!,
+                        name: data.name || "",
+                        aisleId: data.aisleId || null,
+                        sectionId: data.sectionId || null,
+                        storeId,
+                    });
+                } catch (error: unknown) {
+                    if (error instanceof ApiError && error.code === "ITEM_NAME_CONFLICT") {
+                        setError("name", { type: "server", message: error.message });
+                    }
+                    return;
+                }
                 storeItemId = editingItem.storeItemId!;
             } else {
                 // Get or create store item

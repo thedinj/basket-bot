@@ -88,7 +88,7 @@
 
 /* Left accent border for idea items (connects visually to the amber Ideas header) */
 .shopping-list-item--idea:not(.shopping-list-item--checked)::part(native) {
-    box-shadow: inset 3px 0 0 var(--ion-color-warning);
+    box-shadow: inset 3px 0 0 var(--app-color-ideas);
 }
 
 /* Checkbox container needs relative positioning for Zzz particles */

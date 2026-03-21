@@ -72,6 +72,28 @@ export function getItemById(id: string): StoreItem | null {
     };
 }
 
+export function findItemByNameNorm(
+    storeId: string,
+    nameNorm: string,
+    excludeId: string
+): StoreItem | undefined {
+    const row = db
+        .prepare(
+            `SELECT id, storeId, name, nameNorm, aisleId, sectionId, usageCount, lastUsedAt, isHidden, isFavorite, createdById, updatedById, createdAt, updatedAt
+             FROM StoreItem
+             WHERE storeId = ? AND nameNorm = ? AND id != ?`
+        )
+        .get(storeId, nameNorm, excludeId) as any | undefined;
+
+    if (!row) return undefined;
+
+    return {
+        ...row,
+        isHidden: intToBool(row.isHidden),
+        isFavorite: intToBool(row.isFavorite),
+    };
+}
+
 export function getItemsByStore(storeId: string): StoreItem[] {
     const rows = db
         .prepare(

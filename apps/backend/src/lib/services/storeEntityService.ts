@@ -11,6 +11,7 @@ import type {
 import * as aisleRepo from "../repos/aisleRepo";
 import * as itemRepo from "../repos/itemRepo";
 import * as sectionRepo from "../repos/sectionRepo";
+import { normalizeItemName } from "../utils/stringUtils";
 import * as shoppingListRepo from "../repos/shoppingListRepo";
 import * as storeRepo from "../repos/storeRepo";
 
@@ -205,6 +206,12 @@ export function updateItem(params: {
     userId: string;
 }): StoreItem | null {
     verifyStoreAccess(params.storeId, params.userId);
+
+    const nameNorm = normalizeItemName(params.name);
+    const conflict = itemRepo.findItemByNameNorm(params.storeId, nameNorm, params.id);
+    if (conflict) {
+        throw new Error(`ITEM_NAME_CONFLICT: An item named "${conflict.name}" already exists in this store.`);
+    }
 
     return itemRepo.updateItem({
         id: params.id,

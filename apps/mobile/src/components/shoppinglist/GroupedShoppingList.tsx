@@ -61,13 +61,13 @@ const createIdeasGroup = (
     header: {
         label: (
             <>
-                <IonIcon icon={bulbOutline} color="warning" /> Ideas
+                <IonIcon icon={bulbOutline} style={{ color: "var(--app-color-ideas)" }} /> Ideas
             </>
         ),
         color: "light",
         sticky: true,
         labelClassName: HEADER_LABEL_CLASS,
-        labelStyle: { color: "var(--ion-color-warning)" },
+        labelStyle: { color: "var(--app-color-ideas)" },
     },
     sortOrder: IDEAS_SORT_ORDER,
     indentLevel: INDENT_LEVEL,

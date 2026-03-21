@@ -1039,6 +1039,7 @@ export function useUpdateItem() {
             });
         },
         onError: (error: Error) => {
+            if (error instanceof ApiError && error.code === "ITEM_NAME_CONFLICT") return;
             showError(`Failed to update item: ${error.message}`);
         },
     });
