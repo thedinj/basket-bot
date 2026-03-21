@@ -73,13 +73,15 @@ export function LocationSelectors<T extends FieldValues = FieldValues>({
     }, [sortedAisles]);
 
     const sectionItems: SelectableItem[] = useMemo(() => {
+        const aisleMap = new Map(aisles?.map((a) => [a.id, a.name]) ?? []);
         return (
             filteredSections?.map((section) => ({
                 id: section.id,
                 label: section.name,
+                subtitle: !currentAisleId ? aisleMap.get(section.aisleId) : undefined,
             })) || []
         );
-    }, [filteredSections]);
+    }, [filteredSections, aisles, currentAisleId]);
 
     const handleAutoCategorize = async (force = false) => {
         if (!itemName?.trim()) {

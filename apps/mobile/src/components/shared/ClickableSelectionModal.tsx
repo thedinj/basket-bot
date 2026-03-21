@@ -23,6 +23,8 @@ export interface SelectableItem {
     label: string;
     /** Optional additional search terms (not displayed in UI) */
     searchTerms?: string[];
+    /** Optional subtitle shown below the label in the modal list */
+    subtitle?: string;
 }
 
 interface ClickableSelectionModalProps {
@@ -201,7 +203,10 @@ export const ClickableSelectionModal: React.FC<
                                 onClick={() => handleItemClick(item.id)}
                                 detail={false}
                             >
-                                <IonLabel>{item.label}</IonLabel>
+                                <IonLabel>
+                                    {item.label}
+                                    {item.subtitle && <p>{item.subtitle}</p>}
+                                </IonLabel>
                                 {value === item.id && (
                                     <IonCheckbox slot="end" checked disabled />
                                 )}
