@@ -86,65 +86,63 @@ http://ionicframework.com/docs/theming/ */
     --ion-color-step-950: #010305;
 }
 
-/* Dark Mode - Activated by system preference or manual toggle */
-@media (prefers-color-scheme: dark) {
-    :root {
-        /* Royal Purple stays consistent */
-        --ion-color-primary: #7c3aed;
-        --ion-color-primary-rgb: 124, 58, 237;
-        --ion-color-primary-contrast: #ffffff;
-        --ion-color-primary-contrast-rgb: 255, 255, 255;
-        --ion-color-primary-shade: #6d33d1;
-        --ion-color-primary-tint: #894eef;
+/* Dark Mode - Activated by .ion-palette-dark on body (set by ThemeApplier) */
+body.ion-palette-dark {
+    /* Royal Purple stays consistent */
+    --ion-color-primary: #7c3aed;
+    --ion-color-primary-rgb: 124, 58, 237;
+    --ion-color-primary-contrast: #ffffff;
+    --ion-color-primary-contrast-rgb: 255, 255, 255;
+    --ion-color-primary-shade: #6d33d1;
+    --ion-color-primary-tint: #894eef;
 
-        /* Secondary - Brighter Purple for dark mode */
-        --ion-color-secondary: #a78bfa;
-        --ion-color-secondary-rgb: 167, 139, 250;
-        --ion-color-secondary-contrast: #000000;
-        --ion-color-secondary-contrast-rgb: 0, 0, 0;
-        --ion-color-secondary-shade: #937adc;
-        --ion-color-secondary-tint: #b097fb;
+    /* Secondary - Brighter Purple for dark mode */
+    --ion-color-secondary: #a78bfa;
+    --ion-color-secondary-rgb: 167, 139, 250;
+    --ion-color-secondary-contrast: #000000;
+    --ion-color-secondary-contrast-rgb: 0, 0, 0;
+    --ion-color-secondary-shade: #937adc;
+    --ion-color-secondary-tint: #b097fb;
 
-        /* Dark Mode Backgrounds */
-        --ion-background-color: #0f0f23;
-        --ion-background-color-rgb: 15, 15, 35;
+    /* Dark Mode Backgrounds */
+    --ion-background-color: #0f0f23;
+    --ion-background-color-rgb: 15, 15, 35;
 
-        --ion-text-color: #e2e8f0;
-        --ion-text-color-rgb: 226, 232, 240;
+    --ion-text-color: #e2e8f0;
+    --ion-text-color-rgb: 226, 232, 240;
 
-        /* Card/Surface backgrounds */
-        --ion-card-background: #1a1a2e;
+    /* Card/Surface backgrounds */
+    --ion-card-background: #1a1a2e;
 
-        /* Stepped background colors for layering */
-        --ion-color-step-50: #1a1a2e;
-        --ion-color-step-100: #16213e;
-        --ion-color-step-150: #1e2a47;
-        --ion-color-step-200: #2d3748;
-        --ion-color-step-250: #374151;
-        --ion-color-step-300: #4a5568;
-        --ion-color-step-350: #5a6c7d;
-        --ion-color-step-400: #718096;
-        --ion-color-step-450: #8492a6;
-        --ion-color-step-500: #a0aec0;
-        --ion-color-step-550: #b8c5d0;
-        --ion-color-step-600: #cbd5e0;
-        --ion-color-step-650: #d4dce5;
-        --ion-color-step-700: #e2e8f0;
-        --ion-color-step-750: #edf2f7;
-        --ion-color-step-800: #f7fafc;
-        --ion-color-step-850: #fafcfd;
-        --ion-color-step-900: #fcfdfe;
-        --ion-color-step-950: #fefefe;
+    /* Stepped background colors for layering */
+    --ion-color-step-50: #1a1a2e;
+    --ion-color-step-100: #16213e;
+    --ion-color-step-150: #1e2a47;
+    --ion-color-step-200: #2d3748;
+    --ion-color-step-250: #374151;
+    --ion-color-step-300: #4a5568;
+    --ion-color-step-350: #5a6c7d;
+    --ion-color-step-400: #718096;
+    --ion-color-step-450: #8492a6;
+    --ion-color-step-500: #a0aec0;
+    --ion-color-step-550: #b8c5d0;
+    --ion-color-step-600: #cbd5e0;
+    --ion-color-step-650: #d4dce5;
+    --ion-color-step-700: #e2e8f0;
+    --ion-color-step-750: #edf2f7;
+    --ion-color-step-800: #f7fafc;
+    --ion-color-step-850: #fafcfd;
+    --ion-color-step-900: #fcfdfe;
+    --ion-color-step-950: #fefefe;
 
-        /* Ideas - vivid yellow (dark mode) */
-        --app-color-ideas: oklch(88% 0.22 103);
+    /* Ideas - vivid yellow (dark mode) */
+    --app-color-ideas: oklch(88% 0.22 103);
 
-        /* Better borders for dark mode */
-        --ion-border-color: #2d3748;
+    /* Better borders for dark mode */
+    --ion-border-color: #2d3748;
 
-        /* Toolbar background */
-        --ion-toolbar-background: #1a1a2e;
-    }
+    /* Toolbar background */
+    --ion-toolbar-background: #1a1a2e;
 }
 
 /* Global safe area bottom spacing for all scrollable content */

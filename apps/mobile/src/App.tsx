@@ -8,6 +8,7 @@ import AppErrorBoundary from "./components/AppErrorBoundary";
 import Auth from "./components/Auth";
 import LoadingFallback from "./components/LoadingFallback";
 import Main from "./components/Main";
+import ThemeApplier from "./components/ThemeApplier";
 import { DatabaseProvider } from "./db/DatabaseContext";
 
 /* Core CSS required for Ionic components to work properly */
@@ -34,8 +35,8 @@ import "@ionic/react/css/text-transformation.css";
  */
 
 /* import '@ionic/react/css/palettes/dark.always.css'; */
-/* import '@ionic/react/css/palettes/dark.class.css'; */
-import "@ionic/react/css/palettes/dark.system.css";
+import "@ionic/react/css/palettes/dark.class.css";
+/* import '@ionic/react/css/palettes/dark.system.css'; */
 
 /* Theme variables */
 import "./theme/variables.scss";
@@ -99,6 +100,7 @@ const App: React.FC = () => {
                 <AppErrorBoundary>
                     <Suspense fallback={<LoadingFallback />}>
                         <DatabaseProvider>
+                            <ThemeApplier />
                             <AuthProvider>
                                 <AppRoutes />
                             </AuthProvider>

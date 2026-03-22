@@ -38,7 +38,7 @@ export const useStoreItemOperations = (storeId: string) => {
                     storeId: storeId,
                     storeItemId: item.id,
                 });
-                showSuccess("Added to shopping list");
+                showSuccess("Added to shopping list", { position: "bottom" });
             } catch {
                 showError("Failed to add to shopping list");
             }

@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+export const themeModeSchema = z.enum(["system", "light", "dark"]);
+export type ThemeMode = z.infer<typeof themeModeSchema>;
+
 // URL validation helper
 const urlSchema = z
     .string()
@@ -20,6 +23,7 @@ const urlSchema = z
 export const settingsSchema = z.object({
     openaiApiKey: z.string().optional(),
     remoteApiUrl: urlSchema,
+    themeMode: themeModeSchema.optional(),
 });
 
 export type SettingsFormData = z.infer<typeof settingsSchema>;

@@ -1,10 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { usePreference } from "../hooks/usePreference";
 import { useSaveSecureApiKey, useSecureApiKey } from "../hooks/useSecureStorage";
 import { useToast } from "../hooks/useToast";
-import { settingsSchema, type SettingsFormData } from "./settingsSchema";
+import { settingsSchema, type SettingsFormData, type ThemeMode } from "./settingsSchema";
 
 /**
  * Custom hook to manage settings form state and operations
@@ -19,6 +19,9 @@ export function useSettingsForm() {
     const { value: remoteApiUrlValue, savePreference: saveRemoteApiUrl } =
         usePreference("remote_api_url");
 
+    // Fetch theme mode from preferences (suspends until loaded)
+    const { value: themeModeValue, savePreference: saveThemeMode } = usePreference("theme_mode");
+
     // Save API key mutation
     const { mutateAsync: saveApiKey } = useSaveSecureApiKey();
 
@@ -28,46 +31,49 @@ export function useSettingsForm() {
         defaultValues: {
             openaiApiKey: undefined,
             remoteApiUrl: undefined,
+            themeMode: undefined,
         },
     });
 
-    const { reset, handleSubmit, formState } = form;
+    const { reset, formState } = form;
     const { isSubmitting } = formState;
 
-    // Update form when API key or remote URL is loaded
+    // Update form when preferences are loaded
     useEffect(() => {
         reset({
             openaiApiKey: apiKeyValue || undefined,
             remoteApiUrl: remoteApiUrlValue || undefined,
+            themeMode: (themeModeValue as ThemeMode) || undefined,
         });
-    }, [apiKeyValue, remoteApiUrlValue, reset]);
+    }, [apiKeyValue, remoteApiUrlValue, themeModeValue, reset]);
 
-    // Handle form submission
-    const onSubmit = handleSubmit(async (data: SettingsFormData) => {
-        try {
-            // Save API key to secure storage (if provided)
-            if (data.openaiApiKey && data.openaiApiKey.trim()) {
-                await saveApiKey(data.openaiApiKey.trim());
+    // Performs the actual save — takes validated form data, returns boolean success
+    const performSave = useCallback(
+        async (data: SettingsFormData): Promise<boolean> => {
+            try {
+                if (data.openaiApiKey && data.openaiApiKey.trim()) {
+                    await saveApiKey(data.openaiApiKey.trim());
+                }
+
+                const urlToSave = data.remoteApiUrl?.trim() || null;
+                await saveRemoteApiUrl(urlToSave);
+
+                await saveThemeMode(data.themeMode ?? "system");
+
+                showSuccess("Settings saved successfully");
+                return true;
+            } catch (error: unknown) {
+                showError(error instanceof Error ? error.message : "Failed to save settings");
+                console.error("Failed to save settings:", error);
+                return false;
             }
-
-            // Save remote API URL to preferences
-            const urlToSave = data.remoteApiUrl?.trim() || null;
-            await saveRemoteApiUrl(urlToSave);
-
-            // Show success message
-            showSuccess("Settings saved successfully");
-            return true;
-        } catch (error) {
-            // Show error toast
-            showError(error instanceof Error ? error.message : "Failed to save settings");
-            console.error("Failed to save settings:", error);
-        }
-        return false;
-    });
+        },
+        [saveApiKey, saveRemoteApiUrl, saveThemeMode, showError, showSuccess]
+    );
 
     return {
         form,
-        onSubmit,
+        performSave,
         isSubmitting,
     };
 }

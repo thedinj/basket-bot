@@ -48,8 +48,12 @@ export const useLoginMutation = () => {
             apiClient.setAccessToken(response.accessToken);
             apiClient.setRefreshToken(response.refreshToken);
 
-            // Invalidate any cached user data
-            queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+            // Clear all cached data on login to prevent stale data from previous sessions
+            // (similar to logout, but we keep the new auth data)
+            await queryClient.invalidateQueries();
+
+            // Clear shopping list caches specifically to prevent cross-session contamination
+            queryClient.removeQueries({ queryKey: ["shopping-list-items"] });
         },
     });
 };

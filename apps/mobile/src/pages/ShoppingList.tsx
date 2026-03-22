@@ -251,7 +251,9 @@ const ShoppingListContent: React.FC = () => {
         );
     }
 
-    return <ShoppingListWithItems storeId={selectedStoreId} />;
+    // Key forces clean unmount/remount when switching stores to prevent state contamination
+    // (animation state, modal state, closures with captured storeId in setTimeout)
+    return <ShoppingListWithItems key={selectedStoreId} storeId={selectedStoreId} />;
 };
 
 const ShoppingList: React.FC = () => {
@@ -261,7 +263,9 @@ const ShoppingList: React.FC = () => {
         <IonPage>
             <Suspense fallback={<LoadingFallback />}>
                 <ShoppingListProvider>
-                    <ShoppingListContent />
+                    <Suspense fallback={<LoadingFallback />}>
+                        <ShoppingListContent />
+                    </Suspense>
                 </ShoppingListProvider>
             </Suspense>
         </IonPage>

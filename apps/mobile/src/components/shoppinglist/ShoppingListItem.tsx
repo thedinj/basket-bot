@@ -226,7 +226,7 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                 </>
             </IonLabel>
 
-            {stores && stores.length > 1 && (
+            {stores && stores.length > 1 && !isChecked && (
                 <IonButton
                     slot="end"
                     fill="clear"
