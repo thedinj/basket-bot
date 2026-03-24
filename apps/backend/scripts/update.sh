@@ -1,9 +1,17 @@
 #!/bin/bash
 set -e
 
-# Basket Bot Backend Update Script
-# For Raspberry Pi Production Server
-# Updates running production server with minimal downtime
+# ==============================================================================
+# BASKET BOT BACKEND UPDATE SCRIPT
+# ==============================================================================
+# For Raspberry Pi Raspbian - Run as admin user
+#
+# Putty to admin@pi-server
+# `cd ~/basket-bot/apps/backend`
+# `git pull`
+# If update.sh doesn't have execute permissions, run:
+#   `chmod +x update.sh`
+# `./scripts/update.sh`
 
 echo "================================================"
 echo "Basket Bot Backend Update"

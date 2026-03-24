@@ -23,7 +23,7 @@
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         {
             "name": "Debug: Mobile (Hot-reload)",
-            "type": "chrome",
+            "type": "chrome", // "editor-browser", "chrome"
             "request": "launch",
             "url": "http://localhost:8100",
             "webRoot": "${workspaceFolder}/apps/mobile",
@@ -31,10 +31,7 @@
                 "webpack:///./src/*": "${webRoot}/src/*"
             },
             "preLaunchTask": "Dev: Mobile (Hot-reload)",
-            "runtimeArgs": [
-                "--new-window",
-                "--disable-features=IsolateOrigins,site-per-process"
-            ],
+            "runtimeArgs": ["--new-window", "--disable-features=IsolateOrigins,site-per-process"],
             "postDebugTask": "Terminate All Tasks"
         }
     ]

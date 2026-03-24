@@ -4,10 +4,26 @@
         <meta charset="UTF-8" />
         <link rel="icon" type="image/svg+xml" href="/vite.svg" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#1a1a2e" />
         <title>Basket Bot</title>
     </head>
-    <body>
+    <body class="ion-palette-dark">
+        <script>
+            // Apply theme before React renders to prevent FOUC.
+            // Body starts with ion-palette-dark (dark default).
+            // This script immediately corrects it based on the saved preference or OS setting.
+            try {
+                var saved = localStorage.getItem('CapacitorStorage.theme_mode');
+                if (saved === 'light') {
+                    document.body.classList.remove('ion-palette-dark');
+                } else if (!saved || saved === 'system') {
+                    if (!window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        document.body.classList.remove('ion-palette-dark');
+                    }
+                }
+                // saved === 'dark': keep class (already on body)
+            } catch (e) { /* keep dark on any error */ }
+        </script>
         <div id="root"></div>
         <script type="module" src="/src/main.tsx"></script>
     </body>
