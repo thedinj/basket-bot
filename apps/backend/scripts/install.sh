@@ -2,66 +2,86 @@
 set -e
 
 # ==============================================================================
-# BASKET BOT BACKEND INSTALLATION SCRIPT
+# PI-DEPLOY GENERIC INSTALLATION SCRIPT
 # ==============================================================================
-# For Raspberry Pi Raspbian - Run as admin user
+# Canonical source: basket-bot repo (apps/backend/scripts/install.sh)
+# Also installed system-wide as: /usr/local/lib/pi-deploy/install.sh
 #
-# PREREQUISITES - Getting the code onto your server:
-# ------------------------------------------------------------------------------
+# GETTING STARTED - Basket Bot Installation:
+# ------------------------------------------
 # 1. SSH into your Raspberry Pi as the admin user:
-#    ssh admin@your-pi-hostname
+#      ssh admin@your-pi-hostname
 #
-# 2. Install Node.js (v18 or higher) if not already installed:
-#    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-#    sudo apt-get install -y nodejs
-#    # Verify installation: node --version && npm --version
+# 2. Install Node.js v20 if not already installed:
+#      curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+#      sudo apt-get install -y nodejs
+#      node --version && npm --version   # verify
 #
-# 3. Navigate to your home directory (recommended location):
-#    cd ~
-#    # This takes you to /home/admin (typical for admin user on Raspbian)
-#    # You can clone to any directory you have write permissions for
-#    # Use 'pwd' to confirm your current location
+# 3. Clone basket-bot (recommended location: ~/basket-bot):
+#      cd ~
+#      git clone https://github.com/thedinj/basket-bot.git
 #
-# 4. Clone the repository from GitHub:
-#    git clone https://github.com/thedinj/basket-bot.git
-#    # This creates a new directory: ~/basket-bot
+# 4. Disable file mode change tracking:
+#      cd ~/basket-bot && git config core.filemode false
 #
-#    OR, if you've already cloned it, navigate into it and update to latest:
-#    cd ~/basket-bot
-#    git pull origin main
+# 5. Make the scripts executable and run:
+#      cd ~/basket-bot/apps/backend/scripts
+#      chmod +x install.sh update.sh bootstrap.sh
+#      ./install.sh
 #
-# 5. Configure Git to ignore file mode changes (prevents chmod from showing as change):
-#    cd ~/basket-bot
-#    git config core.filemode false
+# This script also runs bootstrap.sh at the end, which installs
+# pi-app-install and pi-app-update system-wide so you can install
+# additional apps (e.g. chance-a-maran) without re-cloning basket-bot.
 #
-# 6. Navigate to the backend scripts directory:
-#    cd apps/backend/scripts
+# INSTALLING OTHER APPS:
+# ----------------------
+# After basket-bot is installed, install other apps with:
+#   pi-app-install ~/other-app/apps/backend/scripts/deploy.config.sh
+# Or call the app's own thin-wrapper install.sh:
+#   cd ~/other-app/apps/backend/scripts && ./install.sh
 #
-# 7. Make this script executable (if not already):
-#    chmod +x install.sh
-#
-# 8. Run this installation script:
-#    ./install.sh
+# ADVANCED USAGE:
+# ---------------
+# Call directly with a different deploy.config.sh to install any app:
+#   ./install.sh /path/to/app/apps/backend/scripts/deploy.config.sh
 #
 # WHAT THIS SCRIPT DOES:
-# ------------------------------------------------------------------------------
-# - Installs dependencies (pnpm, Node.js packages)
-# - Builds the backend application
-# - Sets up the SQLite database
-# - Configures systemd service for auto-start on boot
-# - Optionally configures HTTPS with Caddy reverse proxy
+# ----------------------
+# - Installs pnpm dependencies across the monorepo
+# - Builds shared core package, backend, and (if configured) mobile web SPA
+# - Creates apps/backend/.env (prompts you to set admin credentials)
+# - Initialises the SQLite database
+# - Creates a systemd service for auto-start on boot
+# - Installs and configures Caddy (serves mobile SPA + reverse-proxies the API)
+# - Optionally configures HTTPS with Let's Encrypt
+# - Optionally installs Samba for Windows network file access
 # ==============================================================================
 
-echo "================================================"
-echo "Basket Bot Backend Installation"
-echo "================================================"
-echo ""
-
-# Get the absolute path to the project root (2 levels up from scripts/)
+# --- Load project config ---
+# Config file path: first argument OR deploy.config.sh next to this script.
+# IMPORTANT: Project root is derived from the config file's location
+# (apps/backend/scripts/deploy.config.sh → project root 3 levels up),
+# not from where this script itself lives.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+CONFIG_FILE="${1:-$SCRIPT_DIR/deploy.config.sh}"
+
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "❌ Config file not found: $CONFIG_FILE"
+    echo "   Usage: $0 [/path/to/deploy.config.sh]"
+    exit 1
+fi
+
+# shellcheck source=/dev/null
+source "$CONFIG_FILE"
+
+CONFIG_DIR="$(cd "$(dirname "$CONFIG_FILE")" && pwd)"
+PROJECT_ROOT="$(cd "$CONFIG_DIR/../../.." && pwd)"
 BACKEND_DIR="$PROJECT_ROOT/apps/backend"
 
+echo "================================================"
+echo "$APP_DISPLAY_NAME Installation"
+echo "================================================"
+echo ""
 echo "Project root: $PROJECT_ROOT"
 echo "Backend directory: $BACKEND_DIR"
 echo ""
@@ -87,7 +107,7 @@ cleanup_on_error() {
         echo "⚠️  Partial installation state. You may need to manually clean up:"
         echo "   - Firewall rules (ufw status)"
         echo "   - Samba shares (/etc/samba/smb.conf)"
-        echo "   - Caddy config (/etc/caddy/Caddyfile)"
+        echo "   - Caddy config (/etc/caddy/conf.d/$APP_SLUG.caddy)"
     fi
 }
 trap cleanup_on_error EXIT
@@ -108,14 +128,10 @@ echo "Checking for pnpm..."
 if ! command -v pnpm &> /dev/null; then
     echo "pnpm not found. Installing pnpm globally..."
 
-    # Check if npm is available
     if ! command -v npm &> /dev/null; then
         echo "❌ npm is not installed. Please install Node.js first:"
         echo "   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -"
         echo "   sudo apt-get install -y nodejs"
-        echo ""
-        echo "   Then verify installation:"
-        echo "   node --version && npm --version"
         exit 1
     fi
 
@@ -125,7 +141,7 @@ else
 fi
 echo ""
 
-# Check if Node.js is installed (v18 or higher recommended)
+# Check Node.js version
 echo "Checking Node.js version..."
 NODE_VERSION=$(node --version 2>/dev/null || echo "not found")
 if [ "$NODE_VERSION" = "not found" ]; then
@@ -197,7 +213,6 @@ if ! sudo ufw status | grep -q "Status: active"; then
         sudo ufw default allow outgoing
         echo "✓ Default policies set (deny incoming, allow outgoing)"
 
-        # Enable UFW
         echo ""
         echo "Enabling UFW firewall..."
         sudo ufw --force enable
@@ -229,8 +244,8 @@ echo "✓ Dependencies installed"
 echo ""
 
 # Build core package
-echo "Building core package..."
-if ! pnpm --filter @basket-bot/core build; then
+echo "Building core package ($CORE_PACKAGE)..."
+if ! pnpm --filter "$CORE_PACKAGE" build; then
     echo "❌ Failed to build core package"
     exit 1
 fi
@@ -255,8 +270,6 @@ if [ ! -f "$BACKEND_DIR/.env" ]; then
 else
     echo "✓ .env file already exists"
     echo "Updating NODE_ENV to production..."
-
-    # Ensure production environment
     sed -i 's|NODE_ENV="development"|NODE_ENV="production"|g' "$BACKEND_DIR/.env"
 fi
 
@@ -292,12 +305,25 @@ echo ""
 
 # Build backend (after .env is configured and validated)
 echo "Building backend..."
+cd "$PROJECT_ROOT"
 if ! pnpm build; then
     echo "❌ Backend build failed"
     exit 1
 fi
 echo "✓ Backend built"
 echo ""
+
+# Build mobile app (if configured)
+if [ "$HAS_MOBILE_APP" = true ]; then
+    echo "Building mobile web app..."
+    cd "$PROJECT_ROOT"
+    if ! pnpm --filter mobile build; then
+        echo "❌ Mobile app build failed"
+        exit 1
+    fi
+    echo "✓ Mobile web app built → $PROJECT_ROOT/$MOBILE_BUILD_DIR"
+    echo ""
+fi
 
 # Ask if user wants to enable HTTPS with Caddy
 echo "================================================"
@@ -317,16 +343,14 @@ ENABLE_HTTPS=false
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     ENABLE_HTTPS=true
 
-    # Get domain name
     echo ""
-    read -p "Enter your domain name [basketbot.ddns.net]: " DOMAIN_NAME
-    DOMAIN_NAME=${DOMAIN_NAME:-basketbot.ddns.net}
+    read -p "Enter your domain name [$DEFAULT_DOMAIN]: " DOMAIN_NAME
+    DOMAIN_NAME=${DOMAIN_NAME:-$DEFAULT_DOMAIN}
 
     if [ -z "$DOMAIN_NAME" ]; then
         echo "❌ Domain name is required for HTTPS. Skipping HTTPS setup."
         ENABLE_HTTPS=false
     else
-        # Validate domain name format (basic check)
         if ! echo "$DOMAIN_NAME" | grep -qE '^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'; then
             echo "❌ Invalid domain name format: $DOMAIN_NAME"
             echo "   Domain should be like: example.com or subdomain.example.com"
@@ -336,9 +360,10 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 fi
 echo ""
 
-# Initialize database (before service creation)
+# Initialize database
 echo "Initializing database..."
-if ! pnpm db:init; then
+cd "$BACKEND_DIR"
+if ! pnpm "$DB_INIT_SCRIPT"; then
     echo "❌ Database initialization failed"
     exit 1
 fi
@@ -346,14 +371,13 @@ echo "✓ Database initialized"
 echo ""
 
 # Create systemd service file
-SERVICE_NAME="basket-bot-backend"
 SERVICE_FILE="/etc/systemd/system/$SERVICE_NAME.service"
 SERVICE_CREATED=true
 
 echo "Creating systemd service..."
 sudo tee "$SERVICE_FILE" > /dev/null <<EOF
 [Unit]
-Description=Basket Bot Backend Service
+Description=$APP_DISPLAY_NAME Backend Service
 After=network.target
 
 [Service]
@@ -376,11 +400,17 @@ EOF
 echo "✓ Systemd service file created at $SERVICE_FILE"
 echo ""
 
-# Reload systemd, enable and start the service
+# Reload systemd, enable and start (or restart) the service
 echo "Configuring systemd service..."
 sudo systemctl daemon-reload
 sudo systemctl enable "$SERVICE_NAME"
-sudo systemctl start "$SERVICE_NAME"
+
+if sudo systemctl is-active --quiet "$SERVICE_NAME"; then
+    echo "Service already running, restarting..."
+    sudo systemctl restart "$SERVICE_NAME"
+else
+    sudo systemctl start "$SERVICE_NAME"
+fi
 echo "✓ Service enabled and started"
 echo ""
 
@@ -413,27 +443,18 @@ echo ""
 # Get port from .env file
 PORT=$(grep -E '^PORT=' "$BACKEND_DIR/.env" | cut -d '=' -f 2 | tr -d '"' || echo "3000")
 
-# Configure firewall to allow application access
+# Configure firewall to allow application port
 echo "Configuring firewall for application access..."
 
 if command -v ufw &> /dev/null && sudo ufw status | grep -q "Status: active"; then
     echo "Detected active UFW firewall"
-
-    # Always allow backend port for flexibility (direct access, debugging)
     echo "Allowing backend port $PORT..."
 
-    # Check if rule already exists
     if ! sudo ufw status | grep -q "$PORT/tcp"; then
         sudo ufw allow $PORT/tcp
         echo "✓ Firewall rule added (ufw allow $PORT/tcp)"
     else
         echo "✓ Firewall rule already exists for port $PORT"
-    fi
-
-    if [ "$ENABLE_HTTPS" = true ]; then
-        echo "✓ HTTPS mode: Backend accessible via reverse proxy and directly on port $PORT"
-    else
-        echo "✓ Direct access mode: Backend accessible on port $PORT"
     fi
 
     echo ""
@@ -442,7 +463,6 @@ if command -v ufw &> /dev/null && sudo ufw status | grep -q "Status: active"; th
 elif command -v iptables &> /dev/null; then
     echo "⚠️  UFW not active. Falling back to iptables configuration."
 
-    # Determine which ports to open
     if [ "$ENABLE_HTTPS" = true ]; then
         PORTS="80 443"
     else
@@ -458,7 +478,6 @@ elif command -v iptables &> /dev/null; then
         fi
     done
 
-    # Save iptables rules
     if command -v iptables-save &> /dev/null; then
         sudo sh -c "iptables-save > /etc/iptables/rules.v4" 2>/dev/null || true
         echo "✓ iptables rules saved"
@@ -466,33 +485,35 @@ elif command -v iptables &> /dev/null; then
 else
     echo "⚠️  No firewall detected or configured."
     echo "   For security, consider enabling UFW:"
-    echo "   1. Allow SSH: sudo ufw allow 22/tcp"
-    echo "   2. Allow app port: sudo ufw allow $PORT/tcp"
-    echo "   3. Enable firewall: sudo ufw enable"
+    echo "   1. sudo ufw allow 22/tcp"
+    echo "   2. sudo ufw allow $PORT/tcp"
+    echo "   3. sudo ufw enable"
 fi
 echo ""
 
-# Install and configure Caddy if HTTPS is enabled
-if [ "$ENABLE_HTTPS" = true ]; then
+# Install and configure Caddy
+# For apps with a mobile SPA, Caddy is always installed (not optional) since it
+# is needed to route / → static files and /api + /admin → Next.js backend.
+# For backend-only apps, Caddy is only installed when HTTPS is requested.
+INSTALL_CADDY=false
+if [ "$HAS_MOBILE_APP" = true ] || [ "$ENABLE_HTTPS" = true ]; then
+    INSTALL_CADDY=true
+fi
+
+if [ "$INSTALL_CADDY" = true ]; then
     echo "================================================"
     echo "Installing Caddy"
     echo "================================================"
     echo ""
 
-    # Check if Caddy is already installed
     if command -v caddy &> /dev/null; then
         echo "✓ Caddy is already installed ($(caddy version))"
     else
         echo "Installing Caddy..."
 
-        # Install dependencies
         sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
-
-        # Add Caddy repository
         curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
         curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
-
-        # Install Caddy
         sudo apt update
         sudo apt install -y caddy
 
@@ -500,55 +521,112 @@ if [ "$ENABLE_HTTPS" = true ]; then
     fi
     echo ""
 
-    # Create Caddyfile
-    echo "Creating Caddyfile..."
-    CADDYFILE="/etc/caddy/Caddyfile"
+    # Use per-app config file under conf.d/ — never overwrite the whole Caddyfile
+    sudo mkdir -p /etc/caddy/conf.d
 
-    sudo tee "$CADDYFILE" > /dev/null <<EOF
-# Basket Bot Backend - Automatic HTTPS
-$DOMAIN_NAME {
-    # Reverse proxy to Next.js backend
-    reverse_proxy localhost:$PORT
+    # Add import directive to Caddyfile only if not already present
+    if ! grep -q "import /etc/caddy/conf.d" /etc/caddy/Caddyfile 2>/dev/null; then
+        echo "" | sudo tee -a /etc/caddy/Caddyfile > /dev/null
+        echo "import /etc/caddy/conf.d/*.caddy" | sudo tee -a /etc/caddy/Caddyfile > /dev/null
+        echo "✓ Added import directive to /etc/caddy/Caddyfile"
+    else
+        echo "✓ /etc/caddy/Caddyfile already has import directive"
+    fi
 
-    # Enable gzip compression
+    # Determine the listen address
+    if [ "$ENABLE_HTTPS" = true ]; then
+        CADDY_LISTEN="$DOMAIN_NAME"
+    else
+        CADDY_LISTEN=":80"
+    fi
+
+    # Create log directory
+    sudo mkdir -p /var/log/caddy
+    sudo chown caddy:caddy /var/log/caddy 2>/dev/null || true
+
+    # Write app-specific Caddy config
+    APP_CADDY_FILE="/etc/caddy/conf.d/$APP_SLUG.caddy"
+    echo "Writing Caddy config to $APP_CADDY_FILE ..."
+
+    if [ "$HAS_MOBILE_APP" = true ]; then
+        # Mobile SPA app: route /api/* and /admin* to Next.js; serve SPA for everything else
+        MOBILE_BUILD_PATH="$PROJECT_ROOT/$MOBILE_BUILD_DIR"
+        sudo tee "$APP_CADDY_FILE" > /dev/null <<EOF
+# $APP_DISPLAY_NAME - generated by pi-deploy install.sh
+$CADDY_LISTEN {
+    # API and admin portal → Next.js backend
+    handle /api/* {
+        reverse_proxy localhost:$PORT
+    }
+    handle /admin* {
+        reverse_proxy localhost:$PORT
+    }
+
+    # Mobile SPA (catch-all) — static files with SPA fallback
+    handle {
+        root * $MOBILE_BUILD_PATH
+        try_files {path} /index.html
+        file_server
+    }
+
     encode gzip
 
-    # Security headers
     header {
-        # Enable HSTS (6 months)
         Strict-Transport-Security "max-age=15552000; includeSubDomains"
-        # Prevent clickjacking
         X-Frame-Options "SAMEORIGIN"
-        # Prevent MIME sniffing
         X-Content-Type-Options "nosniff"
-        # Enable XSS filter
         X-XSS-Protection "1; mode=block"
     }
 
-    # Log access
     log {
-        output file /var/log/caddy/basketbot-access.log {
+        output file /var/log/caddy/${CADDY_LOG_NAME}-access.log {
             roll_size 10mb
             roll_keep 5
         }
     }
 }
 EOF
+    else
+        # Backend-only app: simple reverse proxy
+        sudo tee "$APP_CADDY_FILE" > /dev/null <<EOF
+# $APP_DISPLAY_NAME - generated by pi-deploy install.sh
+$CADDY_LISTEN {
+    reverse_proxy localhost:$PORT
 
-    echo "✓ Caddyfile created at $CADDYFILE"
+    encode gzip
+
+    header {
+        Strict-Transport-Security "max-age=15552000; includeSubDomains"
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+    }
+
+    log {
+        output file /var/log/caddy/${CADDY_LOG_NAME}-access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+    }
+}
+EOF
+    fi
+
+    echo "✓ Caddy config written to $APP_CADDY_FILE"
     echo ""
 
-    # Create log directory
-    sudo mkdir -p /var/log/caddy
-    sudo chown caddy:caddy /var/log/caddy
-
-    # Enable and start Caddy
-    echo "Starting Caddy service..."
+    # Enable and reload Caddy
     sudo systemctl enable caddy
-    sudo systemctl restart caddy
+
+    if sudo systemctl is-active --quiet caddy; then
+        echo "Reloading Caddy config..."
+        sudo systemctl reload caddy
+    else
+        echo "Starting Caddy service..."
+        sudo systemctl start caddy
+    fi
 
     # Wait for Caddy to start (with timeout)
-    echo "Waiting for Caddy to start..."
     MAX_WAIT=10
     COUNT=0
     CADDY_STARTED=false
@@ -571,13 +649,13 @@ EOF
         echo "Recent logs:"
         sudo journalctl -u caddy -n 50 --no-pager
         echo ""
-        echo "⚠️  HTTPS setup incomplete. Backend is still accessible on port $PORT."
-        echo "   Check logs and Caddyfile configuration."
+        echo "⚠️  Caddy setup incomplete. Backend still accessible on port $PORT."
+        echo "   Check logs and $APP_CADDY_FILE configuration."
     fi
     echo ""
 fi
 
-# Optional Samba installation for network file access
+# Optional Samba installation
 echo ""
 read -p "Install Samba for network file access from Windows? (y/N): " -n 1 -r
 echo ""
@@ -599,10 +677,8 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "✓ Samba installed"
     fi
 
-    # Configure shares
     SAMBA_CONF="/etc/samba/smb.conf"
 
-    # Backup existing config if this is first time
     if [ ! -f "$SAMBA_CONF.backup" ]; then
         sudo cp "$SAMBA_CONF" "$SAMBA_CONF.backup"
         echo "✓ Samba config backed up"
@@ -611,13 +687,13 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo ""
     echo "Configuring Samba shares..."
 
-    # Share 1: Basket Bot project (read-write)
-    if ! grep -q "\[basket-bot\]" "$SAMBA_CONF"; then
+    # Share: project files (read-write)
+    if ! grep -q "\[$APP_SLUG\]" "$SAMBA_CONF"; then
         sudo tee -a "$SAMBA_CONF" > /dev/null <<EOF
 
-# Basket Bot Backend Files (read-write)
-[basket-bot]
-    comment = Basket Bot Application Files
+# $APP_DISPLAY_NAME Application Files (read-write)
+[$APP_SLUG]
+    comment = $APP_DISPLAY_NAME Application Files
     path = $PROJECT_ROOT
     browseable = yes
     read only = no
@@ -625,16 +701,14 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     directory mask = 0755
     valid users = $CURRENT_USER
 EOF
-        echo "✓ basket-bot share configured (read-write)"
+        echo "✓ $APP_SLUG share configured (read-write)"
     else
-        echo "✓ basket-bot share already exists"
+        echo "✓ $APP_SLUG share already exists"
     fi
 
-    # Share 2: System logs (read-only)
+    # Share: system logs (read-only)
     if ! grep -q "\[logs\]" "$SAMBA_CONF"; then
-        # Add admin user to adm group for log access
         sudo usermod -a -G adm "$CURRENT_USER"
-
         sudo tee -a "$SAMBA_CONF" > /dev/null <<EOF
 
 # System and Application Logs (read-only)
@@ -651,12 +725,11 @@ EOF
         echo "✓ logs share already exists"
     fi
 
-    # Share 3: Caddy config (if HTTPS enabled) - configuration only, permissions set after password
+    # Share: Caddy config (if Caddy was installed)
     CONFIGURE_CADDY_SHARE=false
-    if [ "$ENABLE_HTTPS" = true ]; then
+    if [ "$INSTALL_CADDY" = true ]; then
         if ! grep -q "\[caddy-config\]" "$SAMBA_CONF"; then
             CONFIGURE_CADDY_SHARE=true
-
             sudo tee -a "$SAMBA_CONF" > /dev/null <<EOF
 
 # Caddy Configuration Files (read-write)
@@ -681,12 +754,9 @@ EOF
     echo "(This can be the same as your Linux password for convenience)"
     echo ""
 
-    # Check if user exists in Samba database
     if ! sudo pdbedit -L | grep -q "^$CURRENT_USER:"; then
-        # User doesn't exist, add and set password interactively
         sudo smbpasswd -a "$CURRENT_USER"
     else
-        # User already exists
         echo "Samba user '$CURRENT_USER' already exists."
         read -p "Reset Samba password? (y/N): " -n 1 -r
         echo ""
@@ -695,26 +765,22 @@ EOF
         fi
     fi
 
-    # Ensure user is enabled
     sudo smbpasswd -e "$CURRENT_USER"
     echo ""
     echo "✓ Samba user configured"
 
-    # Now that password is set successfully, adjust Caddy permissions if needed
     if [ "$CONFIGURE_CADDY_SHARE" = true ]; then
         sudo chown -R caddy:"$CURRENT_USER" /etc/caddy 2>/dev/null || true
         sudo chmod -R g+w /etc/caddy 2>/dev/null || true
         echo "✓ Caddy directory permissions updated for Samba access"
     fi
 
-    # Restart Samba services
     sudo systemctl restart smbd
     sudo systemctl enable smbd
     sudo systemctl restart nmbd 2>/dev/null || true
     sudo systemctl enable nmbd 2>/dev/null || true
     echo "✓ Samba services started"
 
-    # Configure firewall for Samba
     if command -v ufw &> /dev/null && sudo ufw status | grep -q "Status: active"; then
         if ! sudo ufw status | grep -q "Samba"; then
             sudo ufw allow Samba
@@ -724,7 +790,6 @@ EOF
         fi
     fi
 
-    # Get IP address
     SERVER_IP=$(hostname -I | awk '{print $1}')
 
     echo ""
@@ -733,19 +798,42 @@ EOF
     echo "================================================"
     echo ""
     echo "From Windows File Explorer, access:"
-    echo "  \\\\$SERVER_IP\\basket-bot       (Application files - read/write)"
+    echo "  \\\\$SERVER_IP\\$APP_SLUG       (Application files - read/write)"
     echo "  \\\\$SERVER_IP\\logs              (System logs - read-only)"
-    if [ "$ENABLE_HTTPS" = true ]; then
+    if [ "$INSTALL_CADDY" = true ]; then
         echo "  \\\\$SERVER_IP\\caddy-config      (Caddy config - read/write)"
     fi
     echo ""
     echo "Username: $CURRENT_USER"
     echo "Password: (the Samba password you just set)"
     echo ""
-    echo "Tip: In Windows, you can map these as network drives for"
-    echo "     easy access. Right-click 'This PC' → 'Map network drive'"
+    echo "Tip: In Windows, map as a network drive:"
+    echo "     Right-click 'This PC' → 'Map network drive'"
     echo ""
 fi
+
+# Install shared scripts system-wide (bootstrap)
+echo "================================================"
+echo "Installing Shared Deploy Scripts"
+echo "================================================"
+echo ""
+DEPLOY_LIB="/usr/local/lib/pi-deploy"
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -f "$SELF_DIR/install.sh" ] && [ -f "$SELF_DIR/update.sh" ]; then
+    sudo mkdir -p "$DEPLOY_LIB"
+    sudo cp "$SELF_DIR/install.sh" "$DEPLOY_LIB/install.sh"
+    sudo cp "$SELF_DIR/update.sh"  "$DEPLOY_LIB/update.sh"
+    sudo chmod +x "$DEPLOY_LIB/install.sh" "$DEPLOY_LIB/update.sh"
+    sudo ln -sf "$DEPLOY_LIB/install.sh" /usr/local/bin/pi-app-install
+    sudo ln -sf "$DEPLOY_LIB/update.sh"  /usr/local/bin/pi-app-update
+    echo "✓ pi-app-install and pi-app-update installed system-wide"
+    echo "  Use these to install additional apps on this Pi:"
+    echo "  pi-app-install ~/other-app/apps/backend/scripts/deploy.config.sh"
+else
+    echo "⚠️  Could not find install.sh/update.sh next to this script — skipping bootstrap."
+fi
+echo ""
 
 # Display useful commands
 echo "================================================"
@@ -753,9 +841,9 @@ echo "Installation Complete!"
 echo "================================================"
 echo ""
 echo "The backend service is now running and will start automatically on boot."
+echo ""
 
-if [ "$ENABLE_HTTPS" = true ]; then
-    echo ""
+if [ "$INSTALL_CADDY" = true ] && [ "$ENABLE_HTTPS" = true ]; then
     echo "HTTPS Configuration:"
     echo "  Domain: https://$DOMAIN_NAME"
     echo "  Certificate: Automatic (Let's Encrypt)"
@@ -770,63 +858,60 @@ if [ "$ENABLE_HTTPS" = true ]; then
     echo "  sudo journalctl -u caddy -f        # View Caddy logs"
     echo "  caddy validate --config /etc/caddy/Caddyfile  # Test config"
     echo ""
-    echo "Test HTTPS:"
-    echo "  curl -I https://$DOMAIN_NAME"
-    echo ""
-    echo "Update mobile app configuration:"
-    echo "  Edit apps/mobile/.env and set:"
-    echo "  VITE_API_BASE_URL=https://$DOMAIN_NAME"
+    if [ "$HAS_MOBILE_APP" = true ]; then
+        echo "App accessible at:"
+        echo "  https://$DOMAIN_NAME           (mobile web app)"
+        echo "  https://$DOMAIN_NAME/admin     (admin portal)"
+        echo "  https://$DOMAIN_NAME/api/...   (API)"
+    else
+        echo "App accessible at:"
+        echo "  https://$DOMAIN_NAME"
+        echo "  https://$DOMAIN_NAME/admin     (admin portal)"
+    fi
+elif [ "$INSTALL_CADDY" = true ]; then
+    echo "Caddy is running on :80 (HTTP)."
+    if [ "$HAS_MOBILE_APP" = true ]; then
+        SERVER_IP=$(hostname -I | awk '{print $1}')
+        echo ""
+        echo "App accessible at:"
+        echo "  http://$SERVER_IP              (mobile web app)"
+        echo "  http://$SERVER_IP/admin        (admin portal)"
+        echo "  http://$SERVER_IP/api/...      (API)"
+    fi
 else
     echo "Firewall configured to allow network access on port $PORT."
-fi
-echo ""
-echo "Backend service commands:"
-echo "  sudo systemctl status $SERVICE_NAME    # Check service status"
-echo "  sudo systemctl restart $SERVICE_NAME   # Restart service"
-echo "  sudo systemctl stop $SERVICE_NAME      # Stop service"
-echo "  sudo systemctl start $SERVICE_NAME     # Start service"
-echo "  sudo journalctl -u $SERVICE_NAME -f   # View live logs"
-echo "  sudo journalctl -u $SERVICE_NAME -n 100  # View last 100 log lines"
-echo ""
-echo "After making changes to code or .env:"
-echo "  1. Rebuild: cd $BACKEND_DIR && pnpm build"
-echo "  2. Restart: sudo systemctl restart $SERVICE_NAME"
-echo ""
-
-if [ "$ENABLE_HTTPS" = true ]; then
-    echo "Backend accessible at:"
-    echo "  HTTPS:   https://$DOMAIN_NAME"
-    echo "  Local:   http://localhost:$PORT"
     echo ""
-    echo "Admin portal:"
-    echo "  https://$DOMAIN_NAME/admin"
-else
-    echo "Backend should be accessible at:"
+    echo "App accessible at:"
     echo "  Local:   http://localhost:$PORT"
     echo "  Network: http://$(hostname -I | awk '{print $1}'):$PORT"
-    echo ""
-    echo "Admin portal:"
-    echo "  http://localhost:$PORT/admin"
+    echo "  Admin:   http://localhost:$PORT/admin"
 fi
-
 echo ""
-echo "Environment file location: $BACKEND_DIR/.env"
-echo "Database location: $BACKEND_DIR/database.db"
 
-if [ "$ENABLE_HTTPS" = true ]; then
-    echo "Caddyfile location: /etc/caddy/Caddyfile"
-    echo "Caddy logs: /var/log/caddy/basketbot-access.log"
-    echo ""
-    echo "For detailed HTTPS setup documentation, see:"
-    echo "  $PROJECT_ROOT/docs/HTTPS_SETUP.md"
+echo "Backend service commands:"
+echo "  sudo systemctl status $SERVICE_NAME    # Check status"
+echo "  sudo systemctl restart $SERVICE_NAME   # Restart"
+echo "  sudo systemctl stop $SERVICE_NAME      # Stop"
+echo "  sudo systemctl start $SERVICE_NAME     # Start"
+echo "  sudo journalctl -u $SERVICE_NAME -f    # Live logs"
+echo "  sudo journalctl -u $SERVICE_NAME -n 100  # Last 100 log lines"
+echo ""
+echo "After making code or .env changes:"
+echo "  Run: cd $PROJECT_ROOT && ./apps/backend/scripts/update.sh"
+echo "  Or:  pi-app-update $CONFIG_FILE"
+echo ""
+echo "Environment file: $BACKEND_DIR/.env"
+echo "Database:         $BACKEND_DIR/database.db"
+if [ "$INSTALL_CADDY" = true ]; then
+    echo "Caddy site config: /etc/caddy/conf.d/$APP_SLUG.caddy"
+    echo "Caddy access log:  /var/log/caddy/${CADDY_LOG_NAME}-access.log"
 fi
-
 echo ""
+
 echo "================================================"
 echo "Firewall Configuration"
 echo "================================================"
 echo ""
-
 if command -v ufw &> /dev/null && sudo ufw status | grep -q "Status: active"; then
     echo "UFW Firewall Status:"
     sudo ufw status numbered | head -n 10
@@ -859,9 +944,9 @@ if [ "$INSTALL_SAMBA" = true ]; then
     echo "  3. Enter credentials when prompted"
     echo ""
     echo "Available shares:"
-    echo "  \\\\$SERVER_IP\\basket-bot       (read/write)"
+    echo "  \\\\$SERVER_IP\\$APP_SLUG       (read/write)"
     echo "  \\\\$SERVER_IP\\logs              (read-only)"
-    if [ "$ENABLE_HTTPS" = true ]; then
+    if [ "$INSTALL_CADDY" = true ]; then
         echo "  \\\\$SERVER_IP\\caddy-config      (read/write)"
     fi
     echo ""
@@ -872,16 +957,12 @@ if [ "$INSTALL_SAMBA" = true ]; then
     echo "  sudo systemctl restart smbd      # Restart Samba"
     echo "  sudo smbpasswd $CURRENT_USER     # Change Samba password"
     echo "  sudo nano /etc/samba/smb.conf    # Edit Samba config"
-    echo ""
-    echo "To edit files remotely:"
-    echo "  - Use Notepad++ or VS Code to open files directly from network share"
-    echo "  - Or map network drive: Right-click 'This PC' → 'Map network drive'"
 fi
 
 echo ""
 
 # Make update script executable
-chmod +x "$BACKEND_DIR/scripts/update.sh"
+chmod +x "$CONFIG_DIR/update.sh" 2>/dev/null || true
 
 echo ""
 echo "================================================"
@@ -895,25 +976,18 @@ echo "   sqlite3 $BACKEND_DIR/database.db"
 echo ""
 echo "2. Common commands (run inside sqlite3):"
 echo "   .tables                      # List all tables"
-echo "   .schema User                 # Show User table schema"
-echo "   .schema                      # Show schema for all tables"
+echo "   .schema <table>              # Show table schema"
 echo "   .headers on                  # Enable column headers"
-echo "   .mode column                 # Enable column-aligned output"
+echo "   .mode column                 # Column-aligned output"
+echo "   .quit                        # Exit sqlite3"
 echo ""
-echo "3. Query examples:"
-echo "   SELECT COUNT(*) FROM User;                    # Count total users"
-echo "   SELECT id, email, name FROM User;             # List all users"
-echo "   SELECT * FROM User WHERE email LIKE '%admin%'; # Find admin users"
-echo "   SELECT COUNT(*) FROM Store;                   # Count stores"
-echo "   SELECT * FROM Household;                      # View all households"
-echo "   SELECT * FROM RefreshToken;                   # View active tokens"
+echo "3. Useful queries:"
+echo "   SELECT COUNT(*) FROM users;"
+echo "   SELECT id, email FROM users;"
+echo "   SELECT * FROM refresh_tokens LIMIT 10;"
 echo ""
-echo "4. Exit sqlite3:"
-echo "   .quit"
-echo ""
-echo "Quick one-liner examples (no need to enter sqlite3 shell):"
-echo "   sqlite3 $BACKEND_DIR/database.db 'SELECT COUNT(*) FROM User;'"
-echo "   sqlite3 $BACKEND_DIR/database.db 'SELECT email, name FROM User;'"
+echo "Quick one-liner:"
+echo "   sqlite3 $BACKEND_DIR/database.db 'SELECT email FROM users;'"
 echo ""
 echo "================================================"
 echo ""

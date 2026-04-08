@@ -33,7 +33,10 @@
         "**/.next": true,
         "**/.turbo": true,
         "**/coverage": true,
-        "pnpm-lock.yaml": true
+        "pnpm-lock.yaml": true,
+        "**/.agents/**": true,
+        "**/.claude/**": true,
+        "**/.github/**": true
     },
     "terminal.integrated.defaultProfile.windows": "PowerShell",
     "terminal.integrated.cwd": "${workspaceFolder}",

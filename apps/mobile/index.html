@@ -13,16 +13,18 @@
             // Body starts with ion-palette-dark (dark default).
             // This script immediately corrects it based on the saved preference or OS setting.
             try {
-                var saved = localStorage.getItem('CapacitorStorage.theme_mode');
-                if (saved === 'light') {
-                    document.body.classList.remove('ion-palette-dark');
-                } else if (!saved || saved === 'system') {
-                    if (!window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                        document.body.classList.remove('ion-palette-dark');
+                var saved = localStorage.getItem("CapacitorStorage.theme_mode");
+                if (saved === "light") {
+                    document.body.classList.remove("ion-palette-dark");
+                } else if (!saved || saved === "system") {
+                    if (!window.matchMedia("(prefers-color-scheme: dark)").matches) {
+                        document.body.classList.remove("ion-palette-dark");
                     }
                 }
                 // saved === 'dark': keep class (already on body)
-            } catch (e) { /* keep dark on any error */ }
+            } catch (e) {
+                /* keep dark on any error */
+            }
         </script>
         <div id="root"></div>
         <script type="module" src="/src/main.tsx"></script>

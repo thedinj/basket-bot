@@ -2,19 +2,61 @@
 set -e
 
 # ==============================================================================
-# BASKET BOT BACKEND UPDATE SCRIPT
+# PI-DEPLOY GENERIC UPDATE SCRIPT
 # ==============================================================================
-# For Raspberry Pi Raspbian - Run as admin user
+# Canonical source: basket-bot repo (apps/backend/scripts/update.sh)
+# Also installed system-wide as: /usr/local/lib/pi-deploy/update.sh
 #
-# Putty to admin@pi-server
-# `cd ~/basket-bot/apps/backend`
-# `git pull`
-# If update.sh doesn't have execute permissions, run:
-#   `chmod +x update.sh`
-# `./scripts/update.sh`
+# GETTING STARTED - Updating Basket Bot:
+# ----------------------------------------
+# 1. SSH into your Raspberry Pi:
+#      ssh admin@your-pi-hostname
+#
+# 2. Navigate to the scripts directory:
+#      cd ~/basket-bot/apps/backend/scripts
+#
+# 3. If update.sh doesn't have execute permissions:
+#      chmod +x update.sh
+#
+# 4. Run the update:
+#      ./update.sh
+#
+# UPDATING OTHER APPS:
+# --------------------
+# After the system-wide scripts are installed, update any app with:
+#   pi-app-update ~/other-app/apps/backend/scripts/deploy.config.sh
+# Or use the app's own thin-wrapper update.sh:
+#   cd ~/other-app/apps/backend/scripts && ./update.sh
+#
+# WHAT THIS SCRIPT DOES:
+# ----------------------
+# - Backs up the SQLite database
+# - Pulls the latest code from git
+# - Rebuilds core package, backend, and (if configured) mobile web app
+# - Stops the service, runs any pending migrations, then restarts
+# - Runs a health check; automatically rolls back on failure
+# - Cleans up old backups (retains the last 10)
+# ==============================================================================
+
+# --- Load project config ---
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_FILE="${1:-$SCRIPT_DIR/deploy.config.sh}"
+
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "❌ Config file not found: $CONFIG_FILE"
+    echo "   Usage: $0 [/path/to/deploy.config.sh]"
+    exit 1
+fi
+
+# shellcheck source=/dev/null
+source "$CONFIG_FILE"
+
+CONFIG_DIR="$(cd "$(dirname "$CONFIG_FILE")" && pwd)"
+PROJECT_ROOT="$(cd "$CONFIG_DIR/../../.." && pwd)"
+BACKEND_DIR="$PROJECT_ROOT/apps/backend"
 
 echo "================================================"
-echo "Basket Bot Backend Update"
+echo "$APP_DISPLAY_NAME Update"
 echo "================================================"
 echo ""
 
@@ -25,16 +67,6 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Get the absolute path to the project root (2 levels up from scripts/)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-BACKEND_DIR="$PROJECT_ROOT/apps/backend"
-CORE_DIR="$PROJECT_ROOT/packages/core"
-
-# Service name
-SERVICE_NAME="basket-bot-backend"
-
-# Backup directory
 BACKUP_DIR="$BACKEND_DIR/backups"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
@@ -49,11 +81,10 @@ echo ""
 echo -e "${BLUE}[1/10] Running pre-flight checks...${NC}"
 echo ""
 
-# Check if running as correct user
 CURRENT_USER=$(whoami)
 echo "Running as user: $CURRENT_USER"
 
-# Check Node.js version
+# Check Node.js
 echo "Checking Node.js version..."
 NODE_VERSION=$(node --version 2>/dev/null || echo "not found")
 if [ "$NODE_VERSION" = "not found" ]; then
@@ -72,7 +103,7 @@ else
     echo -e "${GREEN}✓${NC} pnpm version: $(pnpm --version)"
 fi
 
-# Check if service exists and is running
+# Check service exists
 echo "Checking service status..."
 if ! systemctl list-units --type=service --all | grep -q "$SERVICE_NAME"; then
     echo -e "${RED}❌ Service '$SERVICE_NAME' does not exist.${NC}"
@@ -92,7 +123,7 @@ else
     echo -e "${GREEN}✓${NC} Service is running"
 fi
 
-# Check if in git repository
+# Check git repo
 cd "$PROJECT_ROOT"
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
     echo -e "${RED}❌ Not a git repository.${NC}"
@@ -131,7 +162,6 @@ if [ ! -f "$ENV_FILE" ]; then
     exit 1
 fi
 
-# Extract required variables from .env.example (non-empty, non-comment lines with =)
 REQUIRED_VARS=(
     "JWT_SECRET"
     "ADMIN_EMAIL"
@@ -145,7 +175,6 @@ for VAR in "${REQUIRED_VARS[@]}"; do
     if ! grep -q "^${VAR}=" "$ENV_FILE"; then
         MISSING_VARS+=("$VAR")
     else
-        # Check if value is not empty (not just VAR="" or VAR='')
         VAR_VALUE=$(grep "^${VAR}=" "$ENV_FILE" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
         if [ -z "$VAR_VALUE" ]; then
             MISSING_VARS+=("$VAR (empty)")
@@ -167,11 +196,9 @@ fi
 echo "Checking for new environment variables..."
 NEW_VARS=()
 while IFS= read -r line; do
-    # Skip comments and empty lines
     if [[ $line =~ ^#.*$ ]] || [[ -z $line ]]; then
         continue
     fi
-    # Extract variable name
     if [[ $line =~ ^([A-Z_]+)= ]]; then
         VAR_NAME="${BASH_REMATCH[1]}"
         if ! grep -q "^${VAR_NAME}=" "$ENV_FILE"; then
@@ -206,15 +233,12 @@ echo ""
 echo -e "${BLUE}[3/10] Creating backup...${NC}"
 echo ""
 
-# Create backup directory if it doesn't exist
 mkdir -p "$BACKUP_DIR"
 
-# Record current git commit
 CURRENT_COMMIT=$(git rev-parse HEAD)
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 echo "Current commit: $CURRENT_COMMIT ($CURRENT_BRANCH)"
 
-# Backup database
 DB_PATH="$BACKEND_DIR/database.db"
 
 if [ -f "$DB_PATH" ]; then
@@ -225,7 +249,6 @@ else
     echo -e "${YELLOW}⚠️  Database file not found at $DB_PATH (this may be OK for a new installation)${NC}"
 fi
 
-# Save commit info for rollback
 echo "$CURRENT_COMMIT" > "$BACKUP_DIR/last-commit-$TIMESTAMP.txt"
 echo -e "${GREEN}✓${NC} Backup completed"
 echo ""
@@ -237,7 +260,6 @@ echo ""
 echo -e "${BLUE}[4/10] Pulling latest code...${NC}"
 echo ""
 
-# Stash any uncommitted changes
 STASH_NEEDED=false
 if ! git diff-index --quiet HEAD --; then
     echo "Stashing uncommitted changes..."
@@ -245,7 +267,6 @@ if ! git diff-index --quiet HEAD --; then
     STASH_NEEDED=true
 fi
 
-# Pull latest code
 echo "Fetching updates from origin/$CURRENT_BRANCH..."
 git fetch origin
 git pull origin "$CURRENT_BRANCH"
@@ -260,7 +281,6 @@ else
     git log --oneline "$CURRENT_COMMIT..$NEW_COMMIT"
 fi
 
-# Restore stashed changes if any
 if [ "$STASH_NEEDED" = true ]; then
     echo ""
     echo "Restoring stashed changes..."
@@ -283,8 +303,8 @@ pnpm install
 echo -e "${GREEN}✓${NC} Dependencies updated"
 echo ""
 
-echo "Building core package..."
-pnpm --filter @basket-bot/core build
+echo "Building core package ($CORE_PACKAGE)..."
+pnpm --filter "$CORE_PACKAGE" build
 echo -e "${GREEN}✓${NC} Core package built"
 echo ""
 
@@ -293,6 +313,14 @@ cd "$BACKEND_DIR"
 pnpm build
 echo -e "${GREEN}✓${NC} Backend built"
 echo ""
+
+if [ "$HAS_MOBILE_APP" = true ]; then
+    echo "Building mobile web app..."
+    cd "$PROJECT_ROOT"
+    pnpm --filter mobile build
+    echo -e "${GREEN}✓${NC} Mobile web app built"
+    echo ""
+fi
 
 # ================================================================
 # STOP SERVICE
@@ -317,12 +345,10 @@ echo ""
 echo -e "${BLUE}[7/10] Running database migrations...${NC}"
 echo ""
 
-# Check if migrations exist
 MIGRATIONS_DIR="$BACKEND_DIR/src/db/migrations"
 if [ -d "$MIGRATIONS_DIR" ] && [ -n "$(ls -A $MIGRATIONS_DIR 2>/dev/null)" ]; then
     echo "Found migrations directory, running migrations..."
     cd "$BACKEND_DIR"
-    # This assumes a migration script exists - adjust as needed
     if grep -q '"db:migrate"' package.json; then
         pnpm db:migrate
         echo -e "${GREEN}✓${NC} Migrations completed"
@@ -332,7 +358,7 @@ if [ -d "$MIGRATIONS_DIR" ] && [ -n "$(ls -A $MIGRATIONS_DIR 2>/dev/null)" ]; th
         read -p "Press Enter to continue..."
     fi
 else
-    echo "No migrations directory found, skipping"
+    echo "No migrations found, skipping"
     echo -e "${GREEN}✓${NC} No migrations to run"
 fi
 echo ""
@@ -347,7 +373,6 @@ echo ""
 echo "Starting $SERVICE_NAME..."
 sudo systemctl start "$SERVICE_NAME"
 
-# Wait for service to start
 echo "Waiting for service to start..."
 sleep 5
 
@@ -361,7 +386,6 @@ echo ""
 echo -e "${BLUE}[9/10] Running health checks...${NC}"
 echo ""
 
-# Check if service is active
 SERVICE_STATUS=$(systemctl is-active "$SERVICE_NAME" 2>/dev/null || echo "failed")
 if [ "$SERVICE_STATUS" != "active" ]; then
     echo -e "${RED}❌ Service failed to start (status: $SERVICE_STATUS)${NC}"
@@ -388,7 +412,7 @@ if [ "$SERVICE_STATUS" != "active" ]; then
 
     echo "Rebuilding previous version..."
     pnpm install
-    pnpm --filter @basket-bot/core build
+    pnpm --filter "$CORE_PACKAGE" build
     cd "$BACKEND_DIR"
     pnpm build
 
@@ -409,11 +433,10 @@ fi
 
 echo -e "${GREEN}✓${NC} Service is active"
 
-# Test API health endpoint (if it exists)
+# Test API health endpoint
 PORT=$(grep "^PORT=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "3000")
 echo "Testing API endpoint on port $PORT..."
 
-# Retry up to 5 times with 3 seconds between attempts
 MAX_RETRIES=5
 RETRY_COUNT=0
 HTTP_STATUS="000"
@@ -424,17 +447,14 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     fi
     sleep 3
 
-    echo "Running: curl --max-time 10 -s -o /dev/null -w \"%{http_code}\" \"http://localhost:$PORT/api/health\""
     HTTP_STATUS=$(curl --max-time 10 -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT/api/health" 2>/dev/null || true)
 
-    # If curl completely failed, HTTP_STATUS might be empty or malformed
     if [ -z "$HTTP_STATUS" ] || [ ${#HTTP_STATUS} -ne 3 ]; then
         HTTP_STATUS="000"
     fi
 
     echo "Response code: $HTTP_STATUS"
 
-    # Break on success
     if [ "$HTTP_STATUS" = "200" ]; then
         break
     fi
@@ -452,7 +472,6 @@ else
     echo -e "${YELLOW}⚠️  Unexpected health check response (HTTP $HTTP_STATUS)${NC}"
 fi
 
-# Check recent logs for errors
 echo ""
 echo "Recent service logs:"
 sudo journalctl -u "$SERVICE_NAME" -n 20 --no-pager | tail -10
@@ -468,7 +487,6 @@ echo ""
 echo -e "${BLUE}[10/10] Cleanup...${NC}"
 echo ""
 
-# Keep only the last 10 backups
 echo "Cleaning old backups (keeping last 10)..."
 cd "$BACKUP_DIR"
 ls -t database-backup-*.db 2>/dev/null | tail -n +11 | xargs -r rm
@@ -489,10 +507,12 @@ echo "Summary:"
 echo "  • Previous commit: $CURRENT_COMMIT"
 echo "  • New commit: $NEW_COMMIT"
 echo "  • Service status: $(systemctl is-active $SERVICE_NAME)"
-echo "  • Backup location: $BACKUP_DB"
+if [ -n "$BACKUP_DB" ]; then
+    echo "  • Backup location: $BACKUP_DB"
+fi
 echo ""
 echo "Useful commands:"
-echo "  • View logs: sudo journalctl -u $SERVICE_NAME -f"
-echo "  • Check status: sudo systemctl status $SERVICE_NAME"
-echo "  • Restart service: sudo systemctl restart $SERVICE_NAME"
+echo "  • View logs:     sudo journalctl -u $SERVICE_NAME -f"
+echo "  • Check status:  sudo systemctl status $SERVICE_NAME"
+echo "  • Restart:       sudo systemctl restart $SERVICE_NAME"
 echo ""
