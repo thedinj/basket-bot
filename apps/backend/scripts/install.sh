@@ -234,6 +234,43 @@ echo ""
 # Navigate to project root
 cd "$PROJECT_ROOT"
 
+# ================================================================
+# STOP SERVICE (if running) — prevents file-lock/resource conflicts
+# during Vite and backend builds on a re-install
+# ================================================================
+
+echo "Checking if service is already running..."
+if systemctl list-units --type=service --all 2>/dev/null | grep -q "$SERVICE_NAME"; then
+    if sudo systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
+        echo "Service '$SERVICE_NAME' is running — stopping before build..."
+        sudo systemctl stop "$SERVICE_NAME"
+        echo "✓ Service stopped"
+    else
+        echo "✓ Service exists but is not running"
+    fi
+else
+    echo "✓ No existing service found (fresh install)"
+fi
+echo ""
+
+# ================================================================
+# BACKUP DATABASE (if one already exists)
+# ================================================================
+
+BACKUP_DIR="$BACKEND_DIR/backups"
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+DB_PATH="$BACKEND_DIR/database.db"
+BACKUP_DB=""   # may be set below; used in cleanup_on_error message
+
+if [ -f "$DB_PATH" ]; then
+    echo "Backing up existing database before re-install..."
+    mkdir -p "$BACKUP_DIR"
+    BACKUP_DB="$BACKUP_DIR/database-backup-$TIMESTAMP.db"
+    cp "$DB_PATH" "$BACKUP_DB"
+    echo "✓ Database backed up to: $BACKUP_DB"
+    echo ""
+fi
+
 # Install dependencies
 echo "Installing dependencies..."
 if ! pnpm install; then

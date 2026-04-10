@@ -495,6 +495,21 @@ BACKUP_COUNT=$(ls -1 database-backup-*.db 2>/dev/null | wc -l)
 echo -e "${GREEN}✓${NC} Cleanup complete ($BACKUP_COUNT backups retained)"
 echo ""
 
+echo "Updating shared deploy scripts system-wide..."
+DEPLOY_LIB="/usr/local/lib/pi-deploy"
+if [ -f "$SCRIPT_DIR/install.sh" ] && [ -f "$SCRIPT_DIR/update.sh" ]; then
+    sudo mkdir -p "$DEPLOY_LIB"
+    sudo cp "$SCRIPT_DIR/install.sh" "$DEPLOY_LIB/install.sh"
+    sudo cp "$SCRIPT_DIR/update.sh"  "$DEPLOY_LIB/update.sh"
+    sudo chmod +x "$DEPLOY_LIB/install.sh" "$DEPLOY_LIB/update.sh"
+    sudo ln -sf "$DEPLOY_LIB/install.sh" /usr/local/bin/pi-app-install
+    sudo ln -sf "$DEPLOY_LIB/update.sh"  /usr/local/bin/pi-app-update
+    echo -e "${GREEN}✓${NC} pi-app-install and pi-app-update updated system-wide"
+else
+    echo -e "${YELLOW}⚠️  install.sh/update.sh not found next to this script — skipping bootstrap${NC}"
+fi
+echo ""
+
 # ================================================================
 # SUMMARY
 # ================================================================
