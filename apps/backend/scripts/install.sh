@@ -584,6 +584,37 @@ if [ "$INSTALL_CADDY" = true ]; then
     sudo mkdir -p /var/log/caddy
     sudo chown caddy:caddy /var/log/caddy 2>/dev/null || true
 
+    # Remove any legacy inline site block for this domain from the main Caddyfile.
+    # Old installs wrote the block directly into Caddyfile; now we keep it in conf.d/.
+    # Having it in both places causes "ambiguous site definition" on reload.
+    if sudo grep -qE "^${CADDY_LISTEN//./\\.}[[:space:]]*\{|^${CADDY_LISTEN//./\\.}\{" /etc/caddy/Caddyfile 2>/dev/null; then
+        echo "Found legacy inline '$CADDY_LISTEN' block in Caddyfile — removing (migrating to conf.d/)..."
+        TMPPY=$(mktemp /tmp/caddy_clean_XXXXXX.py)
+        cat > "$TMPPY" <<'PYEOF'
+import sys, re
+target, path = sys.argv[1], sys.argv[2]
+with open(path) as f:
+    lines = f.readlines()
+result, skip, depth = [], False, 0
+for line in lines:
+    s = line.strip()
+    if not skip and re.match(re.escape(target) + r'\s*\{', s):
+        skip, depth = True, s.count('{') - s.count('}')
+        continue
+    if skip:
+        depth += s.count('{') - s.count('}')
+        if depth <= 0:
+            skip = False
+        continue
+    result.append(line)
+with open(path, 'w') as f:
+    f.writelines(result)
+PYEOF
+        sudo python3 "$TMPPY" "$CADDY_LISTEN" /etc/caddy/Caddyfile
+        rm -f "$TMPPY"
+        echo "✓ Legacy inline block removed from Caddyfile"
+    fi
+
     # Write app-specific Caddy config
     APP_CADDY_FILE="/etc/caddy/conf.d/$APP_SLUG.caddy"
     echo "Writing Caddy config to $APP_CADDY_FILE ..."
@@ -655,15 +686,28 @@ EOF
     echo "✓ Caddy config written to $APP_CADDY_FILE"
     echo ""
 
-    # Enable and reload Caddy
-    sudo systemctl enable caddy
-
-    if sudo systemctl is-active --quiet caddy; then
-        echo "Reloading Caddy config..."
-        sudo systemctl reload caddy
+    # Validate config before touching the live service — surfaces syntax errors
+    echo "Validating Caddy config..."
+    if ! sudo caddy validate --config /etc/caddy/Caddyfile 2>&1; then
+        echo ""
+        echo "⚠️  Caddy config validation failed (see above). Skipping Caddy reload."
+        echo "   Fix $APP_CADDY_FILE, then run: sudo systemctl reload caddy"
+        CADDY_STARTED=false
     else
-        echo "Starting Caddy service..."
-        sudo systemctl start caddy
+        echo "✓ Caddy config valid"
+        echo ""
+
+        # Enable and reload/start Caddy — use || true so a Caddy failure does NOT
+        # abort the install via set -e; the CADDY_STARTED check below handles it.
+        sudo systemctl enable caddy
+
+        if sudo systemctl is-active --quiet caddy; then
+            echo "Reloading Caddy config..."
+            sudo systemctl reload caddy || true
+        else
+            echo "Starting Caddy service..."
+            sudo systemctl start caddy || true
+        fi
     fi
 
     # Wait for Caddy to start (with timeout)
