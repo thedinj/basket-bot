@@ -341,8 +341,11 @@ echo "✓ .env configuration validated"
 echo ""
 
 # Build backend (after .env is configured and validated)
+# Run from BACKEND_DIR (not PROJECT_ROOT) so pnpm executes only the backend
+# build script rather than triggering turbo's full pipeline, which would run
+# backend + mobile in parallel and exhaust memory on low-RAM devices.
 echo "Building backend..."
-cd "$PROJECT_ROOT"
+cd "$BACKEND_DIR"
 if ! pnpm build; then
     echo "❌ Backend build failed"
     exit 1
