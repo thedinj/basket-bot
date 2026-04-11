@@ -386,15 +386,20 @@ mkdir -p "$BUILD_CACHE_DIR"
 
 CURRENT_HEAD=$(git rev-parse HEAD)
 
-# needs_rebuild <name> <path>...
-#   Returns 0 (rebuild needed) if: no prior build marker, stashed local
-#   changes were present, or tracked files changed since last build.
+# needs_rebuild <name> [--artifact <dir>] <path>...
+#   Returns 0 (rebuild needed) if: no prior build marker, artifact dir is
+#   missing, stashed local changes were present, or tracked files changed.
 needs_rebuild() {
     local name="$1"; shift
+    local artifact=""
+    if [ "${1:-}" = "--artifact" ]; then artifact="$2"; shift 2; fi
     local last_built
     last_built=$(cat "$BUILD_CACHE_DIR/last-build-$name" 2>/dev/null || true)
     if [ -z "$last_built" ] || [ "$STASH_NEEDED" = true ]; then
         return 0
+    fi
+    if [ -n "$artifact" ] && [ ! -d "$artifact" ]; then
+        return 0  # build output missing — marker is stale
     fi
     ! git diff --quiet "$last_built" "$CURRENT_HEAD" -- "$@" 2>/dev/null
 }
@@ -408,27 +413,38 @@ REBUILD_BACKEND=false
 REBUILD_MOBILE=false
 
 if [ "$SKIP_BACKEND" = true ] && [ "$SKIP_FRONTEND" = true ]; then
-    echo "Skipping all builds (--skip-builds)"
-elif needs_rebuild "core" packages/; then
-    REBUILD_CORE=true
-    [ "$SKIP_BACKEND" = false ]  && REBUILD_BACKEND=true
-    [ "$SKIP_FRONTEND" = false ] && REBUILD_MOBILE=true
-    echo "Core package changed — rebuilding all"
+    # --skip-builds: nothing to do
+    echo "All builds skipped (--skip-builds)"
+elif [ "$SKIP_BACKEND" = true ]; then
+    # Explicit frontend-only update — build mobile unconditionally.
+    # Also rebuild core if it changed (mobile may depend on it).
+    needs_rebuild "core" packages/ && REBUILD_CORE=true
+    REBUILD_MOBILE=true
+    echo "Building frontend (--skip-backend)"
+elif [ "$SKIP_FRONTEND" = true ]; then
+    # Explicit backend-only update — build backend unconditionally.
+    needs_rebuild "core" packages/ && REBUILD_CORE=true
+    REBUILD_BACKEND=true
+    echo "Building backend (--skip-frontend)"
 else
-    if [ "$SKIP_BACKEND" = false ] && needs_rebuild "backend" apps/backend/src/ apps/backend/package.json apps/backend/tsconfig*.json pnpm-lock.yaml; then
-        REBUILD_BACKEND=true
-        echo "Backend changed — rebuilding backend"
-    fi
-    if [ "$SKIP_FRONTEND" = false ] && [ "$HAS_MOBILE_APP" = true ] && needs_rebuild "mobile" apps/mobile/src/ apps/mobile/package.json apps/mobile/tsconfig*.json apps/mobile/vite.config.* pnpm-lock.yaml; then
-        REBUILD_MOBILE=true
-        echo "Mobile app changed — rebuilding mobile"
+    # No flags: use incremental detection.
+    if needs_rebuild "core" packages/; then
+        REBUILD_CORE=true; REBUILD_BACKEND=true; REBUILD_MOBILE=true
+        echo "Core package changed — rebuilding all"
+    else
+        if needs_rebuild "backend" --artifact "$BACKEND_DIR/.next" apps/backend/src/ apps/backend/package.json apps/backend/tsconfig*.json pnpm-lock.yaml; then
+            REBUILD_BACKEND=true
+            echo "Backend changed — rebuilding backend"
+        fi
+        if [ "$HAS_MOBILE_APP" = true ] && needs_rebuild "mobile" --artifact "$PROJECT_ROOT/$MOBILE_BUILD_DIR" apps/mobile/src/ apps/mobile/package.json apps/mobile/tsconfig*.json apps/mobile/vite.config.* pnpm-lock.yaml; then
+            REBUILD_MOBILE=true
+            echo "Mobile app changed — rebuilding mobile"
+        fi
     fi
 fi
 
-[ "$SKIP_BACKEND"  = true ] && echo "Backend build skipped (--skip-backend)"
-[ "$SKIP_FRONTEND" = true ] && echo "Frontend build skipped (--skip-frontend)"
 if [ "$REBUILD_CORE" = false ] && [ "$REBUILD_BACKEND" = false ] && [ "$REBUILD_MOBILE" = false ]; then
-    echo "Nothing to build"
+    echo "Nothing to build — all packages up to date"
 fi
 echo ""
 

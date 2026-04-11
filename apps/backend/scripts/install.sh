@@ -582,6 +582,7 @@ After=network.target
 Type=simple
 User=$CURRENT_USER
 WorkingDirectory=$BACKEND_DIR
+EnvironmentFile=$BACKEND_DIR/.env
 Environment="NODE_ENV=production"
 Environment="PATH=/usr/bin:/usr/local/bin:$HOME/.local/share/pnpm"
 ExecStart=$(which pnpm) start
