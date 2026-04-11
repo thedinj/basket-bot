@@ -340,6 +340,21 @@ fi
 echo "✓ .env configuration validated"
 echo ""
 
+# Check for port conflicts — catch clashes with other apps before the build,
+# not after a 4-minute build + service start failure.
+PORT=$(grep -E '^PORT=' "$BACKEND_DIR/.env" | cut -d '=' -f 2 | tr -d '"' | tr -d "'" || echo "3000")
+if ss -tlnp 2>/dev/null | grep -q ":${PORT} "; then
+    PORT_OWNER=$(ss -tlnp 2>/dev/null | grep ":${PORT} " | grep -oP 'pid=\K[0-9]+' | head -1)
+    PORT_PROC=$(cat /proc/$PORT_OWNER/comm 2>/dev/null || echo "unknown")
+    # Allow if it's our own service (we stopped it above, but double-check)
+    if ! systemctl list-units --type=service --all 2>/dev/null | grep -q "$SERVICE_NAME" || \
+       ! sudo systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
+        echo "❌ Port $PORT is already in use by '$PORT_PROC' (pid $PORT_OWNER)."
+        echo "   Update PORT= in $BACKEND_DIR/.env to a free port, then re-run."
+        exit 1
+    fi
+fi
+
 # Build backend (after .env is configured and validated)
 # Run from BACKEND_DIR (not PROJECT_ROOT) so pnpm executes only the backend
 # build script rather than triggering turbo's full pipeline, which would run
@@ -486,9 +501,14 @@ PORT=$(grep -E '^PORT=' "$BACKEND_DIR/.env" | cut -d '=' -f 2 | tr -d '"' || ech
 # Configure firewall to allow application port
 echo "Configuring firewall for application access..."
 
-if command -v ufw &> /dev/null && sudo ufw status | grep -q "Status: active"; then
+if [ "$INSTALL_CADDY" = true ]; then
+    # Caddy is the public entry point — the backend port must NOT be open to the
+    # internet (Caddy proxies to it locally). Only 80/443 need to be reachable.
+    echo "Caddy is installed — backend port $PORT is localhost-only (not opening in firewall)."
+    echo "Ports 80 and 443 were already allowed during firewall setup above."
+elif command -v ufw &> /dev/null && sudo ufw status | grep -q "Status: active"; then
     echo "Detected active UFW firewall"
-    echo "Allowing backend port $PORT..."
+    echo "Allowing backend port $PORT (no Caddy — direct access)..."
 
     if ! sudo ufw status | grep -q "$PORT/tcp"; then
         sudo ufw allow $PORT/tcp
@@ -503,13 +523,7 @@ if command -v ufw &> /dev/null && sudo ufw status | grep -q "Status: active"; th
 elif command -v iptables &> /dev/null; then
     echo "⚠️  UFW not active. Falling back to iptables configuration."
 
-    if [ "$ENABLE_HTTPS" = true ]; then
-        PORTS="80 443"
-    else
-        PORTS="$PORT"
-    fi
-
-    for port in $PORTS; do
+    for port in $PORT; do
         if ! sudo iptables -C INPUT -p tcp --dport $port -j ACCEPT 2>/dev/null; then
             sudo iptables -A INPUT -p tcp --dport $port -j ACCEPT
             echo "✓ Firewall rule added (iptables -A INPUT -p tcp --dport $port -j ACCEPT)"
