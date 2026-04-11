@@ -367,9 +367,16 @@ CURRENT_HEAD=$(git rev-parse HEAD)
 
 needs_rebuild() {
     local name="$1"; shift
+    local artifact=""
+    if [ "${1:-}" = "--artifact" ]; then artifact="$2"; shift 2; fi
     local last_built
     last_built=$(cat "$BUILD_CACHE_DIR/last-build-$name" 2>/dev/null || true)
-    [ -z "$last_built" ] && return 0
+    if [ -z "$last_built" ]; then
+        return 0
+    fi
+    if [ -n "$artifact" ] && [ ! -d "$artifact" ]; then
+        return 0  # build output missing — marker is stale
+    fi
     ! git diff --quiet "$last_built" "$CURRENT_HEAD" -- "$@" 2>/dev/null
 }
 
@@ -385,11 +392,11 @@ if needs_rebuild "core" packages/; then
     REBUILD_CORE=true; REBUILD_BACKEND=true; REBUILD_MOBILE=true
     echo "Core package changed — rebuilding all"
 else
-    if needs_rebuild "backend" apps/backend/src/ apps/backend/package.json apps/backend/tsconfig*.json pnpm-lock.yaml; then
+    if needs_rebuild "backend" --artifact "$BACKEND_DIR/.next" apps/backend/src/ apps/backend/package.json apps/backend/tsconfig*.json pnpm-lock.yaml; then
         REBUILD_BACKEND=true
         echo "Backend changed — rebuilding backend"
     fi
-    if [ "$HAS_MOBILE_APP" = true ] && needs_rebuild "mobile" apps/mobile/src/ apps/mobile/package.json apps/mobile/tsconfig*.json apps/mobile/vite.config.* pnpm-lock.yaml; then
+    if [ "$HAS_MOBILE_APP" = true ] && needs_rebuild "mobile" --artifact "$PROJECT_ROOT/$MOBILE_BUILD_DIR" apps/mobile/src/ apps/mobile/package.json apps/mobile/tsconfig*.json apps/mobile/vite.config.* pnpm-lock.yaml; then
         REBUILD_MOBILE=true
         echo "Mobile app changed — rebuilding mobile"
     fi
