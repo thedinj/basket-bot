@@ -46,7 +46,9 @@ set -e
 # When invoked via the hoisted pi-app-update symlink, re-exec from the project's
 # own scripts directory so a freshly pulled update.sh takes effect immediately,
 # without needing a separate bootstrap step.
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve symlinks so SCRIPT_DIR points to the real file location, not the
+# directory of the pi-app-update symlink (/usr/local/bin).
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 
 # Parse flags (accepted before or after the config path)
 SKIP_BACKEND=false
@@ -144,7 +146,8 @@ if ! systemctl list-units --type=service --all | grep -q "$SERVICE_NAME"; then
     exit 1
 fi
 
-SERVICE_STATUS=$(systemctl is-active "$SERVICE_NAME" 2>/dev/null || echo "inactive")
+SERVICE_STATUS=$(systemctl is-active "$SERVICE_NAME" 2>/dev/null || true)
+SERVICE_STATUS="${SERVICE_STATUS:-inactive}"
 if [ "$SERVICE_STATUS" != "active" ]; then
     echo -e "${YELLOW}⚠️  Service is not running (status: $SERVICE_STATUS)${NC}"
     read -p "Continue anyway? (y/N): " -n 1 -r
@@ -537,7 +540,8 @@ echo ""
 echo -e "${BLUE}[9/10] Running health checks...${NC}"
 echo ""
 
-SERVICE_STATUS=$(systemctl is-active "$SERVICE_NAME" 2>/dev/null || echo "failed")
+SERVICE_STATUS=$(systemctl is-active "$SERVICE_NAME" 2>/dev/null || true)
+SERVICE_STATUS="${SERVICE_STATUS:-failed}"
 if [ "$SERVICE_STATUS" != "active" ]; then
     echo -e "${RED}❌ Service failed to start (status: $SERVICE_STATUS)${NC}"
     echo ""
@@ -646,9 +650,13 @@ BACKUP_COUNT=$(ls -1 database-backup-*.db 2>/dev/null | wc -l)
 echo -e "${GREEN}✓${NC} Cleanup complete ($BACKUP_COUNT backups retained)"
 echo ""
 
-echo "Updating shared deploy scripts system-wide..."
 DEPLOY_LIB="/usr/local/lib/pi-deploy"
-if [ -f "$SCRIPT_DIR/install.sh" ] && [ -f "$SCRIPT_DIR/update.sh" ]; then
+if [ "$SCRIPT_DIR" = "$DEPLOY_LIB" ]; then
+    # Already running from the hoisted lib dir (e.g. updating a secondary app via
+    # pi-app-update). Nothing to re-hoist — basket-bot's update.sh does this.
+    echo -e "${GREEN}✓${NC} Deploy scripts already current (run basket-bot update to refresh)"
+elif [ -f "$SCRIPT_DIR/install.sh" ] && [ -f "$SCRIPT_DIR/update.sh" ]; then
+    echo "Updating shared deploy scripts system-wide..."
     sudo mkdir -p "$DEPLOY_LIB"
     sudo cp "$SCRIPT_DIR/install.sh" "$DEPLOY_LIB/install.sh"
     sudo cp "$SCRIPT_DIR/update.sh"  "$DEPLOY_LIB/update.sh"
