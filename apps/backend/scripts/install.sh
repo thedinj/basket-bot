@@ -304,6 +304,12 @@ ensure_swap() {
 
     echo "Available memory: $((mem_kb / 1024))MB RAM + $((swap_kb / 1024))MB swap = $((total_kb / 1024))MB"
 
+    # Raise V8's heap ceiling beyond the ~512 MB default on 32-bit ARM.
+    # Swap alone doesn't help — V8 won't allocate past its heap limit regardless
+    # of how much OS memory is available.
+    export NODE_OPTIONS="--max-old-space-size=1024"
+    echo "✓ NODE_OPTIONS set (--max-old-space-size=1024)"
+
     if [ "$total_kb" -lt "$required_kb" ]; then
         echo "⚠️  Less than $((required_kb / 1024))MB available — creating temporary swapfile for build..."
         sudo fallocate -l 1G "$SWAPFILE_PATH" 2>/dev/null || sudo dd if=/dev/zero of="$SWAPFILE_PATH" bs=1M count=1024 status=none

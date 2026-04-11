@@ -324,6 +324,10 @@ swap_kb=$(grep SwapFree /proc/meminfo 2>/dev/null | awk '{print $2}' || echo 0)
 total_kb=$((mem_kb + swap_kb))
 echo "Available memory: $((mem_kb / 1024))MB RAM + $((swap_kb / 1024))MB swap = $((total_kb / 1024))MB"
 
+# Raise V8's heap ceiling beyond the ~512 MB default on 32-bit ARM.
+export NODE_OPTIONS="--max-old-space-size=1024"
+echo -e "${GREEN}✓${NC} NODE_OPTIONS set (--max-old-space-size=1024)"
+
 if [ "$total_kb" -lt 1400000 ]; then
     echo -e "${YELLOW}⚠️  Less than 1.4 GB available — creating temporary swapfile for build...${NC}"
     sudo fallocate -l 1G "$SWAPFILE_PATH" 2>/dev/null || sudo dd if=/dev/zero of="$SWAPFILE_PATH" bs=1M count=1024 status=none
