@@ -45,9 +45,15 @@ After install, `pi-app-install` and `pi-app-update` are available system-wide.
 
 ## 2. Install Chance-a-Maran (after Basket Bot)
 
-First, bring the hoisted scripts up to date with the latest fixes from this repo:
+First, bring the hoisted scripts up to date with the latest fixes from this repo.
+Use bootstrap if you only want to refresh the scripts without a full basket-bot
+build/restart cycle:
 
 ```bash
+# Fast — pull latest scripts and hoist, no build or service restart
+cd ~/basket-bot && git pull && apps/backend/scripts/bootstrap.sh
+
+# Full — pull, rebuild, restart basket-bot, then hoist (use when updating basket-bot itself)
 cd ~/basket-bot/apps/backend/scripts && ./update.sh
 ```
 
@@ -116,8 +122,8 @@ sudo systemctl status caddy
 sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 
-# Refresh hoisted scripts without a full update
-~/basket-bot/apps/backend/scripts/bootstrap.sh
+# Refresh hoisted scripts only (no build or service restart)
+cd ~/basket-bot && git pull && apps/backend/scripts/bootstrap.sh
 ```
 
 ---

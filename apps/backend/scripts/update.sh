@@ -317,7 +317,7 @@ cd "$PROJECT_ROOT"
 
 # Ensure enough virtual memory — Next.js/Vite builds need ~1.4 GB.
 SWAPFILE_CREATED=false
-SWAPFILE_PATH="/tmp/pi-deploy-build.swap"
+SWAPFILE_PATH="/var/tmp/pi-deploy-build.swap"  # /tmp is often tmpfs (RAM-backed); use disk
 
 mem_kb=$(grep MemAvailable /proc/meminfo 2>/dev/null | awk '{print $2}' || echo 0)
 swap_kb=$(grep SwapFree /proc/meminfo 2>/dev/null | awk '{print $2}' || echo 0)
@@ -330,12 +330,18 @@ echo -e "${GREEN}✓${NC} NODE_OPTIONS set (--max-old-space-size=1024)"
 
 if [ "$total_kb" -lt 1400000 ]; then
     echo -e "${YELLOW}⚠️  Less than 1.4 GB available — creating temporary swapfile for build...${NC}"
-    sudo fallocate -l 1G "$SWAPFILE_PATH" 2>/dev/null || sudo dd if=/dev/zero of="$SWAPFILE_PATH" bs=1M count=1024 status=none
-    sudo chmod 600 "$SWAPFILE_PATH"
-    sudo mkswap "$SWAPFILE_PATH" > /dev/null
-    sudo swapon "$SWAPFILE_PATH"
-    SWAPFILE_CREATED=true
-    echo -e "${GREEN}✓${NC} Temporary swapfile active"
+    disk_free_kb=$(df -k "$(dirname "$SWAPFILE_PATH")" | awk 'NR==2 {print $4}')
+    if [ "$disk_free_kb" -lt 1100000 ]; then
+        echo -e "${YELLOW}⚠️  Not enough disk space for swapfile ($((disk_free_kb / 1024))MB free on $(dirname "$SWAPFILE_PATH"))${NC}"
+        echo "   Continuing without additional swap — build may fail. Free up disk space and retry."
+    else
+        sudo fallocate -l 1G "$SWAPFILE_PATH" 2>/dev/null || sudo dd if=/dev/zero of="$SWAPFILE_PATH" bs=1M count=1024 status=none
+        sudo chmod 600 "$SWAPFILE_PATH"
+        sudo mkswap "$SWAPFILE_PATH" > /dev/null
+        sudo swapon "$SWAPFILE_PATH"
+        SWAPFILE_CREATED=true
+        echo -e "${GREEN}✓${NC} Temporary swapfile active"
+    fi
 else
     echo -e "${GREEN}✓${NC} Sufficient memory for build"
 fi

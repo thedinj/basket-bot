@@ -293,7 +293,7 @@ fi
 # ================================================================
 
 SWAPFILE_CREATED=false
-SWAPFILE_PATH="/tmp/pi-deploy-build.swap"
+SWAPFILE_PATH="/var/tmp/pi-deploy-build.swap"  # /tmp is often tmpfs (RAM-backed); use disk
 
 ensure_swap() {
     local required_kb=1400000   # ~1.4 GB minimum
@@ -312,12 +312,19 @@ ensure_swap() {
 
     if [ "$total_kb" -lt "$required_kb" ]; then
         echo "⚠️  Less than $((required_kb / 1024))MB available — creating temporary swapfile for build..."
-        sudo fallocate -l 1G "$SWAPFILE_PATH" 2>/dev/null || sudo dd if=/dev/zero of="$SWAPFILE_PATH" bs=1M count=1024 status=none
-        sudo chmod 600 "$SWAPFILE_PATH"
-        sudo mkswap "$SWAPFILE_PATH" > /dev/null
-        sudo swapon "$SWAPFILE_PATH"
-        SWAPFILE_CREATED=true
-        echo "✓ Temporary swapfile active ($SWAPFILE_PATH)"
+        local disk_free_kb
+        disk_free_kb=$(df -k "$(dirname "$SWAPFILE_PATH")" | awk 'NR==2 {print $4}')
+        if [ "$disk_free_kb" -lt 1100000 ]; then
+            echo "⚠️  Not enough disk space for swapfile ($((disk_free_kb / 1024))MB free on $(dirname "$SWAPFILE_PATH"))"
+            echo "   Continuing without additional swap — build may fail. Free up disk space and retry."
+        else
+            sudo fallocate -l 1G "$SWAPFILE_PATH" 2>/dev/null || sudo dd if=/dev/zero of="$SWAPFILE_PATH" bs=1M count=1024 status=none
+            sudo chmod 600 "$SWAPFILE_PATH"
+            sudo mkswap "$SWAPFILE_PATH" > /dev/null
+            sudo swapon "$SWAPFILE_PATH"
+            SWAPFILE_CREATED=true
+            echo "✓ Temporary swapfile active ($SWAPFILE_PATH)"
+        fi
     else
         echo "✓ Sufficient memory for build"
     fi
