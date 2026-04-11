@@ -846,6 +846,23 @@ EOF
     echo "✓ Caddy config written to $APP_CADDY_FILE"
     echo ""
 
+    if [ "$HAS_MOBILE_APP" = true ]; then
+        # Caddy runs as the caddy user and needs execute (+x) permission on every
+        # directory in the path to the static files. Home directories default to
+        # 700/750, which blocks traversal and causes Caddy to return 403.
+        # Walk from the build output up to (but not including) /home and add o+x.
+        echo "Ensuring Caddy can traverse to static files..."
+        _path="$MOBILE_BUILD_PATH"
+        _stop="$(dirname "$HOME")"   # e.g. /home — stop before modifying this
+        while [ "$_path" != "$_stop" ] && [ "$_path" != "/" ] && [ -n "$_path" ]; do
+            sudo chmod o+x "$_path" 2>/dev/null || true
+            _path="$(dirname "$_path")"
+        done
+        unset _path _stop
+        echo "✓ Directory traversal permissions set"
+        echo ""
+    fi
+
     # Validate config before touching the live service — surfaces syntax errors
     echo "Validating Caddy config..."
     if ! sudo caddy validate --config /etc/caddy/Caddyfile 2>&1; then
