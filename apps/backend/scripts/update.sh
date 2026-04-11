@@ -51,7 +51,8 @@ CONFIG_FILE="${1:-$SCRIPT_DIR/deploy.config.sh}"
 _CANONICAL_DIR="$(cd "$(dirname "$CONFIG_FILE")" && pwd 2>/dev/null || true)"
 _CANONICAL_SELF="$_CANONICAL_DIR/$(basename "${BASH_SOURCE[0]}")"
 if [ -f "$_CANONICAL_SELF" ] && \
-   [ "$(readlink -f "${BASH_SOURCE[0]}")" != "$(readlink -f "$_CANONICAL_SELF")" ]; then
+   [ "$(readlink -f "${BASH_SOURCE[0]}")" != "$(readlink -f "$_CANONICAL_SELF")" ] && \
+   grep -q "PI-DEPLOY GENERIC" "$_CANONICAL_SELF" 2>/dev/null; then
     exec "$_CANONICAL_SELF" "$@"
 fi
 unset _CANONICAL_DIR _CANONICAL_SELF
