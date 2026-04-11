@@ -492,7 +492,13 @@ fi
 # so DB tables must exist or the build fails with "no such table".
 echo "Initializing database..."
 cd "$BACKEND_DIR"
-if [ -f "$DB_PATH" ]; then
+# Treat a zero-byte database as uninitialized — a failed previous install can
+# leave an empty file behind, and skipping the seed would leave no tables.
+DB_INITIALIZED=false
+if [ -f "$DB_PATH" ] && [ -s "$DB_PATH" ]; then
+    DB_INITIALIZED=true
+fi
+if [ "$DB_INITIALIZED" = true ]; then
     echo "✓ Database already exists — skipping seed (re-install, data preserved)"
 else
     if ! pnpm "$DB_INIT_SCRIPT"; then
@@ -798,6 +804,11 @@ $CADDY_LISTEN {
         reverse_proxy localhost:$PORT
     }
     handle /admin* {
+        reverse_proxy localhost:$PORT
+    }
+
+    # Next.js static assets (JS/CSS/fonts injected by the admin portal)
+    handle /_next/* {
         reverse_proxy localhost:$PORT
     }
 
