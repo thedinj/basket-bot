@@ -400,7 +400,23 @@ if ss -tlnp 2>/dev/null | grep -q ":${PORT} "; then
     fi
 fi
 
-# Build backend (after .env is configured and validated)
+# Initialize database BEFORE the backend build.
+# Next.js evaluates module-level code during 'next build' page data collection,
+# so DB tables must exist or the build fails with "no such table".
+echo "Initializing database..."
+cd "$BACKEND_DIR"
+if [ -f "$DB_PATH" ]; then
+    echo "✓ Database already exists — skipping seed (re-install, data preserved)"
+else
+    if ! pnpm "$DB_INIT_SCRIPT"; then
+        echo "❌ Database initialization failed"
+        exit 1
+    fi
+    echo "✓ Database initialized"
+fi
+echo ""
+
+# Build backend (after .env is configured and database exists)
 # Run from BACKEND_DIR (not PROJECT_ROOT) so pnpm executes only the backend
 # build script rather than triggering turbo's full pipeline, which would run
 # backend + mobile in parallel and exhaust memory on low-RAM devices.
@@ -460,16 +476,6 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         fi
     fi
 fi
-echo ""
-
-# Initialize database
-echo "Initializing database..."
-cd "$BACKEND_DIR"
-if ! pnpm "$DB_INIT_SCRIPT"; then
-    echo "❌ Database initialization failed"
-    exit 1
-fi
-echo "✓ Database initialized"
 echo ""
 
 # Create systemd service file
