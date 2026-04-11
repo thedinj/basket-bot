@@ -146,17 +146,31 @@ if ! systemctl list-units --type=service --all | grep -q "$SERVICE_NAME"; then
     exit 1
 fi
 
-SERVICE_STATUS=$(systemctl is-active "$SERVICE_NAME" 2>/dev/null || true)
-SERVICE_STATUS="${SERVICE_STATUS:-inactive}"
-if [ "$SERVICE_STATUS" != "active" ]; then
-    echo -e "${YELLOW}⚠️  Service is not running (status: $SERVICE_STATUS)${NC}"
-    read -p "Continue anyway? (y/N): " -n 1 -r
-    echo ""
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
+# Wait out "activating" — normal on boot or right after a restart
+for _i in 1 2 3 4 5; do
+    SERVICE_STATUS=$(systemctl is-active "$SERVICE_NAME" 2>/dev/null || true)
+    SERVICE_STATUS="${SERVICE_STATUS:-inactive}"
+    [ "$SERVICE_STATUS" != "activating" ] && break
+    echo "Service is activating, waiting... (${_i}s)"
+    sleep 1
+done
+unset _i
+
+if [ "$SERVICE_STATUS" = "active" ]; then
+    echo -e "${GREEN}✓${NC} Service is running"
+elif [ "$SERVICE_STATUS" = "inactive" ] || [ "$SERVICE_STATUS" = "failed" ]; then
+    echo -e "${YELLOW}⚠️  Service is stopped (status: $SERVICE_STATUS) — starting it now${NC}"
+    sudo systemctl start "$SERVICE_NAME" || true
+    sleep 2
+    SERVICE_STATUS=$(systemctl is-active "$SERVICE_NAME" 2>/dev/null || true)
+    SERVICE_STATUS="${SERVICE_STATUS:-inactive}"
+    if [ "$SERVICE_STATUS" = "active" ]; then
+        echo -e "${GREEN}✓${NC} Service started"
+    else
+        echo -e "${YELLOW}⚠️  Service did not start (status: $SERVICE_STATUS) — continuing anyway${NC}"
     fi
 else
-    echo -e "${GREEN}✓${NC} Service is running"
+    echo -e "${YELLOW}⚠️  Unexpected service status: $SERVICE_STATUS — continuing${NC}"
 fi
 
 # Check git repo
