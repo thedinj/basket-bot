@@ -308,7 +308,11 @@ ensure_swap() {
     # Swap alone doesn't help — V8 won't allocate past its heap limit regardless
     # of how much OS memory is available.
     export NODE_OPTIONS="--max-old-space-size=1024"
-    echo "✓ NODE_OPTIONS set (--max-old-space-size=1024)"
+    # Prevent rollup from spawning parallel worker threads — on a memory-constrained
+    # Pi the workers get OOM-killed silently and the main process hangs indefinitely
+    # at "rendering chunks". Single-threaded is slower but always completes.
+    export ROLLUP_MAX_PARALLEL_TASKS=1
+    echo "✓ NODE_OPTIONS set (--max-old-space-size=1024, ROLLUP_MAX_PARALLEL_TASKS=1)"
 
     if [ "$total_kb" -lt "$required_kb" ]; then
         echo "⚠️  Less than $((required_kb / 1024))MB available — creating temporary swapfile for build..."
@@ -354,13 +358,60 @@ fi
 echo "✓ Dependencies installed"
 echo ""
 
-# Build core package
-echo "Building core package ($CORE_PACKAGE)..."
-if ! pnpm --filter "$CORE_PACKAGE" build; then
-    echo "❌ Failed to build core package"
-    exit 1
+# Incremental build: skip packages that haven't changed since last successful
+# build. Marker files live in .pi-deploy/ — same mechanism as update.sh so
+# a freshly installed app doesn't rebuild everything on the first update.
+BUILD_CACHE_DIR="$PROJECT_ROOT/.pi-deploy"
+mkdir -p "$BUILD_CACHE_DIR"
+CURRENT_HEAD=$(git rev-parse HEAD)
+
+needs_rebuild() {
+    local name="$1"; shift
+    local last_built
+    last_built=$(cat "$BUILD_CACHE_DIR/last-build-$name" 2>/dev/null || true)
+    [ -z "$last_built" ] && return 0
+    ! git diff --quiet "$last_built" "$CURRENT_HEAD" -- "$@" 2>/dev/null
+}
+
+mark_built() {
+    echo "$CURRENT_HEAD" > "$BUILD_CACHE_DIR/last-build-$1"
+}
+
+REBUILD_CORE=false
+REBUILD_BACKEND=false
+REBUILD_MOBILE=false
+
+if needs_rebuild "core" packages/; then
+    REBUILD_CORE=true; REBUILD_BACKEND=true; REBUILD_MOBILE=true
+    echo "Core package changed — rebuilding all"
+else
+    if needs_rebuild "backend" apps/backend/ pnpm-lock.yaml; then
+        REBUILD_BACKEND=true
+        echo "Backend changed — rebuilding backend"
+    fi
+    if [ "$HAS_MOBILE_APP" = true ] && needs_rebuild "mobile" apps/mobile/ pnpm-lock.yaml; then
+        REBUILD_MOBILE=true
+        echo "Mobile app changed — rebuilding mobile"
+    fi
 fi
-echo "✓ Core package built"
+
+if [ "$REBUILD_CORE" = false ] && [ "$REBUILD_BACKEND" = false ] && [ "$REBUILD_MOBILE" = false ]; then
+    echo "All packages up to date — skipping builds"
+fi
+echo ""
+
+# Build core package
+if [ "$REBUILD_CORE" = true ]; then
+    echo "Building core package ($CORE_PACKAGE)..."
+    if ! pnpm --filter "$CORE_PACKAGE" build; then
+        echo "❌ Failed to build core package"
+        exit 1
+    fi
+    mark_built "core"
+    echo "✓ Core package built"
+else
+    echo "✓ Core package unchanged — skipped"
+fi
 echo ""
 
 # Set up environment file (must be done BEFORE building backend)
@@ -449,24 +500,34 @@ echo ""
 # Run from BACKEND_DIR (not PROJECT_ROOT) so pnpm executes only the backend
 # build script rather than triggering turbo's full pipeline, which would run
 # backend + mobile in parallel and exhaust memory on low-RAM devices.
-echo "Building backend..."
 cd "$BACKEND_DIR"
-if ! pnpm build; then
-    echo "❌ Backend build failed"
-    exit 1
+if [ "$REBUILD_BACKEND" = true ]; then
+    echo "Building backend..."
+    if ! pnpm build; then
+        echo "❌ Backend build failed"
+        exit 1
+    fi
+    mark_built "backend"
+    echo "✓ Backend built"
+else
+    echo "✓ Backend unchanged — skipped"
 fi
-echo "✓ Backend built"
 echo ""
 
 # Build mobile app (if configured)
 if [ "$HAS_MOBILE_APP" = true ]; then
-    echo "Building mobile web app..."
     cd "$PROJECT_ROOT"
-    if ! pnpm --filter mobile build; then
-        echo "❌ Mobile app build failed"
-        exit 1
+    if [ "$REBUILD_MOBILE" = true ]; then
+        echo "Building mobile web app..."
+        if ! pnpm --filter mobile build; then
+            echo "❌ Mobile app build failed"
+            exit 1
+        fi
+        mark_built "mobile"
+        echo "✓ Mobile web app built → $PROJECT_ROOT/$MOBILE_BUILD_DIR"
+    else
+        echo "✓ Mobile app unchanged — skipped"
     fi
-    echo "✓ Mobile web app built → $PROJECT_ROOT/$MOBILE_BUILD_DIR"
     echo ""
 fi
 

@@ -326,7 +326,11 @@ echo "Available memory: $((mem_kb / 1024))MB RAM + $((swap_kb / 1024))MB swap = 
 
 # Raise V8's heap ceiling beyond the ~512 MB default on 32-bit ARM.
 export NODE_OPTIONS="--max-old-space-size=1024"
-echo -e "${GREEN}✓${NC} NODE_OPTIONS set (--max-old-space-size=1024)"
+# Prevent rollup from spawning parallel worker threads — on a memory-constrained
+# Pi the workers get OOM-killed silently and the main process hangs indefinitely
+# at "rendering chunks". Single-threaded is slower but always completes.
+export ROLLUP_MAX_PARALLEL_TASKS=1
+echo -e "${GREEN}✓${NC} NODE_OPTIONS set (--max-old-space-size=1024, ROLLUP_MAX_PARALLEL_TASKS=1)"
 
 if [ "$total_kb" -lt 1400000 ]; then
     echo -e "${YELLOW}⚠️  Less than 1.4 GB available — creating temporary swapfile for build...${NC}"
@@ -352,22 +356,89 @@ pnpm install
 echo -e "${GREEN}✓${NC} Dependencies updated"
 echo ""
 
-echo "Building core package ($CORE_PACKAGE)..."
-pnpm --filter "$CORE_PACKAGE" build
-echo -e "${GREEN}✓${NC} Core package built"
+# Incremental build: compare each package's source paths against the commit
+# it was last successfully built at.  Works regardless of whether git pull
+# was done by this script or manually beforehand.
+#
+# Marker files live in .pi-deploy/ (add to .gitignore if not already there).
+# A missing marker means "never built here" → always build.
+# Uncommitted changes that were stashed also force a full rebuild.
+BUILD_CACHE_DIR="$PROJECT_ROOT/.pi-deploy"
+mkdir -p "$BUILD_CACHE_DIR"
+
+CURRENT_HEAD=$(git rev-parse HEAD)
+
+# needs_rebuild <name> <path>...
+#   Returns 0 (rebuild needed) if: no prior build marker, stashed local
+#   changes were present, or tracked files changed since last build.
+needs_rebuild() {
+    local name="$1"; shift
+    local last_built
+    last_built=$(cat "$BUILD_CACHE_DIR/last-build-$name" 2>/dev/null || true)
+    if [ -z "$last_built" ] || [ "$STASH_NEEDED" = true ]; then
+        return 0
+    fi
+    ! git diff --quiet "$last_built" "$CURRENT_HEAD" -- "$@" 2>/dev/null
+}
+
+mark_built() {
+    echo "$CURRENT_HEAD" > "$BUILD_CACHE_DIR/last-build-$1"
+}
+
+REBUILD_CORE=false
+REBUILD_BACKEND=false
+REBUILD_MOBILE=false
+
+if needs_rebuild "core" packages/; then
+    REBUILD_CORE=true REBUILD_BACKEND=true REBUILD_MOBILE=true
+    echo "Core package changed — rebuilding all"
+else
+    if needs_rebuild "backend" apps/backend/ pnpm-lock.yaml; then
+        REBUILD_BACKEND=true
+        echo "Backend changed — rebuilding backend"
+    fi
+    if [ "$HAS_MOBILE_APP" = true ] && needs_rebuild "mobile" apps/mobile/ pnpm-lock.yaml; then
+        REBUILD_MOBILE=true
+        echo "Mobile app changed — rebuilding mobile"
+    fi
+fi
+
+if [ "$REBUILD_CORE" = false ] && [ "$REBUILD_BACKEND" = false ] && [ "$REBUILD_MOBILE" = false ]; then
+    echo "All packages up to date — skipping builds"
+fi
 echo ""
 
-echo "Building backend..."
+if [ "$REBUILD_CORE" = true ]; then
+    echo "Building core package ($CORE_PACKAGE)..."
+    pnpm --filter "$CORE_PACKAGE" build
+    mark_built "core"
+    echo -e "${GREEN}✓${NC} Core package built"
+else
+    echo -e "${GREEN}✓${NC} Core package unchanged — skipped"
+fi
+echo ""
+
 cd "$BACKEND_DIR"
-pnpm build
-echo -e "${GREEN}✓${NC} Backend built"
+if [ "$REBUILD_BACKEND" = true ]; then
+    echo "Building backend..."
+    pnpm build
+    mark_built "backend"
+    echo -e "${GREEN}✓${NC} Backend built"
+else
+    echo -e "${GREEN}✓${NC} Backend unchanged — skipped"
+fi
 echo ""
 
 if [ "$HAS_MOBILE_APP" = true ]; then
-    echo "Building mobile web app..."
     cd "$PROJECT_ROOT"
-    pnpm --filter mobile build
-    echo -e "${GREEN}✓${NC} Mobile web app built"
+    if [ "$REBUILD_MOBILE" = true ]; then
+        echo "Building mobile web app..."
+        pnpm --filter mobile build
+        mark_built "mobile"
+        echo -e "${GREEN}✓${NC} Mobile web app built"
+    else
+        echo -e "${GREEN}✓${NC} Mobile app unchanged — skipped"
+    fi
     echo ""
 fi
 
