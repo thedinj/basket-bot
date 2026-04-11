@@ -737,9 +737,12 @@ if [ "$INSTALL_CADDY" = true ]; then
         CADDY_LISTEN=":80"
     fi
 
-    # Create log directory
+    # Create log directory and ensure caddy owns everything inside it.
+    # Re-installs can leave stale root-owned log files that prevent Caddy from
+    # starting even though the directory itself has the right owner.
     sudo mkdir -p /var/log/caddy
-    sudo chown caddy:caddy /var/log/caddy 2>/dev/null || true
+    sudo chown -R caddy:caddy /var/log/caddy 2>/dev/null || true
+    sudo chmod 755 /var/log/caddy
 
     # Remove any legacy inline site block for this domain from the main Caddyfile.
     # Old installs wrote the block directly into Caddyfile; now we keep it in conf.d/.
