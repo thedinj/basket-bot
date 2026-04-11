@@ -14,6 +14,8 @@ DB_INIT_SCRIPT="db:init"       # pnpm script that initialises/seeds the database
 
 HAS_MOBILE_APP=false           # Set to true if this app has an apps/mobile/ SPA to build
 
+WARMUP_PATHS=("/api/health" "/api/auth/invitation-required")  # Paths to hit after startup to prime Next.js route compilation
+
 DEFAULT_DOMAIN="basketbot.ddns.net"   # Default used if user presses Enter at the HTTPS prompt
 CADDY_LOG_NAME="basket-bot"
 

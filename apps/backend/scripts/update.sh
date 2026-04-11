@@ -77,6 +77,9 @@ unset _CANONICAL_DIR _CANONICAL_SELF
 
 # --- Load project config ---
 
+# Defaults that config files may override
+WARMUP_PATHS=()
+
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "❌ Config file not found: $CONFIG_FILE"
     echo "   Usage: $0 [/path/to/deploy.config.sh]"
@@ -640,6 +643,19 @@ elif [ "$HTTP_STATUS" = "000" ]; then
     echo -e "${YELLOW}⚠️  Could not connect to API (curl failed) - may need more time to start${NC}"
 else
     echo -e "${YELLOW}⚠️  Unexpected health check response (HTTP $HTTP_STATUS)${NC}"
+fi
+
+# Warmup requests — prime Next.js route compilation on configured paths.
+# Only fires if WARMUP_PATHS is non-empty and the server is reachable.
+if [ ${#WARMUP_PATHS[@]} -gt 0 ] && [ "$HTTP_STATUS" != "000" ]; then
+    echo ""
+    echo "Sending warmup requests..."
+    for _warmup_path in "${WARMUP_PATHS[@]}"; do
+        _warmup_status=$(curl --max-time 10 -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT$_warmup_path" 2>/dev/null || true)
+        echo "  • http://localhost:$PORT$_warmup_path → HTTP $_warmup_status"
+    done
+    unset _warmup_path _warmup_status
+    echo -e "${GREEN}✓${NC} Warmup requests sent"
 fi
 
 echo ""
