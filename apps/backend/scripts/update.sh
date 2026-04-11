@@ -298,6 +298,28 @@ echo ""
 
 cd "$PROJECT_ROOT"
 
+# Ensure enough virtual memory — Next.js/Vite builds need ~1.4 GB.
+SWAPFILE_CREATED=false
+SWAPFILE_PATH="/tmp/pi-deploy-build.swap"
+
+mem_kb=$(grep MemAvailable /proc/meminfo 2>/dev/null | awk '{print $2}' || echo 0)
+swap_kb=$(grep SwapFree /proc/meminfo 2>/dev/null | awk '{print $2}' || echo 0)
+total_kb=$((mem_kb + swap_kb))
+echo "Available memory: $((mem_kb / 1024))MB RAM + $((swap_kb / 1024))MB swap = $((total_kb / 1024))MB"
+
+if [ "$total_kb" -lt 1400000 ]; then
+    echo -e "${YELLOW}⚠️  Less than 1.4 GB available — creating temporary swapfile for build...${NC}"
+    sudo fallocate -l 1G "$SWAPFILE_PATH" 2>/dev/null || sudo dd if=/dev/zero of="$SWAPFILE_PATH" bs=1M count=1024 status=none
+    sudo chmod 600 "$SWAPFILE_PATH"
+    sudo mkswap "$SWAPFILE_PATH" > /dev/null
+    sudo swapon "$SWAPFILE_PATH"
+    SWAPFILE_CREATED=true
+    echo -e "${GREEN}✓${NC} Temporary swapfile active"
+else
+    echo -e "${GREEN}✓${NC} Sufficient memory for build"
+fi
+echo ""
+
 echo "Installing/updating dependencies..."
 pnpm install
 echo -e "${GREEN}✓${NC} Dependencies updated"
@@ -319,6 +341,15 @@ if [ "$HAS_MOBILE_APP" = true ]; then
     cd "$PROJECT_ROOT"
     pnpm --filter mobile build
     echo -e "${GREEN}✓${NC} Mobile web app built"
+    echo ""
+fi
+
+# Release temporary swap now that all builds are done
+if [ "$SWAPFILE_CREATED" = true ]; then
+    echo "Removing temporary swapfile..."
+    sudo swapoff "$SWAPFILE_PATH" 2>/dev/null || true
+    sudo rm -f "$SWAPFILE_PATH"
+    echo -e "${GREEN}✓${NC} Temporary swapfile removed"
     echo ""
 fi
 

@@ -271,9 +271,54 @@ if [ -f "$DB_PATH" ]; then
     echo ""
 fi
 
+# ================================================================
+# SWAP CHECK — Next.js/Vite builds need ~1.5 GB virtual memory.
+# Create a temporary swapfile if RAM+swap is insufficient.
+# ================================================================
+
+SWAPFILE_CREATED=false
+SWAPFILE_PATH="/tmp/pi-deploy-build.swap"
+
+ensure_swap() {
+    local required_kb=1400000   # ~1.4 GB minimum
+    local mem_kb swap_kb total_kb
+    mem_kb=$(grep MemAvailable /proc/meminfo 2>/dev/null | awk '{print $2}' || echo 0)
+    swap_kb=$(grep SwapFree /proc/meminfo 2>/dev/null | awk '{print $2}' || echo 0)
+    total_kb=$((mem_kb + swap_kb))
+
+    echo "Available memory: $((mem_kb / 1024))MB RAM + $((swap_kb / 1024))MB swap = $((total_kb / 1024))MB"
+
+    if [ "$total_kb" -lt "$required_kb" ]; then
+        echo "⚠️  Less than $((required_kb / 1024))MB available — creating temporary swapfile for build..."
+        sudo fallocate -l 1G "$SWAPFILE_PATH" 2>/dev/null || sudo dd if=/dev/zero of="$SWAPFILE_PATH" bs=1M count=1024 status=none
+        sudo chmod 600 "$SWAPFILE_PATH"
+        sudo mkswap "$SWAPFILE_PATH" > /dev/null
+        sudo swapon "$SWAPFILE_PATH"
+        SWAPFILE_CREATED=true
+        echo "✓ Temporary swapfile active ($SWAPFILE_PATH)"
+    else
+        echo "✓ Sufficient memory for build"
+    fi
+    echo ""
+}
+
+remove_swap() {
+    if [ "$SWAPFILE_CREATED" = true ]; then
+        echo "Removing temporary swapfile..."
+        sudo swapoff "$SWAPFILE_PATH" 2>/dev/null || true
+        sudo rm -f "$SWAPFILE_PATH"
+        SWAPFILE_CREATED=false
+        echo "✓ Temporary swapfile removed"
+        echo ""
+    fi
+}
+
+ensure_swap
+
 # Install dependencies
 echo "Installing dependencies..."
 if ! pnpm install; then
+    remove_swap
     echo "❌ Failed to install dependencies"
     exit 1
 fi
@@ -379,6 +424,8 @@ if [ "$HAS_MOBILE_APP" = true ]; then
     echo "✓ Mobile web app built → $PROJECT_ROOT/$MOBILE_BUILD_DIR"
     echo ""
 fi
+
+remove_swap
 
 # Ask if user wants to enable HTTPS with Caddy
 echo "================================================"
