@@ -21,11 +21,15 @@ set -e
 # 4. Run the update:
 #      ./update.sh
 #
-# UPDATING OTHER APPS:
-# --------------------
-# After the system-wide scripts are installed, update any app with:
+# UPDATING OTHER APPS (e.g. Chance-a-Maran):
+# -------------------------------------------
+# Always update basket-bot first — this re-hoists the latest scripts so
+# pi-app-update is current before it runs other apps:
+#   cd ~/basket-bot/apps/backend/scripts && ./update.sh
+#
+# Then update the other app using pi-app-update (preferred) or its thin wrapper:
 #   pi-app-update ~/other-app/apps/backend/scripts/deploy.config.sh
-# Or use the app's own thin-wrapper update.sh:
+#   -- or --
 #   cd ~/other-app/apps/backend/scripts && ./update.sh
 #
 # WHAT THIS SCRIPT DOES:

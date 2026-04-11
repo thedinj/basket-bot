@@ -33,16 +33,21 @@ set -e
 # pi-app-install and pi-app-update system-wide so you can install
 # additional apps (e.g. chance-a-maran) without re-cloning basket-bot.
 #
-# INSTALLING OTHER APPS:
-# ----------------------
-# After basket-bot is installed, install other apps with:
+# INSTALLING OTHER APPS (e.g. Chance-a-Maran):
+# ---------------------------------------------
+# basket-bot is the canonical source for the shared scripts. Before installing
+# another app, run basket-bot's update first so the hoisted pi-app-install
+# has all the latest fixes:
+#   cd ~/basket-bot/apps/backend/scripts && ./update.sh
+#
+# Then install the other app using pi-app-install (preferred) or its thin wrapper:
 #   pi-app-install ~/other-app/apps/backend/scripts/deploy.config.sh
-# Or call the app's own thin-wrapper install.sh:
+#   -- or --
 #   cd ~/other-app/apps/backend/scripts && ./install.sh
 #
 # ADVANCED USAGE:
 # ---------------
-# Call directly with a different deploy.config.sh to install any app:
+# Install any app by passing its deploy.config.sh directly to this script:
 #   ./install.sh /path/to/app/apps/backend/scripts/deploy.config.sh
 #
 # WHAT THIS SCRIPT DOES:
