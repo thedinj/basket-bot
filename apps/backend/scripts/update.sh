@@ -38,9 +38,21 @@ set -e
 # - Cleans up old backups (retains the last 10)
 # ==============================================================================
 
-# --- Load project config ---
+# --- Self-update: always run the canonical copy next to the project config ---
+# When invoked via the hoisted pi-app-update symlink, re-exec from the project's
+# own scripts directory so a freshly pulled update.sh takes effect immediately,
+# without needing a separate bootstrap step.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="${1:-$SCRIPT_DIR/deploy.config.sh}"
+_CANONICAL_DIR="$(cd "$(dirname "$CONFIG_FILE")" && pwd 2>/dev/null || true)"
+_CANONICAL_SELF="$_CANONICAL_DIR/$(basename "${BASH_SOURCE[0]}")"
+if [ -f "$_CANONICAL_SELF" ] && \
+   [ "$(readlink -f "${BASH_SOURCE[0]}")" != "$(readlink -f "$_CANONICAL_SELF")" ]; then
+    exec "$_CANONICAL_SELF" "$@"
+fi
+unset _CANONICAL_DIR _CANONICAL_SELF
+
+# --- Load project config ---
 
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "❌ Config file not found: $CONFIG_FILE"

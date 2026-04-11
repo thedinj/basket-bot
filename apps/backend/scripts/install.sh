@@ -62,8 +62,18 @@ set -e
 # IMPORTANT: Project root is derived from the config file's location
 # (apps/backend/scripts/deploy.config.sh → project root 3 levels up),
 # not from where this script itself lives.
+# --- Self-update: always run the canonical copy next to the project config ---
+# When invoked via the hoisted pi-app-install symlink, re-exec from the project's
+# own scripts directory so a freshly pulled install.sh takes effect immediately.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="${1:-$SCRIPT_DIR/deploy.config.sh}"
+_CANONICAL_DIR="$(cd "$(dirname "$CONFIG_FILE")" && pwd 2>/dev/null || true)"
+_CANONICAL_SELF="$_CANONICAL_DIR/$(basename "${BASH_SOURCE[0]}")"
+if [ -f "$_CANONICAL_SELF" ] && \
+   [ "$(readlink -f "${BASH_SOURCE[0]}")" != "$(readlink -f "$_CANONICAL_SELF")" ]; then
+    exec "$_CANONICAL_SELF" "$@"
+fi
+unset _CANONICAL_DIR _CANONICAL_SELF
 
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "❌ Config file not found: $CONFIG_FILE"
