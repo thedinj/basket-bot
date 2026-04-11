@@ -385,11 +385,11 @@ if needs_rebuild "core" packages/; then
     REBUILD_CORE=true; REBUILD_BACKEND=true; REBUILD_MOBILE=true
     echo "Core package changed — rebuilding all"
 else
-    if needs_rebuild "backend" apps/backend/ pnpm-lock.yaml; then
+    if needs_rebuild "backend" apps/backend/src/ apps/backend/package.json apps/backend/tsconfig*.json pnpm-lock.yaml; then
         REBUILD_BACKEND=true
         echo "Backend changed — rebuilding backend"
     fi
-    if [ "$HAS_MOBILE_APP" = true ] && needs_rebuild "mobile" apps/mobile/ pnpm-lock.yaml; then
+    if [ "$HAS_MOBILE_APP" = true ] && needs_rebuild "mobile" apps/mobile/src/ apps/mobile/package.json apps/mobile/tsconfig*.json apps/mobile/vite.config.* pnpm-lock.yaml; then
         REBUILD_MOBILE=true
         echo "Mobile app changed — rebuilding mobile"
     fi

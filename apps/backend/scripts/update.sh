@@ -47,7 +47,23 @@ set -e
 # own scripts directory so a freshly pulled update.sh takes effect immediately,
 # without needing a separate bootstrap step.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_FILE="${1:-$SCRIPT_DIR/deploy.config.sh}"
+
+# Parse flags (accepted before or after the config path)
+SKIP_BACKEND=false
+SKIP_FRONTEND=false
+CONFIG_FILE=""
+for _arg in "$@"; do
+    case "$_arg" in
+        --skip-backend)   SKIP_BACKEND=true ;;
+        --skip-frontend)  SKIP_FRONTEND=true ;;
+        --skip-builds)    SKIP_BACKEND=true; SKIP_FRONTEND=true ;;
+        -*)               echo "Unknown flag: $_arg"; exit 1 ;;
+        *)                [ -z "$CONFIG_FILE" ] && CONFIG_FILE="$_arg" ;;
+    esac
+done
+unset _arg
+CONFIG_FILE="${CONFIG_FILE:-$SCRIPT_DIR/deploy.config.sh}"
+
 _CANONICAL_DIR="$(cd "$(dirname "$CONFIG_FILE")" && pwd 2>/dev/null || true)"
 _CANONICAL_SELF="$_CANONICAL_DIR/$(basename "${BASH_SOURCE[0]}")"
 if [ -f "$_CANONICAL_SELF" ] && \
@@ -389,22 +405,28 @@ REBUILD_CORE=false
 REBUILD_BACKEND=false
 REBUILD_MOBILE=false
 
-if needs_rebuild "core" packages/; then
-    REBUILD_CORE=true REBUILD_BACKEND=true REBUILD_MOBILE=true
+if [ "$SKIP_BACKEND" = true ] && [ "$SKIP_FRONTEND" = true ]; then
+    echo "Skipping all builds (--skip-builds)"
+elif needs_rebuild "core" packages/; then
+    REBUILD_CORE=true
+    [ "$SKIP_BACKEND" = false ]  && REBUILD_BACKEND=true
+    [ "$SKIP_FRONTEND" = false ] && REBUILD_MOBILE=true
     echo "Core package changed — rebuilding all"
 else
-    if needs_rebuild "backend" apps/backend/ pnpm-lock.yaml; then
+    if [ "$SKIP_BACKEND" = false ] && needs_rebuild "backend" apps/backend/src/ apps/backend/package.json apps/backend/tsconfig*.json pnpm-lock.yaml; then
         REBUILD_BACKEND=true
         echo "Backend changed — rebuilding backend"
     fi
-    if [ "$HAS_MOBILE_APP" = true ] && needs_rebuild "mobile" apps/mobile/ pnpm-lock.yaml; then
+    if [ "$SKIP_FRONTEND" = false ] && [ "$HAS_MOBILE_APP" = true ] && needs_rebuild "mobile" apps/mobile/src/ apps/mobile/package.json apps/mobile/tsconfig*.json apps/mobile/vite.config.* pnpm-lock.yaml; then
         REBUILD_MOBILE=true
         echo "Mobile app changed — rebuilding mobile"
     fi
 fi
 
+[ "$SKIP_BACKEND"  = true ] && echo "Backend build skipped (--skip-backend)"
+[ "$SKIP_FRONTEND" = true ] && echo "Frontend build skipped (--skip-frontend)"
 if [ "$REBUILD_CORE" = false ] && [ "$REBUILD_BACKEND" = false ] && [ "$REBUILD_MOBILE" = false ]; then
-    echo "All packages up to date — skipping builds"
+    echo "Nothing to build"
 fi
 echo ""
 
