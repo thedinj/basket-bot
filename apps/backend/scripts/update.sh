@@ -53,17 +53,31 @@ SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 # Parse flags (accepted before or after the config path)
 SKIP_BACKEND=false
 SKIP_FRONTEND=false
+FORCE_BACKEND=false
+FORCE_FRONTEND=false
 CONFIG_FILE=""
 for _arg in "$@"; do
     case "$_arg" in
         --skip-backend)   SKIP_BACKEND=true ;;
         --skip-frontend)  SKIP_FRONTEND=true ;;
         --skip-builds)    SKIP_BACKEND=true; SKIP_FRONTEND=true ;;
+        --force-backend)  FORCE_BACKEND=true ;;
+        --force-frontend) FORCE_FRONTEND=true ;;
+        --force-builds)   FORCE_BACKEND=true; FORCE_FRONTEND=true ;;
         -*)               echo "Unknown flag: $_arg"; exit 1 ;;
         *)                [ -z "$CONFIG_FILE" ] && CONFIG_FILE="$_arg" ;;
     esac
 done
 unset _arg
+
+if [ "$FORCE_BACKEND" = true ] && [ "$SKIP_BACKEND" = true ]; then
+    echo "❌ Conflicting flags: --force-backend and --skip-backend cannot be used together."
+    exit 1
+fi
+if [ "$FORCE_FRONTEND" = true ] && [ "$SKIP_FRONTEND" = true ]; then
+    echo "❌ Conflicting flags: --force-frontend and --skip-frontend cannot be used together."
+    exit 1
+fi
 CONFIG_FILE="${CONFIG_FILE:-$SCRIPT_DIR/deploy.config.sh}"
 
 _CANONICAL_DIR="$(cd "$(dirname "$CONFIG_FILE")" && pwd 2>/dev/null || true)"
@@ -428,19 +442,27 @@ REBUILD_MOBILE=false
 
 if [ "$SKIP_BACKEND" = true ] && [ "$SKIP_FRONTEND" = true ]; then
     echo "All builds skipped (--skip-builds)"
-elif [ "$SKIP_BACKEND" = true ]; then
-    needs_rebuild "core" && REBUILD_CORE=true
-    REBUILD_MOBILE=true
-    echo "Building frontend (--skip-backend)"
-elif [ "$SKIP_FRONTEND" = true ]; then
-    needs_rebuild "core" && REBUILD_CORE=true
-    REBUILD_BACKEND=true
-    echo "Building backend (--skip-frontend)"
 else
-    needs_rebuild "core"    && { REBUILD_CORE=true; REBUILD_BACKEND=true; REBUILD_MOBILE=true; echo "Core not built — building all"; }
-    needs_rebuild "backend" --artifact "$BACKEND_DIR/.next" && { REBUILD_BACKEND=true; echo "Backend not built — building backend"; }
+    needs_rebuild "core" && { REBUILD_CORE=true; REBUILD_BACKEND=true; REBUILD_MOBILE=true; echo "Core not built — building all"; }
+
+    if [ "$SKIP_BACKEND" = true ]; then
+        echo "Backend skipped (--skip-backend)"
+    elif [ "$FORCE_BACKEND" = true ]; then
+        REBUILD_BACKEND=true
+        echo "Backend forced (--force-backend)"
+    else
+        needs_rebuild "backend" --artifact "$BACKEND_DIR/.next" && { REBUILD_BACKEND=true; echo "Backend not built — building backend"; }
+    fi
+
     if [ "$HAS_MOBILE_APP" = true ]; then
-        needs_rebuild "mobile" --artifact "$PROJECT_ROOT/apps/mobile/dist" && { REBUILD_MOBILE=true; echo "Mobile not built — building mobile"; }
+        if [ "$SKIP_FRONTEND" = true ]; then
+            echo "Frontend skipped (--skip-frontend)"
+        elif [ "$FORCE_FRONTEND" = true ]; then
+            REBUILD_MOBILE=true
+            echo "Frontend forced (--force-frontend)"
+        else
+            needs_rebuild "mobile" --artifact "$PROJECT_ROOT/apps/mobile/dist" && { REBUILD_MOBILE=true; echo "Mobile not built — building mobile"; }
+        fi
     fi
 fi
 
