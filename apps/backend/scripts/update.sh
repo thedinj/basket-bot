@@ -377,38 +377,49 @@ pnpm install
 echo -e "${GREEN}✓${NC} Dependencies updated"
 echo ""
 
-# Incremental build: compare each package's source paths against the commit
-# it was last successfully built at.  Works regardless of whether git pull
-# was done by this script or manually beforehand.
-#
-# Marker files live in .pi-deploy/ (add to .gitignore if not already there).
-# A missing marker means "never built here" → always build.
-# Uncommitted changes that were stashed also force a full rebuild.
+# Build sentinels live in .pi-deploy/ (add to .gitignore if not already there).
+# begin_build writes a sentinel before starting; mark_built removes it and
+# writes a completion marker. A leftover sentinel means the last build was
+# interrupted — force a rebuild. A missing completion marker means never built.
 BUILD_CACHE_DIR="$PROJECT_ROOT/.pi-deploy"
 mkdir -p "$BUILD_CACHE_DIR"
 
-CURRENT_HEAD=$(git rev-parse HEAD)
+CURRENT_HEAD="$NEW_COMMIT"
 
-# needs_rebuild <name> [--artifact <dir>] <path>...
-#   Returns 0 (rebuild needed) if: no prior build marker, artifact dir is
-#   missing, stashed local changes were present, or tracked files changed.
+# needs_rebuild <name> [--artifact <dir>]: true if sentinel present
+# (interrupted), never built, commit changed since last build, or artifact
+# directory is missing/empty.
 needs_rebuild() {
     local name="$1"; shift
     local artifact=""
-    if [ "${1:-}" = "--artifact" ]; then artifact="$2"; shift 2; fi
-    local last_built
-    last_built=$(cat "$BUILD_CACHE_DIR/last-build-$name" 2>/dev/null || true)
-    if [ -z "$last_built" ] || [ "$STASH_NEEDED" = true ]; then
+    [ "${1:-}" = "--artifact" ] && { artifact="$2"; shift 2; }
+    if [ -f "$BUILD_CACHE_DIR/building-$name" ]; then
+        echo "  (prior $name build was interrupted — forcing rebuild)"
         return 0
     fi
-    if [ -n "$artifact" ] && [ ! -d "$artifact" ]; then
-        return 0  # build output missing — marker is stale
+    local last_built
+    last_built=$(cat "$BUILD_CACHE_DIR/last-build-$name" 2>/dev/null || true)
+    [ -z "$last_built" ] && return 0
+    if [ "$last_built" != "$CURRENT_HEAD" ]; then
+        echo "  ($name commit changed — forcing rebuild)"
+        return 0
     fi
-    ! git diff --quiet "$last_built" "$CURRENT_HEAD" -- "$@" 2>/dev/null
+    if [ -n "$artifact" ] && [ -z "$(ls -A "$artifact" 2>/dev/null)" ]; then
+        echo "  ($name artifact missing or empty — forcing rebuild)"
+        return 0
+    fi
+    return 1
 }
 
+# begin_build <name>: write sentinel before starting.
+begin_build() {
+    touch "$BUILD_CACHE_DIR/building-$1"
+}
+
+# mark_built <name>: record success and remove the in-progress sentinel.
 mark_built() {
     echo "$CURRENT_HEAD" > "$BUILD_CACHE_DIR/last-build-$1"
+    rm -f "$BUILD_CACHE_DIR/building-$1"
 }
 
 REBUILD_CORE=false
@@ -416,43 +427,31 @@ REBUILD_BACKEND=false
 REBUILD_MOBILE=false
 
 if [ "$SKIP_BACKEND" = true ] && [ "$SKIP_FRONTEND" = true ]; then
-    # --skip-builds: nothing to do
     echo "All builds skipped (--skip-builds)"
 elif [ "$SKIP_BACKEND" = true ]; then
-    # Explicit frontend-only update — build mobile unconditionally.
-    # Also rebuild core if it changed (mobile may depend on it).
-    needs_rebuild "core" packages/ && REBUILD_CORE=true
+    needs_rebuild "core" && REBUILD_CORE=true
     REBUILD_MOBILE=true
     echo "Building frontend (--skip-backend)"
 elif [ "$SKIP_FRONTEND" = true ]; then
-    # Explicit backend-only update — build backend unconditionally.
-    needs_rebuild "core" packages/ && REBUILD_CORE=true
+    needs_rebuild "core" && REBUILD_CORE=true
     REBUILD_BACKEND=true
     echo "Building backend (--skip-frontend)"
 else
-    # No flags: use incremental detection.
-    if needs_rebuild "core" packages/; then
-        REBUILD_CORE=true; REBUILD_BACKEND=true; REBUILD_MOBILE=true
-        echo "Core package changed — rebuilding all"
-    else
-        if needs_rebuild "backend" --artifact "$BACKEND_DIR/.next" apps/backend/src/ apps/backend/package.json apps/backend/tsconfig*.json pnpm-lock.yaml; then
-            REBUILD_BACKEND=true
-            echo "Backend changed — rebuilding backend"
-        fi
-        if [ "$HAS_MOBILE_APP" = true ] && needs_rebuild "mobile" --artifact "$PROJECT_ROOT/$MOBILE_BUILD_DIR" apps/mobile/src/ apps/mobile/package.json apps/mobile/tsconfig*.json apps/mobile/vite.config.* pnpm-lock.yaml; then
-            REBUILD_MOBILE=true
-            echo "Mobile app changed — rebuilding mobile"
-        fi
+    needs_rebuild "core"    && { REBUILD_CORE=true; REBUILD_BACKEND=true; REBUILD_MOBILE=true; echo "Core not built — building all"; }
+    needs_rebuild "backend" --artifact "$BACKEND_DIR/.next" && { REBUILD_BACKEND=true; echo "Backend not built — building backend"; }
+    if [ "$HAS_MOBILE_APP" = true ]; then
+        needs_rebuild "mobile" --artifact "$PROJECT_ROOT/apps/mobile/dist" && { REBUILD_MOBILE=true; echo "Mobile not built — building mobile"; }
     fi
 fi
 
 if [ "$REBUILD_CORE" = false ] && [ "$REBUILD_BACKEND" = false ] && [ "$REBUILD_MOBILE" = false ]; then
-    echo "Nothing to build — all packages up to date"
+    echo "Nothing to build — all packages already built"
 fi
 echo ""
 
 if [ "$REBUILD_CORE" = true ]; then
     echo "Building core package ($CORE_PACKAGE)..."
+    begin_build "core"
     pnpm --filter "$CORE_PACKAGE" build
     mark_built "core"
     echo -e "${GREEN}✓${NC} Core package built"
@@ -464,6 +463,7 @@ echo ""
 cd "$BACKEND_DIR"
 if [ "$REBUILD_BACKEND" = true ]; then
     echo "Building backend..."
+    begin_build "backend"
     pnpm build
     mark_built "backend"
     echo -e "${GREEN}✓${NC} Backend built"
@@ -476,6 +476,7 @@ if [ "$HAS_MOBILE_APP" = true ]; then
     cd "$PROJECT_ROOT"
     if [ "$REBUILD_MOBILE" = true ]; then
         echo "Building mobile web app..."
+        begin_build "mobile"
         pnpm --filter mobile build
         mark_built "mobile"
         echo -e "${GREEN}✓${NC} Mobile web app built"
