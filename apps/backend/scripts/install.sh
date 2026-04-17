@@ -817,6 +817,13 @@ $CADDY_LISTEN {
         root * $MOBILE_BUILD_PATH
         try_files {path} /index.html
         file_server
+
+        # Vite-hashed JS/CSS/font assets — content-addressed, safe to cache forever
+        header /assets/* Cache-Control "public, max-age=31536000, immutable"
+
+        # Static app assets (sounds, images) — long cache; no content hash in filenames
+        header /sound/* Cache-Control "public, max-age=604800"
+        header /img/* Cache-Control "public, max-age=604800"
     }
 
     encode gzip
