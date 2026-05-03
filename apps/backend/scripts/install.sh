@@ -598,7 +598,7 @@ WorkingDirectory=$BACKEND_DIR
 EnvironmentFile=$BACKEND_DIR/.env
 Environment="NODE_ENV=production"
 Environment="PATH=/usr/bin:/usr/local/bin:$HOME/.local/share/pnpm"
-ExecStart=$(which pnpm) start
+ExecStart=$(which node) $BACKEND_DIR/node_modules/next/dist/bin/next start
 Restart=always
 RestartSec=10
 StandardOutput=journal
