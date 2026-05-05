@@ -6,6 +6,22 @@ export const MIN_PASSWORD_LENGTH = 6;
 // Text field length limits
 export * from "./textLimits";
 
+// Recipe tag palette keys — maps to CSS variables --tag-{key}-bg/border/text in both themes
+export const TAG_PALETTE_KEYS = [
+    "rose",
+    "amber",
+    "emerald",
+    "sky",
+    "violet",
+    "pink",
+    "teal",
+    "indigo",
+    "orange",
+    "lime",
+] as const;
+
+export type TagPaletteKey = (typeof TAG_PALETTE_KEYS)[number];
+
 // Scopes
 export const ADMIN_SCOPE = "admin";
 

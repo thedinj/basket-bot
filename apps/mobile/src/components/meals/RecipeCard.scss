@@ -1,0 +1,63 @@
+.recipe-card-motion {
+    /* fills the grid cell so the IonCard stretches to full height */
+    display: flex;
+    flex-direction: column;
+}
+
+.recipe-card {
+    margin: 0;
+    flex: 1;
+    border-radius: 16px;
+    border: 1px solid var(--ion-border-color, #2d3748);
+    background: var(--ion-card-background, #1a1a2e);
+    box-shadow: none;
+}
+
+.recipe-card__header {
+    padding-bottom: 4px;
+}
+
+.recipe-card__title {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    color: var(--ion-text-color);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.recipe-card__tags {
+    margin-top: 6px;
+}
+
+.recipe-card__content {
+    padding-top: 0;
+}
+
+.recipe-card__description {
+    font-size: 9px !important;
+    line-height: 1.1 !important;
+    color: var(--ion-color-step-300, #4a5568) !important;
+    opacity: 0.65;
+    margin: 0 0 4px !important;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.recipe-card__meta {
+    display: flex;
+    gap: 8px;
+    margin: 0;
+}
+
+.recipe-card__meta-item {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    color: var(--ion-color-step-400, #718096);
+    letter-spacing: 0.02em;
+}

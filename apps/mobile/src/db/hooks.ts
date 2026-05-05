@@ -1673,6 +1673,8 @@ export function useRemoveMember() {
             householdApi.removeMember(params.householdId, params.userId),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ["household", variables.householdId] });
+            queryClient.invalidateQueries({ queryKey: ["households"] });
+            queryClient.invalidateQueries({ queryKey: ["stores"] });
             showSuccess("Member removed");
         },
         onError: (error: Error) => {

@@ -4,18 +4,30 @@ import {
     IonContent,
     IonHeader,
     IonIcon,
+    IonItem,
     IonLabel,
     IonList,
     IonListHeader,
     IonModal,
+    IonNote,
     IonSegment,
     IonSegmentButton,
+    IonSelect,
+    IonSelectOption,
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { closeOutline, moonOutline, phonePortraitOutline, sunnyOutline } from "ionicons/icons";
-import { useEffect, useRef } from "react";
+import {
+    addOutline,
+    closeOutline,
+    moonOutline,
+    phonePortraitOutline,
+    removeOutline,
+    sunnyOutline,
+} from "ionicons/icons";
+import { useEffect, useMemo, useRef } from "react";
 import { Controller } from "react-hook-form";
+import { useStores } from "../../db/hooks";
 import { LLM_COLOR, LLM_ICON_SRC } from "../../llm/shared";
 import type { SettingsFormData } from "../../settings/settingsSchema";
 import { useSettingsForm } from "../../settings/useSettingsForm";
@@ -26,6 +38,8 @@ import { useAppHeader } from "../layout/useAppHeader";
 const SettingsModal: React.FC = () => {
     const { form, performSave, isSubmitting } = useSettingsForm();
     const { isModalOpen, closeModal } = useAppHeader();
+    const { data: stores } = useStores();
+    const visibleStores = useMemo(() => stores?.filter((s) => !s.isHidden) ?? [], [stores]);
 
     const preOpenModeRef = useRef<string | null>(null);
     const saveSucceededRef = useRef(false);
@@ -106,6 +120,94 @@ const SettingsModal: React.FC = () => {
                                 )}
                             />
                         </div>
+                    </IonList>
+
+                    {/* Meal Planning Section */}
+                    <IonList>
+                        <IonListHeader>
+                            <h2>Meal Planning</h2>
+                        </IonListHeader>
+
+                        <Controller
+                            name="defaultMealPlanSlots"
+                            control={form.control}
+                            render={({ field, fieldState: { error } }) => (
+                                <IonItem>
+                                    <IonLabel>Default meal count</IonLabel>
+                                    <div
+                                        slot="end"
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "8px",
+                                        }}
+                                    >
+                                        <IonButton
+                                            fill="clear"
+                                            size="small"
+                                            disabled={isSubmitting || (field.value ?? 4) <= 1}
+                                            onClick={() =>
+                                                field.onChange(Math.max(1, (field.value ?? 4) - 1))
+                                            }
+                                        >
+                                            <IonIcon icon={removeOutline} slot="icon-only" />
+                                        </IonButton>
+                                        <IonNote
+                                            style={{
+                                                minWidth: "24px",
+                                                textAlign: "center",
+                                                fontSize: "1.1rem",
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            {field.value ?? 4}
+                                        </IonNote>
+                                        <IonButton
+                                            fill="clear"
+                                            size="small"
+                                            disabled={isSubmitting || (field.value ?? 4) >= 12}
+                                            onClick={() =>
+                                                field.onChange(Math.min(12, (field.value ?? 4) + 1))
+                                            }
+                                        >
+                                            <IonIcon icon={addOutline} slot="icon-only" />
+                                        </IonButton>
+                                    </div>
+                                    {error && (
+                                        <IonNote color="danger" slot="helper">
+                                            {error.message}
+                                        </IonNote>
+                                    )}
+                                </IonItem>
+                            )}
+                        />
+                        {visibleStores.length > 0 && (
+                            <Controller
+                                name="defaultMealPlanStore"
+                                control={form.control}
+                                render={({ field }) => (
+                                    <IonItem>
+                                        <IonLabel>Default store</IonLabel>
+                                        <IonSelect
+                                            value={field.value ?? ""}
+                                            onIonChange={(e) =>
+                                                field.onChange(e.detail.value || undefined)
+                                            }
+                                            interface="action-sheet"
+                                            placeholder="Select a store"
+                                            disabled={isSubmitting}
+                                        >
+                                            <IonSelectOption value="">(none)</IonSelectOption>
+                                            {visibleStores.map((s) => (
+                                                <IonSelectOption key={s.id} value={s.id}>
+                                                    {s.name}
+                                                </IonSelectOption>
+                                            ))}
+                                        </IonSelect>
+                                    </IonItem>
+                                )}
+                            />
+                        )}
                     </IonList>
 
                     {/* API Settings Section */}

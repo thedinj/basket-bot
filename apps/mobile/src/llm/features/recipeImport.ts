@@ -1,0 +1,48 @@
+/**
+ * Recipe import types and validation for LLM-based recipe extraction
+ */
+
+export interface ParsedRecipeIngredient {
+    name: string;
+    qty: number | null;
+    unit: string | null;
+    isPantryItem?: boolean;
+}
+
+export interface ParsedRecipe {
+    name: string;
+    description: string | null;
+    steps: string | null;
+    cookingTimeMinutes: number | null;
+    ingredients: ParsedRecipeIngredient[];
+}
+
+export interface RecipeImportResponse {
+    recipe: ParsedRecipe;
+}
+
+export function validateRecipeImportResult(data: unknown): data is RecipeImportResponse {
+    if (typeof data !== "object" || data === null) return false;
+
+    const root = data as Record<string, unknown>;
+    if (typeof root.recipe !== "object" || root.recipe === null) return false;
+
+    const recipe = root.recipe as Record<string, unknown>;
+
+    if (typeof recipe.name !== "string" || recipe.name.trim() === "") return false;
+    if (recipe.description !== null && typeof recipe.description !== "string") return false;
+    if (recipe.steps !== null && typeof recipe.steps !== "string") return false;
+    if (recipe.cookingTimeMinutes !== null && typeof recipe.cookingTimeMinutes !== "number") return false;
+    if (!Array.isArray(recipe.ingredients)) return false;
+
+    return recipe.ingredients.every((ing: unknown) => {
+        if (typeof ing !== "object" || ing === null) return false;
+        const i = ing as Record<string, unknown>;
+        if (typeof i.name !== "string" || i.name.trim() === "") return false;
+        if (i.qty !== null && typeof i.qty !== "number") return false;
+        if (i.unit !== null && typeof i.unit !== "string") return false;
+        // isPantryItem is optional; if present must be boolean
+        if (i.isPantryItem !== undefined && typeof i.isPantryItem !== "boolean") return false;
+        return true;
+    });
+}

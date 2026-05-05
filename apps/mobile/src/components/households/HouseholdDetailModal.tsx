@@ -27,6 +27,8 @@ import {
     useHouseholdInvitations,
     useRemoveMember,
 } from "../../db/hooks";
+import { useHousehold } from "../../households/useHousehold";
+import TagManagerModal from "../meals/TagManagerModal";
 import EditHouseholdDetailsModal from "./EditHouseholdDetailsModal";
 import InviteMemberModal from "./InviteMemberModal";
 
@@ -42,6 +44,7 @@ const HouseholdDetailModal: React.FC<HouseholdDetailModalProps> = ({
     onClose,
 }) => {
     const { user } = useAuth();
+    const { refreshHouseholds } = useHousehold();
     const { data: household, isLoading, error } = useHouseholdDetail(householdId);
     const { data: invitations, isLoading: invitationsLoading } =
         useHouseholdInvitations(householdId);
@@ -52,6 +55,7 @@ const HouseholdDetailModal: React.FC<HouseholdDetailModalProps> = ({
 
     const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+    const [isTagManagerOpen, setIsTagManagerOpen] = useState(false);
 
     const handleRemoveMember = async (userId: string, userName: string) => {
         if (!householdId) return;
@@ -104,6 +108,7 @@ const HouseholdDetailModal: React.FC<HouseholdDetailModalProps> = ({
                     role: "destructive",
                     handler: async () => {
                         await deleteHousehold.mutateAsync(householdId);
+                        await refreshHouseholds();
                         onClose();
                     },
                 },
@@ -124,6 +129,7 @@ const HouseholdDetailModal: React.FC<HouseholdDetailModalProps> = ({
                     role: "destructive",
                     handler: async () => {
                         await removeMember.mutateAsync({ householdId, userId: user.id });
+                        await refreshHouseholds();
                         onClose();
                     },
                 },
@@ -274,7 +280,27 @@ const HouseholdDetailModal: React.FC<HouseholdDetailModalProps> = ({
                                 </IonList>
                             ) : null}
 
+                            {/* Recipe Tags Section */}
+                            <IonList>
+                                <IonListHeader>
+                                    <h2>Recipe Tags</h2>
+                                </IonListHeader>
+                                <div
+                                    className="ion-padding-horizontal"
+                                    style={{ marginTop: "-8px", marginBottom: "8px" }}
+                                >
+                                    <IonButton
+                                        expand="block"
+                                        fill="outline"
+                                        onClick={() => setIsTagManagerOpen(true)}
+                                    >
+                                        Manage Tags
+                                    </IonButton>
+                                </div>
+                            </IonList>
+
                             {/* Actions Section */}
+                            {household.members.length > 1 && (
                             <div className="ion-padding">
                                 <IonButton
                                     expand="block"
@@ -286,10 +312,17 @@ const HouseholdDetailModal: React.FC<HouseholdDetailModalProps> = ({
                                     Leave Household
                                 </IonButton>
                             </div>
+                            )}
                         </>
                     ) : null}
                 </IonContent>
             </IonModal>
+
+            <TagManagerModal
+                isOpen={isTagManagerOpen}
+                onDismiss={() => setIsTagManagerOpen(false)}
+                householdId={householdId}
+            />
 
             <EditHouseholdDetailsModal
                 householdId={householdId}

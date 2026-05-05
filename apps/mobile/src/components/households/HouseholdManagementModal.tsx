@@ -24,12 +24,14 @@ import {
     useHouseholds,
     usePendingInvitations,
 } from "../../db/hooks";
+import { useHousehold } from "../../households/useHousehold";
 import { useAppHeader } from "../layout/useAppHeader";
 import CreateHouseholdModal from "./CreateHouseholdModal";
 import HouseholdDetailModal from "./HouseholdDetailModal";
 
 export const HouseholdManagementModal: React.FC = () => {
     const { isModalOpen, closeModal } = useAppHeader();
+    const { refreshHouseholds } = useHousehold();
     const {
         data: households,
         isLoading: householdsLoading,
@@ -52,6 +54,7 @@ export const HouseholdManagementModal: React.FC = () => {
 
     const handleAcceptInvitation = async (token: string) => {
         await acceptInvitation.mutateAsync(token);
+        await refreshHouseholds();
     };
 
     const handleDeclineInvitation = async (token: string) => {

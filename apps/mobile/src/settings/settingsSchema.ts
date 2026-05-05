@@ -24,6 +24,8 @@ export const settingsSchema = z.object({
     openaiApiKey: z.string().optional(),
     remoteApiUrl: urlSchema,
     themeMode: themeModeSchema.optional(),
+    defaultMealPlanSlots: z.number().int().min(1).max(12).optional(),
+    defaultMealPlanStore: z.string().optional(),
 });
 
 export type SettingsFormData = z.infer<typeof settingsSchema>;

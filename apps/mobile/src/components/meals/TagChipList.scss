@@ -1,0 +1,15 @@
+.tag-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+}
+
+.tag-chip-list__overflow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    color: var(--ion-color-medium);
+    align-self: center;
+    margin-left: 2px;
+    letter-spacing: 0.02em;
+}

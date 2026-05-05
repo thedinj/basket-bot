@@ -1,30 +1,12 @@
 import type { Store } from "@basket-bot/core";
 import { db } from "../db/db";
+import { boolToInt, intToBool } from "../utils/sqliteUtils";
 import { normalizeItemName } from "../utils/stringUtils";
 
 /**
  * Repository for Store entity operations.
  * Handles all database access for stores.
  */
-
-// Boolean conversion helpers for SQLite
-// We use null for false to save space and make intent clearer
-
-/**
- * Convert a boolean to SQLite value (1 for true, null for false)
- */
-function boolToInt(value: boolean | null | undefined): number | null {
-    if (value == null || !value) return null;
-    return 1;
-}
-
-/**
- * Convert SQLite value to boolean (1 → true, null/0 → false)
- */
-function intToBool(value: number | null | undefined): boolean {
-    if (value == null) return false;
-    return value !== 0;
-}
 
 export function createStore(params: {
     name: string;

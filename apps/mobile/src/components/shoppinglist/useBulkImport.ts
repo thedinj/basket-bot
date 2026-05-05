@@ -13,38 +13,8 @@ import {
 import { useToast } from "../../hooks/useToast";
 import type { ParsedShoppingItem } from "../../llm/features/bulkImport";
 import { useAutoCategorize } from "../../llm/features/useAutoCategorize";
-import { normalizeItemName, toSentenceCase } from "../../utils/stringUtils";
+import { matchUnitId, normalizeItemName, toSentenceCase } from "../../utils/stringUtils";
 import { useShield } from "../shield/useShield";
-
-/**
- * Process and validate a unit string against known units.
- * Returns normalized unit ID and quantity, or nulls if unit not recognized.
- */
-function processUnit(
-    parsedUnit: string | null,
-    parsedQuantity: number | null,
-    units: Array<{ id: string; abbreviation: string }> | undefined
-): { unitId: string | null; quantity: number | null } {
-    if (!parsedUnit || !units) {
-        return { unitId: null, quantity: parsedQuantity };
-    }
-
-    // Normalize: remove punctuation, singularize, lowercase
-    const normalizedUnit = pluralize
-        .singular(parsedUnit.replace(/[^\w\s]/g, ""))
-        .toLowerCase()
-        .trim();
-
-    // Find matching unit (case-insensitive)
-    const matchingUnit = units.find((u) => u.abbreviation.toLowerCase() === normalizedUnit);
-
-    if (matchingUnit) {
-        return { unitId: matchingUnit.id, quantity: parsedQuantity };
-    }
-
-    // Unit not recognized, nullify both unit and quantity
-    return { unitId: null, quantity: null };
-}
 
 /**
  * Hook to handle bulk import of shopping list items
@@ -124,12 +94,10 @@ export function useBulkImport(storeId: string) {
                             itemId = newItem.id;
                         }
 
-                        // Process and validate unit
-                        const { unitId: processedUnitId, quantity: processedQty } = processUnit(
-                            parsed.unit,
-                            parsed.quantity,
-                            units
-                        );
+                        // Process and validate unit; nullify quantity if unit is unrecognized
+                        const processedUnitId = matchUnitId(parsed.unit, units);
+                        const processedQty =
+                            parsed.unit && !processedUnitId ? null : parsed.quantity;
 
                         // Create shopping list item
                         const shoppingListItem: ShoppingListItemInput = {

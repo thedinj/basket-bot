@@ -7,6 +7,38 @@ http://ionicframework.com/docs/theming/ */
     /* Safe area for Android navigation buttons and iOS notches */
     --app-safe-bottom: max(env(safe-area-inset-bottom), 16px);
 
+    /* Recipe tag palette — light mode */
+    --tag-rose-bg:     rgba(190,18,60,.12);
+    --tag-rose-border: rgba(190,18,60,.30);
+    --tag-rose-text:   #be123c;
+    --tag-amber-bg:     rgba(180,83,9,.12);
+    --tag-amber-border: rgba(180,83,9,.30);
+    --tag-amber-text:   #b45309;
+    --tag-emerald-bg:     rgba(4,120,87,.12);
+    --tag-emerald-border: rgba(4,120,87,.30);
+    --tag-emerald-text:   #047857;
+    --tag-sky-bg:     rgba(3,105,161,.12);
+    --tag-sky-border: rgba(3,105,161,.30);
+    --tag-sky-text:   #0369a1;
+    --tag-violet-bg:     rgba(109,40,217,.12);
+    --tag-violet-border: rgba(109,40,217,.30);
+    --tag-violet-text:   #6d28d9;
+    --tag-pink-bg:     rgba(157,23,77,.12);
+    --tag-pink-border: rgba(157,23,77,.30);
+    --tag-pink-text:   #9d174d;
+    --tag-teal-bg:     rgba(15,118,110,.12);
+    --tag-teal-border: rgba(15,118,110,.30);
+    --tag-teal-text:   #0f766e;
+    --tag-indigo-bg:     rgba(55,48,163,.12);
+    --tag-indigo-border: rgba(55,48,163,.30);
+    --tag-indigo-text:   #3730a3;
+    --tag-orange-bg:     rgba(194,65,12,.12);
+    --tag-orange-border: rgba(194,65,12,.30);
+    --tag-orange-text:   #c2410c;
+    --tag-lime-bg:     rgba(77,124,15,.12);
+    --tag-lime-border: rgba(77,124,15,.30);
+    --tag-lime-text:   #4d7c0f;
+
     /* Ideas - vivid yellow (light mode) */
     --app-color-ideas: oklch(65% 0.25 103);
 
@@ -61,6 +93,9 @@ http://ionicframework.com/docs/theming/ */
     /* Light Mode Backgrounds */
     --ion-background-color: #f7fafc;
     --ion-background-color-rgb: 247, 250, 252;
+    --ion-card-background: #ffffff;
+    --ion-border-color: #e2e8f0;
+    --ion-toolbar-background: #ffffff;
 
     --ion-text-color: #1a202c;
     --ion-text-color-rgb: 26, 32, 44;
@@ -134,6 +169,38 @@ body.ion-palette-dark {
     --ion-color-step-850: #fafcfd;
     --ion-color-step-900: #fcfdfe;
     --ion-color-step-950: #fefefe;
+
+    /* Recipe tag palette — dark mode */
+    --tag-rose-bg:     rgba(190,18,60,.20);
+    --tag-rose-border: rgba(190,18,60,.45);
+    --tag-rose-text:   #fda4af;
+    --tag-amber-bg:     rgba(180,83,9,.20);
+    --tag-amber-border: rgba(180,83,9,.45);
+    --tag-amber-text:   #fcd34d;
+    --tag-emerald-bg:     rgba(4,120,87,.20);
+    --tag-emerald-border: rgba(4,120,87,.45);
+    --tag-emerald-text:   #6ee7b7;
+    --tag-sky-bg:     rgba(3,105,161,.20);
+    --tag-sky-border: rgba(3,105,161,.45);
+    --tag-sky-text:   #7dd3fc;
+    --tag-violet-bg:     rgba(109,40,217,.20);
+    --tag-violet-border: rgba(109,40,217,.45);
+    --tag-violet-text:   #c4b5fd;
+    --tag-pink-bg:     rgba(157,23,77,.20);
+    --tag-pink-border: rgba(157,23,77,.45);
+    --tag-pink-text:   #f9a8d4;
+    --tag-teal-bg:     rgba(15,118,110,.20);
+    --tag-teal-border: rgba(15,118,110,.45);
+    --tag-teal-text:   #5eead4;
+    --tag-indigo-bg:     rgba(55,48,163,.20);
+    --tag-indigo-border: rgba(55,48,163,.45);
+    --tag-indigo-text:   #a5b4fc;
+    --tag-orange-bg:     rgba(194,65,12,.20);
+    --tag-orange-border: rgba(194,65,12,.45);
+    --tag-orange-text:   #fdba74;
+    --tag-lime-bg:     rgba(77,124,15,.20);
+    --tag-lime-border: rgba(77,124,15,.45);
+    --tag-lime-text:   #bef264;
 
     /* Ideas - vivid yellow (dark mode) */
     --app-color-ideas: oklch(88% 0.22 103);

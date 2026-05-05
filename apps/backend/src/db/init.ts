@@ -178,6 +178,8 @@ export function initializeDatabase() {
             "steps" TEXT CHECK("steps" IS NULL OR length("steps") <= 50000),
             "sourceUrl" TEXT CHECK("sourceUrl" IS NULL OR length("sourceUrl") <= 500),
             "isHidden" INTEGER,
+            "isPoolExcluded" INTEGER,
+            "cookingTimeMinutes" INTEGER,
             "createdById" TEXT NOT NULL,
             "updatedById" TEXT NOT NULL,
             "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -192,7 +194,7 @@ export function initializeDatabase() {
             "id" TEXT NOT NULL PRIMARY KEY,
             "householdId" TEXT NOT NULL,
             "name" TEXT NOT NULL CHECK(length("name") >= 1 AND length("name") <= 50),
-            "color" TEXT CHECK("color" IS NULL OR length("color") <= 255),
+            "colorKey" TEXT CHECK("colorKey" IS NULL OR length("colorKey") <= 30),
             "createdById" TEXT NOT NULL,
             "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY ("householdId") REFERENCES "Household" ("id") ON DELETE CASCADE,
@@ -220,6 +222,7 @@ export function initializeDatabase() {
             "unitId" TEXT,
             "sortOrder" INTEGER NOT NULL DEFAULT 0,
             "notes" TEXT CHECK("notes" IS NULL OR length("notes") <= 500),
+            "excluded" INTEGER,
             "createdById" TEXT NOT NULL,
             "updatedById" TEXT NOT NULL,
             "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -228,6 +231,56 @@ export function initializeDatabase() {
             FOREIGN KEY ("unitId") REFERENCES "QuantityUnit" ("id") ON DELETE SET NULL,
             FOREIGN KEY ("createdById") REFERENCES "User" ("id") ON DELETE RESTRICT,
             FOREIGN KEY ("updatedById") REFERENCES "User" ("id") ON DELETE RESTRICT
+        );
+
+        -- Plan table
+        CREATE TABLE IF NOT EXISTS "Plan" (
+            "id" TEXT NOT NULL PRIMARY KEY,
+            "householdId" TEXT NOT NULL,
+            "state" TEXT NOT NULL DEFAULT 'draft' CHECK("state" IN ('draft', 'active', 'archived')),
+            "slotCount" INTEGER NOT NULL DEFAULT 4 CHECK("slotCount" >= 1 AND "slotCount" <= 12),
+            "defaultStoreId" TEXT,
+            "dispatchedAt" DATETIME,
+            "createdById" TEXT NOT NULL,
+            "updatedById" TEXT NOT NULL,
+            "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" DATETIME NOT NULL,
+            FOREIGN KEY ("householdId") REFERENCES "Household" ("id") ON DELETE CASCADE,
+            FOREIGN KEY ("defaultStoreId") REFERENCES "Store" ("id") ON DELETE SET NULL,
+            FOREIGN KEY ("createdById") REFERENCES "User" ("id") ON DELETE RESTRICT,
+            FOREIGN KEY ("updatedById") REFERENCES "User" ("id") ON DELETE RESTRICT
+        );
+
+        -- PlanSlot table
+        CREATE TABLE IF NOT EXISTS "PlanSlot" (
+            "id" TEXT NOT NULL PRIMARY KEY,
+            "planId" TEXT NOT NULL,
+            "slotNumber" INTEGER NOT NULL CHECK("slotNumber" >= 1),
+            "tagIds" TEXT NOT NULL DEFAULT '[]',
+            "maxCookingTimeMinutes" INTEGER,
+            "pickedRecipeId" TEXT,
+            "pinned" INTEGER,
+            "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" DATETIME NOT NULL,
+            FOREIGN KEY ("planId") REFERENCES "Plan" ("id") ON DELETE CASCADE,
+            FOREIGN KEY ("pickedRecipeId") REFERENCES "Recipe" ("id") ON DELETE SET NULL,
+            UNIQUE ("planId", "slotNumber")
+        );
+
+        -- PlanIngredientRoute table
+        CREATE TABLE IF NOT EXISTS "PlanIngredientRoute" (
+            "id" TEXT NOT NULL PRIMARY KEY,
+            "planId" TEXT NOT NULL,
+            "ingredientId" TEXT NOT NULL,
+            "storeId" TEXT,
+            "overridden" INTEGER,
+            "checked" INTEGER,
+            "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" DATETIME NOT NULL,
+            FOREIGN KEY ("planId") REFERENCES "Plan" ("id") ON DELETE CASCADE,
+            FOREIGN KEY ("ingredientId") REFERENCES "RecipeIngredient" ("id") ON DELETE CASCADE,
+            FOREIGN KEY ("storeId") REFERENCES "Store" ("id") ON DELETE SET NULL,
+            UNIQUE ("planId", "ingredientId")
         );
 
         -- RefreshToken table
@@ -271,6 +324,16 @@ export function initializeDatabase() {
 
         CREATE INDEX IF NOT EXISTS "RecipeIngredient_recipeId_sortOrder_idx"
             ON "RecipeIngredient"("recipeId", "sortOrder");
+
+        -- Plan indexes
+        CREATE INDEX IF NOT EXISTS "Plan_householdId_state_createdAt_idx"
+            ON "Plan"("householdId", "state", "createdAt" DESC);
+
+        CREATE INDEX IF NOT EXISTS "PlanSlot_planId_slotNumber_idx"
+            ON "PlanSlot"("planId", "slotNumber");
+
+        CREATE INDEX IF NOT EXISTS "PlanIngredientRoute_planId_idx"
+            ON "PlanIngredientRoute"("planId");
 
         -- Insert quantity units if not exists
         INSERT OR IGNORE INTO "QuantityUnit" ("id", "name", "abbreviation", "sortOrder", "category") VALUES

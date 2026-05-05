@@ -19,7 +19,6 @@ export const MAX_RECIPE_DESCRIPTION_LENGTH = 2000; // Recipe descriptions
 export const MAX_RECIPE_STEPS_LENGTH = 50000; // Recipe steps (markdown)
 export const MAX_RECIPE_SOURCE_URL_LENGTH = 500; // Recipe source URLs
 export const MAX_RECIPE_TAG_NAME_LENGTH = 50; // Recipe tag names
-export const MAX_RECIPE_TAG_COLOR_LENGTH = 255; // Recipe tag colors (hex codes or CSS color names)
 export const MAX_RECIPE_INGREDIENT_NAME_LENGTH = 200; // Recipe ingredient names
 export const MAX_RECIPE_INGREDIENT_NOTES_LENGTH = 500; // Recipe ingredient notes
 

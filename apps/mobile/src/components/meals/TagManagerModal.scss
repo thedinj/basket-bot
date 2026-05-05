@@ -1,0 +1,64 @@
+.tag-manager-list {
+    --background: transparent;
+    margin: 0 -16px;
+}
+
+.tag-manager-item {
+    --background: transparent;
+    --padding-start: 16px;
+    --inner-padding-end: 8px;
+}
+
+
+.tag-manager-empty {
+    font-size: 14px;
+    color: var(--ion-color-medium);
+    text-align: center;
+    padding: 32px 0 16px;
+    margin: 0;
+}
+
+.tag-manager-new {
+    margin-top: 24px;
+}
+
+.tag-manager-edit {
+    margin-top: 24px;
+    padding: 16px;
+    border: 1px solid var(--ion-border-color, var(--ion-color-step-200));
+    border-radius: 12px;
+}
+
+.tag-manager-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 0 8px;
+}
+
+.tag-palette-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--swatch-bg);
+    border: 2px solid var(--swatch-border);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    outline: none;
+
+    &.selected {
+        transform: scale(1.2);
+        box-shadow: 0 0 0 3px var(--swatch-text);
+    }
+
+    &:active {
+        transform: scale(0.92);
+    }
+}
+
+.tag-manager-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+}

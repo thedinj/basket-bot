@@ -6,6 +6,12 @@ import { db } from "../db/db";
  * Handles ingredients for recipes with sortOrder for display.
  */
 
+type RawRow = Omit<RecipeIngredient, "excluded"> & { excluded: 1 | null };
+
+function mapRow(row: RawRow): RecipeIngredient {
+    return { ...row, excluded: row.excluded === 1 };
+}
+
 // ========== RecipeIngredient CRUD Operations ==========
 
 export function addIngredient(params: {
@@ -15,14 +21,15 @@ export function addIngredient(params: {
     unitId?: string | null;
     sortOrder?: number;
     notes?: string | null;
+    excluded?: boolean;
     createdById: string;
 }): RecipeIngredient {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
 
     db.prepare(
-        `INSERT INTO RecipeIngredient (id, recipeId, name, qty, unitId, sortOrder, notes, createdById, updatedById, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO RecipeIngredient (id, recipeId, name, qty, unitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
         id,
         params.recipeId,
@@ -31,6 +38,7 @@ export function addIngredient(params: {
         params.unitId ?? null,
         params.sortOrder ?? 0,
         params.notes ?? null,
+        params.excluded ? 1 : null,
         params.createdById,
         params.createdById,
         now,
@@ -43,26 +51,26 @@ export function addIngredient(params: {
 export function getIngredientById(id: string): RecipeIngredient | null {
     const row = db
         .prepare(
-            `SELECT id, recipeId, name, qty, unitId, sortOrder, notes, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, recipeId, name, qty, unitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt
              FROM RecipeIngredient
              WHERE id = ?`
         )
-        .get(id) as RecipeIngredient | undefined;
+        .get(id) as RawRow | undefined;
 
-    return row ?? null;
+    return row ? mapRow(row) : null;
 }
 
 export function getIngredientsByRecipe(recipeId: string): RecipeIngredient[] {
     const rows = db
         .prepare(
-            `SELECT id, recipeId, name, qty, unitId, sortOrder, notes, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, recipeId, name, qty, unitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt
              FROM RecipeIngredient
              WHERE recipeId = ?
              ORDER BY sortOrder ASC, name ASC`
         )
-        .all(recipeId) as RecipeIngredient[];
+        .all(recipeId) as RawRow[];
 
-    return rows;
+    return rows.map(mapRow);
 }
 
 export function updateIngredient(params: {
@@ -72,6 +80,7 @@ export function updateIngredient(params: {
     unitId?: string | null;
     sortOrder?: number;
     notes?: string | null;
+    excluded?: boolean;
     updatedById: string;
 }): RecipeIngredient | null {
     const existing = getIngredientById(params.id);
@@ -79,9 +88,12 @@ export function updateIngredient(params: {
 
     const now = new Date().toISOString();
 
+    const excluded =
+        params.excluded !== undefined ? (params.excluded ? 1 : null) : existing.excluded ? 1 : null;
+
     db.prepare(
         `UPDATE RecipeIngredient
-         SET name = ?, qty = ?, unitId = ?, sortOrder = ?, notes = ?, updatedById = ?, updatedAt = ?
+         SET name = ?, qty = ?, unitId = ?, sortOrder = ?, notes = ?, excluded = ?, updatedById = ?, updatedAt = ?
          WHERE id = ?`
     ).run(
         params.name ?? existing.name,
@@ -89,6 +101,7 @@ export function updateIngredient(params: {
         params.unitId !== undefined ? params.unitId : existing.unitId,
         params.sortOrder !== undefined ? params.sortOrder : existing.sortOrder,
         params.notes !== undefined ? params.notes : existing.notes,
+        excluded,
         params.updatedById,
         now,
         params.id

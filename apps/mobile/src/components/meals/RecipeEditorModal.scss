@@ -1,0 +1,154 @@
+.recipe-editor-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 0;
+}
+
+.recipe-editor-section-label {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ion-color-step-500, #a0aec0);
+    margin: 20px 0 8px;
+}
+
+// ── Tags ──────────────────────────────────────────────────────────────────────
+
+.recipe-editor-tags-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .recipe-editor-section-label {
+        margin-bottom: 0;
+    }
+}
+
+.recipe-editor-tags-manage {
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    height: 28px;
+    --color: var(--ion-color-medium);
+    margin-top: 20px;
+}
+
+.recipe-editor-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.recipe-editor-tag-btn {
+    all: unset;
+    cursor: pointer;
+    border-radius: 100px;
+    opacity: 0.4;
+    transition: opacity 0.15s;
+
+    &.selected {
+        opacity: 1;
+    }
+}
+
+// ── Ingredients ───────────────────────────────────────────────────────────────
+
+.recipe-editor-ingredients-header {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+
+    .recipe-editor-section-label {
+        margin-bottom: 0;
+    }
+}
+
+.recipe-editor-ingredients-hint {
+    display: flex;
+    align-items: center;
+    font-size: 11px;
+    color: var(--ion-color-medium);
+    white-space: nowrap;
+    margin-top: 20px;
+
+    ion-icon {
+        font-size: 12px;
+        vertical-align: middle;
+    }
+}
+
+.recipe-editor-ingredients {
+    display: flex;
+    flex-direction: column;
+}
+
+.recipe-editor-ingredient-row {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--ion-border-color, var(--ion-color-step-150));
+
+    &:first-child {
+        border-top: 1px solid var(--ion-border-color, var(--ion-color-step-150));
+    }
+}
+
+.recipe-editor-ingredient-row__top {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.recipe-editor-ingredient-row__bottom {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-top: 2px;
+    padding-left: 2px;
+}
+
+.recipe-editor-ing-name {
+    flex: 1;
+    font-size: 15px;
+    --padding-start: 0;
+}
+
+.recipe-editor-cart-btn {
+    flex: 0 0 auto;
+    --color: var(--ion-color-step-400, #718096);
+
+    &.included {
+        --color: var(--ion-color-primary, #7c3aed);
+    }
+}
+
+.recipe-editor-qty {
+    flex: 0 0 60px;
+    font-size: 14px;
+    --padding-start: 0;
+}
+
+.recipe-editor-qty-sep {
+    font-size: 13px;
+    color: var(--ion-color-step-400, #718096);
+    flex: 0 0 auto;
+    user-select: none;
+}
+
+.recipe-editor-unit-select {
+    font-size: 14px;
+    --padding-start: 0;
+    flex: 0 0 auto;
+}
+
+// ── Action buttons ────────────────────────────────────────────────────────────
+
+.recipe-editor-add-ingredient-btn {
+    margin-top: 8px;
+    --padding-start: 0;
+}
+
+.recipe-editor-save-btn {
+    margin-top: 24px;
+}

@@ -1,10 +1,13 @@
 import { LLMModalProvider } from "@/llm/shared";
 import { IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } from "@ionic/react";
-import { cartOutline } from "ionicons/icons";
+import { cartOutline, restaurantOutline } from "ionicons/icons";
 import { useEffect, useRef } from "react";
 import { Route } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { usePreloadCoreData } from "../db/hooks";
+import { HouseholdProvider } from "../households/HouseholdProvider";
+import Meals from "../pages/Meals";
+import RecipeDetail from "../pages/RecipeDetail";
 import ShoppingList from "../pages/ShoppingList";
 import { AppHeaderProvider } from "./layout/AppHeaderProvider";
 import { AppMenu } from "./layout/AppMenu";
@@ -46,12 +49,12 @@ const Main: React.FC = () => {
             icon: cartOutline,
             label: "Shopping List",
         },
-        /*         {
-            tab: "placeholder",
-            href: "/placeholder",
-            icon: cartOutline,
-            label: "Placeholder",
-        }, */
+        {
+            tab: "meals",
+            href: "/meals",
+            icon: restaurantOutline,
+            label: "Meals",
+        },
     ];
 
     // Add body class when tab bar is present for conditional FAB positioning
@@ -68,31 +71,39 @@ const Main: React.FC = () => {
     }, [tabs.length]);
 
     return (
-        <ShieldProvider>
-            <LLMModalProvider>
-                <AppHeaderProvider>
-                    <AppMenu />
-                    <NetworkStatusBanner />
-                    <IonTabs>
-                        <IonRouterOutlet id="main-content" animated={false}>
-                            {/* REMEMBER: Most specific routes first */}
-                            <Route exact path="/shoppinglist" component={ShoppingList} />
-                        </IonRouterOutlet>
+        <HouseholdProvider>
+            <ShieldProvider>
+                <LLMModalProvider>
+                    <AppHeaderProvider>
+                        <AppMenu />
+                        <NetworkStatusBanner />
+                        <IonTabs>
+                            <IonRouterOutlet id="main-content" animated={false}>
+                                {/* REMEMBER: Most specific routes first */}
+                                <Route exact path="/shoppinglist" component={ShoppingList} />
+                                <Route
+                                    exact
+                                    path="/meals/recipes/:recipeId"
+                                    component={RecipeDetail}
+                                />
+                                <Route exact path="/meals" component={Meals} />
+                            </IonRouterOutlet>
 
-                        {tabs.length > 1 && (
-                            <IonTabBar slot="bottom">
-                                {tabs.map(({ tab, href, icon, label }) => (
-                                    <IonTabButton key={tab} tab={tab} href={href}>
-                                        <IonIcon aria-hidden="true" icon={icon} />
-                                        <IonLabel>{label}</IonLabel>
-                                    </IonTabButton>
-                                ))}
-                            </IonTabBar>
-                        )}
-                    </IonTabs>
-                </AppHeaderProvider>
-            </LLMModalProvider>
-        </ShieldProvider>
+                            {tabs.length > 1 && (
+                                <IonTabBar slot="bottom">
+                                    {tabs.map(({ tab, href, icon, label }) => (
+                                        <IonTabButton key={tab} tab={tab} href={href}>
+                                            <IonIcon aria-hidden="true" icon={icon} />
+                                            <IonLabel>{label}</IonLabel>
+                                        </IonTabButton>
+                                    ))}
+                                </IonTabBar>
+                            )}
+                        </IonTabs>
+                    </AppHeaderProvider>
+                </LLMModalProvider>
+            </ShieldProvider>
+        </HouseholdProvider>
     );
 };
 

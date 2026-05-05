@@ -31,6 +31,31 @@ export const normalizeItemName = (name: string): string => {
 };
 
 /**
+ * Normalizes a raw unit string from LLM output for matching against known units.
+ * Removes punctuation, singularizes, and lowercases.
+ */
+const normalizeUnit = (unit: string): string =>
+    pluralize.singular(unit.replace(/[^\w\s]/g, "")).toLowerCase().trim();
+
+/**
+ * Matches a raw unit string against known units and returns the matching unit ID,
+ * or null if the unit is not recognized. Matches by abbreviation or name.
+ */
+export const matchUnitId = (
+    unitStr: string | null | undefined,
+    units: Array<{ id: string; abbreviation: string; name: string }> | undefined
+): string | null => {
+    if (!unitStr || !units) return null;
+    const normalized = normalizeUnit(unitStr);
+    return (
+        units.find(
+            (u) =>
+                normalizeUnit(u.abbreviation) === normalized || normalizeUnit(u.name) === normalized
+        )?.id ?? null
+    );
+};
+
+/**
  * Returns a sort function for Array.prototype.sort that sorts objects naturally by a mapped string property.
  *
  * @param mapFn - Function to map an object to a string for comparison

@@ -1,0 +1,287 @@
+// ── FAB layout ────────────────────────────────────────────────────────────────
+
+.meals-import-fab {
+    margin-right: 70px;
+}
+
+// ── Household selector ────────────────────────────────────────────────────────
+
+.meals-household-select {
+    font-size: 13px;
+    color: var(--ion-color-step-500, #a0aec0);
+    --padding-start: 4px;
+    --padding-end: 4px;
+    max-width: 140px;
+}
+
+// ── Segment bar ───────────────────────────────────────────────────────────────
+
+.meals-segment-bar {
+    --background: var(--ion-background-color);
+    border-bottom: 1px solid var(--ion-border-color, #2d3748);
+    padding: 0 16px;
+
+    ion-segment-button {
+        --color: var(--ion-color-step-500, #a0aec0);
+        --color-checked: var(--ion-color-primary, #7c3aed);
+        --indicator-color: var(--ion-color-primary, #7c3aed);
+        font-size: 14px;
+        font-weight: 500;
+        min-height: 44px;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+}
+
+.meals-page {
+    --background: var(--ion-background-color);
+}
+
+// ── Filter bar ───────────────────────────────────────────────────────────────
+
+.meals-filter-bar {
+    padding: 8px 16px 0;
+    background: var(--ion-background-color);
+
+    ion-searchbar {
+        --background: var(--ion-card-background, #1a1a2e);
+        --border-radius: 12px;
+        --box-shadow: none;
+        --color: var(--ion-text-color);
+        --placeholder-color: var(--ion-color-step-500, #a0aec0);
+        --icon-color: var(--ion-color-step-500, #a0aec0);
+        padding: 0;
+        height: 44px;
+    }
+}
+
+.meals-filter-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ion-color-step-500, #a0aec0);
+    padding: 4px 0 8px 4px;
+}
+
+// ── Tag filter bar ───────────────────────────────────────────────────────────
+
+.meals-tag-filter {
+    display: flex;
+    align-items: center;
+    padding: 2px 4px 4px 12px;
+    gap: 4px;
+
+    // Pill badge: shows active filter count and clears on tap
+    &__badge {
+        all: unset;
+        cursor: pointer;
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        background: var(--ion-color-primary);
+        color: #fff;
+        border-radius: 100px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 6px 3px 9px;
+        line-height: 1;
+
+        ion-icon {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+    }
+
+    // Horizontally scrollable chip row — no wrap, no expand/collapse
+    &__strip-wrap {
+        flex: 1;
+        min-width: 0;
+        position: relative;
+
+        // Fade hint at the right edge to signal scrollability
+        &::after {
+            content: "";
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 24px;
+            background: linear-gradient(to right, transparent, var(--ion-background-color));
+            pointer-events: none;
+        }
+    }
+
+    &__strip {
+        display: flex;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        padding: 4px 0 4px;
+        gap: 0;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    // Inline "Create tags" nudge when no tags exist
+    &__create-hint {
+        all: unset;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--ion-color-medium);
+        padding: 4px 0;
+        flex: 1;
+
+        ion-icon {
+            font-size: 16px;
+        }
+    }
+}
+
+// ── Recipe grid ──────────────────────────────────────────────────────────────
+
+.meals-recipe-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 12px 16px;
+}
+
+// ── Empty states ─────────────────────────────────────────────────────────────
+
+.meals-segment-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 64px 32px;
+    text-align: center;
+
+    p {
+        font-size: 15px;
+        color: var(--ion-color-step-500, #a0aec0);
+        margin: 0;
+    }
+}
+
+.meals-empty-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(124, 58, 237, 0.12);
+    color: var(--ion-color-primary, #7c3aed);
+    margin-bottom: 4px;
+
+    ion-icon {
+        font-size: 36px;
+    }
+}
+
+.meals-empty-title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ion-text-color);
+    margin: 0 0 4px;
+}
+
+.meals-empty-body {
+    font-size: 14px;
+    color: var(--ion-color-step-500, #a0aec0);
+    margin: 0;
+    max-width: 260px;
+}
+
+// ── Plan history ─────────────────────────────────────────────────────────────
+
+.plans-history {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.plans-history-meta {
+    font-size: 11px;
+    font-family: "JetBrains Mono", monospace;
+    color: var(--ion-color-medium);
+    padding: 4px 0;
+}
+
+.plan-history-card {
+    background: var(--ion-card-background, #1a1a2e);
+    border: 1px solid var(--ion-border-color, #2d3748);
+    border-radius: 10px;
+    overflow: hidden;
+
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px 8px;
+        border-bottom: 1px solid var(--ion-border-color, #2d3748);
+    }
+
+    &__date {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ion-text-color);
+    }
+
+    &__count {
+        font-size: 11px;
+        font-family: "JetBrains Mono", monospace;
+        color: var(--ion-color-medium);
+    }
+
+    &__slots {
+        padding: 4px 0;
+    }
+}
+
+.plan-history-slot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px;
+
+    &__num {
+        font-size: 11px;
+        font-weight: 700;
+        font-family: "JetBrains Mono", monospace;
+        color: var(--ion-color-primary, #7c3aed);
+        min-width: 16px;
+        flex: 0 0 auto;
+    }
+
+    &__name {
+        font-size: 13px;
+        color: var(--ion-text-color);
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+
+        em {
+            color: var(--ion-color-medium);
+            font-style: italic;
+        }
+    }
+}
+
+.plans-history-more {
+    display: flex;
+    justify-content: center;
+    padding: 4px 0 8px;
+}

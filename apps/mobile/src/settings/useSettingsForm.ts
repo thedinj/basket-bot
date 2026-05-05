@@ -22,6 +22,14 @@ export function useSettingsForm() {
     // Fetch theme mode from preferences (suspends until loaded)
     const { value: themeModeValue, savePreference: saveThemeMode } = usePreference("theme_mode");
 
+    // Fetch default meal plan slots from preferences (suspends until loaded)
+    const { value: defaultMealPlanSlotsValue, savePreference: saveDefaultMealPlanSlots } =
+        usePreference("default_meal_plan_slots");
+
+    // Fetch default meal plan store from preferences (suspends until loaded)
+    const { value: defaultMealPlanStoreValue, savePreference: saveDefaultMealPlanStore } =
+        usePreference("default_meal_plan_store");
+
     // Save API key mutation
     const { mutateAsync: saveApiKey } = useSaveSecureApiKey();
 
@@ -32,6 +40,7 @@ export function useSettingsForm() {
             openaiApiKey: undefined,
             remoteApiUrl: undefined,
             themeMode: undefined,
+            defaultMealPlanSlots: undefined,
         },
     });
 
@@ -44,8 +53,12 @@ export function useSettingsForm() {
             openaiApiKey: apiKeyValue || undefined,
             remoteApiUrl: remoteApiUrlValue || undefined,
             themeMode: (themeModeValue as ThemeMode) || undefined,
+            defaultMealPlanSlots: defaultMealPlanSlotsValue
+                ? Number(defaultMealPlanSlotsValue)
+                : undefined,
+            defaultMealPlanStore: defaultMealPlanStoreValue || undefined,
         });
-    }, [apiKeyValue, remoteApiUrlValue, themeModeValue, reset]);
+    }, [apiKeyValue, remoteApiUrlValue, themeModeValue, defaultMealPlanSlotsValue, reset]);
 
     // Performs the actual save — takes validated form data, returns boolean success
     const performSave = useCallback(
@@ -60,6 +73,12 @@ export function useSettingsForm() {
 
                 await saveThemeMode(data.themeMode ?? "system");
 
+                await saveDefaultMealPlanSlots(
+                    data.defaultMealPlanSlots != null ? String(data.defaultMealPlanSlots) : null
+                );
+
+                await saveDefaultMealPlanStore(data.defaultMealPlanStore || null);
+
                 showSuccess("Settings saved successfully");
                 return true;
             } catch (error: unknown) {
@@ -68,7 +87,7 @@ export function useSettingsForm() {
                 return false;
             }
         },
-        [saveApiKey, saveRemoteApiUrl, saveThemeMode, showError, showSuccess]
+        [saveApiKey, saveRemoteApiUrl, saveThemeMode, saveDefaultMealPlanSlots, saveDefaultMealPlanStore, showError, showSuccess]
     );
 
     return {

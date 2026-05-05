@@ -1,30 +1,11 @@
-import type { Recipe, RecipeWithDetails } from "@basket-bot/core";
+import type { Recipe, RecipeIngredient, RecipeTag, RecipeWithDetails } from "@basket-bot/core";
 import { db } from "../db/db";
+import { intToBool } from "../utils/sqliteUtils";
 
 /**
  * Repository for Recipe entity operations.
  * Handles all database access for recipes.
  */
-
-// ========== Boolean Conversion Helpers ==========
-// SQLite stores booleans as integers (1) or null
-// We use null for false to save space and make intent clearer
-
-/**
- * Convert a boolean to SQLite value (1 for true, null for false)
- */
-function boolToInt(value: boolean | null | undefined): number | null {
-    if (value == null || !value) return null;
-    return 1;
-}
-
-/**
- * Convert SQLite value to boolean (1 → true, null/0 → false)
- */
-function intToBool(value: number | null | undefined): boolean {
-    if (value == null) return false;
-    return value !== 0;
-}
 
 // ========== Recipe CRUD Operations ==========
 
@@ -34,14 +15,16 @@ export function createRecipe(params: {
     description?: string | null;
     steps?: string | null;
     sourceUrl?: string | null;
+    isPoolExcluded?: boolean | null;
+    cookingTimeMinutes?: number | null;
     createdById: string;
 }): Recipe {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
 
     db.prepare(
-        `INSERT INTO Recipe (id, householdId, name, description, steps, sourceUrl, isHidden, createdById, updatedById, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO Recipe (id, householdId, name, description, steps, sourceUrl, isHidden, isPoolExcluded, cookingTimeMinutes, createdById, updatedById, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
         id,
         params.householdId,
@@ -50,6 +33,8 @@ export function createRecipe(params: {
         params.steps ?? null,
         params.sourceUrl ?? null,
         null, // isHidden defaults to false (NULL)
+        params.isPoolExcluded ? 1 : null,
+        params.cookingTimeMinutes ?? null,
         params.createdById,
         params.createdById,
         now,
@@ -62,17 +47,18 @@ export function createRecipe(params: {
 export function getRecipeById(id: string): Recipe | null {
     const row = db
         .prepare(
-            `SELECT id, householdId, name, description, steps, sourceUrl, isHidden, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, householdId, name, description, steps, sourceUrl, isHidden, isPoolExcluded, cookingTimeMinutes, createdById, updatedById, createdAt, updatedAt
              FROM Recipe
              WHERE id = ?`
         )
-        .get(id) as (Omit<Recipe, "isHidden"> & { isHidden: number | null }) | undefined;
+        .get(id) as (Omit<Recipe, "isHidden" | "isPoolExcluded"> & { isHidden: number | null; isPoolExcluded: number | null }) | undefined;
 
     if (!row) return null;
 
     return {
         ...row,
         isHidden: intToBool(row.isHidden),
+        isPoolExcluded: intToBool(row.isPoolExcluded),
     };
 }
 
@@ -80,7 +66,7 @@ export function getRecipesByHousehold(
     householdId: string,
     includeHidden: boolean = false
 ): Recipe[] {
-    let query = `SELECT id, householdId, name, description, steps, sourceUrl, isHidden, createdById, updatedById, createdAt, updatedAt
+    let query = `SELECT id, householdId, name, description, steps, sourceUrl, isHidden, isPoolExcluded, cookingTimeMinutes, createdById, updatedById, createdAt, updatedAt
                  FROM Recipe
                  WHERE householdId = ?`;
 
@@ -91,12 +77,13 @@ export function getRecipesByHousehold(
     query += ` ORDER BY name ASC`;
 
     const rows = db.prepare(query).all(householdId) as Array<
-        Omit<Recipe, "isHidden"> & { isHidden: number | null }
+        Omit<Recipe, "isHidden" | "isPoolExcluded"> & { isHidden: number | null; isPoolExcluded: number | null }
     >;
 
     return rows.map((row) => ({
         ...row,
         isHidden: intToBool(row.isHidden),
+        isPoolExcluded: intToBool(row.isPoolExcluded),
     }));
 }
 
@@ -106,6 +93,8 @@ export function updateRecipe(params: {
     description?: string | null;
     steps?: string | null;
     sourceUrl?: string | null;
+    isPoolExcluded?: boolean | null;
+    cookingTimeMinutes?: number | null;
     updatedById: string;
 }): Recipe | null {
     const existing = getRecipeById(params.id);
@@ -113,15 +102,20 @@ export function updateRecipe(params: {
 
     const now = new Date().toISOString();
 
+    const newIsPoolExcluded =
+        params.isPoolExcluded !== undefined ? (params.isPoolExcluded ? 1 : null) : (existing.isPoolExcluded ? 1 : null);
+
     db.prepare(
         `UPDATE Recipe
-         SET name = ?, description = ?, steps = ?, sourceUrl = ?, updatedById = ?, updatedAt = ?
+         SET name = ?, description = ?, steps = ?, sourceUrl = ?, isPoolExcluded = ?, cookingTimeMinutes = ?, updatedById = ?, updatedAt = ?
          WHERE id = ?`
     ).run(
         params.name ?? existing.name,
         params.description !== undefined ? params.description : existing.description,
         params.steps !== undefined ? params.steps : existing.steps,
         params.sourceUrl !== undefined ? params.sourceUrl : existing.sourceUrl,
+        newIsPoolExcluded,
+        params.cookingTimeMinutes !== undefined ? params.cookingTimeMinutes : existing.cookingTimeMinutes,
         params.updatedById,
         now,
         params.id
@@ -176,7 +170,7 @@ export function getRecipeWithDetails(id: string): RecipeWithDetails | null {
     // Get tags
     const tagRows = db
         .prepare(
-            `SELECT rt.id, rt.householdId, rt.name, rt.color, rt.createdById, rt.createdAt
+            `SELECT rt.id, rt.householdId, rt.name, rt.colorKey, rt.createdById, rt.createdAt
              FROM RecipeTag rt
              INNER JOIN RecipeTagAssignment rta ON rta.tagId = rt.id
              WHERE rta.recipeId = ?
@@ -187,51 +181,134 @@ export function getRecipeWithDetails(id: string): RecipeWithDetails | null {
     // Get ingredients
     const ingredientRows = db
         .prepare(
-            `SELECT id, recipeId, name, qty, unitId, sortOrder, notes, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, recipeId, name, qty, unitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt
              FROM RecipeIngredient
              WHERE recipeId = ?
              ORDER BY sortOrder ASC`
         )
-        .all(id) as any[];
+        .all(id) as Array<Omit<RecipeIngredient, "excluded"> & { excluded: 1 | null }>;
 
     return {
         ...recipe,
-        tags: tagRows,
-        ingredients: ingredientRows,
+        tags: tagRows as RecipeTag[],
+        ingredients: ingredientRows.map((r) => ({ ...r, excluded: r.excluded === 1 })),
     };
+}
+
+export function getRecipesWithDetailsByHousehold(householdId: string): RecipeWithDetails[] {
+    const recipes = getRecipesByHousehold(householdId);
+    if (recipes.length === 0) return [];
+
+    const ids = recipes.map((r) => r.id);
+    const ph = ids.map(() => "?").join(",");
+
+    const tagRows = db
+        .prepare(
+            `SELECT rta.recipeId, rt.id, rt.householdId, rt.name, rt.colorKey, rt.createdById, rt.createdAt
+             FROM RecipeTagAssignment rta
+             INNER JOIN RecipeTag rt ON rt.id = rta.tagId
+             WHERE rta.recipeId IN (${ph})
+             ORDER BY rt.name ASC`
+        )
+        .all(...ids) as Array<RecipeTag & { recipeId: string }>;
+
+    const ingRows = db
+        .prepare(
+            `SELECT id, recipeId, name, qty, unitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt
+             FROM RecipeIngredient
+             WHERE recipeId IN (${ph})
+             ORDER BY sortOrder ASC, name ASC`
+        )
+        .all(...ids) as Array<
+        Omit<RecipeIngredient, "excluded"> & { recipeId: string; excluded: 1 | null }
+    >;
+
+    const tagsByRecipe = new Map<string, RecipeTag[]>();
+    for (const row of tagRows) {
+        const { recipeId, ...tag } = row;
+        if (!tagsByRecipe.has(recipeId)) tagsByRecipe.set(recipeId, []);
+        tagsByRecipe.get(recipeId)!.push(tag as RecipeTag);
+    }
+
+    const ingsByRecipe = new Map<string, RecipeIngredient[]>();
+    for (const row of ingRows) {
+        const { recipeId, ...rest } = row;
+        if (!ingsByRecipe.has(recipeId)) ingsByRecipe.set(recipeId, []);
+        ingsByRecipe.get(recipeId)!.push({ ...rest, recipeId, excluded: rest.excluded === 1 });
+    }
+
+    return recipes.map((recipe) => ({
+        ...recipe,
+        tags: tagsByRecipe.get(recipe.id) ?? [],
+        ingredients: ingsByRecipe.get(recipe.id) ?? [],
+    }));
 }
 
 // ========== Tag-based Search ==========
 
 /**
- * Search recipes by tags (AND filter - recipe must have all specified tags)
+ * Search recipes by tags (AND logic) and optional max cooking time.
+ * Recipes with null cookingTimeMinutes fail the maxCookingTimeMinutes filter when it is set.
  */
-export function searchRecipesByTags(householdId: string, tagIds: string[]): Recipe[] {
-    if (tagIds.length === 0) {
+export function searchRecipes(
+    householdId: string,
+    tagIds: string[],
+    maxCookingTimeMinutes?: number | null
+): Recipe[] {
+    const hasTagFilter = tagIds.length > 0;
+    const hasTimeFilter = maxCookingTimeMinutes != null;
+
+    if (!hasTagFilter && !hasTimeFilter) {
         return getRecipesByHousehold(householdId);
     }
 
-    // Build query with AND logic (recipe must have all tags)
-    // Count how many of the specified tags each recipe has, and filter to only those with all tags
-    const placeholders = tagIds.map(() => "?").join(",");
-    const query = `
-        SELECT DISTINCT r.id, r.householdId, r.name, r.description, r.steps, r.sourceUrl, r.isHidden, r.createdById, r.updatedById, r.createdAt, r.updatedAt
-        FROM Recipe r
-        INNER JOIN RecipeTagAssignment rta ON rta.recipeId = r.id
-        WHERE r.householdId = ?
-          AND (r.isHidden IS NULL OR r.isHidden = 0)
-          AND rta.tagId IN (${placeholders})
-        GROUP BY r.id
-        HAVING COUNT(DISTINCT rta.tagId) = ?
-        ORDER BY r.name ASC
-    `;
+    const binds: unknown[] = [householdId];
+    let query: string;
 
-    const rows = db.prepare(query).all(householdId, ...tagIds, tagIds.length) as Array<
-        Omit<Recipe, "isHidden"> & { isHidden: number | null }
+    if (hasTagFilter) {
+        const placeholders = tagIds.map(() => "?").join(",");
+        query = `
+            SELECT r.id, r.householdId, r.name, r.description, r.steps, r.sourceUrl, r.isHidden, r.isPoolExcluded, r.cookingTimeMinutes, r.createdById, r.updatedById, r.createdAt, r.updatedAt
+            FROM Recipe r
+            INNER JOIN RecipeTagAssignment rta ON rta.recipeId = r.id
+            WHERE r.householdId = ?
+              AND (r.isHidden IS NULL OR r.isHidden = 0)
+              AND r.isPoolExcluded IS NULL
+              AND rta.tagId IN (${placeholders})
+            GROUP BY r.id
+            HAVING COUNT(DISTINCT rta.tagId) = ?
+        `;
+        binds.push(...tagIds, tagIds.length);
+    } else {
+        query = `
+            SELECT id, householdId, name, description, steps, sourceUrl, isHidden, isPoolExcluded, cookingTimeMinutes, createdById, updatedById, createdAt, updatedAt
+            FROM Recipe
+            WHERE householdId = ?
+              AND (isHidden IS NULL OR isHidden = 0)
+              AND isPoolExcluded IS NULL
+        `;
+    }
+
+    const col = hasTagFilter ? "r.cookingTimeMinutes" : "cookingTimeMinutes";
+
+    if (hasTimeFilter) {
+        query += ` AND (${col} IS NOT NULL AND ${col} <= ?)`;
+        binds.push(maxCookingTimeMinutes);
+    }
+
+    query += ` ORDER BY ${hasTagFilter ? "r." : ""}name ASC`;
+
+    const rows = db.prepare(query).all(...binds) as Array<
+        Omit<Recipe, "isHidden" | "isPoolExcluded"> & { isHidden: number | null; isPoolExcluded: number | null }
     >;
 
     return rows.map((row) => ({
         ...row,
         isHidden: intToBool(row.isHidden),
+        isPoolExcluded: intToBool(row.isPoolExcluded),
     }));
+}
+
+export function searchRecipesByTags(householdId: string, tagIds: string[]): Recipe[] {
+    return searchRecipes(householdId, tagIds, null);
 }

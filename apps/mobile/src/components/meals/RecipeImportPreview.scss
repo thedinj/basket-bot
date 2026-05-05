@@ -1,0 +1,112 @@
+.recipe-import-preview {
+    &__header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 4px;
+    }
+
+    &__name {
+        font-size: 17px;
+        font-weight: 600;
+        color: var(--ion-text-color);
+        margin: 0;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__count {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--ion-color-medium);
+        margin: 0;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    &__count-num {
+        color: var(--ion-color-primary);
+        font-weight: 600;
+    }
+
+    &__hint {
+        font-size: 12px;
+        color: var(--ion-color-medium);
+        margin: 0 0 12px;
+        opacity: 0.7;
+    }
+
+    &__list {
+        --background: transparent;
+        margin: 0;
+        padding: 0;
+    }
+
+    &__item {
+        --background: transparent;
+        --padding-start: 0;
+        --inner-padding-end: 0;
+        --min-height: 40px;
+        transition: opacity 0.15s ease;
+
+        &--excluded {
+            opacity: 0.35;
+        }
+    }
+
+    // IonLabel reset — Ionic applies unwanted transforms
+    &__row {
+        display: flex !important;
+        align-items: baseline;
+        gap: 8px;
+        overflow: visible !important;
+        white-space: normal !important;
+    }
+
+    &__qty {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--ion-color-medium);
+        min-width: 52px;
+        text-align: right;
+        flex-shrink: 0;
+        line-height: 1.4;
+    }
+
+    &__qty-empty {
+        opacity: 0.3;
+    }
+
+    &__ing-name {
+        flex: 1;
+        min-width: 0;
+        font-size: 14px;
+        line-height: 1.4;
+        word-break: break-word;
+    }
+
+    &__pantry-badge {
+        display: inline-block;
+        font-size: 9px;
+        font-weight: 700;
+        font-family: "JetBrains Mono", monospace;
+        color: var(--ion-color-medium);
+        background: transparent;
+        border-radius: 3px;
+        padding: 1px 4px;
+        margin-left: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        vertical-align: middle;
+        opacity: 0.6;
+    }
+
+    &__empty {
+        font-size: 14px;
+        margin: 8px 0;
+    }
+}

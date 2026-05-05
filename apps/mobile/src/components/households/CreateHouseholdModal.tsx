@@ -15,6 +15,7 @@ import {
 import { closeOutline } from "ionicons/icons";
 import React, { useState } from "react";
 import { useCreateHousehold } from "../../db/hooks";
+import { useHousehold } from "../../households/useHousehold";
 
 interface CreateHouseholdModalProps {
     isOpen: boolean;
@@ -24,12 +25,14 @@ interface CreateHouseholdModalProps {
 const CreateHouseholdModal: React.FC<CreateHouseholdModalProps> = ({ isOpen, onClose }) => {
     const [name, setName] = useState("");
     const createHousehold = useCreateHousehold();
+    const { refreshHouseholds } = useHousehold();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name.trim()) return;
 
         await createHousehold.mutateAsync(name.trim());
+        await refreshHouseholds();
         setName("");
         onClose();
     };

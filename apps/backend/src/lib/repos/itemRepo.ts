@@ -1,23 +1,11 @@
 import type { StoreItem, StoreItemWithDetails } from "@basket-bot/core";
 import { db } from "../db/db";
+import { intToBool } from "../utils/sqliteUtils";
 import { normalizeItemName } from "../utils/stringUtils";
 
 /**
  * Repository for StoreItem entity operations.
  */
-
-// ========== Boolean Conversion Helpers ==========
-// SQLite stores booleans as integers (1) or null
-// We use null for false to save space and make intent clearer
-// These helpers ensure type safety between database and application layers
-
-/**
- * Convert SQLite value to boolean (1 → true, null/0 → false)
- */
-function intToBool(value: number | null | undefined): boolean {
-    if (value == null) return false;
-    return value !== 0;
-}
 
 export function createItem(params: {
     storeId: string;

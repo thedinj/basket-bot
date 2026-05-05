@@ -1,19 +1,10 @@
-import type { Recipe, RecipeTag } from "@basket-bot/core";
+import type { Recipe, RecipeTag, TagPaletteKey } from "@basket-bot/core";
+import { TAG_PALETTE_KEYS } from "@basket-bot/core";
 import { db } from "../db/db";
+import { intToBool } from "../utils/sqliteUtils";
 
-/**
- * Repository for RecipeTag entity operations.
- * Handles tags and tag assignments for recipes.
- */
-
-// ========== Boolean Conversion Helper ==========
-
-/**
- * Convert SQLite value to boolean (1 → true, null/0 → false)
- */
-function intToBool(value: number | null | undefined): boolean {
-    if (value == null) return false;
-    return value !== 0;
+function randomPaletteKey(): TagPaletteKey {
+    return TAG_PALETTE_KEYS[Math.floor(Math.random() * TAG_PALETTE_KEYS.length)];
 }
 
 // ========== RecipeTag CRUD Operations ==========
@@ -21,16 +12,17 @@ function intToBool(value: number | null | undefined): boolean {
 export function createTag(params: {
     householdId: string;
     name: string;
-    color?: string | null;
+    colorKey?: TagPaletteKey | null;
     createdById: string;
 }): RecipeTag {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
+    const colorKey = params.colorKey ?? randomPaletteKey();
 
     db.prepare(
-        `INSERT INTO RecipeTag (id, householdId, name, color, createdById, createdAt)
+        `INSERT INTO RecipeTag (id, householdId, name, colorKey, createdById, createdAt)
          VALUES (?, ?, ?, ?, ?, ?)`
-    ).run(id, params.householdId, params.name, params.color ?? null, params.createdById, now);
+    ).run(id, params.householdId, params.name, colorKey, params.createdById, now);
 
     return getTagById(id)!;
 }
@@ -38,7 +30,7 @@ export function createTag(params: {
 export function getTagById(id: string): RecipeTag | null {
     const row = db
         .prepare(
-            `SELECT id, householdId, name, color, createdById, createdAt
+            `SELECT id, householdId, name, colorKey, createdById, createdAt
              FROM RecipeTag
              WHERE id = ?`
         )
@@ -50,7 +42,7 @@ export function getTagById(id: string): RecipeTag | null {
 export function getTagsByHousehold(householdId: string): RecipeTag[] {
     const rows = db
         .prepare(
-            `SELECT id, householdId, name, color, createdById, createdAt
+            `SELECT id, householdId, name, colorKey, createdById, createdAt
              FROM RecipeTag
              WHERE householdId = ?
              ORDER BY name ASC`
@@ -63,18 +55,18 @@ export function getTagsByHousehold(householdId: string): RecipeTag[] {
 export function updateTag(params: {
     id: string;
     name?: string;
-    color?: string | null;
+    colorKey?: TagPaletteKey | null;
 }): RecipeTag | null {
     const existing = getTagById(params.id);
     if (!existing) return null;
 
     db.prepare(
         `UPDATE RecipeTag
-         SET name = ?, color = ?
+         SET name = ?, colorKey = ?
          WHERE id = ?`
     ).run(
         params.name ?? existing.name,
-        params.color !== undefined ? params.color : existing.color,
+        params.colorKey !== undefined ? params.colorKey : existing.colorKey,
         params.id
     );
 
@@ -112,7 +104,7 @@ export function removeTagFromRecipe(recipeId: string, tagId: string): boolean {
 export function getTagsForRecipe(recipeId: string): RecipeTag[] {
     const rows = db
         .prepare(
-            `SELECT rt.id, rt.householdId, rt.name, rt.color, rt.createdById, rt.createdAt
+            `SELECT rt.id, rt.householdId, rt.name, rt.colorKey, rt.createdById, rt.createdAt
              FROM RecipeTag rt
              INNER JOIN RecipeTagAssignment rta ON rta.tagId = rt.id
              WHERE rta.recipeId = ?

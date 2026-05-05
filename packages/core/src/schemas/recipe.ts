@@ -6,8 +6,8 @@ import {
     MAX_RECIPE_NAME_LENGTH,
     MAX_RECIPE_SOURCE_URL_LENGTH,
     MAX_RECIPE_STEPS_LENGTH,
-    MAX_RECIPE_TAG_COLOR_LENGTH,
     MAX_RECIPE_TAG_NAME_LENGTH,
+    TAG_PALETTE_KEYS,
 } from "../constants/index.js";
 import { maxLengthString, minMaxLengthString } from "./zodHelpers.js";
 
@@ -35,6 +35,8 @@ export const recipeSchema = z.object({
     steps: maxLengthString(MAX_RECIPE_STEPS_LENGTH, "Steps").nullable(),
     sourceUrl: maxLengthString(MAX_RECIPE_SOURCE_URL_LENGTH, "Source URL").nullable(),
     isHidden: z.boolean(),
+    isPoolExcluded: z.boolean(),
+    cookingTimeMinutes: z.number().int().min(1).nullable(),
     ...auditFields,
 });
 
@@ -47,6 +49,8 @@ export const createRecipeRequestSchema = z.object({
         .optional(),
     steps: maxLengthString(MAX_RECIPE_STEPS_LENGTH, "Steps").nullable().optional(),
     sourceUrl: maxLengthString(MAX_RECIPE_SOURCE_URL_LENGTH, "Source URL").nullable().optional(),
+    isPoolExcluded: z.boolean().optional(),
+    cookingTimeMinutes: z.number().int().min(1).nullable().optional(),
 });
 
 export type CreateRecipeRequest = z.infer<typeof createRecipeRequestSchema>;
@@ -60,7 +64,7 @@ export const recipeTagSchema = z.object({
     id: z.string().uuid(),
     householdId: z.string().uuid(),
     name: minMaxLengthString(1, MAX_RECIPE_TAG_NAME_LENGTH, "Tag name"),
-    color: maxLengthString(MAX_RECIPE_TAG_COLOR_LENGTH, "Tag color").nullable(),
+    colorKey: z.enum(TAG_PALETTE_KEYS).nullable(),
     ...tagAuditFields,
 });
 
@@ -68,7 +72,7 @@ export type RecipeTag = z.infer<typeof recipeTagSchema>;
 
 export const createRecipeTagRequestSchema = z.object({
     name: minMaxLengthString(1, MAX_RECIPE_TAG_NAME_LENGTH, "Tag name"),
-    color: maxLengthString(MAX_RECIPE_TAG_COLOR_LENGTH, "Tag color").nullable().optional(),
+    colorKey: z.enum(TAG_PALETTE_KEYS).nullable().optional(),
 });
 
 export type CreateRecipeTagRequest = z.infer<typeof createRecipeTagRequestSchema>;
@@ -102,6 +106,7 @@ export const recipeIngredientSchema = z.object({
     unitId: z.string().nullable(),
     sortOrder: z.number().int().min(0),
     notes: maxLengthString(MAX_RECIPE_INGREDIENT_NOTES_LENGTH, "Ingredient notes").nullable(),
+    excluded: z.boolean(),
     ...auditFields,
 });
 
@@ -115,6 +120,7 @@ export const addRecipeIngredientRequestSchema = z.object({
     notes: maxLengthString(MAX_RECIPE_INGREDIENT_NOTES_LENGTH, "Ingredient notes")
         .nullable()
         .optional(),
+    excluded: z.boolean().optional().default(false),
 });
 
 export type AddRecipeIngredientRequest = z.infer<typeof addRecipeIngredientRequestSchema>;
@@ -143,19 +149,23 @@ export const recipeWithDetailsSchema = recipeSchema.extend({
 
 export type RecipeWithDetails = z.infer<typeof recipeWithDetailsSchema>;
 
-// ========== Add Recipes to Shopping List ==========
-export const addRecipesToShoppingListRequestSchema = z.object({
-    recipeIds: z.array(z.string().uuid()).min(1, "At least one recipe must be selected"),
-    storeId: z.string().uuid(),
+// ========== Add Recipe to Shopping List ==========
+export const addRecipeToShoppingListRequestSchema = z.object({
+    routes: z
+        .array(
+            z.object({
+                ingredientId: z.string().uuid(),
+                storeId: z.string().uuid(),
+            })
+        )
+        .min(1, "At least one ingredient route must be provided"),
 });
 
-export type AddRecipesToShoppingListRequest = z.infer<typeof addRecipesToShoppingListRequestSchema>;
+export type AddRecipeToShoppingListRequest = z.infer<typeof addRecipeToShoppingListRequestSchema>;
 
-export const addRecipesToShoppingListResponseSchema = z.object({
+export const addRecipeToShoppingListResponseSchema = z.object({
     itemsCreated: z.number().int().min(0),
     itemsSkipped: z.number().int().min(0),
 });
 
-export type AddRecipesToShoppingListResponse = z.infer<
-    typeof addRecipesToShoppingListResponseSchema
->;
+export type AddRecipeToShoppingListResponse = z.infer<typeof addRecipeToShoppingListResponseSchema>;
