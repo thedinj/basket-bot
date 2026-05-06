@@ -1,5 +1,6 @@
 import type { RecipeIngredient } from "@basket-bot/core";
 import { db } from "../db/db";
+import { normalizeItemName } from "../utils/stringUtils";
 
 /**
  * Repository for RecipeIngredient entity operations.
@@ -17,8 +18,11 @@ function mapRow(row: RawRow): RecipeIngredient {
 export function addIngredient(params: {
     recipeId: string;
     name: string;
+    shoppingName?: string | null;
     qty?: number | null;
+    shoppingQty?: number | null;
     unitId?: string | null;
+    shoppingUnitId?: string | null;
     sortOrder?: number;
     notes?: string | null;
     excluded?: boolean;
@@ -26,16 +30,31 @@ export function addIngredient(params: {
 }): RecipeIngredient {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
+    const shoppingName =
+        params.shoppingName && normalizeItemName(params.shoppingName) !== normalizeItemName(params.name)
+            ? params.shoppingName.trim()
+            : null;
+
+    const recipeQty = params.qty ?? null;
+    const recipeUnitId = params.unitId ?? null;
+    const rawShoppingQty = params.shoppingQty ?? null;
+    const rawShoppingUnitId = params.shoppingUnitId ?? null;
+    const sameAsRecipe = rawShoppingQty === recipeQty && rawShoppingUnitId === recipeUnitId;
+    const shoppingQty = sameAsRecipe ? null : rawShoppingQty;
+    const shoppingUnitId = sameAsRecipe ? null : rawShoppingUnitId;
 
     db.prepare(
-        `INSERT INTO RecipeIngredient (id, recipeId, name, qty, unitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO RecipeIngredient (id, recipeId, name, shoppingName, qty, shoppingQty, unitId, shoppingUnitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
         id,
         params.recipeId,
         params.name,
-        params.qty ?? null,
-        params.unitId ?? null,
+        shoppingName,
+        recipeQty,
+        shoppingQty,
+        recipeUnitId,
+        shoppingUnitId,
         params.sortOrder ?? 0,
         params.notes ?? null,
         params.excluded ? 1 : null,
@@ -51,7 +70,7 @@ export function addIngredient(params: {
 export function getIngredientById(id: string): RecipeIngredient | null {
     const row = db
         .prepare(
-            `SELECT id, recipeId, name, qty, unitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, recipeId, name, shoppingName, qty, shoppingQty, unitId, shoppingUnitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt
              FROM RecipeIngredient
              WHERE id = ?`
         )
@@ -63,7 +82,7 @@ export function getIngredientById(id: string): RecipeIngredient | null {
 export function getIngredientsByRecipe(recipeId: string): RecipeIngredient[] {
     const rows = db
         .prepare(
-            `SELECT id, recipeId, name, qty, unitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, recipeId, name, shoppingName, qty, shoppingQty, unitId, shoppingUnitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt
              FROM RecipeIngredient
              WHERE recipeId = ?
              ORDER BY sortOrder ASC, name ASC`
@@ -76,8 +95,11 @@ export function getIngredientsByRecipe(recipeId: string): RecipeIngredient[] {
 export function updateIngredient(params: {
     id: string;
     name?: string;
+    shoppingName?: string | null;
     qty?: number | null;
+    shoppingQty?: number | null;
     unitId?: string | null;
+    shoppingUnitId?: string | null;
     sortOrder?: number;
     notes?: string | null;
     excluded?: boolean;
@@ -87,18 +109,47 @@ export function updateIngredient(params: {
     if (!existing) return null;
 
     const now = new Date().toISOString();
+    const resolvedName = params.name ?? existing.name;
+    const resolvedQty = params.qty !== undefined ? (params.qty ?? null) : (existing.qty ?? null);
+    const resolvedUnitId = params.unitId !== undefined ? (params.unitId ?? null) : (existing.unitId ?? null);
 
     const excluded =
         params.excluded !== undefined ? (params.excluded ? 1 : null) : existing.excluded ? 1 : null;
 
+    let shoppingName: string | null;
+    if (params.shoppingName !== undefined) {
+        shoppingName =
+            params.shoppingName && normalizeItemName(params.shoppingName) !== normalizeItemName(resolvedName)
+                ? params.shoppingName.trim()
+                : null;
+    } else {
+        shoppingName = existing.shoppingName;
+    }
+
+    let shoppingQty: number | null;
+    let shoppingUnitId: string | null;
+    if (params.shoppingQty !== undefined || params.shoppingUnitId !== undefined) {
+        const rawShoppingQty = params.shoppingQty !== undefined ? (params.shoppingQty ?? null) : existing.shoppingQty;
+        const rawShoppingUnitId = params.shoppingUnitId !== undefined ? (params.shoppingUnitId ?? null) : existing.shoppingUnitId;
+        const sameAsRecipe = rawShoppingQty === resolvedQty && rawShoppingUnitId === resolvedUnitId;
+        shoppingQty = sameAsRecipe ? null : rawShoppingQty;
+        shoppingUnitId = sameAsRecipe ? null : rawShoppingUnitId;
+    } else {
+        shoppingQty = existing.shoppingQty;
+        shoppingUnitId = existing.shoppingUnitId;
+    }
+
     db.prepare(
         `UPDATE RecipeIngredient
-         SET name = ?, qty = ?, unitId = ?, sortOrder = ?, notes = ?, excluded = ?, updatedById = ?, updatedAt = ?
+         SET name = ?, shoppingName = ?, qty = ?, shoppingQty = ?, unitId = ?, shoppingUnitId = ?, sortOrder = ?, notes = ?, excluded = ?, updatedById = ?, updatedAt = ?
          WHERE id = ?`
     ).run(
-        params.name ?? existing.name,
-        params.qty !== undefined ? params.qty : existing.qty,
-        params.unitId !== undefined ? params.unitId : existing.unitId,
+        resolvedName,
+        shoppingName,
+        resolvedQty,
+        shoppingQty,
+        resolvedUnitId,
+        shoppingUnitId,
         params.sortOrder !== undefined ? params.sortOrder : existing.sortOrder,
         params.notes !== undefined ? params.notes : existing.notes,
         excluded,

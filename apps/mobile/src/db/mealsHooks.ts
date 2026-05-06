@@ -168,11 +168,17 @@ export function useAddRecipeToShoppingList(householdId: string | null, recipeId:
     const { showError } = useToast()
 
     return useTanstackMutation({
-        mutationFn: (routes: Array<{ ingredientId: string; storeId: string | null }>) => {
+        mutationFn: ({
+            routes,
+            factor = 1,
+        }: {
+            routes: Array<{ ingredientId: string; storeId: string | null }>
+            factor?: number
+        }) => {
             const included = routes.filter(
                 (r): r is { ingredientId: string; storeId: string } => r.storeId !== null
             )
-            return recipeApi.addToShoppingList(householdId!, recipeId!, { routes: included })
+            return recipeApi.addToShoppingList(householdId!, recipeId!, { routes: included, factor })
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["shoppingList"] })
@@ -288,8 +294,11 @@ export function useAddIngredient(householdId: string | null) {
         mutationFn: (params: {
             recipeId: string
             name: string
+            shoppingName?: string | null
             qty?: number | null
+            shoppingQty?: number | null
             unitId?: string | null
+            shoppingUnitId?: string | null
             sortOrder?: number
             notes?: string | null
             excluded?: boolean
@@ -317,8 +326,11 @@ export function useUpdateIngredient(householdId: string | null) {
             recipeId: string
             ingredientId: string
             name?: string
+            shoppingName?: string | null
             qty?: number | null
+            shoppingQty?: number | null
             unitId?: string | null
+            shoppingUnitId?: string | null
             sortOrder?: number
             notes?: string | null
             excluded?: boolean
@@ -480,8 +492,8 @@ export function useDispatchPlan(householdId: string | null) {
     const { showError, showSuccess } = useToast()
 
     return useTanstackMutation({
-        mutationFn: (params: { planId: string }) =>
-            planApi.dispatchPlan(householdId!, params.planId),
+        mutationFn: (params: { planId: string; scaleFactors?: Record<string, number> }) =>
+            planApi.dispatchPlan(householdId!, params.planId, params.scaleFactors ?? {}),
         onSuccess: (result: { plan: Plan; itemsAdded: number; itemsSkipped: number }, variables) => {
             queryClient.invalidateQueries({ queryKey: ["plans", householdId] })
             queryClient.invalidateQueries({ queryKey: ["plans", householdId, variables.planId] })

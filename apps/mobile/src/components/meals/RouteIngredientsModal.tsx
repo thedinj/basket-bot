@@ -10,8 +10,9 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { DEFAULT_STORE, type RawIngredient, useRouteIngredients } from "../../hooks/useRouteIngredients"
+import ScaleFactorControl from "./ScaleFactorControl"
 import RouteIngredientsContent from "./RouteIngredientsContent"
 
 import "../../pages/MealPlanWizard.scss"
@@ -23,7 +24,8 @@ interface RouteIngredientsModalProps {
     stores: Store[]
     initialDefaultStoreId?: string | null
     isWorking: boolean
-    onConfirm: (routes: Array<{ ingredientId: string; storeId: string | null }>) => void
+    unitMap?: Map<string, string>
+    onConfirm: (routes: Array<{ ingredientId: string; storeId: string | null }>, factor: number) => void
 }
 
 const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
@@ -33,13 +35,16 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
     stores,
     initialDefaultStoreId,
     isWorking,
+    unitMap,
     onConfirm,
 }) => {
     const visibleStores = useMemo(() => stores.filter((s) => !s.isHidden), [stores])
     const routing = useRouteIngredients()
+    const [factor, setFactor] = useState(1)
 
     useEffect(() => {
         if (!isOpen) return
+        setFactor(1)
         const initialMap = new Map<string, string | null>()
         for (const ing of rawIngredients) {
             initialMap.set(ing.id, DEFAULT_STORE)
@@ -55,20 +60,28 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
         () =>
             rawIngredients.map((ing) => {
                 const raw = routing.routeMap.get(ing.id) ?? null
+                const scaledQty = ing.qty != null ? parseFloat((ing.qty * factor).toPrecision(4)) : null
                 return {
                     ingredientId: ing.id,
+                    recipeId: ing.recipeId,
                     name: ing.name,
                     recipeName: ing.recipeName,
                     storeId: raw === DEFAULT_STORE ? (routing.defaultStoreId ?? null) : raw,
+                    qty: ing.qty,
+                    scaledQty,
+                    unitId: ing.unitId,
                 }
             }),
-        [rawIngredients, routing.routeMap, routing.defaultStoreId]
+        [rawIngredients, routing.routeMap, routing.defaultStoreId, factor]
     )
 
     const includedCount = resolvedIngredients.filter((r) => r.storeId !== null).length
 
     const handleConfirm = () => {
-        onConfirm(resolvedIngredients.map((r) => ({ ingredientId: r.ingredientId, storeId: r.storeId })))
+        onConfirm(
+            resolvedIngredients.map((r) => ({ ingredientId: r.ingredientId, storeId: r.storeId })),
+            factor
+        )
     }
 
     return (
@@ -84,6 +97,10 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
                 </IonToolbar>
             </IonHeader>
 
+            <div className="route-modal-scale-row">
+                <ScaleFactorControl factor={factor} onChange={setFactor} />
+            </div>
+
             <IonContent className="wizard-content">
                 <RouteIngredientsContent
                     resolvedIngredients={resolvedIngredients}
@@ -92,6 +109,7 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
                     defaultStoreId={routing.defaultStoreId}
                     setDefaultStoreId={routing.setDefaultStoreId}
                     visibleStores={visibleStores}
+unitMap={unitMap}
                 />
             </IonContent>
 

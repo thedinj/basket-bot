@@ -67,6 +67,17 @@
     line-height: 1.55;
     background: var(--ion-card-background, #1a1a2e);
     border-radius: 8px;
+
+    &::after {
+        content: " ▊";
+        animation: cursor-blink 1.1s step-end infinite;
+        color: var(--ion-color-primary, #7c3aed);
+    }
+}
+
+@keyframes cursor-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
 }
 
 .wizard-loading {
@@ -551,6 +562,28 @@
     flex-direction: column;
     padding: 4px 8px 8px;
     gap: 2px;
+}
+
+// ── Recipe scaling ───────────────────────────────────────────────────────────
+
+.wizard-scale-table {
+    background: var(--ion-card-background, #1a1a2e);
+    border-top: 1px solid var(--ion-border-color, #2d3748);
+    border-bottom: 1px solid var(--ion-border-color, #2d3748);
+}
+
+.route-modal-scale-row {
+    background: var(--ion-card-background, #1a1a2e);
+    border-bottom: 1px solid var(--ion-border-color, var(--ion-color-step-150));
+}
+
+.wizard-confirm-scale {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ion-color-primary, #7c3aed);
+    margin-left: auto;
+    padding-left: 8px;
 }
 
 // ── Reduced motion ────────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@ import * as householdRepo from "@/lib/repos/householdRepo"
 import * as itemRepo from "@/lib/repos/itemRepo"
 import * as recipeRepo from "@/lib/repos/recipeRepo"
 import * as shoppingListRepo from "@/lib/repos/shoppingListRepo"
+import { roundFactor } from "@/lib/utils/math"
 import { addRecipeToShoppingListRequestSchema } from "@basket-bot/core"
 import { NextResponse } from "next/server"
 
@@ -31,7 +32,7 @@ async function handlePost(
             )
         }
 
-        const { routes } = parsed.data
+        const { routes, factor } = parsed.data
         const ingredientSet = new Set(recipe.ingredients.filter((i) => !i.excluded).map((i) => i.id))
 
         let itemsCreated = 0
@@ -44,18 +45,22 @@ async function handlePost(
             }
 
             const ingredient = recipe.ingredients.find((i) => i.id === route.ingredientId)!
+            const hasShoppingOverride = ingredient.shoppingQty !== null || ingredient.shoppingUnitId !== null
+            const effectiveQty = hasShoppingOverride ? ingredient.shoppingQty : ingredient.qty
+            const effectiveUnitId = hasShoppingOverride ? ingredient.shoppingUnitId : ingredient.unitId
+            const scaledQty = effectiveQty != null ? roundFactor(effectiveQty * factor) : null
 
             const storeItem = itemRepo.getOrCreateStoreItemByName({
                 storeId: route.storeId,
-                name: ingredient.name,
+                name: ingredient.shoppingName ?? ingredient.name,
                 createdById: req.auth.sub,
             })
 
             shoppingListRepo.upsertShoppingListItem({
                 storeId: route.storeId,
                 storeItemId: storeItem.id,
-                qty: ingredient.qty ?? null,
-                unitId: ingredient.unitId ?? null,
+                qty: scaledQty,
+                unitId: effectiveUnitId ?? null,
                 notes: recipe.name,
                 userId: req.auth.sub,
             })

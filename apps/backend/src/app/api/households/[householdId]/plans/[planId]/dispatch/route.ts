@@ -1,5 +1,6 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth"
 import * as planService from "@/lib/services/planService"
+import { dispatchPlanRequestSchema } from "@basket-bot/core"
 import { NextResponse } from "next/server"
 
 async function handlePost(
@@ -8,7 +9,15 @@ async function handlePost(
 ) {
     try {
         const { householdId, planId } = await params
-        const result = planService.dispatchPlan(householdId, planId, req.auth.sub)
+        const body = await req.json().catch(() => ({}))
+        const parsed = dispatchPlanRequestSchema.safeParse(body)
+        if (!parsed.success) {
+            return NextResponse.json(
+                { code: "VALIDATION_ERROR", message: parsed.error.errors[0]?.message ?? "Invalid request" },
+                { status: 400 }
+            )
+        }
+        const result = planService.dispatchPlan(householdId, planId, req.auth.sub, parsed.data.scaleFactors)
         return NextResponse.json(result)
     } catch (error: any) {
         if (error.message === "Access denied") {

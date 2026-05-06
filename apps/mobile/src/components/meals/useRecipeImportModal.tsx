@@ -62,8 +62,11 @@ export function useRecipeImportModal(onAccepted: (data: RecipeInitialData) => vo
                     cookingTimeMinutes: cookingTimeMinutes ?? undefined,
                     ingredients: ingredients.map((ing, idx) => ({
                         name: ing.name,
+                        shoppingName: ing.shoppingName ?? null,
                         qty: ing.qty !== null ? String(ing.qty) : "",
+                        shoppingQty: ing.shoppingQty ?? null,
                         unitId: matchUnitId(ing.unit, units),
+                        shoppingUnitId: matchUnitId(ing.shoppingUnit ?? null, units),
                         excluded: excludedIds.has(idx),
                     })),
                 };

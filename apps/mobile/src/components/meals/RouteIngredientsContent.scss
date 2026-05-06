@@ -1,6 +1,12 @@
 // Styles for RouteIngredientsContent live in MealPlanWizard.scss (wizard-route-* classes)
 // This file intentionally left minimal — only add overrides needed outside the wizard context
 
+.route-ingredient-qty {
+    font-size: 12px !important;
+    font-variant-numeric: tabular-nums;
+    color: var(--ion-color-step-500, #a0aec0) !important;
+}
+
 .route-ingredient-recipe {
     font-size: 11px !important;
     font-family: "JetBrains Mono", monospace;

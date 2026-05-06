@@ -4,15 +4,22 @@ export const DEFAULT_STORE = "__default__"
 
 export interface RawIngredient {
     id: string
+    recipeId: string
     name: string
     recipeName: string
+    qty: number | null
+    unitId: string | null
 }
 
 export interface ResolvedIngredient {
     ingredientId: string
+    recipeId: string
     name: string
     recipeName: string
     storeId: string | null
+    qty: number | null
+    scaledQty: number | null
+    unitId: string | null
 }
 
 export function useRouteIngredients() {

@@ -181,7 +181,7 @@ export function getRecipeWithDetails(id: string): RecipeWithDetails | null {
     // Get ingredients
     const ingredientRows = db
         .prepare(
-            `SELECT id, recipeId, name, qty, unitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, recipeId, name, shoppingName, qty, shoppingQty, unitId, shoppingUnitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt
              FROM RecipeIngredient
              WHERE recipeId = ?
              ORDER BY sortOrder ASC`
@@ -214,7 +214,7 @@ export function getRecipesWithDetailsByHousehold(householdId: string): RecipeWit
 
     const ingRows = db
         .prepare(
-            `SELECT id, recipeId, name, qty, unitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, recipeId, name, shoppingName, qty, shoppingQty, unitId, shoppingUnitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt
              FROM RecipeIngredient
              WHERE recipeId IN (${ph})
              ORDER BY sortOrder ASC, name ASC`

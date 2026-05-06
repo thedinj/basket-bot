@@ -100,6 +100,13 @@
     gap: 2px;
 }
 
+.recipe-editor-ingredient-row__middle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 0 2px;
+}
+
 .recipe-editor-ingredient-row__bottom {
     display: flex;
     align-items: center;
@@ -112,6 +119,24 @@
     flex: 1;
     font-size: 15px;
     --padding-start: 0;
+}
+
+.recipe-editor-ing-shopping-name {
+    flex: 1;
+    font-size: 13px;
+    --color: var(--ion-color-step-600, #718096);
+    --placeholder-color: var(--ion-color-step-400, #a0aec0);
+    --padding-start: 0;
+}
+
+.recipe-editor-qty--shopping {
+    font-size: 13px;
+    --color: var(--ion-color-step-600, #718096);
+}
+
+.recipe-editor-unit-select--shopping {
+    font-size: 13px;
+    --color: var(--ion-color-step-600, #718096);
 }
 
 .recipe-editor-cart-btn {

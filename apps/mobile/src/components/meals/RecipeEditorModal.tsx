@@ -18,8 +18,15 @@ import {
     IonToggle,
     IonToolbar,
 } from "@ionic/react";
-import { addOutline, cart, cartOutline, closeOutline, pricetagOutline, trashOutline } from "ionicons/icons";
-import { useEffect, useRef, useState } from "react";
+import {
+    addOutline,
+    cart,
+    cartOutline,
+    closeOutline,
+    pricetagOutline,
+    trashOutline,
+} from "ionicons/icons";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuantityUnits, useStores } from "../../db/hooks";
 import {
     useAddIngredient,
@@ -46,8 +53,11 @@ interface IngredientRow {
     rowKey: string;
     id?: string;
     name: string;
+    shoppingName: string;
     qty: string;
+    shoppingQty: string;
     unitId: string | null;
+    shoppingUnitId: string | null;
     excluded: boolean;
 }
 
@@ -58,8 +68,11 @@ export interface RecipeInitialData {
     cookingTimeMinutes?: number | null;
     ingredients?: Array<{
         name: string;
+        shoppingName?: string | null;
         qty: string;
+        shoppingQty?: number | null;
         unitId: string | null;
+        shoppingUnitId?: string | null;
         excluded: boolean;
     }>;
 }
@@ -68,8 +81,11 @@ const genKey = () => Math.random().toString(36).slice(2);
 const emptyRow = (): IngredientRow => ({
     rowKey: genKey(),
     name: "",
+    shoppingName: "",
     qty: "",
+    shoppingQty: "",
     unitId: null,
+    shoppingUnitId: null,
     excluded: false,
 });
 
@@ -99,6 +115,10 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
     );
     const { data: allTags = [] } = useTags(householdId);
     const { data: units } = useQuantityUnits();
+    const unitMap = useMemo(
+        () => new Map(units?.map((u) => [u.id, u.abbreviation]) ?? []),
+        [units]
+    );
 
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
@@ -162,8 +182,11 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                         initialData.ingredients.map((ing) => ({
                             rowKey: genKey(),
                             name: ing.name,
+                            shoppingName: ing.shoppingName ?? "",
                             qty: ing.qty,
+                            shoppingQty: ing.shoppingQty != null ? String(ing.shoppingQty) : "",
                             unitId: ing.unitId,
+                            shoppingUnitId: ing.shoppingUnitId ?? null,
                             excluded: ing.excluded,
                         }))
                     );
@@ -193,8 +216,11 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                       rowKey: genKey(),
                       id: ing.id,
                       name: ing.name,
+                      shoppingName: ing.shoppingName ?? "",
                       qty: ing.qty !== null ? String(ing.qty) : "",
+                      shoppingQty: ing.shoppingQty !== null ? String(ing.shoppingQty) : "",
                       unitId: ing.unitId ?? null,
+                      shoppingUnitId: ing.shoppingUnitId ?? null,
                       excluded: !!ing.excluded,
                   }))
                 : [emptyRow()];
@@ -249,7 +275,8 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                 description: description.trim() || undefined,
                 steps: steps.trim() || undefined,
                 isPoolExcluded: isPoolExcluded || undefined,
-                cookingTimeMinutes: cookingTime !== null && !Number.isNaN(cookingTime) ? cookingTime : null,
+                cookingTimeMinutes:
+                    cookingTime !== null && !Number.isNaN(cookingTime) ? cookingTime : null,
             };
             const validRows = ingredients.filter((r) => r.name.trim());
             let savedId: string;
@@ -259,11 +286,15 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                 savedId = created.id;
 
                 for (const row of validRows) {
+                    const parsedShoppingQty = row.shoppingQty ? Number(row.shoppingQty) : null;
                     await addIngredientMutation.mutateAsync({
                         recipeId: savedId,
                         name: row.name.trim(),
+                        shoppingName: row.shoppingName.trim() || null,
                         qty: row.qty ? Number(row.qty) : null,
+                        shoppingQty: parsedShoppingQty,
                         unitId: row.unitId || null,
+                        shoppingUnitId: parsedShoppingQty ? (row.shoppingUnitId || null) : null,
                         excluded: row.excluded,
                     });
                 }
@@ -299,12 +330,17 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                     }
                 }
                 for (const row of validRows) {
+                    const parsedShoppingQty = row.shoppingQty ? Number(row.shoppingQty) : null;
+                    const resolvedShoppingUnitId = parsedShoppingQty ? (row.shoppingUnitId || null) : null;
                     if (!row.id) {
                         await addIngredientMutation.mutateAsync({
                             recipeId: savedId,
                             name: row.name.trim(),
+                            shoppingName: row.shoppingName.trim() || null,
                             qty: row.qty ? Number(row.qty) : null,
+                            shoppingQty: parsedShoppingQty,
                             unitId: row.unitId || null,
+                            shoppingUnitId: resolvedShoppingUnitId,
                             excluded: row.excluded,
                         });
                     } else {
@@ -312,16 +348,22 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                         if (
                             orig &&
                             (row.name !== orig.name ||
+                                row.shoppingName !== orig.shoppingName ||
                                 row.qty !== orig.qty ||
+                                row.shoppingQty !== orig.shoppingQty ||
                                 row.unitId !== orig.unitId ||
+                                row.shoppingUnitId !== orig.shoppingUnitId ||
                                 row.excluded !== orig.excluded)
                         ) {
                             await updateIngredientMutation.mutateAsync({
                                 recipeId: savedId,
                                 ingredientId: row.id,
                                 name: row.name.trim(),
+                                shoppingName: row.shoppingName.trim() || null,
                                 qty: row.qty ? Number(row.qty) : null,
+                                shoppingQty: parsedShoppingQty,
                                 unitId: row.unitId || null,
+                                shoppingUnitId: resolvedShoppingUnitId,
                                 excluded: row.excluded,
                             });
                         }
@@ -387,6 +429,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                     value={name}
                                     onIonInput={(e) => setName(e.detail.value ?? "")}
                                     placeholder="Enter recipe name"
+                                    autocapitalize="words"
                                 />
                             </IonItem>
                             <IonItem>
@@ -395,9 +438,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                     type="number"
                                     inputMode="numeric"
                                     value={cookingTimeMinutes}
-                                    onIonInput={(e) =>
-                                        setCookingTimeMinutes(e.detail.value ?? "")
-                                    }
+                                    onIonInput={(e) => setCookingTimeMinutes(e.detail.value ?? "")}
                                     placeholder="Optional"
                                     min="1"
                                 />
@@ -412,6 +453,20 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                     />
                                 </IonItem>
                             )}
+                        </IonList>
+
+                        {/* Notes */}
+                        <IonList>
+                            <IonItem>
+                                <IonLabel position="stacked">Notes</IonLabel>
+                                <IonTextarea
+                                    value={description}
+                                    onIonInput={(e) => setDescription(e.detail.value ?? "")}
+                                    placeholder="Enter notes or variations"
+                                    autoGrow
+                                    rows={3}
+                                />
+                            </IonItem>
                         </IonList>
 
                         {/* Tags */}
@@ -462,13 +517,18 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                             onIonInput={(e) =>
                                                 updateRow(row.rowKey, "name", e.detail.value ?? "")
                                             }
+                                            autocapitalize="sentences"
                                         />
                                         <IonButton
                                             fill="clear"
                                             size="small"
                                             className={`recipe-editor-cart-btn${!row.excluded ? " included" : ""}`}
                                             onClick={() => toggleRowExcluded(row.rowKey)}
-                                            aria-label={row.excluded ? "Not in shopping list" : "In shopping list"}
+                                            aria-label={
+                                                row.excluded
+                                                    ? "Not in shopping list"
+                                                    : "In shopping list"
+                                            }
                                         >
                                             <IonIcon
                                                 slot="icon-only"
@@ -485,6 +545,49 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                             <IonIcon slot="icon-only" icon={closeOutline} />
                                         </IonButton>
                                     </div>
+                                    {row.name.trim() && (
+                                        <div className="recipe-editor-ingredient-row__middle">
+                                            <IonInput
+                                                className="recipe-editor-ing-shopping-name"
+                                                placeholder="Shopping list item name"
+                                                value={row.shoppingName}
+                                                onIonInput={(e) =>
+                                                    updateRow(
+                                                        row.rowKey,
+                                                        "shoppingName",
+                                                        e.detail.value ?? ""
+                                                    )
+                                                }
+                                                autocapitalize="sentences"
+                                            />
+                                            <IonInput
+                                                className="recipe-editor-qty recipe-editor-qty--shopping"
+                                                type="number"
+                                                placeholder="Qty"
+                                                value={row.shoppingQty}
+                                                onIonInput={(e) =>
+                                                    updateRow(row.rowKey, "shoppingQty", e.detail.value ?? "")
+                                                }
+                                            />
+                                            <span className="recipe-editor-qty-sep">·</span>
+                                            <IonSelect
+                                                className="recipe-editor-unit-select recipe-editor-unit-select--shopping"
+                                                placeholder="Unit"
+                                                value={row.shoppingUnitId}
+                                                onIonChange={(e) =>
+                                                    updateRow(row.rowKey, "shoppingUnitId", e.detail.value ?? null)
+                                                }
+                                                interface="action-sheet"
+                                            >
+                                                <IonSelectOption value={null}>No unit</IonSelectOption>
+                                                {units?.map((u) => (
+                                                    <IonSelectOption key={u.id} value={u.id}>
+                                                        {u.abbreviation}
+                                                    </IonSelectOption>
+                                                ))}
+                                            </IonSelect>
+                                        </div>
+                                    )}
                                     <div className="recipe-editor-ingredient-row__bottom">
                                         <IonInput
                                             className="recipe-editor-qty"
@@ -501,7 +604,11 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                             placeholder="Unit"
                                             value={row.unitId}
                                             onIonChange={(e) =>
-                                                updateRow(row.rowKey, "unitId", e.detail.value ?? null)
+                                                updateRow(
+                                                    row.rowKey,
+                                                    "unitId",
+                                                    e.detail.value ?? null
+                                                )
                                             }
                                             interface="action-sheet"
                                         >
@@ -537,20 +644,6 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                     placeholder="Enter cooking steps"
                                     autoGrow
                                     rows={4}
-                                />
-                            </IonItem>
-                        </IonList>
-
-                        {/* Notes */}
-                        <IonList>
-                            <IonItem>
-                                <IonLabel position="stacked">Notes</IonLabel>
-                                <IonTextarea
-                                    value={description}
-                                    onIonInput={(e) => setDescription(e.detail.value ?? "")}
-                                    placeholder="Enter notes or variations"
-                                    autoGrow
-                                    rows={3}
                                 />
                             </IonItem>
                         </IonList>
@@ -598,13 +691,21 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                     onDismiss={() => setRouteModalOpen(false)}
                     rawIngredients={recipe.ingredients
                         .filter((i) => !i.excluded)
-                        .map((i) => ({ id: i.id, name: i.name, recipeName: recipe.name }))}
+                        .map((i) => ({
+                            id: i.id,
+                            recipeId: i.recipeId,
+                            name: i.name,
+                            recipeName: recipe.name,
+                            qty: i.qty,
+                            unitId: i.unitId ?? null,
+                        }))}
                     stores={stores}
                     initialDefaultStoreId={defaultStoreValue ?? null}
                     isWorking={addToListMutation.isPending}
-                    onConfirm={async (routes) => {
-                        await addToListMutation.mutateAsync(routes)
-                        setRouteModalOpen(false)
+                    unitMap={unitMap}
+                    onConfirm={async (routes, factor) => {
+                        await addToListMutation.mutateAsync({ routes, factor });
+                        setRouteModalOpen(false);
                     }}
                 />
             )}

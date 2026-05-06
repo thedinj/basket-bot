@@ -131,7 +131,7 @@ export const recipeApi = {
     async addIngredient(
         householdId: string,
         recipeId: string,
-        data: { name: string; qty?: number | null; unitId?: string | null; sortOrder?: number; notes?: string | null }
+        data: { name: string; shoppingName?: string | null; qty?: number | null; shoppingQty?: number | null; unitId?: string | null; shoppingUnitId?: string | null; sortOrder?: number; notes?: string | null }
     ): Promise<RecipeIngredient> {
         const response = await apiClient.post<{ ingredient: RecipeIngredient }>(
             `/api/households/${householdId}/recipes/${recipeId}/ingredients`,
@@ -144,7 +144,7 @@ export const recipeApi = {
         householdId: string,
         recipeId: string,
         ingredientId: string,
-        data: { name?: string; qty?: number | null; unitId?: string | null; sortOrder?: number; notes?: string | null }
+        data: { name?: string; shoppingName?: string | null; qty?: number | null; shoppingQty?: number | null; unitId?: string | null; shoppingUnitId?: string | null; sortOrder?: number; notes?: string | null }
     ): Promise<RecipeIngredient> {
         const response = await apiClient.patch<{ ingredient: RecipeIngredient }>(
             `/api/households/${householdId}/recipes/${recipeId}/ingredients/${ingredientId}`,
@@ -237,11 +237,12 @@ export const planApi = {
 
     async dispatchPlan(
         householdId: string,
-        planId: string
+        planId: string,
+        scaleFactors: Record<string, number> = {}
     ): Promise<{ plan: Plan; itemsAdded: number; itemsSkipped: number }> {
         const response = await apiClient.post<{ plan: Plan; itemsAdded: number; itemsSkipped: number }>(
             `/api/households/${householdId}/plans/${planId}/dispatch`,
-            {}
+            { scaleFactors }
         )
         return response
     },

@@ -10,7 +10,9 @@ Use this exact format:
     "steps": "Step-by-step instructions as a single string, each step on a new line, or null",
     "cookingTimeMinutes": 45,
     "ingredients": [
-      { "name": "Ingredient name", "qty": 2, "unit": "cup", "isPantryItem": false },
+      { "name": "Thinly sliced beef", "shoppingName": "Beef", "qty": 300, "unit": "g", "isPantryItem": false },
+      { "name": "Diced carrot", "shoppingName": "Carrot", "qty": 2, "unit": null, "shoppingQty": 3, "isPantryItem": false },
+      { "name": "Chicken stock", "qty": 500, "unit": "ml", "shoppingQty": 1, "shoppingUnit": "can", "isPantryItem": false },
       { "name": "Salt", "qty": null, "unit": null, "isPantryItem": true }
     ]
   }
@@ -18,6 +20,8 @@ Use this exact format:
 
 Ingredient rules:
 - Extract ALL ingredients listed in the recipe
+- shoppingQty / shoppingUnit: **Omit both for pantry items.** For non-pantry items: the quantity and unit to actually purchase, when they differ from the recipe measurement. For countable items, use the purchase count with no unit (e.g. recipe "10g onion" → shoppingQty: 1, shoppingUnit omitted; recipe "2 cloves garlic" → shoppingQty: 1, shoppingUnit omitted — buy a bulb). For items sold in different units (e.g. recipe "500ml chicken stock" → shoppingQty: 1, shoppingUnit: "can"), transform accordingly. **Omit both fields entirely** if the shopping quantity and unit are the same as the recipe (e.g. "300g beef" → omit; "2 cups flour" → omit). Apply the same range/fraction rules as qty.
+- shoppingName: **Omit for pantry items.** For non-pantry items: the simplified shopper-facing name — the base ingredient with preparation/descriptive words removed (e.g. "diced", "thinly sliced", "chopped", "fresh", "frozen", "grated", "melted", "cooked"). Apply the same sentence-case rule as name. **Omit this field entirely** if the name already has no preparation descriptors and shoppingName would be identical to name. Examples: "Thinly sliced beef" → "Beef", "Diced carrot" → "Carrot", "Freshly grated Parmesan cheese" → "Parmesan cheese", "Canned diced tomatoes" → "Canned tomatoes". For bare ingredients like "Salt" or "Olive oil", omit the key.
 - name: Sentence case and singular — capitalize only the first word and any proper nouns or brand names (e.g. "Egg" → "Egg", "beef stock" → "Beef stock", "cloves of garlic" → "Clove of garlic", "Worcestershire sauce" → "Worcestershire sauce", "Tabasco" → "Tabasco", "Parmesan cheese" → "Parmesan cheese")
 - qty: number, or null if unspecified or "to taste". Convert fractions to decimals (½ → 0.5, ¼ → 0.25, ⅓ → 0.333, ¾ → 0.75). For ranges (e.g. "1–2 cups"), use the midpoint (1.5)
 - unit: use standard abbreviations — g, kg, ml, l, tsp, tbsp, cup, oz, lb, fl oz, bunch, can, pkg, slice, piece — or null if no unit

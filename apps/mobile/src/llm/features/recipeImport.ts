@@ -4,8 +4,11 @@
 
 export interface ParsedRecipeIngredient {
     name: string;
+    shoppingName?: string | null;
     qty: number | null;
+    shoppingQty?: number | null;
     unit: string | null;
+    shoppingUnit?: string | null;
     isPantryItem?: boolean;
 }
 
@@ -42,6 +45,9 @@ export function validateRecipeImportResult(data: unknown): data is RecipeImportR
         if (i.qty !== null && typeof i.qty !== "number") return false;
         if (i.unit !== null && typeof i.unit !== "string") return false;
         // isPantryItem is optional; if present must be boolean
+        if (i.shoppingName !== undefined && i.shoppingName !== null && typeof i.shoppingName !== "string") return false;
+        if (i.shoppingQty !== undefined && i.shoppingQty !== null && typeof i.shoppingQty !== "number") return false;
+        if (i.shoppingUnit !== undefined && i.shoppingUnit !== null && typeof i.shoppingUnit !== "string") return false;
         if (i.isPantryItem !== undefined && typeof i.isPantryItem !== "boolean") return false;
         return true;
     });

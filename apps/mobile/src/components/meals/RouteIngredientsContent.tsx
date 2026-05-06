@@ -20,6 +20,7 @@ interface RouteIngredientsContentProps {
     setDefaultStoreId: (id: string | null) => void
     visibleStores: Store[]
     recipeCount?: number
+    unitMap?: Map<string, string>
 }
 
 const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
@@ -30,6 +31,7 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
     setDefaultStoreId,
     visibleStores,
     recipeCount,
+    unitMap,
 }) => {
     if (resolvedIngredients.length === 0) {
         return (
@@ -86,7 +88,17 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
                         />
                         <IonLabel>
                             <h3>{ri.name}</h3>
-                            <p className="route-ingredient-recipe">{ri.recipeName}</p>
+                            {ri.scaledQty != null && (
+                                <p className="route-ingredient-qty">
+                                    {ri.qty !== ri.scaledQty
+                                        ? `${ri.qty} → ${ri.scaledQty}`
+                                        : ri.scaledQty}
+                                    {ri.unitId ? ` ${unitMap?.get(ri.unitId) ?? ""}` : ""}
+                                </p>
+                            )}
+                            {recipeCount !== undefined && (
+                                <p className="route-ingredient-recipe">{ri.recipeName}</p>
+                            )}
                         </IonLabel>
                         {ri.storeId !== null && visibleStores.length > 1 && (
                             <IonSelect

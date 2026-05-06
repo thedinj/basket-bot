@@ -5,6 +5,7 @@ import * as itemRepo from "../repos/itemRepo"
 import * as planRepo from "../repos/planRepo"
 import * as recipeRepo from "../repos/recipeRepo"
 import * as shoppingListRepo from "../repos/shoppingListRepo"
+import { roundFactor } from "../utils/math"
 
 /**
  * Verify user is a member of the household (throws "Access denied" if not).
@@ -215,7 +216,8 @@ export function updateRoutes(
 export function dispatchPlan(
     householdId: string,
     planId: string,
-    userId: string
+    userId: string,
+    scaleFactors: Record<string, number> = {}
 ): { plan: Plan; itemsAdded: number; itemsSkipped: number } {
     assertMember(householdId, userId)
 
@@ -236,30 +238,36 @@ export function dispatchPlan(
 
             const ingredient = db
                 .prepare(
-                    `SELECT ri.name, ri.qty, ri.unitId, r.name AS recipeName
+                    `SELECT ri.name, ri.shoppingName, ri.qty, ri.shoppingQty, ri.unitId, ri.shoppingUnitId, ri.recipeId, r.name AS recipeName
                      FROM RecipeIngredient ri
                      JOIN Recipe r ON r.id = ri.recipeId
                      WHERE ri.id = ?`
                 )
-                .get(route.ingredientId) as { name: string; qty: number | null; unitId: string | null; recipeName: string } | undefined
+                .get(route.ingredientId) as { name: string; shoppingName: string | null; qty: number | null; shoppingQty: number | null; unitId: string | null; shoppingUnitId: string | null; recipeId: string; recipeName: string } | undefined
 
             if (!ingredient) {
                 itemsSkipped++
                 continue
             }
 
+            const factor = scaleFactors[ingredient.recipeId] ?? 1
+            const hasShoppingOverride = ingredient.shoppingQty !== null || ingredient.shoppingUnitId !== null
+            const effectiveQty = hasShoppingOverride ? ingredient.shoppingQty : ingredient.qty
+            const effectiveUnitId = hasShoppingOverride ? ingredient.shoppingUnitId : ingredient.unitId
+            const scaledQty = effectiveQty != null ? roundFactor(effectiveQty * factor) : null
+
             // Find or create a StoreItem for this ingredient in the target store
             const storeItem = itemRepo.getOrCreateStoreItemByName({
                 storeId: route.storeId,
-                name: ingredient.name,
+                name: ingredient.shoppingName ?? ingredient.name,
                 createdById: userId,
             })
 
             shoppingListRepo.upsertShoppingListItem({
                 storeId: route.storeId,
                 storeItemId: storeItem.id,
-                qty: ingredient.qty ?? null,
-                unitId: ingredient.unitId ?? null,
+                qty: scaledQty,
+                unitId: effectiveUnitId ?? null,
                 notes: ingredient.recipeName,
                 userId,
             })

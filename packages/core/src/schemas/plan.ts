@@ -118,6 +118,14 @@ export const planHistoryResponseSchema = z.object({
 })
 export type PlanHistoryResponse = z.infer<typeof planHistoryResponseSchema>
 
+// ========== Dispatch request ==========
+
+export const dispatchPlanRequestSchema = z.object({
+    // recipeId → scale factor; missing entries default to 1 on the backend
+    scaleFactors: z.record(z.string().uuid(), z.number().min(0.01).max(100)).optional().default({}),
+})
+export type DispatchPlanRequest = z.infer<typeof dispatchPlanRequestSchema>
+
 // ========== Response schemas ==========
 
 export const poolCountResponseSchema = z.object({

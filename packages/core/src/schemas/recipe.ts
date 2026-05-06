@@ -102,8 +102,11 @@ export const recipeIngredientSchema = z.object({
     id: z.string().uuid(),
     recipeId: z.string().uuid(),
     name: minMaxLengthString(1, MAX_RECIPE_INGREDIENT_NAME_LENGTH, "Ingredient name"),
+    shoppingName: maxLengthString(MAX_RECIPE_INGREDIENT_NAME_LENGTH, "Shopping name").nullable(),
     qty: z.number().nullable(),
+    shoppingQty: z.number().nullable(),
     unitId: z.string().nullable(),
+    shoppingUnitId: z.string().nullable(),
     sortOrder: z.number().int().min(0),
     notes: maxLengthString(MAX_RECIPE_INGREDIENT_NOTES_LENGTH, "Ingredient notes").nullable(),
     excluded: z.boolean(),
@@ -114,8 +117,11 @@ export type RecipeIngredient = z.infer<typeof recipeIngredientSchema>;
 
 export const addRecipeIngredientRequestSchema = z.object({
     name: minMaxLengthString(1, MAX_RECIPE_INGREDIENT_NAME_LENGTH, "Ingredient name"),
+    shoppingName: maxLengthString(MAX_RECIPE_INGREDIENT_NAME_LENGTH, "Shopping name").nullable().optional(),
     qty: z.number().nullable().optional(),
+    shoppingQty: z.number().nullable().optional(),
     unitId: z.string().nullable().optional(),
+    shoppingUnitId: z.string().nullable().optional(),
     sortOrder: z.number().int().min(0).optional().default(0),
     notes: maxLengthString(MAX_RECIPE_INGREDIENT_NOTES_LENGTH, "Ingredient notes")
         .nullable()
@@ -151,6 +157,7 @@ export type RecipeWithDetails = z.infer<typeof recipeWithDetailsSchema>;
 
 // ========== Add Recipe to Shopping List ==========
 export const addRecipeToShoppingListRequestSchema = z.object({
+    factor: z.number().min(0.01).max(100).optional().default(1),
     routes: z
         .array(
             z.object({

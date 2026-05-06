@@ -25,8 +25,9 @@ import { useAuth } from "../auth/useAuth";
 import RecipeDetailContent from "../components/meals/RecipeDetailContent";
 import RouteIngredientsContent from "../components/meals/RouteIngredientsContent";
 import RecipePickerModal from "../components/meals/RecipePickerModal";
+import ScaleFactorControl from "../components/meals/ScaleFactorControl";
 import TagChip from "../components/meals/TagChip";
-import { DEFAULT_STORE, useRouteIngredients } from "../hooks/useRouteIngredients";
+import { DEFAULT_STORE, type ResolvedIngredient, useRouteIngredients } from "../hooks/useRouteIngredients";
 import { useQuantityUnits, useStores } from "../db/hooks";
 import {
     useCreatePlan,
@@ -53,16 +54,16 @@ const STEP_LABELS = ["Pool", "Spin", "Route", "Send"] as const;
 
 const ROBOT_QUIPS: Record<number, string> = {
     1: "> One meal. Minimal commitment. Noted.",
-    2: "> Two meals. A start.",
-    3: "> Three. Acceptable.",
-    4: "> Four meals it is.",
-    5: "> Five. Bold choice.",
+    2: "> Two. Technically a plan.",
+    3: "> Three. I've seen worse.",
+    4: "> Four. The minimum viable week.",
+    5: "> Five. Bold.",
     6: "> Six. You enjoy cooking, apparently.",
-    7: "> Seven. Impressive dedication.",
+    7: "> Seven. Do you even own a couch?",
     8: "> Eight. You are either organized or optimistic.",
-    9: "> Nine. The entire week. I admire the ambition.",
+    9: "> Nine. The whole week. Respect.",
     10: "> Ten meals. You clearly love this more than I do.",
-    11: "> Eleven. You are unstoppable.",
+    11: "> Eleven. Unstoppable. Slightly alarming.",
     12: "> Twelve meals. A culinary marathon. Godspeed.",
 };
 
@@ -249,6 +250,11 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
     const setRouteMap = routing.setRouteMap;
     const defaultStoreId = routing.defaultStoreId;
 
+    // Step 3: per-recipe scale factors (recipeId → multiplier)
+    const [scaleFactors, setScaleFactors] = useState<Map<string, number>>(new Map());
+    const setFactor = (recipeId: string, f: number) =>
+        setScaleFactors((prev) => new Map(prev).set(recipeId, f));
+
     // ── Reset each time the modal opens ────────────────────────────────────────
 
     const handleWillPresent = () => {
@@ -260,6 +266,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
         setFilterPopoverSlot(null);
         setPickerSlot(null);
         setPeekRecipe(null);
+        setScaleFactors(new Map());
         routing.init(new Map(), null);
         cleanedUp.current = false;
     };
@@ -353,30 +360,30 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
 
     const routeIngredients = useMemo(() => {
         if (!planData) return [];
-        const result: Array<{
-            ingredientId: string;
-            name: string;
-            recipeName: string;
-            storeId: string | null;
-        }> = [];
+        const result: ResolvedIngredient[] = [];
         for (const slot of planData.slots) {
             if (!slot.pickedRecipeId) continue;
             const recipe = recipeById.get(slot.pickedRecipeId);
             if (!recipe) continue;
+            const factor = scaleFactors.get(recipe.id) ?? 1;
             for (const ing of recipe.ingredients) {
                 if (!ing.excluded) {
                     const raw = routeMap.get(ing.id) ?? null;
                     result.push({
                         ingredientId: ing.id,
+                        recipeId: recipe.id,
                         name: ing.name,
                         recipeName: recipe.name,
                         storeId: raw === DEFAULT_STORE ? (defaultStoreId ?? null) : raw,
+                        qty: ing.qty,
+                        scaledQty: ing.qty != null ? parseFloat((ing.qty * factor).toPrecision(4)) : null,
+                        unitId: ing.unitId ?? null,
                     });
                 }
             }
         }
         return result;
-    }, [planData, recipeById, routeMap, defaultStoreId]);
+    }, [planData, recipeById, routeMap, defaultStoreId, scaleFactors]);
 
     const includedCount = routeIngredients.filter((ri) => ri.storeId !== null).length;
 
@@ -626,7 +633,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
         if (!planId) return;
         setIsWorking(true);
         try {
-            await dispatchMut.mutateAsync({ planId });
+            await dispatchMut.mutateAsync({ planId, scaleFactors: Object.fromEntries(scaleFactors) });
             onDismiss();
         } catch (e) {
             showError(`Failed to dispatch: ${e instanceof Error ? e.message : "Unknown error"}`);
@@ -822,10 +829,10 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                         {canReview && (
                             <div className="wizard-robot-line">
                                 {allSlotsFilled
-                                    ? `> ${mealCount} meal${mealCount !== 1 ? "s" : ""} selected. Ready when you are.`
+                                    ? `> ${mealCount} meal${mealCount !== 1 ? "s" : ""} locked. Proceed, or keep second-guessing yourself.`
                                     : pinnedCount > 0
-                                    ? `> ${pinnedCount} locked in. Roll or fill the rest, or review as-is.`
-                                    : "> Some slots filled. Roll the rest or review now."}
+                                    ? `> ${pinnedCount} locked in. Roll the rest or review as-is. I don't judge. Much.`
+                                    : "> Partially filled. Commit to what you've got or roll the rest."}
                             </div>
                         )}
                     </>
@@ -833,15 +840,29 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
 
                 {/* ── Step 3: Route ─────────────────────────────────────────── */}
                 {step === 3 && (
-                    <RouteIngredientsContent
-                        resolvedIngredients={routeIngredients}
-                        routeMap={routeMap}
-                        setRouteMap={setRouteMap}
-                        defaultStoreId={defaultStoreId}
-                        setDefaultStoreId={routing.setDefaultStoreId}
-                        visibleStores={visibleStores}
-                        recipeCount={pickedRecipes.length}
-                    />
+                    <>
+                        <div className="wizard-scale-table">
+                            <div className="wizard-section-title">Scale recipes</div>
+                            {pickedRecipes.map((r) => (
+                                <ScaleFactorControl
+                                    key={r.id}
+                                    label={r.name}
+                                    factor={scaleFactors.get(r.id) ?? 1}
+                                    onChange={(f) => setFactor(r.id, f)}
+                                />
+                            ))}
+                        </div>
+                        <RouteIngredientsContent
+                            resolvedIngredients={routeIngredients}
+                            routeMap={routeMap}
+                            setRouteMap={setRouteMap}
+                            defaultStoreId={defaultStoreId}
+                            setDefaultStoreId={routing.setDefaultStoreId}
+                            visibleStores={visibleStores}
+                            recipeCount={pickedRecipes.length}
+                            unitMap={unitMap}
+                        />
+                    </>
                 )}
 
                 {/* ── Step 4: Send ─────────────────────────────────────────── */}
@@ -883,6 +904,11 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                 <div key={recipe.id} className="wizard-confirm-recipe-row">
                                     <span className="wizard-confirm-num">{i + 1}</span>
                                     <span>{recipe.name}</span>
+                                    {(scaleFactors.get(recipe.id) ?? 1) !== 1 && (
+                                        <span className="wizard-confirm-scale">
+                                            ×{scaleFactors.get(recipe.id)}
+                                        </span>
+                                    )}
                                 </div>
                             ))}
                         </div>

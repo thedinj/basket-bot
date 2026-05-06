@@ -1,0 +1,119 @@
+.sfc-root {
+    padding: 10px 16px;
+
+    &--inline {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    &--stacked {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        & + & {
+            border-top: 1px solid var(--ion-border-color, #2d3748);
+        }
+    }
+
+    &--modified .sfc-recipe-label {
+        color: var(--ion-color-primary, #7c3aed);
+    }
+}
+
+.sfc-static-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ion-color-step-500, #a0aec0);
+    flex-shrink: 0;
+}
+
+.sfc-recipe-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ion-text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.15s;
+}
+
+.sfc-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sfc-presets {
+    display: flex;
+    gap: 5px;
+    flex: 1;
+}
+
+.sfc-preset {
+    all: unset;
+    box-sizing: border-box;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--ion-border-color, #2d3748);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    color: var(--ion-color-step-500, #a0aec0);
+    background: transparent;
+    transition: background 0.1s, border-color 0.1s, color 0.1s;
+    line-height: 1;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &--active {
+        background: var(--ion-color-primary, #7c3aed);
+        border-color: var(--ion-color-primary, #7c3aed);
+        color: #fff;
+    }
+
+    @media (hover: hover) {
+        &:hover:not(.sfc-preset--active) {
+            border-color: var(--ion-color-primary, #7c3aed);
+            color: var(--ion-color-primary, #7c3aed);
+        }
+    }
+}
+
+.sfc-input {
+    width: 50px;
+    flex-shrink: 0;
+    background: var(--ion-color-step-50, #1a1a2e);
+    border: 1px solid var(--ion-border-color, #2d3748);
+    border-radius: 6px;
+    color: var(--ion-color-step-500, #a0aec0);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    padding: 5px 8px;
+    min-height: 32px;
+
+    // hide number input spinners
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    -moz-appearance: textfield;
+
+    &--custom {
+        border-color: var(--ion-color-primary, #7c3aed);
+        color: var(--ion-color-primary, #7c3aed);
+    }
+
+    &:focus {
+        outline: none;
+        border-color: var(--ion-color-primary, #7c3aed);
+        color: var(--ion-text-color);
+    }
+}

@@ -1,0 +1,276 @@
+.recipe-filter-sheet {
+    --background: var(--ion-background-color);
+
+    // ── Section wrapper ────────────────────────────────────────────────────────
+    // Each major section (sort, time, tags, toggles) gets a top divider except the first.
+    &__section {
+        & + & {
+            border-top: 1px solid var(--ion-border-color, #2d3748);
+        }
+    }
+
+    // ── Section labels ─────────────────────────────────────────────────────────
+    &__section-label {
+        font-size: 10px;
+        font-weight: 700;
+        font-family: "JetBrains Mono", monospace;
+        color: var(--ion-color-step-400, #718096);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        padding: 14px 16px 6px;
+        margin: 0;
+    }
+
+    // ── Sort ───────────────────────────────────────────────────────────────────
+    &__sort-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 0 16px 14px;
+    }
+
+    &__sort-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        flex: 1;
+    }
+
+    &__sort-chip {
+        all: unset;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ion-color-medium);
+        background: color-mix(in srgb, var(--ion-text-color) 5%, transparent);
+        border: 1px solid var(--ion-border-color, #2d3748);
+        border-radius: 8px;
+        padding: 7px 13px;
+        transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
+        line-height: 1;
+
+        &.active {
+            background: rgba(124, 58, 237, 0.15);
+            border-color: rgba(124, 58, 237, 0.45);
+            color: var(--ion-color-primary, #7c3aed);
+            font-weight: 600;
+        }
+
+        &:active {
+            transform: scale(0.95);
+        }
+    }
+
+    &__dir-btn {
+        all: unset;
+        cursor: pointer;
+        flex: 0 0 auto;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--ion-color-primary, #7c3aed);
+        background: rgba(124, 58, 237, 0.1);
+        border: 1px solid rgba(124, 58, 237, 0.3);
+        border-radius: 8px;
+        padding: 7px 11px;
+        line-height: 1;
+        transition: background 0.12s, transform 0.08s;
+        white-space: nowrap;
+
+        &:active {
+            background: rgba(124, 58, 237, 0.22);
+            transform: scale(0.95);
+        }
+    }
+
+    // ── Cook time ──────────────────────────────────────────────────────────────
+    &__time-section {
+        padding: 0 16px 14px;
+    }
+
+    &__time-presets {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+
+    &__time-preset {
+        all: unset;
+        cursor: pointer;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--ion-color-medium);
+        background: color-mix(in srgb, var(--ion-text-color) 5%, transparent);
+        border: 1px solid var(--ion-border-color, #2d3748);
+        border-radius: 8px;
+        padding: 7px 14px;
+        line-height: 1;
+        transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
+
+        &.active {
+            background: rgba(124, 58, 237, 0.15);
+            border-color: rgba(124, 58, 237, 0.45);
+            color: var(--ion-color-primary, #7c3aed);
+        }
+
+        &:active {
+            transform: scale(0.95);
+        }
+    }
+
+    &__time-clear {
+        all: unset;
+        cursor: pointer;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--ion-color-danger, #f56565);
+        padding: 4px 2px;
+        opacity: 0.8;
+        transition: opacity 0.1s;
+
+        &:active {
+            opacity: 1;
+        }
+    }
+
+    &__time-custom-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid var(--ion-border-color, #2d3748);
+        padding-top: 10px;
+    }
+
+    &__time-label {
+        font-size: 13px;
+        color: var(--ion-color-step-500, #a0aec0);
+    }
+
+    &__time-input-wrap {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    &__time-input {
+        all: unset;
+        width: 44px;
+        text-align: right;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--ion-text-color);
+
+        &::placeholder {
+            color: var(--ion-color-step-400, #718096);
+            font-weight: 400;
+            font-size: 14px;
+        }
+
+        &::-webkit-inner-spin-button,
+        &::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        -moz-appearance: textfield;
+    }
+
+    &__time-unit {
+        font-size: 13px;
+        font-family: "JetBrains Mono", monospace;
+        color: var(--ion-color-step-500, #a0aec0);
+    }
+
+    // ── Tags ───────────────────────────────────────────────────────────────────
+    &__tags-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-right: 16px;
+    }
+
+    &__tag-mode {
+        display: flex;
+        gap: 4px;
+        padding-bottom: 6px;
+    }
+
+    &__mode-btn {
+        all: unset;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--ion-color-medium);
+        border: 1px solid var(--ion-border-color, #2d3748);
+        border-radius: 6px;
+        padding: 4px 10px;
+        transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
+
+        &.active {
+            background: rgba(124, 58, 237, 0.15);
+            border-color: rgba(124, 58, 237, 0.45);
+            color: var(--ion-color-primary, #7c3aed);
+        }
+
+        &:active {
+            transform: scale(0.95);
+        }
+    }
+
+    &__tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 0 16px 10px;
+    }
+
+    &__tags-empty {
+        font-size: 13px;
+        color: var(--ion-color-medium);
+        padding: 0 16px 10px;
+        margin: 0;
+        font-style: italic;
+    }
+
+    // ── Toggle rows ────────────────────────────────────────────────────────────
+    &__toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 2px 16px 14px;
+
+        ion-toggle {
+            --track-background: var(--ion-color-step-200, #2d3748);
+            --track-background-checked: var(--ion-color-primary, #7c3aed);
+            padding: 0;
+        }
+    }
+
+    &__toggle-label {
+        font-size: 15px;
+        color: var(--ion-text-color);
+    }
+
+    // ── Footer ─────────────────────────────────────────────────────────────────
+    &__footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 8px 8px;
+        gap: 8px;
+
+        ion-button {
+            flex: 1;
+        }
+    }
+}
+
+// Force the footer toolbar to match the sheet background
+.recipe-filter-sheet-footer ion-toolbar {
+    --background: var(--ion-background-color);
+    --border-color: var(--ion-border-color, #2d3748);
+}
