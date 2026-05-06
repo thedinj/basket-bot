@@ -17,7 +17,7 @@ import {
     IonToolbar,
 } from "@ionic/react";
 import { attach, camera, close } from "ionicons/icons";
-import React, { use, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useShield } from "../../components/shield/useShield";
 import { useSecureApiKey } from "../../hooks/useSecureStorage";
 import { useToast } from "../../hooks/useToast";
@@ -25,13 +25,6 @@ import { OpenAIClient } from "./openaiClient";
 import type { LLMAttachment } from "./types";
 import { useLLMModalContext } from "./useLLMModalContext";
 
-const checkCameraAllowedAsync = Capacitor.isNativePlatform()
-    ? Camera.requestPermissions({ permissions: ["camera"] }).then(() => true)
-    : Promise.resolve(false);
-
-/**
- * Modal for running LLM API calls with file attachments
- */
 export const LLMModal: React.FC = () => {
     const { isOpen, config, closeModal, response, setResponse } = useLLMModalContext();
     const { showError } = useToast();
@@ -41,7 +34,7 @@ export const LLMModal: React.FC = () => {
     const [userText, setUserText] = useState("");
     const [interactionState, setInteractionState] = useState<unknown>(undefined);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const isAllowCamera = use(checkCameraAllowedAsync);
+    const isNative = Capacitor.isNativePlatform();
 
     const handleClose = () => {
         if (config?.onCancel) {
@@ -65,33 +58,30 @@ export const LLMModal: React.FC = () => {
         closeModal();
     };
 
-    const handleCapture = async () => {
-        if (!config || !isAllowCamera) return;
+    const handleCameraPhoto = async (source: CameraSource) => {
+        if (!config) return;
 
         try {
-            // Dynamically import Capacitor Camera for native platforms
-            try {
-                const image = await Camera.getPhoto({
-                    quality: 90,
-                    allowEditing: false,
-                    resultType: CameraResultType.Base64,
-                    source: CameraSource.Photos,
-                });
+            const image = await Camera.getPhoto({
+                quality: 90,
+                allowEditing: false,
+                resultType: CameraResultType.Base64,
+                source,
+            });
 
-                if (image.base64String) {
-                    const attachment: LLMAttachment = {
-                        name: `image_${Date.now()}.${image.format}`,
-                        data: image.base64String,
-                        mimeType: `image/${image.format}`,
-                    };
-                    setAttachments((prev) => [...prev, attachment]);
-                }
-            } catch {
-                // The user might have just cancelled the photo taking, so don't show an error in that case
+            if (image.base64String) {
+                const attachment: LLMAttachment = {
+                    name: `image_${Date.now()}.${image.format}`,
+                    data: image.base64String,
+                    mimeType: `image/${image.format}`,
+                };
+                setAttachments((prev) => [...prev, attachment]);
             }
         } catch (error: unknown) {
-            if (error instanceof Error && error.message !== "User cancelled photos app") {
-                showError(`Failed to add attachment: ${error.message}`);
+            const message = error instanceof Error ? error.message : String(error);
+            // Only swallow genuine user cancellations
+            if (message !== "User cancelled photos app" && message !== "No image picked") {
+                showError(`Photo picker error: ${message}`);
             }
         }
     };
@@ -325,18 +315,28 @@ export const LLMModal: React.FC = () => {
                                     <IonLabel>
                                         <h3>Attachments</h3>
                                     </IonLabel>
-                                    {isAllowCamera && (
-                                        <IonButton
-                                            slot="end"
-                                            fill="outline"
-                                            size="small"
-                                            onClick={handleCapture}
-                                        >
-                                            <IonIcon icon={camera} slot="start" />
-                                            Capture
-                                        </IonButton>
-                                    )}
-                                    {!isAllowCamera && (
+                                    {isNative ? (
+                                        <>
+                                            <IonButton
+                                                slot="end"
+                                                fill="outline"
+                                                size="small"
+                                                onClick={() => handleCameraPhoto(CameraSource.Camera)}
+                                            >
+                                                <IonIcon icon={camera} slot="start" />
+                                                Camera
+                                            </IonButton>
+                                            <IonButton
+                                                slot="end"
+                                                fill="outline"
+                                                size="small"
+                                                onClick={() => handleCameraPhoto(CameraSource.Photos)}
+                                            >
+                                                <IonIcon icon={attach} slot="start" />
+                                                Gallery
+                                            </IonButton>
+                                        </>
+                                    ) : (
                                         <IonButton
                                             slot="end"
                                             fill="outline"
