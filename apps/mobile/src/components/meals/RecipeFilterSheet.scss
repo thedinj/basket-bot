@@ -1,5 +1,6 @@
 .recipe-filter-sheet {
     --background: var(--ion-background-color);
+    --padding-bottom: 80px;
 
     // ── Section wrapper ────────────────────────────────────────────────────────
     // Each major section (sort, time, tags, toggles) gets a top divider except the first.
@@ -273,4 +274,5 @@
 .recipe-filter-sheet-footer ion-toolbar {
     --background: var(--ion-background-color);
     --border-color: var(--ion-border-color, #2d3748);
+    --padding-bottom: env(safe-area-inset-bottom, 0px);
 }

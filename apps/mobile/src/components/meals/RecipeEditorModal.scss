@@ -86,7 +86,7 @@
 }
 
 .recipe-editor-ingredient-row {
-    padding: 8px 0;
+    padding: 4px 0;
     border-bottom: 1px solid var(--ion-border-color, var(--ion-color-step-150));
 
     &:first-child {
@@ -100,19 +100,53 @@
     gap: 2px;
 }
 
-.recipe-editor-ingredient-row__middle {
+.recipe-editor-ingredient-row__recipe-qty {
     display: flex;
     align-items: center;
     gap: 4px;
-    padding: 1px 0 2px;
+    padding: 0 0 2px 2px;
 }
 
-.recipe-editor-ingredient-row__bottom {
+.recipe-editor-ingredient-row__shop {
+    background: color-mix(in srgb, var(--ion-color-primary, #7c3aed) 8%, transparent);
+    border-radius: 6px;
+    padding: 2px 8px 4px;
+    margin-top: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.recipe-editor-ingredient-row__shop-name {
+    display: flex;
+    align-items: center;
+}
+
+.recipe-editor-ingredient-row__shop-qty {
     display: flex;
     align-items: center;
     gap: 4px;
-    padding-top: 2px;
-    padding-left: 2px;
+}
+
+.recipe-editor-shop-expand-btn {
+    --padding-start: 2px;
+    --padding-top: 3px;
+    --padding-bottom: 3px;
+    --color: var(--ion-color-step-500, #718096);
+    font-size: 12px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    margin: 1px 0 2px;
+}
+
+.recipe-editor-shop-collapse-btn {
+    flex: 0 0 auto;
+    --padding-start: 4px;
+    --padding-end: 4px;
+    --padding-top: 2px;
+    --padding-bottom: 2px;
+    --color: var(--ion-color-step-400, #a0aec0);
 }
 
 .recipe-editor-ing-name {
@@ -124,9 +158,9 @@
 .recipe-editor-ing-shopping-name {
     flex: 1;
     font-size: 13px;
+    --padding-start: 0;
     --color: var(--ion-color-step-600, #718096);
     --placeholder-color: var(--ion-color-step-400, #a0aec0);
-    --padding-start: 0;
 }
 
 .recipe-editor-qty--shopping {
@@ -134,9 +168,34 @@
     --color: var(--ion-color-step-600, #718096);
 }
 
-.recipe-editor-unit-select--shopping {
-    font-size: 13px;
-    --color: var(--ion-color-step-600, #718096);
+.recipe-editor-unit-btn {
+    all: unset;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--ion-color-step-400, #718096);
+    border: 1px solid var(--ion-border-color, var(--ion-color-step-200));
+    border-radius: 6px;
+    padding: 2px 8px;
+    white-space: nowrap;
+    transition: background 0.1s, border-color 0.1s, color 0.1s;
+
+    &.has-value {
+        color: var(--ion-text-color);
+        border-color: var(--ion-color-step-300, #4a5568);
+    }
+
+    &:active {
+        background: var(--ion-color-step-100, #2d3748);
+    }
+
+    &--shopping {
+        font-size: 13px;
+        color: var(--ion-color-step-500, #718096);
+
+        &.has-value {
+            color: var(--ion-color-step-600, #718096);
+        }
+    }
 }
 
 .recipe-editor-cart-btn {
@@ -159,12 +218,6 @@
     color: var(--ion-color-step-400, #718096);
     flex: 0 0 auto;
     user-select: none;
-}
-
-.recipe-editor-unit-select {
-    font-size: 14px;
-    --padding-start: 0;
-    flex: 0 0 auto;
 }
 
 // ── Action buttons ────────────────────────────────────────────────────────────
