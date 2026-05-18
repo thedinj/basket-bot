@@ -94,7 +94,10 @@ const RecipesContent: React.FC<{
 
         if (search.trim()) {
             const q = search.trim().toLowerCase();
-            result = result.filter((r) => r.name.toLowerCase().includes(q));
+            result = result.filter((r) =>
+                r.name.toLowerCase().includes(q) ||
+                (r.source?.toLowerCase().includes(q) ?? false)
+            );
         }
         if (filters.tagIds.size > 0) {
             if (filters.tagMode === "any") {
