@@ -8,6 +8,7 @@ import {
     IonHeader,
     IonIcon,
     IonModal,
+    IonPage,
     IonSpinner,
     IonTitle,
     IonToolbar,
@@ -128,7 +129,7 @@ const SlotFilterSheet: React.FC<SlotFilterSheetProps> = ({
     onReroll,
     onDismiss,
 }) => (
-    <>
+    <IonPage>
         <IonContent className="slot-filter-sheet">
             <div className="slot-filter-sheet__heading">
                 <span className="slot-filter-sheet__slot-num">Slot {slotNumber}</span>
@@ -191,7 +192,7 @@ const SlotFilterSheet: React.FC<SlotFilterSheetProps> = ({
                 </div>
             </IonToolbar>
         </IonFooter>
-    </>
+    </IonPage>
 );
 
 // ── Main wizard ─────────────────────────────────────────────────────────────
@@ -466,8 +467,8 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                 const f = effectiveSlotFilters.get(n) ?? { tagIds: [], maxCookingTimeMinutes: null };
                 return {
                     slotNumber: n,
-                    tagIds: existing?.tagIds ?? f.tagIds,
-                    maxCookingTimeMinutes: existing?.maxCookingTimeMinutes ?? f.maxCookingTimeMinutes,
+                    tagIds: f.tagIds,
+                    maxCookingTimeMinutes: f.maxCookingTimeMinutes,
                     pickedRecipeId: existing?.pickedRecipeId ?? null,
                     pinned: existing?.pinned ?? false,
                 };
@@ -574,8 +575,8 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
             const f = effectiveSlotFilters.get(n) ?? { tagIds: [], maxCookingTimeMinutes: null };
             return {
                 slotNumber: n,
-                tagIds: existing?.tagIds ?? f.tagIds,
-                maxCookingTimeMinutes: existing?.maxCookingTimeMinutes ?? f.maxCookingTimeMinutes,
+                tagIds: f.tagIds,
+                maxCookingTimeMinutes: f.maxCookingTimeMinutes,
                 pickedRecipeId: n === pickerSlot ? recipe.id : (existing?.pickedRecipeId ?? null),
                 pinned: n === pickerSlot ? true : (existing?.pinned ?? false),
             };
@@ -742,6 +743,9 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                                 onClick={(e) => { e.stopPropagation(); setPeekRecipe(recipe); }}
                                             >
                                                 {recipe.name}
+                                                {recipe.source && (
+                                                    <span className="wizard-slot-source">{recipe.source}</span>
+                                                )}
                                             </div>
                                         ) : (
                                             <div className="wizard-slot-empty">
@@ -903,7 +907,12 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                             {pickedRecipes.map((recipe, i) => (
                                 <div key={recipe.id} className="wizard-confirm-recipe-row">
                                     <span className="wizard-confirm-num">{i + 1}</span>
-                                    <span>{recipe.name}</span>
+                                    <span>
+                                        {recipe.name}
+                                        {recipe.source && (
+                                            <span className="wizard-confirm-source">{recipe.source}</span>
+                                        )}
+                                    </span>
                                     {(scaleFactors.get(recipe.id) ?? 1) !== 1 && (
                                         <span className="wizard-confirm-scale">
                                             ×{scaleFactors.get(recipe.id)}

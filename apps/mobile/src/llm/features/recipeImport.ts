@@ -14,6 +14,7 @@ export interface ParsedRecipeIngredient {
 
 export interface ParsedRecipe {
     name: string;
+    source: string | null;
     description: string | null;
     steps: string | null;
     cookingTimeMinutes: number | null;
@@ -33,6 +34,7 @@ export function validateRecipeImportResult(data: unknown): data is RecipeImportR
     const recipe = root.recipe as Record<string, unknown>;
 
     if (typeof recipe.name !== "string" || recipe.name.trim() === "") return false;
+    if (recipe.source !== null && recipe.source !== undefined && typeof recipe.source !== "string") return false;
     if (recipe.description !== null && typeof recipe.description !== "string") return false;
     if (recipe.steps !== null && typeof recipe.steps !== "string") return false;
     if (recipe.cookingTimeMinutes !== null && typeof recipe.cookingTimeMinutes !== "number") return false;

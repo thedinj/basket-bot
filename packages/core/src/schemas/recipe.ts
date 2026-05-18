@@ -4,6 +4,7 @@ import {
     MAX_RECIPE_INGREDIENT_NAME_LENGTH,
     MAX_RECIPE_INGREDIENT_NOTES_LENGTH,
     MAX_RECIPE_NAME_LENGTH,
+    MAX_RECIPE_SOURCE_LENGTH,
     MAX_RECIPE_SOURCE_URL_LENGTH,
     MAX_RECIPE_STEPS_LENGTH,
     MAX_RECIPE_TAG_NAME_LENGTH,
@@ -33,6 +34,7 @@ export const recipeSchema = z.object({
     name: minMaxLengthString(1, MAX_RECIPE_NAME_LENGTH, "Name"),
     description: maxLengthString(MAX_RECIPE_DESCRIPTION_LENGTH, "Description").nullable(),
     steps: maxLengthString(MAX_RECIPE_STEPS_LENGTH, "Steps").nullable(),
+    source: maxLengthString(MAX_RECIPE_SOURCE_LENGTH, "Source").nullable(),
     sourceUrl: maxLengthString(MAX_RECIPE_SOURCE_URL_LENGTH, "Source URL").nullable(),
     isHidden: z.boolean(),
     isPoolExcluded: z.boolean(),
@@ -44,6 +46,7 @@ export type Recipe = z.infer<typeof recipeSchema>;
 
 export const createRecipeRequestSchema = z.object({
     name: minMaxLengthString(1, MAX_RECIPE_NAME_LENGTH, "Name"),
+    source: maxLengthString(MAX_RECIPE_SOURCE_LENGTH, "Source").nullable().optional(),
     description: maxLengthString(MAX_RECIPE_DESCRIPTION_LENGTH, "Description")
         .nullable()
         .optional(),

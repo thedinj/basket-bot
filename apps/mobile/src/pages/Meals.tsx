@@ -1,3 +1,4 @@
+import type { RecipeWithDetails } from "@basket-bot/core";
 import {
     IonButton,
     IonContent,
@@ -27,19 +28,24 @@ import RecipeFilterSheet, {
     type RecipeFilters,
     type RecipeSort,
 } from "../components/meals/RecipeFilterSheet";
+import RouteIngredientsModal from "../components/meals/RouteIngredientsModal";
 import TagManagerModal from "../components/meals/TagManagerModal";
 import { useRecipeImportModal } from "../components/meals/useRecipeImportModal";
 import { FabSpacer } from "../components/shared/FabSpacer";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { useShield } from "../components/shield/useShield";
+import { useStores } from "../db/hooks";
 import {
     useAddIngredient,
+    useAddRecipeToShoppingList,
     useCreateRecipe,
     usePlansHistory,
     useRecipes,
     useTags,
 } from "../db/mealsHooks";
 import { useHousehold } from "../households/useHousehold";
+import { usePreference } from "../hooks/usePreference";
+import { useUnitItems } from "../hooks/useUnitItems";
 import { LLMFabButton } from "../llm/shared";
 import MealPlanWizard from "./MealPlanWizard";
 
@@ -50,7 +56,8 @@ type Segment = "recipes" | "plans";
 const RecipesContent: React.FC<{
     householdId: string | null;
     onOpenEditor: (recipeId?: string) => void;
-}> = ({ householdId, onOpenEditor }) => {
+    onAddToList: (recipe: RecipeWithDetails) => void;
+}> = ({ householdId, onOpenEditor, onAddToList }) => {
     const { data: recipes } = useRecipes(householdId);
     const { data: allTags = [] } = useTags(householdId);
     const [search, setSearch] = useState("");
@@ -261,6 +268,7 @@ const RecipesContent: React.FC<{
                             key={recipe.id}
                             recipe={recipe}
                             onClick={() => onOpenEditor(recipe.id)}
+                            onAddToList={() => onAddToList(recipe)}
                         />
                     ))}
                 </div>
@@ -378,10 +386,33 @@ const Meals: React.FC = () => {
     const [editorOpen, setEditorOpen] = useState(false);
     const [editingRecipeId, setEditingRecipeId] = useState<string | undefined>();
     const [tagManagerOpen, setTagManagerOpen] = useState(false);
+    const [routingRecipe, setRoutingRecipe] = useState<RecipeWithDetails | null>(null);
 
     const createRecipe = useCreateRecipe(activeHouseholdId);
     const addIngredient = useAddIngredient(activeHouseholdId);
     const { raiseShield, lowerShield } = useShield();
+    const { data: stores } = useStores();
+    const { value: defaultStoreValue } = usePreference("default_meal_plan_store");
+    const { unitMap } = useUnitItems();
+    const addToListMutation = useAddRecipeToShoppingList(activeHouseholdId, routingRecipe?.id);
+
+    const rawIngredients = useMemo(
+        () =>
+            (routingRecipe?.ingredients ?? [])
+                .filter((i) => !i.excluded)
+                .map((i) => {
+                    const hasShoppingOverride = i.shoppingQty !== null || i.shoppingUnitId !== null;
+                    return {
+                        id: i.id,
+                        recipeId: i.recipeId,
+                        name: i.shoppingName ?? i.name,
+                        recipeName: routingRecipe!.name,
+                        qty: hasShoppingOverride ? i.shoppingQty : i.qty,
+                        unitId: hasShoppingOverride ? (i.shoppingUnitId ?? null) : (i.unitId ?? null),
+                    };
+                }),
+        [routingRecipe]
+    );
 
     const handleImportAccepted = useCallback(
         async (data: RecipeInitialData) => {
@@ -390,6 +421,7 @@ const Meals: React.FC = () => {
             try {
                 const recipe = await createRecipe.mutateAsync({
                     name: data.name ?? "Imported Recipe",
+                    source: data.source ?? null,
                     description: data.description ?? null,
                     steps: data.steps ?? null,
                     cookingTimeMinutes: data.cookingTimeMinutes ?? null,
@@ -463,6 +495,7 @@ const Meals: React.FC = () => {
                                 setEditingRecipeId(id);
                                 setEditorOpen(true);
                             }}
+                            onAddToList={(recipe) => setRoutingRecipe(recipe)}
                         />
                     </Suspense>
                 ) : (
@@ -516,6 +549,20 @@ const Meals: React.FC = () => {
                 onDismiss={() => {
                     setEditorOpen(false);
                     setEditingRecipeId(undefined);
+                }}
+            />
+
+            <RouteIngredientsModal
+                isOpen={routingRecipe !== null}
+                onDismiss={() => setRoutingRecipe(null)}
+                rawIngredients={rawIngredients}
+                stores={stores}
+                initialDefaultStoreId={defaultStoreValue ?? null}
+                isWorking={addToListMutation.isPending}
+                unitMap={unitMap}
+                onConfirm={async (routes, factor) => {
+                    await addToListMutation.mutateAsync({ routes, factor });
+                    setRoutingRecipe(null);
                 }}
             />
 

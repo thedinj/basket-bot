@@ -3,6 +3,7 @@ import {
     IonButton,
     IonButtons,
     IonContent,
+    IonFooter,
     IonHeader,
     IonIcon,
     IonInput,
@@ -26,11 +27,9 @@ import {
     trashOutline,
 } from "ionicons/icons";
 import { useEffect, useRef, useState } from "react";
-import { useStores } from "../../db/hooks";
 import { useUnitItems } from "../../hooks/useUnitItems";
 import {
     useAddIngredient,
-    useAddRecipeToShoppingList,
     useAssignTag,
     useCreateRecipe,
     useDeleteIngredient,
@@ -41,9 +40,7 @@ import {
     useUpdateIngredient,
     useUpdateRecipe,
 } from "../../db/mealsHooks";
-import { usePreference } from "../../hooks/usePreference";
 import { useToast } from "../../hooks/useToast";
-import RouteIngredientsModal from "./RouteIngredientsModal";
 import TagChip from "./TagChip";
 import TagManagerModal from "./TagManagerModal";
 
@@ -64,6 +61,7 @@ interface IngredientRow {
 
 export interface RecipeInitialData {
     name?: string;
+    source?: string;
     description?: string;
     steps?: string;
     cookingTimeMinutes?: number | null;
@@ -124,6 +122,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
     const { unitItems, unitMap } = useUnitItems();
 
     const [name, setName] = useState("");
+    const [source, setSource] = useState("");
     const [description, setDescription] = useState("");
     const [steps, setSteps] = useState("");
     const [cookingTimeMinutes, setCookingTimeMinutes] = useState("");
@@ -133,7 +132,6 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
     const [saving, setSaving] = useState(false);
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
     const [tagManagerOpen, setTagManagerOpen] = useState(false);
-    const [routeModalOpen, setRouteModalOpen] = useState(false);
     const [unitPickerState, setUnitPickerState] = useState<{
         rowKey: string;
         field: "unitId" | "shoppingUnitId";
@@ -151,14 +149,11 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
     const deleteIngredientMutation = useDeleteIngredient(householdId);
     const assignTag = useAssignTag(householdId);
     const removeTag = useRemoveTag(householdId);
-    const addToListMutation = useAddRecipeToShoppingList(householdId, recipeId);
-    const { data: stores } = useStores();
-    const { value: defaultStoreValue } = usePreference("default_meal_plan_store");
-
     useEffect(() => {
         if (!isOpen) {
             initialized.current = false;
             setName("");
+            setSource("");
             setDescription("");
             setSteps("");
             setCookingTimeMinutes("");
@@ -177,6 +172,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
             if (initialData) {
                 initialized.current = true;
                 setName(initialData.name ?? "");
+                setSource(initialData.source ?? "");
                 setDescription(initialData.description ?? "");
                 setSteps(initialData.steps ?? "");
                 setCookingTimeMinutes(
@@ -207,6 +203,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
         initialized.current = true;
 
         setName(recipe.name);
+        setSource(recipe.source ?? "");
         setDescription(recipe.description ?? "");
         setSteps(recipe.steps ?? "");
         setCookingTimeMinutes(
@@ -287,6 +284,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                 : null;
             const recipeData = {
                 name: trimmedName,
+                source: source.trim() || null,
                 description: description.trim() || undefined,
                 steps: steps.trim() || undefined,
                 isPoolExcluded: isPoolExcluded || undefined,
@@ -444,6 +442,15 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                     value={name}
                                     onIonInput={(e) => setName(e.detail.value ?? "")}
                                     placeholder="Enter recipe name"
+                                    autocapitalize="words"
+                                />
+                            </IonItem>
+                            <IonItem>
+                                <IonLabel position="stacked">Source</IonLabel>
+                                <IonInput
+                                    value={source}
+                                    onIonInput={(e) => setSource(e.detail.value ?? "")}
+                                    placeholder="e.g. Brian Lagerstrom, Serious Eats"
                                     autocapitalize="words"
                                 />
                             </IonItem>
@@ -674,36 +681,28 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                             </IonItem>
                         </IonList>
 
-                        {!isNew && recipe && recipe.ingredients.some((i) => !i.excluded) && (
-                            <IonButton
-                                expand="block"
-                                fill="outline"
-                                onClick={() => setRouteModalOpen(true)}
-                                disabled={saving}
-                                className="recipe-editor-add-to-list-btn"
-                            >
-                                <IonIcon slot="start" icon={cartOutline} />
-                                Add to shopping list
-                            </IonButton>
-                        )}
-
-                        <IonButton
-                            expand="block"
-                            onClick={handleSave}
-                            disabled={saving || !name.trim()}
-                            className="recipe-editor-save-btn"
-                        >
-                            {saving ? (
-                                <IonSpinner name="dots" />
-                            ) : isNew ? (
-                                "Add Recipe"
-                            ) : (
-                                "Save Changes"
-                            )}
-                        </IonButton>
                     </>
                 )}
             </IonContent>
+
+            <IonFooter>
+                <IonToolbar>
+                    <IonButton
+                        expand="block"
+                        onClick={handleSave}
+                        disabled={saving || !name.trim()}
+                        className="recipe-editor-save-btn"
+                    >
+                        {saving ? (
+                            <IonSpinner name="dots" />
+                        ) : isNew ? (
+                            "Add Recipe"
+                        ) : (
+                            "Save Changes"
+                        )}
+                    </IonButton>
+                </IonToolbar>
+            </IonFooter>
 
             <ClickableSelectionModal
                 isOpen={unitPickerState !== null}
@@ -724,34 +723,6 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                 householdId={householdId}
                 onDismiss={() => setTagManagerOpen(false)}
             />
-
-            {!isNew && recipe && (
-                <RouteIngredientsModal
-                    isOpen={routeModalOpen}
-                    onDismiss={() => setRouteModalOpen(false)}
-                    rawIngredients={recipe.ingredients
-                        .filter((i) => !i.excluded)
-                        .map((i) => {
-                            const hasShoppingOverride = i.shoppingQty !== null || i.shoppingUnitId !== null
-                            return {
-                                id: i.id,
-                                recipeId: i.recipeId,
-                                name: i.shoppingName ?? i.name,
-                                recipeName: recipe.name,
-                                qty: hasShoppingOverride ? i.shoppingQty : i.qty,
-                                unitId: hasShoppingOverride ? (i.shoppingUnitId ?? null) : (i.unitId ?? null),
-                            }
-                        })}
-                    stores={stores}
-                    initialDefaultStoreId={defaultStoreValue ?? null}
-                    isWorking={addToListMutation.isPending}
-                    unitMap={unitMap}
-                    onConfirm={async (routes, factor) => {
-                        await addToListMutation.mutateAsync({ routes, factor });
-                        setRouteModalOpen(false);
-                    }}
-                />
-            )}
 
             <IonAlert
                 isOpen={showDeleteAlert}

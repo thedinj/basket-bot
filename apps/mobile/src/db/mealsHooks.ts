@@ -109,6 +109,7 @@ export function useCreateRecipe(householdId: string | null) {
     return useTanstackMutation({
         mutationFn: (data: {
             name: string
+            source?: string | null
             description?: string | null
             steps?: string | null
             sourceUrl?: string | null

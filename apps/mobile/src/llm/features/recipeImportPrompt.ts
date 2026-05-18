@@ -6,6 +6,7 @@ Use this exact format:
 {
   "recipe": {
     "name": "Recipe Name",
+    "source": "Chef or creator name, or publication/website if no person is identified, or null",
     "description": "Brief description or null",
     "steps": "Step-by-step instructions as a single string, each step on a new line, or null",
     "cookingTimeMinutes": 45,
@@ -34,6 +35,7 @@ Ingredient rules:
   When in doubt, ask: if someone decided to make this dish right now, would they already have it in their fridge or cupboard without planning? If yes, mark it true.
 
 Recipe rules:
+- source: the chef or creator name if identifiable (e.g. "Brian Lagerstrom", "Kenji López-Alt"). If no person is identified, use the publication or website name (e.g. "Serious Eats", "NYT Cooking"). Set to null if the source cannot be determined from the provided content.
 - cookingTimeMinutes: total time in minutes as an integer, or null if not stated. Add prep and cook times together if both are given (e.g. "15 min prep + 30 min cook" → 45). Only use numbers explicitly stated in the recipe — do not estimate or guess.
 - steps: full cooking instructions preserving original wording, each step on a new line, or null if not available
 - description: 1–2 sentence summary of the dish, or null if not available

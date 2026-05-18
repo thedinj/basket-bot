@@ -6,6 +6,13 @@
     padding: 24px 20px;
 }
 
+.recipe-detail-source {
+    font-size: 13px;
+    color: var(--ion-color-step-400, #718096);
+    margin: 0 0 16px;
+    line-height: 1.4;
+}
+
 .recipe-detail-tags {
     display: flex;
     flex-wrap: wrap;

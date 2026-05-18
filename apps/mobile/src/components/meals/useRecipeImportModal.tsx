@@ -54,9 +54,10 @@ export function useRecipeImportModal(onAccepted: (data: RecipeInitialData) => vo
                 />
             ),
             onAccept: (response, excludedIds) => {
-                const { name, description, steps, cookingTimeMinutes, ingredients } = response.data.recipe;
+                const { name, source, description, steps, cookingTimeMinutes, ingredients } = response.data.recipe;
                 const initialData: RecipeInitialData = {
                     name,
+                    source: source ?? undefined,
                     description: description ?? undefined,
                     steps: steps ?? undefined,
                     cookingTimeMinutes: cookingTimeMinutes ?? undefined,

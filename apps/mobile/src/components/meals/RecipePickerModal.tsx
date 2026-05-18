@@ -112,6 +112,11 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                             >
                                 <IonLabel>
                                     <h3>{recipe.name}</h3>
+                                    {recipe.source && (
+                                        <p style={{ fontSize: "12px", color: "var(--ion-color-step-400, #718096)", margin: "2px 0 0" }}>
+                                            {recipe.source}
+                                        </p>
+                                    )}
                                     {recipe.tags.length > 0 && (
                                         <TagChipList
                                             tags={recipe.tags}

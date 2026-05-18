@@ -9,6 +9,9 @@ interface RecipeDetailContentProps {
 
 const RecipeDetailContent: React.FC<RecipeDetailContentProps> = ({ recipe, unitMap }) => (
     <div className="recipe-detail-content">
+        {recipe.source && (
+            <p className="recipe-detail-source">{recipe.source}</p>
+        )}
         {recipe.tags.length > 0 && (
             <div className="recipe-detail-tags">
                 {recipe.tags.map((tag) => (

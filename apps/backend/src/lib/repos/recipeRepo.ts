@@ -12,6 +12,7 @@ import { intToBool } from "../utils/sqliteUtils";
 export function createRecipe(params: {
     householdId: string;
     name: string;
+    source?: string | null;
     description?: string | null;
     steps?: string | null;
     sourceUrl?: string | null;
@@ -23,12 +24,13 @@ export function createRecipe(params: {
     const now = new Date().toISOString();
 
     db.prepare(
-        `INSERT INTO Recipe (id, householdId, name, description, steps, sourceUrl, isHidden, isPoolExcluded, cookingTimeMinutes, createdById, updatedById, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO Recipe (id, householdId, name, source, description, steps, sourceUrl, isHidden, isPoolExcluded, cookingTimeMinutes, createdById, updatedById, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
         id,
         params.householdId,
         params.name,
+        params.source ?? null,
         params.description ?? null,
         params.steps ?? null,
         params.sourceUrl ?? null,
@@ -47,7 +49,7 @@ export function createRecipe(params: {
 export function getRecipeById(id: string): Recipe | null {
     const row = db
         .prepare(
-            `SELECT id, householdId, name, description, steps, sourceUrl, isHidden, isPoolExcluded, cookingTimeMinutes, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, householdId, name, source, description, steps, sourceUrl, isHidden, isPoolExcluded, cookingTimeMinutes, createdById, updatedById, createdAt, updatedAt
              FROM Recipe
              WHERE id = ?`
         )
@@ -66,7 +68,7 @@ export function getRecipesByHousehold(
     householdId: string,
     includeHidden: boolean = false
 ): Recipe[] {
-    let query = `SELECT id, householdId, name, description, steps, sourceUrl, isHidden, isPoolExcluded, cookingTimeMinutes, createdById, updatedById, createdAt, updatedAt
+    let query = `SELECT id, householdId, name, source, description, steps, sourceUrl, isHidden, isPoolExcluded, cookingTimeMinutes, createdById, updatedById, createdAt, updatedAt
                  FROM Recipe
                  WHERE householdId = ?`;
 
@@ -90,6 +92,7 @@ export function getRecipesByHousehold(
 export function updateRecipe(params: {
     id: string;
     name?: string;
+    source?: string | null;
     description?: string | null;
     steps?: string | null;
     sourceUrl?: string | null;
@@ -107,10 +110,11 @@ export function updateRecipe(params: {
 
     db.prepare(
         `UPDATE Recipe
-         SET name = ?, description = ?, steps = ?, sourceUrl = ?, isPoolExcluded = ?, cookingTimeMinutes = ?, updatedById = ?, updatedAt = ?
+         SET name = ?, source = ?, description = ?, steps = ?, sourceUrl = ?, isPoolExcluded = ?, cookingTimeMinutes = ?, updatedById = ?, updatedAt = ?
          WHERE id = ?`
     ).run(
         params.name ?? existing.name,
+        params.source !== undefined ? params.source : existing.source,
         params.description !== undefined ? params.description : existing.description,
         params.steps !== undefined ? params.steps : existing.steps,
         params.sourceUrl !== undefined ? params.sourceUrl : existing.sourceUrl,
@@ -268,7 +272,7 @@ export function searchRecipes(
     if (hasTagFilter) {
         const placeholders = tagIds.map(() => "?").join(",");
         query = `
-            SELECT r.id, r.householdId, r.name, r.description, r.steps, r.sourceUrl, r.isHidden, r.isPoolExcluded, r.cookingTimeMinutes, r.createdById, r.updatedById, r.createdAt, r.updatedAt
+            SELECT r.id, r.householdId, r.name, r.source, r.description, r.steps, r.sourceUrl, r.isHidden, r.isPoolExcluded, r.cookingTimeMinutes, r.createdById, r.updatedById, r.createdAt, r.updatedAt
             FROM Recipe r
             INNER JOIN RecipeTagAssignment rta ON rta.recipeId = r.id
             WHERE r.householdId = ?
@@ -281,7 +285,7 @@ export function searchRecipes(
         binds.push(...tagIds, tagIds.length);
     } else {
         query = `
-            SELECT id, householdId, name, description, steps, sourceUrl, isHidden, isPoolExcluded, cookingTimeMinutes, createdById, updatedById, createdAt, updatedAt
+            SELECT id, householdId, name, source, description, steps, sourceUrl, isHidden, isPoolExcluded, cookingTimeMinutes, createdById, updatedById, createdAt, updatedAt
             FROM Recipe
             WHERE householdId = ?
               AND (isHidden IS NULL OR isHidden = 0)

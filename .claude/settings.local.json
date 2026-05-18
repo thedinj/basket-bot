@@ -23,7 +23,8 @@
       "Bash(pnpm db:migrate)",
       "Bash(pnpm tsc *)",
       "Bash(xargs head -20)",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Select-Object Name)"
     ]
   }
 }

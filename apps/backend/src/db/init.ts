@@ -176,6 +176,7 @@ export function initializeDatabase() {
             "name" TEXT NOT NULL CHECK(length("name") >= 1 AND length("name") <= 200),
             "description" TEXT CHECK("description" IS NULL OR length("description") <= 2000),
             "steps" TEXT CHECK("steps" IS NULL OR length("steps") <= 50000),
+            "source" TEXT CHECK("source" IS NULL OR (length("source") >= 1 AND length("source") <= 200)),
             "sourceUrl" TEXT CHECK("sourceUrl" IS NULL OR length("sourceUrl") <= 500),
             "isHidden" INTEGER,
             "isPoolExcluded" INTEGER,
