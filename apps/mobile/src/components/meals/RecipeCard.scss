@@ -1,7 +1,7 @@
 .recipe-card-motion {
-    /* fills the grid cell so the IonCard stretches to full height */
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .recipe-card {
@@ -11,6 +11,8 @@
     border: 1px solid var(--ion-border-color, #2d3748);
     background: var(--ion-card-background, #1a1a2e);
     box-shadow: none;
+    display: flex;
+    flex-direction: column;
 }
 
 .recipe-card__header {
@@ -27,6 +29,9 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    /* prevent long words from overflowing the column */
+    min-width: 0;
+    word-break: break-word;
 }
 
 .recipe-card__source {
@@ -37,6 +42,7 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    min-width: 0;
 }
 
 .recipe-card__tags {
@@ -72,16 +78,33 @@
     letter-spacing: 0.02em;
 }
 
+.recipe-card__footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 8px 6px;
+    border-top: 1px solid var(--ion-border-color, rgba(255 255 255 / 0.06));
+    margin-top: auto;
+}
+
 .recipe-card__add-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    z-index: 2;
-    --padding-start: 0;
-    --padding-end: 0;
-    width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
     height: 32px;
-    --border-radius: 8px;
-    --background: color-mix(in srgb, var(--ion-background-color) 60%, transparent);
-    --color: var(--ion-color-step-400, #718096);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    border-radius: 6px;
+    color: var(--ion-color-step-400, #718096);
+
+    &:active {
+        color: var(--ion-color-primary);
+        background: color-mix(in srgb, var(--ion-color-primary) 12%, transparent);
+    }
+}
+
+.recipe-card__add-icon {
+    font-size: 15px;
 }

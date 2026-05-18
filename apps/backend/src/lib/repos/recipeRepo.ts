@@ -263,7 +263,19 @@ export function searchRecipes(
     const hasTimeFilter = maxCookingTimeMinutes != null;
 
     if (!hasTagFilter && !hasTimeFilter) {
-        return getRecipesByHousehold(householdId);
+        const rows = db
+            .prepare(
+                `SELECT id, householdId, name, source, description, steps, sourceUrl, isHidden, isPoolExcluded, cookingTimeMinutes, createdById, updatedById, createdAt, updatedAt
+                 FROM Recipe
+                 WHERE householdId = ?
+                   AND (isHidden IS NULL OR isHidden = 0)
+                   AND isPoolExcluded IS NULL
+                 ORDER BY name ASC`
+            )
+            .all(householdId) as Array<
+            Omit<Recipe, "isHidden" | "isPoolExcluded"> & { isHidden: number | null; isPoolExcluded: number | null }
+        >;
+        return rows.map((row) => ({ ...row, isHidden: intToBool(row.isHidden), isPoolExcluded: intToBool(row.isPoolExcluded) }));
     }
 
     const binds: unknown[] = [householdId];

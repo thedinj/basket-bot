@@ -1,5 +1,5 @@
 import type { RecipeWithDetails } from "@basket-bot/core"
-import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonIcon } from "@ionic/react"
+import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonIcon } from "@ionic/react"
 import { cartOutline } from "ionicons/icons"
 import { motion } from "motion/react"
 import TagChipList from "./TagChipList"
@@ -28,22 +28,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onAddToList })
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
             whileTap={{ scale: 0.965, transition: { duration: 0.09 } }}
             className="recipe-card-motion"
-            style={{ position: "relative" }}
         >
-            {onAddToList && (
-                <IonButton
-                    fill="clear"
-                    size="small"
-                    className="recipe-card__add-btn"
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        onAddToList()
-                    }}
-                    aria-label="Add to shopping list"
-                >
-                    <IonIcon slot="icon-only" icon={cartOutline} />
-                </IonButton>
-            )}
             <IonCard
                 button
                 onClick={onClick}
@@ -82,6 +67,21 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onAddToList })
                         </div>
                     )}
                 </IonCardContent>
+                {onAddToList && (
+                    <div className="recipe-card__footer">
+                        <button
+                            type="button"
+                            className="recipe-card__add-btn"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                onAddToList()
+                            }}
+                            aria-label="Add to shopping list"
+                        >
+                            <IonIcon icon={cartOutline} className="recipe-card__add-icon" />
+                        </button>
+                    </div>
+                )}
             </IonCard>
         </motion.div>
     )

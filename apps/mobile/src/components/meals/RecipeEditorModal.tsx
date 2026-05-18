@@ -450,7 +450,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                 <IonInput
                                     value={source}
                                     onIonInput={(e) => setSource(e.detail.value ?? "")}
-                                    placeholder="e.g. Brian Lagerstrom, Serious Eats"
+                                    placeholder="Book, website, or creator"
                                     autocapitalize="words"
                                 />
                             </IonItem>

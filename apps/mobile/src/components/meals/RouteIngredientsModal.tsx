@@ -5,11 +5,13 @@ import {
     IonContent,
     IonFooter,
     IonHeader,
+    IonIcon,
     IonModal,
     IonSpinner,
     IonTitle,
     IonToolbar,
 } from "@ionic/react"
+import { closeOutline } from "ionicons/icons"
 import { useEffect, useMemo, useState } from "react"
 import { DEFAULT_STORE, type RawIngredient, useRouteIngredients } from "../../hooks/useRouteIngredients"
 import ScaleFactorControl from "./ScaleFactorControl"
@@ -91,7 +93,7 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
                     <IonTitle>Add to shopping list</IonTitle>
                     <IonButtons slot="end">
                         <IonButton onClick={onDismiss} disabled={isWorking}>
-                            Cancel
+                            <IonIcon slot="icon-only" icon={closeOutline} />
                         </IonButton>
                     </IonButtons>
                 </IonToolbar>
