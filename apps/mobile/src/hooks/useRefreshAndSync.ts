@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import pluralize from "pluralize";
 import { useCallback, useState } from "react";
 import { apiClient } from "../lib/api/client";
 import { mutationQueue } from "../lib/mutationQueue";
@@ -112,12 +113,12 @@ export const useSync = () => {
             // Invalidate queries after successful sync to refresh UI
             if (result.success > 0) {
                 await queryClient.invalidateQueries();
-                showSuccess(`Synced ${result.success} change${result.success === 1 ? "" : "s"}`);
+                showSuccess(`Synced ${result.success} ${pluralize("change", result.success)}`);
             }
 
             if (result.failed > 0) {
                 showError(
-                    `Failed to sync ${result.failed} change${result.failed === 1 ? "" : "s"}. Some changes may have been rejected by the server.`
+                    `Failed to sync ${result.failed} ${pluralize("change", result.failed)}. Some changes may have been rejected by the server.`
                 );
             }
         } catch (error) {

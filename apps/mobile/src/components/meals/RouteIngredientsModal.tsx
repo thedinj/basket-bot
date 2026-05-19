@@ -1,4 +1,5 @@
 import type { Store } from "@basket-bot/core"
+import pluralize from "pluralize"
 import {
     IonButton,
     IonButtons,
@@ -125,7 +126,7 @@ unitMap={unitMap}
                             {isWorking ? (
                                 <IonSpinner name="dots" />
                             ) : (
-                                `Add ${includedCount} to list${includedCount !== 1 ? "s" : ""} →`
+                                `Add ${includedCount} to ${pluralize("list", includedCount)} →`
                             )}
                         </IonButton>
                     </IonButtons>

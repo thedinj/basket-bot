@@ -17,6 +17,7 @@ import {
     IonText,
 } from "@ionic/react";
 import { addOutline, calendarOutline, filterOutline, restaurantOutline } from "ionicons/icons";
+import pluralize from "pluralize";
 import { Suspense, useCallback, useMemo, useState } from "react";
 import { AppHeader } from "../components/layout/AppHeader";
 import LoadingFallback from "../components/LoadingFallback";
@@ -201,7 +202,7 @@ const RecipesContent: React.FC<{
                                 className="meals-active-chip"
                                 onClick={() => setFilters((f) => ({ ...f, tagIds: new Set() }))}
                             >
-                                {filters.tagIds.size} tag{filters.tagIds.size !== 1 ? "s" : ""} ×
+                                {filters.tagIds.size} {pluralize("tag", filters.tagIds.size)} ×
                             </button>
                         )}
                         {filters.inPoolOnly && (
@@ -252,7 +253,7 @@ const RecipesContent: React.FC<{
 
             {(search.trim() || activeFilterCount > 0) && (
                 <div className="meals-filter-count">
-                    {filtered.length} recipe{filtered.length !== 1 ? "s" : ""}
+                    {filtered.length} {pluralize("recipe", filtered.length)}
                 </div>
             )}
 
@@ -319,7 +320,7 @@ const PlansContent: React.FC<{ householdId: string | null }> = ({ householdId })
             <div className="plans-history-meta">
                 {data && (
                     <IonNote>
-                        {total} dispatched plan{total !== 1 ? "s" : ""}
+                        {total} dispatched {pluralize("plan", total)}
                     </IonNote>
                 )}
             </div>
@@ -340,7 +341,7 @@ const PlansContent: React.FC<{ householdId: string | null }> = ({ householdId })
                         <div className="plan-history-card__header">
                             <span className="plan-history-card__date">{date ?? "—"}</span>
                             <span className="plan-history-card__count">
-                                {plan.slotCount} meal{plan.slotCount !== 1 ? "s" : ""}
+                                {plan.slotCount} {pluralize("meal", plan.slotCount)}
                             </span>
                         </div>
                         <div className="plan-history-card__slots">

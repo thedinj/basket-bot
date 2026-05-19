@@ -1,3 +1,4 @@
+import pluralize from "pluralize";
 import { z } from "zod";
 
 /**
@@ -33,7 +34,7 @@ export function minMaxLengthString(minLength: number, maxLength: number, fieldNa
     return z
         .string()
         .min(minLength, {
-            message: `${fieldName} must be at least ${minLength} character${minLength !== 1 ? "s" : ""}`,
+            message: `${fieldName} must be at least ${minLength} ${pluralize("character", minLength)}`,
         })
         .max(maxLength, {
             message: `${fieldName} must be ${maxLength} characters or less`,

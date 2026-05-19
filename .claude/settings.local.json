@@ -24,7 +24,8 @@
       "Bash(pnpm tsc *)",
       "Bash(xargs head -20)",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(pnpm install *)"
     ]
   }
 }

@@ -1,4 +1,5 @@
 import type { Store } from "@basket-bot/core"
+import pluralize from "pluralize"
 import {
     IonCheckbox,
     IonItem,
@@ -45,10 +46,9 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
         <>
             <div className="wizard-route-header">
                 <span className="wizard-route-meta">
-                    {resolvedIngredients.length} ingredient
-                    {resolvedIngredients.length !== 1 ? "s" : ""}
+                    {resolvedIngredients.length} {pluralize("ingredient", resolvedIngredients.length)}
                     {recipeCount !== undefined
-                        ? ` · ${recipeCount} recipe${recipeCount !== 1 ? "s" : ""}`
+                        ? ` · ${recipeCount} ${pluralize("recipe", recipeCount)}`
                         : ""}
                 </span>
                 {visibleStores.length > 1 && (

@@ -1,4 +1,5 @@
 import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
+import pluralize from "pluralize";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonButton,
@@ -54,7 +55,7 @@ const Login: React.FC = () => {
                 if (retryAfter) {
                     const minutes = Math.ceil(retryAfter / 60);
                     setError(
-                        `Too many login attempts. Please try again in ${minutes} minute${minutes !== 1 ? "s" : ""}.`
+                        `Too many login attempts. Please try again in ${minutes} ${pluralize("minute", minutes)}.`
                     );
                 } else {
                     setError("Too many login attempts. Please try again later.");

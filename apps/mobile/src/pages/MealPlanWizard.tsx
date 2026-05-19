@@ -21,6 +21,7 @@ import {
     removeOutline,
     searchOutline,
 } from "ionicons/icons";
+import pluralize from "pluralize";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import RecipeDetailContent from "../components/meals/RecipeDetailContent";
@@ -833,7 +834,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                         {canReview && (
                             <div className="wizard-robot-line">
                                 {allSlotsFilled
-                                    ? `> ${mealCount} meal${mealCount !== 1 ? "s" : ""} locked. Proceed, or keep second-guessing yourself.`
+                                    ? `> ${mealCount} ${pluralize("meal", mealCount)} locked. Proceed, or keep second-guessing yourself.`
                                     : pinnedCount > 0
                                     ? `> ${pinnedCount} locked in. Roll the rest or review as-is. I don't judge. Much.`
                                     : "> Partially filled. Commit to what you've got or roll the rest."}
@@ -974,7 +975,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                     {isWorking ? (
                                         <IonSpinner name="dots" />
                                     ) : (
-                                        `Send ${includedCount} to list${includedCount !== 1 ? "s" : ""} →`
+                                        `Send ${includedCount} to ${pluralize("list", includedCount)} →`
                                     )}
                                 </IonButton>
                             </IonButtons>
@@ -1037,7 +1038,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                 isOpen={showPartialAlert}
                 onDidDismiss={() => setShowPartialAlert(false)}
                 header="Not all slots filled"
-                message={`${mealCount - filledCount} slot${mealCount - filledCount !== 1 ? "s" : ""} still empty. Continue anyway?`}
+                message={`${mealCount - filledCount} ${pluralize("slot", mealCount - filledCount)} still empty. Continue anyway?`}
                 buttons={[
                     { text: "Go back", role: "cancel" },
                     { text: "Continue anyway", role: "confirm", handler: handleGoToRoute },

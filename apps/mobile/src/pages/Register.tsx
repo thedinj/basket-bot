@@ -1,4 +1,5 @@
 import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
+import pluralize from "pluralize";
 import { MIN_PASSWORD_LENGTH, passwordSchema } from "@basket-bot/core";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -85,7 +86,7 @@ const Register: React.FC = () => {
                 if (retryAfter) {
                     const minutes = Math.ceil(retryAfter / 60);
                     setError(
-                        `Too many registration attempts. Please try again in ${minutes} minute${minutes !== 1 ? "s" : ""}.`
+                        `Too many registration attempts. Please try again in ${minutes} ${pluralize("minute", minutes)}.`
                     );
                 } else {
                     setError("Too many registration attempts. Please try again later.");

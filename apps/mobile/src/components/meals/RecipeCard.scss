@@ -6,13 +6,10 @@
 
 .recipe-card {
     margin: 0;
-    flex: 1;
     border-radius: 16px;
     border: 1px solid var(--ion-border-color, #2d3748);
     background: var(--ion-card-background, #1a1a2e);
     box-shadow: none;
-    display: flex;
-    flex-direction: column;
 }
 
 .recipe-card__header {
@@ -83,7 +80,6 @@
     justify-content: flex-end;
     padding: 0 8px 6px;
     border-top: 1px solid var(--ion-border-color, rgba(255 255 255 / 0.06));
-    margin-top: auto;
 }
 
 .recipe-card__add-btn {

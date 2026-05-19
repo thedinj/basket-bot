@@ -260,6 +260,9 @@ importers:
 
   packages/core:
     dependencies:
+      pluralize:
+        specifier: ^8.0.0
+        version: 8.0.0
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -267,6 +270,9 @@ importers:
       '@types/node':
         specifier: ^22.10.5
         version: 22.19.5
+      '@types/pluralize':
+        specifier: ^0.0.33
+        version: 0.0.33
       typescript:
         specifier: ^5.7.2
         version: 5.9.3

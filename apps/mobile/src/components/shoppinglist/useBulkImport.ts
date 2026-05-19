@@ -124,12 +124,12 @@ export function useBulkImport(storeId: string) {
 
                 if (successCount > 0) {
                     showSuccess(
-                        `Added ${successCount} item${successCount > 1 ? "s" : ""} to your cart`
+                        `Added ${pluralize("item", successCount, true)} to your cart`
                     );
                 }
 
                 if (errorCount > 0) {
-                    showError(`Failed to import ${errorCount} item${errorCount > 1 ? "s" : ""}`);
+                    showError(`Failed to import ${pluralize("item", errorCount, true)}`);
                 }
             } catch (error) {
                 showError(error instanceof Error ? error.message : "Failed to import items");

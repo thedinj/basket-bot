@@ -1,4 +1,5 @@
 import StoreItemsManagementModal from "@/components/store/StoreItemsManagementModal";
+import pluralize from "pluralize";
 import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
 import {
     IonContent,
@@ -173,9 +174,7 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
                                         <br />
                                         <br />
                                         {currentlySnoozedItemCount > 0
-                                            ? `(${currentlySnoozedItemCount} item${
-                                                  currentlySnoozedItemCount > 1 ? "s" : ""
-                                              } snoozed.)`
+                                            ? `(${currentlySnoozedItemCount} ${pluralize("item", currentlySnoozedItemCount)} snoozed.)`
                                             : ""}
                                     </>
                                 )}
