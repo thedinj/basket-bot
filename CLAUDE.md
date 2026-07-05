@@ -83,6 +83,17 @@ Route handlers validate input with Zod, call services, and return JSON. Services
 - **Mutation queuing** persists failed mutations and retries on reconnect
 - **Shield system** blocks UI during long-running operations
 
+**Cache invalidation contract (avoids stale-data bugs):** every mutation must
+`invalidateQueries` the exact key of *every* query that surfaces the changed data, not
+just the obvious one. Query keys are an exact kebab-case vocabulary (e.g.
+`["shopping-list-items", storeId]`, never `["shoppingListItems"]`) — a typo silently
+no-ops. Gotchas: store-item edits must also invalidate `["shopping-list-items", storeId]`;
+ops that create a store item must invalidate both `["items", storeId]` and
+`["items", "with-details", storeId]`; **ingredient mutations must invalidate both the
+recipe detail AND `["recipes", householdId]`** (the list carries full ingredient details).
+**Full registry + cascade tables (keep updated in the same change):**
+[`apps/mobile/docs/CACHE_KEYS.md`](apps/mobile/docs/CACHE_KEYS.md).
+
 ### Data Hierarchy
 
 ```

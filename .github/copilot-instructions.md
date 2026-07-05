@@ -552,6 +552,36 @@ retry: (failureCount, error: unknown) => {
 retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
 ```
 
+**Query cache keys and invalidation contract (`db/hooks.ts`, `db/mealsHooks.ts`):**
+
+Stale-data bugs (e.g. editing a recipe, then adding it to the cart with the old
+ingredients) come from mutations that fail to invalidate every query that surfaces
+the changed data. Follow these rules:
+
+- **The full key registry + per-mutation cascade tables + reverse ("invalidated-by")
+  index live in [`apps/mobile/docs/CACHE_KEYS.md`](../apps/mobile/docs/CACHE_KEYS.md).**
+  It is the source of truth — read it before changing a query/mutation, and update it in
+  the same change (add a query → add a registry row; add/change a mutation → update its
+  cascade row and the reverse index).
+- **Query keys are an exact, kebab-case vocabulary.** A mutation only refreshes a query
+  when its `invalidateQueries` key is a prefix of that query's key. A typo or casing
+  mismatch silently no-ops (e.g. `["shoppingListItems"]` vs `["shopping-list-items"]`,
+  `["store", id]` vs `["stores", id]`).
+- **Every mutation must invalidate the exact keys of all queries whose data it
+  changed** — not just the "obvious" one. In particular:
+    - A store-item change (`useUpdateItem`, `useUpsertShoppingListItem`, `useMoveItemToStore`)
+      must invalidate `["shopping-list-items", storeId]` too, because the list joins store-item data.
+    - Any op that can create a store item (`getOrCreateStoreItemByName`, upsert, add-to-list)
+      must invalidate `["items", storeId]` **and** `["items", "with-details", storeId]`.
+    - **Ingredient mutations (`useAddIngredient`/`useUpdateIngredient`/`useDeleteIngredient`)
+      must invalidate BOTH `["recipes", householdId, recipeId]` AND `["recipes", householdId]`** —
+      the recipe list carries full ingredient details and drives the add-to-shopping-list flow.
+    - An op spanning unknown/multiple stores (add-recipe-to-list) should invalidate the
+      broad prefix (`["shopping-list-items"]`, `["items"]`) rather than one storeId.
+- **Prefer reading fresh from cache over snapshotting into `useState`.** Passing a whole
+  `RecipeWithDetails`/`StoreItem` object into local state defeats invalidation; hold an id
+  and read via the query hook so the component re-renders after invalidation.
+
 **Error classification (ApiClient):**
 
 - Network errors (timeout, no connection) have `isNetworkError: true` flag on `ApiError`

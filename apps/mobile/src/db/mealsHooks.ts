@@ -182,7 +182,10 @@ export function useAddRecipeToShoppingList(householdId: string | null, recipeId:
             return recipeApi.addToShoppingList(householdId!, recipeId!, { routes: included, factor })
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["shoppingList"] })
+            // Adding a recipe upserts shopping-list items and may create store items
+            // across one or more stores, so invalidate every store's list and item caches.
+            queryClient.invalidateQueries({ queryKey: ["shopping-list-items"] })
+            queryClient.invalidateQueries({ queryKey: ["items"] })
         },
         onError: (error: Error) => {
             showError(`Failed to add to shopping list: ${error.message}`)
@@ -311,6 +314,9 @@ export function useAddIngredient(householdId: string | null) {
             queryClient.invalidateQueries({
                 queryKey: ["recipes", householdId, result.recipeId],
             })
+            // The recipe list also carries full ingredient details (used by the
+            // add-to-shopping-list flow), so it must be refreshed too.
+            queryClient.invalidateQueries({ queryKey: ["recipes", householdId] })
         },
         onError: (error: Error) => {
             showError(`Failed to add ingredient: ${error.message}`)
@@ -343,6 +349,9 @@ export function useUpdateIngredient(householdId: string | null) {
             queryClient.invalidateQueries({
                 queryKey: ["recipes", householdId, variables.recipeId],
             })
+            // The recipe list also carries full ingredient details (used by the
+            // add-to-shopping-list flow), so it must be refreshed too.
+            queryClient.invalidateQueries({ queryKey: ["recipes", householdId] })
         },
         onError: (error: Error) => {
             showError(`Failed to update ingredient: ${error.message}`)
@@ -361,6 +370,9 @@ export function useDeleteIngredient(householdId: string | null) {
             queryClient.invalidateQueries({
                 queryKey: ["recipes", householdId, variables.recipeId],
             })
+            // The recipe list also carries full ingredient details (used by the
+            // add-to-shopping-list flow), so it must be refreshed too.
+            queryClient.invalidateQueries({ queryKey: ["recipes", householdId] })
         },
         onError: (error: Error) => {
             showError(`Failed to delete ingredient: ${error.message}`)

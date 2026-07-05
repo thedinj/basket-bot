@@ -1035,7 +1035,7 @@ export function useUpdateItem() {
             });
             // Also invalidate shopping list items since they display store item data
             queryClient.invalidateQueries({
-                queryKey: ["shoppingListItems"],
+                queryKey: ["shopping-list-items", variables.storeId],
             });
         },
         onError: (error: Error) => {
@@ -1097,6 +1097,10 @@ export function useDeleteItem() {
             });
             queryClient.invalidateQueries({
                 queryKey: ["items", "with-details", variables.storeId],
+            });
+            // Deleting a store item removes any shopping-list item that referenced it
+            queryClient.invalidateQueries({
+                queryKey: ["shopping-list-items", variables.storeId],
             });
         },
         onError: (error: Error) => {
@@ -1209,9 +1213,12 @@ export function useUpsertShoppingListItem() {
             queryClient.invalidateQueries({
                 queryKey: ["shopping-list-items", variables.storeId],
             });
-            // Also invalidate store items for autocomplete
+            // Also invalidate store items (upsert can create a new store item)
             queryClient.invalidateQueries({
                 queryKey: ["items", variables.storeId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["items", "with-details", variables.storeId],
             });
             queryClient.invalidateQueries({
                 queryKey: ["store-items", "search", variables.storeId],
@@ -1441,6 +1448,13 @@ export function useMoveItemToStore() {
             queryClient.invalidateQueries({
                 queryKey: ["shopping-list-items", variables.targetStoreId],
             });
+            // A store item may be created at the target store (getOrCreateStoreItemByName)
+            queryClient.invalidateQueries({
+                queryKey: ["items", variables.targetStoreId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["items", "with-details", variables.targetStoreId],
+            });
         },
     });
 }
@@ -1471,7 +1485,7 @@ export function useUpdateStoreHousehold() {
         mutationFn: (params: { storeId: string; householdId: string | null }) =>
             storeSharingApi.updateStoreHousehold(params.storeId, params.householdId),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ["store", variables.storeId] });
+            queryClient.invalidateQueries({ queryKey: ["stores", variables.storeId] });
             queryClient.invalidateQueries({ queryKey: ["stores"] });
             if (variables.householdId) {
                 showSuccess("Store shared with household!");
@@ -1496,7 +1510,7 @@ export function useUpdateStoreVisibility() {
         mutationFn: (params: { storeId: string; isHidden: boolean }) =>
             storeSharingApi.updateStoreVisibility(params.storeId, params.isHidden),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ["store", variables.storeId] });
+            queryClient.invalidateQueries({ queryKey: ["stores", variables.storeId] });
             queryClient.invalidateQueries({ queryKey: ["stores"] });
             if (variables.isHidden) {
                 showSuccess("Store hidden from lists");
