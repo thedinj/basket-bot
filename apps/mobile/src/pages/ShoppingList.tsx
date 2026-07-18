@@ -28,6 +28,7 @@ import { StoreSelector } from "../components/shoppinglist/StoreSelector";
 import { UncheckedItems } from "../components/shoppinglist/UncheckedItems";
 import { useShoppingListContext } from "../components/shoppinglist/useShoppingListContext";
 import { useClearCheckedItems, useShoppingListItems, useStores } from "../db/hooks";
+import { queryKeys } from "../db/queryKeys";
 import RefreshConfig from "../hooks/refresh/RefreshConfig";
 import { useMidnightUpdate } from "../hooks/useMidnightUpdate";
 import { useOverlayAnimation } from "../hooks/useOverlayAnimation";
@@ -152,7 +153,7 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     }, [currentlySnoozedItemCount, showSnoozed, toggleShowSnoozed]);
 
     return (
-        <RefreshConfig queryKeys={[["shopping-list-items", storeId]]}>
+        <RefreshConfig queryKeys={[queryKeys.shoppingListItems.byStore(storeId)]}>
             <AppHeader
                 title="Shopping List"
                 subToolbar={multipleStores ? <StoreSelector /> : undefined}

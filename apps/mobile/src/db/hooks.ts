@@ -25,6 +25,7 @@ import { formatErrorMessage } from "../utils/errorUtils";
 import { DatabaseContext } from "./context";
 import { checkAndInvalidateCoreDataCache } from "./coreDataVersion";
 import { useOptimisticMutation } from "./optimisticUpdates";
+import { queryKeys } from "./queryKeys";
 import { type Database } from "./types";
 
 // ============================================================================
@@ -107,12 +108,12 @@ export const usePreloadCoreData = () => {
         try {
             const [, stores] = await Promise.all([
                 queryClient.prefetchQuery({
-                    queryKey: ["quantityUnits"],
+                    queryKey: queryKeys.quantityUnits(),
                     queryFn: () => database.loadAllQuantityUnits(),
                     staleTime: CORE_DATA_CACHE.STATIC.staleTime,
                 }),
                 queryClient.fetchQuery({
-                    queryKey: ["stores"],
+                    queryKey: queryKeys.stores.all(),
                     queryFn: () => database.loadAllStores(),
                     staleTime: 30 * 60 * 1000, // 30 minutes
                 }),
@@ -123,12 +124,12 @@ export const usePreloadCoreData = () => {
                 await Promise.all(
                     stores.flatMap((store) => [
                         queryClient.prefetchQuery({
-                            queryKey: ["aisles", store.id],
+                            queryKey: queryKeys.aisles.byStore(store.id),
                             queryFn: () => database.getAislesByStore(store.id),
                             staleTime: 30 * 60 * 1000, // 30 minutes
                         }),
                         queryClient.prefetchQuery({
-                            queryKey: ["sections", store.id],
+                            queryKey: queryKeys.sections.byStore(store.id),
                             queryFn: () => database.getSectionsByStore(store.id),
                             staleTime: 30 * 60 * 1000, // 30 minutes
                         }),
@@ -154,7 +155,7 @@ export const usePreloadCoreData = () => {
 export function useStores() {
     const database = useDatabase();
     return useTanstackSuspenseQuery({
-        queryKey: ["stores"],
+        queryKey: queryKeys.stores.all(),
         queryFn: () => database.loadAllStores(),
     });
 }
@@ -166,7 +167,7 @@ export function useStores() {
 export function useQuantityUnits() {
     const database = useDatabase();
     return useTanstackQuery({
-        queryKey: ["quantityUnits"],
+        queryKey: queryKeys.quantityUnits(),
         queryFn: () => database.loadAllQuantityUnits(),
         staleTime: CORE_DATA_CACHE.STATIC.staleTime,
         gcTime: CORE_DATA_CACHE.STATIC.gcTime,
@@ -179,7 +180,7 @@ export function useQuantityUnits() {
 export function useStore(id: string) {
     const database = useDatabase();
     return useTanstackQuery({
-        queryKey: ["stores", id],
+        queryKey: queryKeys.stores.detail(id),
         queryFn: () => database.getStoreById(id),
         enabled: !!id,
     });
@@ -191,7 +192,7 @@ export function useStore(id: string) {
 export function useStoreSuspense(id: string) {
     const database = useDatabase();
     return useTanstackSuspenseQuery({
-        queryKey: ["stores", id],
+        queryKey: queryKeys.stores.detail(id),
         queryFn: () => database.getStoreById(id),
     });
 }
@@ -203,7 +204,7 @@ export function useStoreSuspense(id: string) {
 export function useAppSetting(key: string) {
     const database = useDatabase();
     return useTanstackQuery({
-        queryKey: ["appSettings", key],
+        queryKey: queryKeys.appSettings.detail(key),
         queryFn: () => database.getAppSetting(key),
         enabled: !!key,
         staleTime: CORE_DATA_CACHE.SETTINGS.staleTime,
@@ -226,7 +227,7 @@ export function useCreateStore() {
     return useTanstackMutation({
         mutationFn: (name: string) => database.insertStore(name),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["stores"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
         },
         onError: (error: Error) => {
             showError(`Failed to create store: ${error.message}`);
@@ -245,9 +246,9 @@ export function useUpdateStore() {
     return useTanstackMutation({
         mutationFn: ({ id, name }: { id: string; name: string }) => database.updateStore(id, name),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ["stores"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
             queryClient.invalidateQueries({
-                queryKey: ["stores", variables.id],
+                queryKey: queryKeys.stores.detail(variables.id),
             });
         },
         onError: (error: Error) => {
@@ -267,7 +268,7 @@ export function useDeleteStore() {
     return useTanstackMutation({
         mutationFn: (id: string) => database.deleteStore(id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["stores"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
         },
         onError: (error: Error) => {
             showError(`Failed to delete store: ${error.message}`);
@@ -290,7 +291,7 @@ export function useDuplicateStore() {
             includeItems: boolean;
         }) => database.duplicateStore(params),
         onSuccess: (newStore) => {
-            queryClient.invalidateQueries({ queryKey: ["stores"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
             showSuccess(`Store "${newStore.name}" created successfully`);
         },
         onError: (error: Error) => {
@@ -312,7 +313,7 @@ export function useSaveAppSetting() {
             database.setAppSetting(key, value),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["appSettings", variables.key],
+                queryKey: queryKeys.appSettings.detail(variables.key),
             });
         },
         onError: (error: Error) => {
@@ -331,7 +332,7 @@ export function useSaveAppSetting() {
 export function useStoreAisles(storeId: string) {
     const database = useDatabase();
     return useTanstackQuery({
-        queryKey: ["aisles", storeId],
+        queryKey: queryKeys.aisles.byStore(storeId),
         queryFn: () => database.getAislesByStore(storeId),
         enabled: !!storeId,
     });
@@ -350,7 +351,7 @@ export function useCreateAisle() {
             database.insertAisle(storeId, name),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["aisles", variables.storeId],
+                queryKey: queryKeys.aisles.byStore(variables.storeId),
             });
         },
         onError: (error: Error) => {
@@ -372,21 +373,21 @@ export function useUpdateAisle() {
             database.updateAisle(storeId, id, name),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["aisles", variables.storeId],
+                queryKey: queryKeys.aisles.byStore(variables.storeId),
             });
             queryClient.invalidateQueries({
-                queryKey: ["aisles", "detail", variables.id],
+                queryKey: queryKeys.aisles.detail(variables.id),
             });
             // Invalidate store items since they display aisle names
             queryClient.invalidateQueries({
-                queryKey: ["items", variables.storeId],
+                queryKey: queryKeys.items.byStore(variables.storeId),
             });
             queryClient.invalidateQueries({
-                queryKey: ["items", "with-details", variables.storeId],
+                queryKey: queryKeys.items.withDetails(variables.storeId),
             });
             // Invalidate shopping list items since they display aisle names
             queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.storeId],
+                queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
         onError: (error: Error) => {
@@ -408,14 +409,14 @@ export function useDeleteAisle() {
             database.deleteAisle(storeId, id),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["aisles", variables.storeId],
+                queryKey: queryKeys.aisles.byStore(variables.storeId),
             });
             // Invalidate store items and shopping list since aisle was deleted
             queryClient.invalidateQueries({
-                queryKey: ["items", "with-details", variables.storeId],
+                queryKey: queryKeys.items.withDetails(variables.storeId),
             });
             queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.storeId],
+                queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
         onError: (error: Error) => {
@@ -442,11 +443,11 @@ export function useReorderAisles() {
         }) => database.reorderAisles(storeId, updates),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["aisles", variables.storeId],
+                queryKey: queryKeys.aisles.byStore(variables.storeId),
             });
             // Invalidate shopping list items since they display items in aisle order
             queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.storeId],
+                queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
         onError: (error: Error) => {
@@ -465,7 +466,7 @@ export function useReorderAisles() {
 export function useStoreSections(storeId: string) {
     const database = useDatabase();
     return useTanstackQuery({
-        queryKey: ["sections", storeId],
+        queryKey: queryKeys.sections.byStore(storeId),
         queryFn: () => database.getSectionsByStore(storeId),
         enabled: !!storeId,
     });
@@ -477,7 +478,7 @@ export function useStoreSections(storeId: string) {
 export function useSection(id: string) {
     const database = useDatabase();
     return useTanstackQuery({
-        queryKey: ["sections", "detail", id],
+        queryKey: queryKeys.sections.detail(id),
         queryFn: () => database.getSectionById(id),
         enabled: !!id,
     });
@@ -503,7 +504,7 @@ export function useCreateSection() {
         }) => database.insertSection(storeId, name, aisleId),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["sections", variables.storeId],
+                queryKey: queryKeys.sections.byStore(variables.storeId),
             });
         },
         onError: (error: Error) => {
@@ -534,18 +535,18 @@ export function useUpdateSection() {
         }) => database.updateSection(storeId, id, name, aisleId),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["sections", variables.storeId],
+                queryKey: queryKeys.sections.byStore(variables.storeId),
             });
             queryClient.invalidateQueries({
-                queryKey: ["sections", "detail", variables.id],
+                queryKey: queryKeys.sections.detail(variables.id),
             });
             // Invalidate store items since they display section names
             queryClient.invalidateQueries({
-                queryKey: ["items", "with-details", variables.storeId],
+                queryKey: queryKeys.items.withDetails(variables.storeId),
             });
             // Invalidate shopping list items since they display section names and order
             queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.storeId],
+                queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
         onError: (error: Error) => {
@@ -567,14 +568,14 @@ export function useDeleteSection() {
             database.deleteSection(storeId, id),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["sections", variables.storeId],
+                queryKey: queryKeys.sections.byStore(variables.storeId),
             });
             // Invalidate store items and shopping list since section was deleted
             queryClient.invalidateQueries({
-                queryKey: ["items", "with-details", variables.storeId],
+                queryKey: queryKeys.items.withDetails(variables.storeId),
             });
             queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.storeId],
+                queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
         onError: (error: Error) => {
@@ -623,15 +624,15 @@ export function useMoveSection() {
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["sections", variables.storeId],
+                queryKey: queryKeys.sections.byStore(variables.storeId),
             });
             // Invalidate store items since section locations changed
             queryClient.invalidateQueries({
-                queryKey: ["items", "with-details", variables.storeId],
+                queryKey: queryKeys.items.withDetails(variables.storeId),
             });
             // Invalidate shopping list items since they display section order
             queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.storeId],
+                queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
         onError: (error: Error) => {
@@ -658,11 +659,11 @@ export function useReorderSections() {
         }) => database.reorderSections(storeId, updates),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["sections", variables.storeId],
+                queryKey: queryKeys.sections.byStore(variables.storeId),
             });
             // Invalidate shopping list items since they display items in section order
             queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.storeId],
+                queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
         onError: (error: Error) => {
@@ -860,10 +861,10 @@ export function useBulkApplyAislesAndSections() {
 
                 // Step 6: Invalidate queries to refresh UI
                 queryClient.invalidateQueries({
-                    queryKey: ["aisles", storeId],
+                    queryKey: queryKeys.aisles.byStore(storeId),
                 });
                 queryClient.invalidateQueries({
-                    queryKey: ["sections", storeId],
+                    queryKey: queryKeys.sections.byStore(storeId),
                 });
 
                 // Show success/error messages
@@ -931,7 +932,7 @@ export function useBulkApplyAislesAndSections() {
 export function useStoreItems(storeId: string) {
     const database = useDatabase();
     return useTanstackQuery({
-        queryKey: ["items", storeId],
+        queryKey: queryKeys.items.byStore(storeId),
         queryFn: async () => {
             const items = await database.getItemsByStore(storeId);
             return sortItemsByName(items);
@@ -946,7 +947,7 @@ export function useStoreItems(storeId: string) {
 export function useStoreItemsWithDetails(storeId: string) {
     const database = useDatabase();
     return useTanstackQuery({
-        queryKey: ["items", "with-details", storeId],
+        queryKey: queryKeys.items.withDetails(storeId),
         queryFn: async () => {
             const items = await database.getItemsByStoreWithDetails(storeId);
             return sortItemsByName(items);
@@ -961,7 +962,7 @@ export function useStoreItemsWithDetails(storeId: string) {
 export function useItem(id: string) {
     const database = useDatabase();
     return useTanstackQuery({
-        queryKey: ["items", "detail", id],
+        queryKey: queryKeys.items.detail(id),
         queryFn: () => database.getItemById(id),
         enabled: !!id,
     });
@@ -989,10 +990,10 @@ export function useCreateItem() {
         }) => database.insertItem(storeId, name, aisleId, sectionId),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["items", variables.storeId],
+                queryKey: queryKeys.items.byStore(variables.storeId),
             });
             queryClient.invalidateQueries({
-                queryKey: ["items", "with-details", variables.storeId],
+                queryKey: queryKeys.items.withDetails(variables.storeId),
             });
         },
         onError: (error: Error) => {
@@ -1025,17 +1026,17 @@ export function useUpdateItem() {
         }) => database.updateItem(storeId, id, name, aisleId, sectionId),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["items", variables.storeId],
+                queryKey: queryKeys.items.byStore(variables.storeId),
             });
             queryClient.invalidateQueries({
-                queryKey: ["items", "with-details", variables.storeId],
+                queryKey: queryKeys.items.withDetails(variables.storeId),
             });
             queryClient.invalidateQueries({
-                queryKey: ["items", "detail", variables.id],
+                queryKey: queryKeys.items.detail(variables.id),
             });
             // Also invalidate shopping list items since they display store item data
             queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.storeId],
+                queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
         onError: (error: Error) => {
@@ -1068,10 +1069,10 @@ export function useGetOrCreateStoreItem() {
         }) => database.getOrCreateStoreItemByName(storeId, name, aisleId, sectionId),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["items", variables.storeId],
+                queryKey: queryKeys.items.byStore(variables.storeId),
             });
             queryClient.invalidateQueries({
-                queryKey: ["items", "with-details", variables.storeId],
+                queryKey: queryKeys.items.withDetails(variables.storeId),
             });
         },
         onError: (error: Error) => {
@@ -1093,14 +1094,14 @@ export function useDeleteItem() {
             database.deleteItem(storeId, id),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["items", variables.storeId],
+                queryKey: queryKeys.items.byStore(variables.storeId),
             });
             queryClient.invalidateQueries({
-                queryKey: ["items", "with-details", variables.storeId],
+                queryKey: queryKeys.items.withDetails(variables.storeId),
             });
             // Deleting a store item removes any shopping-list item that referenced it
             queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.storeId],
+                queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
         onError: (error: Error) => {
@@ -1122,13 +1123,13 @@ export function useToggleFavorite() {
         mutationFn: ({ id, storeId }: { id: string; storeId: string }) =>
             database.toggleItemFavorite(storeId, id),
         queryKeys: (vars) => [
-            ["items", vars.storeId],
-            ["items", "with-details", vars.storeId],
-            ["items", "detail", vars.id],
+            queryKeys.items.byStore(vars.storeId),
+            queryKeys.items.withDetails(vars.storeId),
+            queryKeys.items.detail(vars.id),
         ],
         updateCache: (vars) => [
             {
-                queryKey: ["items", "with-details", vars.storeId],
+                queryKey: queryKeys.items.withDetails(vars.storeId),
                 updateFn: (old: unknown) => {
                     const items = old as StoreItemWithDetails[] | undefined;
                     if (!items) return items;
@@ -1138,7 +1139,7 @@ export function useToggleFavorite() {
                 },
             },
             {
-                queryKey: ["items", vars.storeId],
+                queryKey: queryKeys.items.byStore(vars.storeId),
                 updateFn: (old: unknown) => {
                     const items = old as StoreItemWithDetails[] | undefined;
                     if (!items) return items;
@@ -1154,8 +1155,8 @@ export function useToggleFavorite() {
                 // Silently refresh to sync with server state
                 if (refreshContext) {
                     await refreshContext?.refresh([
-                        ["items", vars.storeId],
-                        ["items", "with-details", vars.storeId],
+                        queryKeys.items.byStore(vars.storeId),
+                        queryKeys.items.withDetails(vars.storeId),
                     ]);
                 }
                 return;
@@ -1176,7 +1177,7 @@ export function useShoppingListItems(storeId: string) {
     const database = useDatabase();
 
     return useTanstackSuspenseQuery({
-        queryKey: ["shopping-list-items", storeId],
+        queryKey: queryKeys.shoppingListItems.byStore(storeId),
         queryFn: async () => {
             const items = await database.getShoppingListItems(storeId);
             return sortNamedItems(items);
@@ -1191,7 +1192,7 @@ export function useStoreItemAutocomplete(storeId: string, searchTerm: string) {
     const database = useDatabase();
 
     return useTanstackQuery({
-        queryKey: ["store-items", "search", storeId, searchTerm],
+        queryKey: queryKeys.storeItemSearch.forTerm(storeId, searchTerm),
         queryFn: () => database.searchStoreItems(storeId, searchTerm, 10),
         enabled: !!storeId && searchTerm.length >= 2,
         staleTime: 30000, // Cache for 30 seconds
@@ -1211,17 +1212,17 @@ export function useUpsertShoppingListItem() {
             database.upsertShoppingListItem(params) as Promise<ShoppingListItem>,
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.storeId],
+                queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
             // Also invalidate store items (upsert can create a new store item)
             queryClient.invalidateQueries({
-                queryKey: ["items", variables.storeId],
+                queryKey: queryKeys.items.byStore(variables.storeId),
             });
             queryClient.invalidateQueries({
-                queryKey: ["items", "with-details", variables.storeId],
+                queryKey: queryKeys.items.withDetails(variables.storeId),
             });
             queryClient.invalidateQueries({
-                queryKey: ["store-items", "search", variables.storeId],
+                queryKey: queryKeys.storeItemSearch.byStore(variables.storeId),
             });
         },
         onError: (error: Error) => {
@@ -1244,9 +1245,9 @@ export function useToggleItemChecked() {
     return useOptimisticMutation({
         mutationFn: (params: { id: string; isChecked: boolean; storeId: string }) =>
             database.toggleShoppingListItemChecked(params.storeId, params.id, params.isChecked),
-        queryKeys: (vars) => [["shopping-list-items", vars.storeId]],
+        queryKeys: (vars) => [queryKeys.shoppingListItems.byStore(vars.storeId)],
         updateCache: (vars) => ({
-            queryKey: ["shopping-list-items", vars.storeId],
+            queryKey: queryKeys.shoppingListItems.byStore(vars.storeId),
             updateFn: (old: unknown) => {
                 const items = old as ShoppingListItemWithDetails[] | undefined;
                 if (!items) return items;
@@ -1278,7 +1279,7 @@ export function useToggleItemChecked() {
             if (error instanceof ApiError && error.status === 404) {
                 // Silently refresh to sync with server state
                 if (refreshContext) {
-                    await refreshContext.refresh([["shopping-list-items", vars.storeId]]);
+                    await refreshContext.refresh([queryKeys.shoppingListItems.byStore(vars.storeId)]);
                 }
                 return;
             }
@@ -1301,7 +1302,7 @@ export function useDeleteShoppingListItem() {
             database.deleteShoppingListItem(params.storeId, params.id),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.storeId],
+                queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
         onError: async (error: unknown, variables) => {
@@ -1309,7 +1310,7 @@ export function useDeleteShoppingListItem() {
             if (error instanceof ApiError && error.status === 404) {
                 // Silently refresh to sync with server state
                 if (refreshContext) {
-                    await refreshContext.refresh([["shopping-list-items", variables.storeId]]);
+                    await refreshContext.refresh([queryKeys.shoppingListItems.byStore(variables.storeId)]);
                 }
                 return;
             }
@@ -1333,7 +1334,7 @@ export function useRemoveShoppingListItem() {
             database.removeShoppingListItem(params.storeId, params.id),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.storeId],
+                queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
         onError: async (error: unknown, variables) => {
@@ -1341,7 +1342,7 @@ export function useRemoveShoppingListItem() {
             if (error instanceof ApiError && error.status === 404) {
                 // Silently refresh to sync with server state
                 if (refreshContext) {
-                    await refreshContext.refresh([["shopping-list-items", variables.storeId]]);
+                    await refreshContext.refresh([queryKeys.shoppingListItems.byStore(variables.storeId)]);
                 }
                 return;
             }
@@ -1363,9 +1364,9 @@ export function useClearCheckedItems() {
     return useOptimisticMutation({
         mutationFn: ({ storeId }: { storeId: string }) =>
             database.clearCheckedShoppingListItems(storeId),
-        queryKeys: (vars) => [["shopping-list-items", vars.storeId]],
+        queryKeys: (vars) => [queryKeys.shoppingListItems.byStore(vars.storeId)],
         updateCache: (vars) => ({
-            queryKey: ["shopping-list-items", vars.storeId],
+            queryKey: queryKeys.shoppingListItems.byStore(vars.storeId),
             updateFn: (old: unknown) => {
                 const items = old as ShoppingListItemWithDetails[] | undefined;
                 if (!items) return items;
@@ -1443,17 +1444,17 @@ export function useMoveItemToStore() {
         onSuccess: (_, variables) => {
             // Invalidate both source and target store queries
             queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.sourceStoreId],
+                queryKey: queryKeys.shoppingListItems.byStore(variables.sourceStoreId),
             });
             queryClient.invalidateQueries({
-                queryKey: ["shopping-list-items", variables.targetStoreId],
+                queryKey: queryKeys.shoppingListItems.byStore(variables.targetStoreId),
             });
             // A store item may be created at the target store (getOrCreateStoreItemByName)
             queryClient.invalidateQueries({
-                queryKey: ["items", variables.targetStoreId],
+                queryKey: queryKeys.items.byStore(variables.targetStoreId),
             });
             queryClient.invalidateQueries({
-                queryKey: ["items", "with-details", variables.targetStoreId],
+                queryKey: queryKeys.items.withDetails(variables.targetStoreId),
             });
         },
     });
@@ -1468,7 +1469,7 @@ export function useMoveItemToStore() {
  */
 export function useNotificationCounts() {
     return useTanstackQuery({
-        queryKey: ["notifications", "counts"],
+        queryKey: queryKeys.notificationCounts(),
         queryFn: storeSharingApi.getNotificationCounts,
         staleTime: 5 * 60 * 1000, // 5 minutes - data is considered fresh
     });
@@ -1485,8 +1486,8 @@ export function useUpdateStoreHousehold() {
         mutationFn: (params: { storeId: string; householdId: string | null }) =>
             storeSharingApi.updateStoreHousehold(params.storeId, params.householdId),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ["stores", variables.storeId] });
-            queryClient.invalidateQueries({ queryKey: ["stores"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.stores.detail(variables.storeId) });
+            queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
             if (variables.householdId) {
                 showSuccess("Store shared with household!");
             } else {
@@ -1510,8 +1511,8 @@ export function useUpdateStoreVisibility() {
         mutationFn: (params: { storeId: string; isHidden: boolean }) =>
             storeSharingApi.updateStoreVisibility(params.storeId, params.isHidden),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ["stores", variables.storeId] });
-            queryClient.invalidateQueries({ queryKey: ["stores"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.stores.detail(variables.storeId) });
+            queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
             if (variables.isHidden) {
                 showSuccess("Store hidden from lists");
             } else {
@@ -1533,7 +1534,7 @@ export function useUpdateStoreVisibility() {
  */
 export function useHouseholds() {
     return useTanstackQuery({
-        queryKey: ["households"],
+        queryKey: queryKeys.households(),
         queryFn: householdApi.getUserHouseholds,
         staleTime: 2 * 60 * 1000, // 2 minutes
         retry: (failureCount, error: unknown) => {
@@ -1553,7 +1554,7 @@ export function useHouseholds() {
  */
 export function useHouseholdDetail(householdId: string | null) {
     return useTanstackQuery({
-        queryKey: ["household", householdId],
+        queryKey: queryKeys.household.detail(householdId),
         queryFn: () => {
             if (!householdId) throw new Error("Household ID is required");
             return householdApi.getHouseholdWithMembers(householdId);
@@ -1580,7 +1581,7 @@ export function useHouseholdDetail(householdId: string | null) {
  */
 export function usePendingInvitations() {
     return useTanstackQuery({
-        queryKey: ["invitations"],
+        queryKey: queryKeys.invitations(),
         queryFn: invitationApi.getUserPendingInvitations,
         staleTime: 2 * 60 * 1000, // 2 minutes
         retry: (failureCount, error: unknown) => {
@@ -1604,7 +1605,7 @@ export function useCreateHousehold() {
     return useTanstackMutation({
         mutationFn: (name: string) => householdApi.createHousehold(name),
         onSuccess: (household) => {
-            queryClient.invalidateQueries({ queryKey: ["households"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.households() });
             showSuccess(`Household "${household.name}" created!`);
         },
         onError: (error: Error) => {
@@ -1624,8 +1625,8 @@ export function useUpdateHousehold() {
         mutationFn: (params: { householdId: string; name: string }) =>
             householdApi.updateHousehold(params.householdId, params.name),
         onSuccess: (household) => {
-            queryClient.invalidateQueries({ queryKey: ["household", household.id] });
-            queryClient.invalidateQueries({ queryKey: ["households"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.household.detail(household.id) });
+            queryClient.invalidateQueries({ queryKey: queryKeys.households() });
             showSuccess("Household updated!");
         },
         onError: (error: Error) => {
@@ -1644,9 +1645,9 @@ export function useDeleteHousehold() {
     return useTanstackMutation({
         mutationFn: (householdId: string) => householdApi.deleteHousehold(householdId),
         onSuccess: (_, householdId) => {
-            queryClient.invalidateQueries({ queryKey: ["household", householdId] });
-            queryClient.invalidateQueries({ queryKey: ["households"] });
-            queryClient.invalidateQueries({ queryKey: ["stores"] }); // Stores may be affected
+            queryClient.invalidateQueries({ queryKey: queryKeys.household.detail(householdId) });
+            queryClient.invalidateQueries({ queryKey: queryKeys.households() });
+            queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() }); // Stores may be affected
             showSuccess("Household deleted");
         },
         onError: (error: Error) => {
@@ -1666,7 +1667,7 @@ export function useInviteMember() {
         mutationFn: (params: { householdId: string; email: string }) =>
             householdApi.createInvitation(params.householdId, params.email),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ["household", variables.householdId] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.household.detail(variables.householdId) });
             showSuccess(`Invitation sent to ${variables.email}`);
         },
         onError: (error: Error) => {
@@ -1686,9 +1687,9 @@ export function useRemoveMember() {
         mutationFn: (params: { householdId: string; userId: string }) =>
             householdApi.removeMember(params.householdId, params.userId),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ["household", variables.householdId] });
-            queryClient.invalidateQueries({ queryKey: ["households"] });
-            queryClient.invalidateQueries({ queryKey: ["stores"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.household.detail(variables.householdId) });
+            queryClient.invalidateQueries({ queryKey: queryKeys.households() });
+            queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
             showSuccess("Member removed");
         },
         onError: (error: Error) => {
@@ -1707,8 +1708,10 @@ export function useAcceptInvitation() {
     return useTanstackMutation({
         mutationFn: (token: string) => invitationApi.acceptInvitation(token),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["invitations"] });
-            queryClient.invalidateQueries({ queryKey: ["households"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.invitations() });
+            queryClient.invalidateQueries({ queryKey: queryKeys.households() });
+            // Accepting clears a pending invite → refresh the notification badge count.
+            queryClient.invalidateQueries({ queryKey: queryKeys.notificationCounts() });
             showSuccess("Invitation accepted!");
         },
         onError: (error: Error) => {
@@ -1727,7 +1730,9 @@ export function useDeclineInvitation() {
     return useTanstackMutation({
         mutationFn: (token: string) => invitationApi.declineInvitation(token),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["invitations"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.invitations() });
+            // Declining clears a pending invite → refresh the notification badge count.
+            queryClient.invalidateQueries({ queryKey: queryKeys.notificationCounts() });
             showSuccess("Invitation declined");
         },
         onError: (error: Error) => {
@@ -1741,7 +1746,7 @@ export function useDeclineInvitation() {
  */
 export function useHouseholdInvitations(householdId: string | null) {
     return useTanstackQuery({
-        queryKey: ["household", householdId, "invitations"],
+        queryKey: queryKeys.household.invitations(householdId),
         queryFn: () => {
             if (!householdId) throw new Error("Household ID is required");
             return householdApi.getHouseholdInvitations(householdId);
@@ -1771,7 +1776,7 @@ export function useCancelInvitation() {
             householdApi.cancelInvitation(params.householdId, params.invitationId),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["household", variables.householdId, "invitations"],
+                queryKey: queryKeys.household.invitations(variables.householdId),
             });
             showSuccess("Invitation cancelled");
         },

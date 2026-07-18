@@ -1,4 +1,5 @@
 import { useSecureApiKey } from "@/hooks/useSecureStorage";
+import { queryKeys } from "@/db/queryKeys";
 import type { ShoppingListItemWithDetails } from "@basket-bot/core";
 import { IonIcon } from "@ionic/react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -131,11 +132,11 @@ export const GroupedShoppingList = ({
     const refreshAfterCategorization = useCallback(async () => {
         if (!storeId) return;
         await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ["shopping-list-items", storeId] }),
-            queryClient.invalidateQueries({ queryKey: ["items", storeId] }),
-            queryClient.invalidateQueries({ queryKey: ["items", "with-details", storeId] }),
+            queryClient.invalidateQueries({ queryKey: queryKeys.shoppingListItems.byStore(storeId) }),
+            queryClient.invalidateQueries({ queryKey: queryKeys.items.byStore(storeId) }),
+            queryClient.invalidateQueries({ queryKey: queryKeys.items.withDetails(storeId) }),
         ]);
-        await queryClient.refetchQueries({ queryKey: ["shopping-list-items", storeId] });
+        await queryClient.refetchQueries({ queryKey: queryKeys.shoppingListItems.byStore(storeId) });
     }, [storeId, queryClient]);
 
     // Handler for auto-categorizing all uncategorized items

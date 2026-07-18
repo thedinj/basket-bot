@@ -1,5 +1,6 @@
 import type { CreateUserRequest, LoginRequest, LoginResponse } from "@basket-bot/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/db/queryKeys";
 import { apiClient } from "../lib/api/client";
 import { KEYS, secureStorage } from "../utils/secureStorage";
 
@@ -14,7 +15,7 @@ interface LogoutRequest {
  */
 export const useAuthUser = (enabled: boolean) => {
     return useQuery({
-        queryKey: ["auth", "me"],
+        queryKey: queryKeys.auth.me(),
         queryFn: async () => {
             const response = await apiClient.get<LoginResponse>("/api/auth/me");
             return response;
@@ -53,7 +54,7 @@ export const useLoginMutation = () => {
             await queryClient.invalidateQueries();
 
             // Clear shopping list caches specifically to prevent cross-session contamination
-            queryClient.removeQueries({ queryKey: ["shopping-list-items"] });
+            queryClient.removeQueries({ queryKey: queryKeys.shoppingListItems.all() });
         },
     });
 };

@@ -1,4 +1,5 @@
 import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
+import { queryKeys } from "@/db/queryKeys";
 import pluralize from "pluralize";
 import { MIN_PASSWORD_LENGTH, passwordSchema } from "@basket-bot/core";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,7 +46,7 @@ const Register: React.FC = () => {
 
     // Check if invitation code is required
     const { data: invitationRequired } = useQuery({
-        queryKey: ["auth", "invitation-required"],
+        queryKey: queryKeys.auth.invitationRequired(),
         queryFn: async () => {
             const response = await apiClient.get<{ required: boolean }>(
                 "/api/auth/invitation-required"

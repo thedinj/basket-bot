@@ -13,6 +13,7 @@ import {
 import { add, closeOutline } from "ionicons/icons";
 import React, { useCallback } from "react";
 import { useStore } from "../../db/hooks";
+import { queryKeys } from "../../db/queryKeys";
 import RefreshConfig from "../../hooks/refresh/RefreshConfig";
 import { useToast } from "../../hooks/useToast";
 import { GlobalActions } from "../layout/GlobalActions";
@@ -53,9 +54,9 @@ const AislesSectionsManagementModalContent: React.FC<AislesSectionsManagementMod
     return (
         <RefreshConfig
             queryKeys={[
-                ["stores", storeId],
-                ["aisles", storeId],
-                ["sections", storeId],
+                queryKeys.stores.detail(storeId),
+                queryKeys.aisles.byStore(storeId),
+                queryKeys.sections.byStore(storeId),
             ]}
         >
             <IonHeader>

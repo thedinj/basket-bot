@@ -14,7 +14,7 @@ interface RefreshConfigProps {
  * Use this to wrap page/modal content that supports refresh operations
  *
  * @example
- * <RefreshConfig queryKeys={[["stores"]]}>
+ * <RefreshConfig queryKeys={[queryKeys.stores.all()]}>
  *   <AppHeader><GlobalActions /></AppHeader>
  *   <IonContent>
  *     <PullToRefresh />

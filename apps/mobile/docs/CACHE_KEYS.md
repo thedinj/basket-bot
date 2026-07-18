@@ -9,21 +9,81 @@ data — this document exists so the cascade is auditable rather than guessed.
 > refreshes a query when `K` is a **prefix** of that query's key (element-by-element,
 > shallow-equal). A typo or wrong casing (`["shoppingListItems"]` vs
 > `["shopping-list-items"]`, `["store", id]` vs `["stores", id]`) silently no-ops.
-> Always use the exact keys below.
+
+## 0. Required: build every key with the `queryKeys` factory
+
+**Never hand-write a query-key array.** All keys are declared once in
+[`src/db/queryKeys.ts`](../src/db/queryKeys.ts) and must be built by calling a function on
+the exported `queryKeys` object. Raw string arrays (`["items", storeId]`) are a typo
+waiting to silently no-op; a mistyped factory call is a **compile error** instead.
+
+```ts
+import { queryKeys } from "@/db/queryKeys" // or a relative path within src/db
+
+useQuery({ queryKey: queryKeys.items.byStore(storeId), queryFn: … })
+queryClient.invalidateQueries({ queryKey: queryKeys.shoppingListItems.byStore(storeId) })
+<RefreshConfig queryKeys={[queryKeys.stores.detail(storeId)]}>
+```
+
+This applies to **every** cache API: `useQuery` / `useSuspenseQuery` / `useInfiniteQuery`,
+`invalidateQueries`, `removeQueries`, `refetchQueries`, `cancelQueries`, `setQueryData`,
+`getQueryData`, `prefetchQuery`, and the `RefreshConfig queryKeys` / `refresh([...])`
+helpers. The tables below document the **shape and cascade** of each key; the factory is
+where they are actually declared. The two must stay in sync (see below).
 
 ## How to keep this file up to date
 
-When you touch caching, update this file **in the same change**:
+When you touch caching, update this file **and** `src/db/queryKeys.ts` **in the same change**:
 
-1. **Add a query hook** → add a row to [§1 Cache registry](#1-cache-registry).
+1. **Add a query hook** → add a builder to `queryKeys` **and** add a row to
+   [§1 Cache registry](#1-cache-registry).
 2. **Add/change a mutation** → update its row in [§2 Mutation cascade table](#2-mutation-cascade-table)
    **and** the reverse index in [§3 Invalidated-by index](#3-invalidated-by-index).
 3. **Rule of thumb:** a mutation must invalidate the key of *every* cache in §1 whose
    "Contains" column includes data the mutation can change — not just the obvious one.
    Use §1's "Joins / derived from" column to find the non-obvious ones.
 
-Keys live in `src/db/hooks.ts` (stores/items/shopping-list/households), `src/db/mealsHooks.ts`
+The builders live in `src/db/queryKeys.ts`; the hooks that consume them live in
+`src/db/hooks.ts` (stores/items/shopping-list/households), `src/db/mealsHooks.ts`
 (recipes/plans/tags), and a few local hooks (`usePreference`, `useSecureStorage`, `useAuthMutations`).
+
+### Key → factory builder
+
+| Literal tuple | Factory call |
+|---|---|
+| `["auth", "me"]` | `queryKeys.auth.me()` |
+| `["auth", "invitation-required"]` | `queryKeys.auth.invitationRequired()` |
+| `["preference", key]` | `queryKeys.preference(key)` |
+| `["secure-storage", key]` | `queryKeys.secureStorage(key)` |
+| `["stores"]` | `queryKeys.stores.all()` |
+| `["stores", storeId]` | `queryKeys.stores.detail(storeId)` |
+| `["quantityUnits"]` | `queryKeys.quantityUnits()` |
+| `["appSettings"]` (prefix) | `queryKeys.appSettings.all()` |
+| `["appSettings", key]` | `queryKeys.appSettings.detail(key)` |
+| `["aisles", storeId]` | `queryKeys.aisles.byStore(storeId)` |
+| `["aisles", "detail", id]` | `queryKeys.aisles.detail(id)` |
+| `["sections", storeId]` | `queryKeys.sections.byStore(storeId)` |
+| `["sections", "detail", id]` | `queryKeys.sections.detail(id)` |
+| `["items"]` (prefix) | `queryKeys.items.all()` |
+| `["items", storeId]` | `queryKeys.items.byStore(storeId)` |
+| `["items", "with-details", storeId]` | `queryKeys.items.withDetails(storeId)` |
+| `["items", "detail", id]` | `queryKeys.items.detail(id)` |
+| `["store-items", "search", storeId]` (prefix) | `queryKeys.storeItemSearch.byStore(storeId)` |
+| `["store-items", "search", storeId, term]` | `queryKeys.storeItemSearch.forTerm(storeId, term)` |
+| `["shopping-list-items"]` (prefix) | `queryKeys.shoppingListItems.all()` |
+| `["shopping-list-items", storeId]` | `queryKeys.shoppingListItems.byStore(storeId)` |
+| `["recipes", householdId]` | `queryKeys.recipes.byHousehold(householdId)` |
+| `["recipes", householdId, recipeId]` | `queryKeys.recipes.detail(householdId, recipeId)` |
+| `["tags", householdId]` | `queryKeys.tags(householdId)` |
+| `["plans", householdId]` | `queryKeys.plans.byHousehold(householdId)` |
+| `["plans", householdId, planId]` | `queryKeys.plans.detail(householdId, planId)` |
+| `["pool-count", householdId, tagIds, maxCookingTimeMinutes]` | `queryKeys.poolCount(householdId, tagIds, maxCookingTimeMinutes)` |
+| `["plans-history", householdId]` | `queryKeys.plansHistory(householdId)` |
+| `["households"]` | `queryKeys.households()` |
+| `["household", householdId]` | `queryKeys.household.detail(householdId)` |
+| `["household", householdId, "invitations"]` | `queryKeys.household.invitations(householdId)` |
+| `["invitations"]` | `queryKeys.invitations()` |
+| `["notifications", "counts"]` | `queryKeys.notificationCounts()` |
 
 ---
 
@@ -72,7 +132,7 @@ Keys live in `src/db/hooks.ts` (stores/items/shopping-list/households), `src/db/
 | `["plans", householdId]` | Meal plans (list) | `usePlans` | — | 1 min |
 | `["plans", householdId, planId]` | One plan (slots + routes) | `usePlan` | recipes, ingredients | 30 s |
 | `["pool-count", householdId, tagIds, maxCookingTimeMinutes]` | Count of eligible recipes for slot filters | `usePoolCount` | recipes, tags | 30 s |
-| `["plans-history", householdId]` | Paged dispatched-plan history | `usePlansHistory` (infinite) | — | 1 min |
+| `["plans-history", householdId]` | Paged dispatched-plan history | `usePlansHistory` (infinite) | dispatched plans (`useDispatchPlan`) | 1 min |
 
 ### Households & sharing (`db/hooks.ts`)
 
@@ -82,7 +142,7 @@ Keys live in `src/db/hooks.ts` (stores/items/shopping-list/households), `src/db/
 | `["household", householdId]` | Household detail + members | `useHouseholdDetail` | 2 min |
 | `["household", householdId, "invitations"]` | Pending invites for a household | `useHouseholdInvitations` | 2 min |
 | `["invitations"]` | Invites addressed to the current user | `usePendingInvitations` | 2 min |
-| `["notifications", "counts"]` | Notification badge counts | `useNotificationCounts` | 5 min |
+| `["notifications", "counts"]` | Notification badge counts (pending household invitations for the current user) | `useNotificationCounts` *(no UI consumer yet)* | 5 min |
 
 ### Auth & local device state
 
@@ -163,7 +223,7 @@ use it when the mutation can affect more than one, or the set is unknown.
 | `useCreatePlan` / `useDeletePlan` | plan | `["plans", householdId]` |
 | `useUpdatePlan` | plan | `["plans", householdId, planId]`, `["plans", householdId]` |
 | `useUpdatePlanSlots` / `useUpdatePlanRoutes` / `useRerollSlots` | plan slots/routes | `["plans", householdId, planId]` |
-| `useDispatchPlan` | plan + shopping list | `["plans", householdId]`, `["plans", householdId, planId]` |
+| `useDispatchPlan` | plan + shopping list + history | `["plans", householdId]`, `["plans", householdId, planId]`, `["plans-history", householdId]` |
 
 ### Household / invitation mutations (`db/hooks.ts`)
 
@@ -174,8 +234,8 @@ use it when the mutation can affect more than one, or the set is unknown.
 | `useDeleteHousehold` | `["household", id]`, `["households"]`, `["stores"]` |
 | `useInviteMember` | `["household", householdId]` |
 | `useRemoveMember` | `["household", householdId]`, `["households"]`, `["stores"]` |
-| `useAcceptInvitation` | `["invitations"]`, `["households"]` |
-| `useDeclineInvitation` | `["invitations"]` |
+| `useAcceptInvitation` | `["invitations"]`, `["households"]`, `["notifications", "counts"]` |
+| `useDeclineInvitation` | `["invitations"]`, `["notifications", "counts"]` |
 | `useCancelInvitation` | `["household", householdId, "invitations"]` |
 
 ### Cross-cutting / lifecycle
@@ -211,10 +271,12 @@ one of these caches, add it here too.
 | `["tags", householdId]` | create/update/delete tag |
 | `["plans", householdId]` | create/update/delete/dispatch plan |
 | `["plans", householdId, planId]` | update plan/slots/routes, reroll, dispatch |
+| `["plans-history", householdId]` | **`useDispatchPlan`** (dispatching records the plan in history) |
 | `["households"]` | create/update/delete household, remove member, accept invitation |
 | `["household", householdId]` | update/delete household, invite/remove member |
 | `["household", householdId, "invitations"]` | `useCancelInvitation` |
 | `["invitations"]` | accept/decline invitation |
+| `["notifications", "counts"]` | accept/decline invitation (clears a pending household invite) |
 | `["quantityUnits"]`, `["appSettings"]` | app-version bump (`coreDataVersion`) |
 
 ---

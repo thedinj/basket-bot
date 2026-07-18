@@ -1,5 +1,6 @@
 import { Preferences } from "@capacitor/preferences";
 import type { QueryClient } from "@tanstack/react-query";
+import { queryKeys } from "./queryKeys";
 
 const CORE_DATA_VERSION_KEY = "coreDataVersion";
 
@@ -47,8 +48,8 @@ export const checkAndInvalidateCoreDataCache = async (
         );
 
         // Invalidate static table caches
-        await queryClient.invalidateQueries({ queryKey: ["quantityUnits"] });
-        await queryClient.invalidateQueries({ queryKey: ["appSettings"] });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.quantityUnits() });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.appSettings.all() });
 
         // Update stored version
         await setStoredCoreDataVersion(currentVersion);
@@ -77,8 +78,8 @@ export const forceClearCoreDataCache = async (queryClient: QueryClient): Promise
     console.log("Force clearing core data cache");
 
     // Invalidate static table caches
-    await queryClient.invalidateQueries({ queryKey: ["quantityUnits"] });
-    await queryClient.invalidateQueries({ queryKey: ["appSettings"] });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.quantityUnits() });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.appSettings.all() });
 
     // Clear stored version to force re-check
     await Preferences.remove({ key: CORE_DATA_VERSION_KEY });

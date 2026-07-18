@@ -1,6 +1,7 @@
 import { Preferences } from "@capacitor/preferences";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { queryKeys } from "@/db/queryKeys";
 
 /**
  * Generic hook for managing Capacitor Preferences.
@@ -14,7 +15,7 @@ export const usePreference = (key: string) => {
 
     // Load preference with Suspense
     const { data: value } = useSuspenseQuery({
-        queryKey: ["preference", key],
+        queryKey: queryKeys.preference(key),
         queryFn: async () => {
             const { value } = await Preferences.get({ key });
             return value;
@@ -33,7 +34,7 @@ export const usePreference = (key: string) => {
         },
         onSuccess: (newValue) => {
             // Update cache immediately
-            queryClient.setQueryData(["preference", key], newValue);
+            queryClient.setQueryData(queryKeys.preference(key), newValue);
         },
     });
 

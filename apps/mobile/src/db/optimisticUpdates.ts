@@ -13,9 +13,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
  * ```typescript
  * const toggleChecked = useOptimisticMutation({
  *   mutationFn: (params) => database.toggleItem(params),
- *   queryKeys: (vars) => [["items", vars.storeId]],
+ *   queryKeys: (vars) => [queryKeys.items.byStore(vars.storeId)],
  *   updateCache: (vars) => ({
- *     queryKey: ["items", vars.storeId],
+ *     queryKey: queryKeys.items.byStore(vars.storeId),
  *     updateFn: (old: QueryData<Item>) => {
  *       if (!old?.data) return old;
  *       return {
@@ -107,9 +107,9 @@ export interface OptimisticMutationConfig<TVariables, TData, TError = Error> {
  * const toggleChecked = useOptimisticMutation({
  *   mutationFn: (params: { id: string; isChecked: boolean; storeId: string }) =>
  *     database.toggleShoppingListItemChecked(params.storeId, params.id, params.isChecked),
- *   queryKeys: (vars) => [["shopping-list-items", vars.storeId]],
+ *   queryKeys: (vars) => [queryKeys.shoppingListItems.byStore(vars.storeId)],
  *   updateCache: (vars) => ({
- *     queryKey: ["shopping-list-items", vars.storeId],
+ *     queryKey: queryKeys.shoppingListItems.byStore(vars.storeId),
  *     updateFn: (old: QueryData<ShoppingListItemWithDetails>) => {
  *       if (!old?.data) return old;
  *       return {

@@ -3,6 +3,7 @@ import {
     useQueryClient,
     useSuspenseQuery,
 } from "@tanstack/react-query";
+import { queryKeys } from "@/db/queryKeys";
 import { secureStorage } from "../utils/secureStorage";
 
 /**
@@ -23,7 +24,7 @@ export const useSaveSecureValue = <T>(
         onSuccess: () => {
             // Invalidate the specific key to trigger refetch
             queryClient.invalidateQueries({
-                queryKey: ["secure-storage", key],
+                queryKey: queryKeys.secureStorage(key),
             });
         },
     });
@@ -41,7 +42,7 @@ export const useSecureValue = <T = string>(
     getFn: () => Promise<T | null>
 ): T | null => {
     const { data } = useSuspenseQuery({
-        queryKey: ["secure-storage", key],
+        queryKey: queryKeys.secureStorage(key),
         queryFn: getFn,
         staleTime: 5 * 60 * 1000, // 5 minutes
         gcTime: 10 * 60 * 1000, // 10 minutes

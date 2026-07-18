@@ -14,6 +14,7 @@ import {
 } from "@tanstack/react-query"
 import { useToast } from "../hooks/useToast"
 import { planApi, recipeApi } from "../lib/api/meals"
+import { queryKeys } from "./queryKeys"
 
 // ============================================================================
 // Recipe Query Hooks
@@ -21,7 +22,7 @@ import { planApi, recipeApi } from "../lib/api/meals"
 
 export function useRecipes(householdId: string | null) {
     return useTanstackSuspenseQuery({
-        queryKey: ["recipes", householdId],
+        queryKey: queryKeys.recipes.byHousehold(householdId),
         queryFn: () => {
             if (!householdId) return [] as RecipeWithDetails[]
             return recipeApi.getRecipes(householdId)
@@ -32,7 +33,7 @@ export function useRecipes(householdId: string | null) {
 
 export function useRecipe(householdId: string | null, recipeId: string | null) {
     return useTanstackQuery({
-        queryKey: ["recipes", householdId, recipeId],
+        queryKey: queryKeys.recipes.detail(householdId, recipeId),
         queryFn: () => recipeApi.getRecipe(householdId!, recipeId!),
         enabled: !!householdId && !!recipeId,
     })
@@ -40,7 +41,7 @@ export function useRecipe(householdId: string | null, recipeId: string | null) {
 
 export function useTags(householdId: string | null) {
     return useTanstackQuery({
-        queryKey: ["tags", householdId],
+        queryKey: queryKeys.tags(householdId),
         queryFn: () => recipeApi.getTags(householdId!),
         enabled: !!householdId,
         staleTime: 5 * 60 * 1000,
@@ -49,7 +50,7 @@ export function useTags(householdId: string | null) {
 
 export function usePlans(householdId: string | null) {
     return useTanstackQuery({
-        queryKey: ["plans", householdId],
+        queryKey: queryKeys.plans.byHousehold(householdId),
         queryFn: () => planApi.getPlans(householdId!),
         enabled: !!householdId,
         staleTime: 60 * 1000,
@@ -58,7 +59,7 @@ export function usePlans(householdId: string | null) {
 
 export function usePlan(householdId: string | null, planId: string | null) {
     return useTanstackQuery({
-        queryKey: ["plans", householdId, planId],
+        queryKey: queryKeys.plans.detail(householdId, planId),
         queryFn: () => planApi.getPlan(householdId!, planId!),
         enabled: !!householdId && !!planId,
         staleTime: 30 * 1000,
@@ -71,7 +72,7 @@ export function usePoolCount(
     maxCookingTimeMinutes: number | null = null
 ) {
     return useTanstackQuery({
-        queryKey: ["pool-count", householdId, tagIds, maxCookingTimeMinutes],
+        queryKey: queryKeys.poolCount(householdId, tagIds, maxCookingTimeMinutes),
         queryFn: () => recipeApi.getPoolCount(householdId!, tagIds, maxCookingTimeMinutes),
         enabled: !!householdId,
         staleTime: 30 * 1000,
@@ -82,7 +83,7 @@ const HISTORY_PAGE_SIZE = 10
 
 export function usePlansHistory(householdId: string | null) {
     return useTanstackInfiniteQuery({
-        queryKey: ["plans-history", householdId],
+        queryKey: queryKeys.plansHistory(householdId),
         queryFn: ({ pageParam }: { pageParam: number }) =>
             planApi.getPlansHistory(householdId!, pageParam, HISTORY_PAGE_SIZE),
         enabled: !!householdId,
@@ -116,7 +117,7 @@ export function useCreateRecipe(householdId: string | null) {
             cookingTimeMinutes?: number | null
         }) => recipeApi.createRecipe(householdId!, data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["recipes", householdId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.recipes.byHousehold(householdId) })
         },
         onError: (error: Error) => {
             showError(`Failed to create recipe: ${error.message}`)
@@ -140,8 +141,8 @@ export function useUpdateRecipe(householdId: string | null) {
             }
         }) => recipeApi.updateRecipe(householdId!, params.recipeId, params.data),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ["recipes", householdId] })
-            queryClient.invalidateQueries({ queryKey: ["recipes", householdId, variables.recipeId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.recipes.byHousehold(householdId) })
+            queryClient.invalidateQueries({ queryKey: queryKeys.recipes.detail(householdId, variables.recipeId) })
         },
         onError: (error: Error) => {
             showError(`Failed to update recipe: ${error.message}`)
@@ -156,7 +157,7 @@ export function useDeleteRecipe(householdId: string | null) {
     return useTanstackMutation({
         mutationFn: (recipeId: string) => recipeApi.deleteRecipe(householdId!, recipeId),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["recipes", householdId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.recipes.byHousehold(householdId) })
         },
         onError: (error: Error) => {
             showError(`Failed to delete recipe: ${error.message}`)
@@ -184,8 +185,8 @@ export function useAddRecipeToShoppingList(householdId: string | null, recipeId:
         onSuccess: () => {
             // Adding a recipe upserts shopping-list items and may create store items
             // across one or more stores, so invalidate every store's list and item caches.
-            queryClient.invalidateQueries({ queryKey: ["shopping-list-items"] })
-            queryClient.invalidateQueries({ queryKey: ["items"] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.shoppingListItems.all() })
+            queryClient.invalidateQueries({ queryKey: queryKeys.items.all() })
         },
         onError: (error: Error) => {
             showError(`Failed to add to shopping list: ${error.message}`)
@@ -205,9 +206,9 @@ export function useAssignTag(householdId: string | null) {
         mutationFn: (params: { recipeId: string; tagId: string }) =>
             recipeApi.assignTag(householdId!, params.recipeId, params.tagId),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ["recipes", householdId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.recipes.byHousehold(householdId) })
             queryClient.invalidateQueries({
-                queryKey: ["recipes", householdId, variables.recipeId],
+                queryKey: queryKeys.recipes.detail(householdId, variables.recipeId),
             })
         },
         onError: (error: Error) => {
@@ -224,9 +225,9 @@ export function useRemoveTag(householdId: string | null) {
         mutationFn: (params: { recipeId: string; tagId: string }) =>
             recipeApi.removeTag(householdId!, params.recipeId, params.tagId),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ["recipes", householdId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.recipes.byHousehold(householdId) })
             queryClient.invalidateQueries({
-                queryKey: ["recipes", householdId, variables.recipeId],
+                queryKey: queryKeys.recipes.detail(householdId, variables.recipeId),
             })
         },
         onError: (error: Error) => {
@@ -243,7 +244,7 @@ export function useCreateTag(householdId: string | null) {
         mutationFn: (data: { name: string; colorKey?: string | null }) =>
             recipeApi.createTag(householdId!, data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["tags", householdId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.tags(householdId) })
         },
         onError: (error: Error) => {
             showError(`Failed to create tag: ${error.message}`)
@@ -261,8 +262,8 @@ export function useUpdateTag(householdId: string | null) {
             data: { name?: string; colorKey?: string | null }
         }) => recipeApi.updateTag(householdId!, params.tagId, params.data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["tags", householdId] })
-            queryClient.invalidateQueries({ queryKey: ["recipes", householdId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.tags(householdId) })
+            queryClient.invalidateQueries({ queryKey: queryKeys.recipes.byHousehold(householdId) })
         },
         onError: (error: Error) => {
             showError(`Failed to update tag: ${error.message}`)
@@ -277,8 +278,8 @@ export function useDeleteTag(householdId: string | null) {
     return useTanstackMutation({
         mutationFn: (tagId: string) => recipeApi.deleteTag(householdId!, tagId),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["tags", householdId] })
-            queryClient.invalidateQueries({ queryKey: ["recipes", householdId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.tags(householdId) })
+            queryClient.invalidateQueries({ queryKey: queryKeys.recipes.byHousehold(householdId) })
         },
         onError: (error: Error) => {
             showError(`Failed to delete tag: ${error.message}`)
@@ -312,11 +313,11 @@ export function useAddIngredient(householdId: string | null) {
         },
         onSuccess: (result: RecipeIngredient) => {
             queryClient.invalidateQueries({
-                queryKey: ["recipes", householdId, result.recipeId],
+                queryKey: queryKeys.recipes.detail(householdId, result.recipeId),
             })
             // The recipe list also carries full ingredient details (used by the
             // add-to-shopping-list flow), so it must be refreshed too.
-            queryClient.invalidateQueries({ queryKey: ["recipes", householdId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.recipes.byHousehold(householdId) })
         },
         onError: (error: Error) => {
             showError(`Failed to add ingredient: ${error.message}`)
@@ -347,11 +348,11 @@ export function useUpdateIngredient(householdId: string | null) {
         },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["recipes", householdId, variables.recipeId],
+                queryKey: queryKeys.recipes.detail(householdId, variables.recipeId),
             })
             // The recipe list also carries full ingredient details (used by the
             // add-to-shopping-list flow), so it must be refreshed too.
-            queryClient.invalidateQueries({ queryKey: ["recipes", householdId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.recipes.byHousehold(householdId) })
         },
         onError: (error: Error) => {
             showError(`Failed to update ingredient: ${error.message}`)
@@ -368,11 +369,11 @@ export function useDeleteIngredient(householdId: string | null) {
             recipeApi.deleteIngredient(householdId!, params.recipeId, params.ingredientId),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
-                queryKey: ["recipes", householdId, variables.recipeId],
+                queryKey: queryKeys.recipes.detail(householdId, variables.recipeId),
             })
             // The recipe list also carries full ingredient details (used by the
             // add-to-shopping-list flow), so it must be refreshed too.
-            queryClient.invalidateQueries({ queryKey: ["recipes", householdId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.recipes.byHousehold(householdId) })
         },
         onError: (error: Error) => {
             showError(`Failed to delete ingredient: ${error.message}`)
@@ -391,7 +392,7 @@ export function useCreatePlan(householdId: string | null) {
     return useTanstackMutation({
         mutationFn: (data?: { slotCount?: number }) => planApi.createPlan(householdId!, data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["plans", householdId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.plans.byHousehold(householdId) })
         },
         onError: (error: Error) => {
             showError(`Failed to create plan: ${error.message}`)
@@ -413,8 +414,8 @@ export function useUpdatePlan(householdId: string | null) {
             return planApi.updatePlan(householdId!, planId, updates)
         },
         onSuccess: (result: PlanWithDetails) => {
-            queryClient.invalidateQueries({ queryKey: ["plans", householdId, result.id] })
-            queryClient.invalidateQueries({ queryKey: ["plans", householdId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.plans.detail(householdId, result.id) })
+            queryClient.invalidateQueries({ queryKey: queryKeys.plans.byHousehold(householdId) })
         },
         onError: (error: Error) => {
             showError(`Failed to update plan: ${error.message}`)
@@ -429,7 +430,7 @@ export function useDeletePlan(householdId: string | null) {
     return useTanstackMutation({
         mutationFn: (planId: string) => planApi.deletePlan(householdId!, planId),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["plans", householdId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.plans.byHousehold(householdId) })
         },
         onError: (error: Error) => {
             showError(`Failed to delete plan: ${error.message}`)
@@ -453,7 +454,7 @@ export function useUpdatePlanSlots(householdId: string | null) {
             }>
         }) => planApi.updateSlots(householdId!, params.planId, params.slots),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ["plans", householdId, variables.planId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.plans.detail(householdId, variables.planId) })
         },
         onError: (error: Error) => {
             showError(`Failed to update plan slots: ${error.message}`)
@@ -476,7 +477,7 @@ export function useUpdatePlanRoutes(householdId: string | null) {
             }>
         }) => planApi.updateRoutes(householdId!, params.planId, params.routes),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ["plans", householdId, variables.planId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.plans.detail(householdId, variables.planId) })
         },
         onError: (error: Error) => {
             showError(`Failed to update plan routes: ${error.message}`)
@@ -492,7 +493,7 @@ export function useRerollSlots(householdId: string | null) {
         mutationFn: (params: { planId: string; slots: number[] }) =>
             planApi.rerollSlots(householdId!, params.planId, params.slots),
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ["plans", householdId, variables.planId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.plans.detail(householdId, variables.planId) })
         },
         onError: (error: Error) => {
             showError(`Failed to reroll slots: ${error.message}`)
@@ -508,8 +509,10 @@ export function useDispatchPlan(householdId: string | null) {
         mutationFn: (params: { planId: string; scaleFactors?: Record<string, number> }) =>
             planApi.dispatchPlan(householdId!, params.planId, params.scaleFactors ?? {}),
         onSuccess: (result: { plan: Plan; itemsAdded: number; itemsSkipped: number }, variables) => {
-            queryClient.invalidateQueries({ queryKey: ["plans", householdId] })
-            queryClient.invalidateQueries({ queryKey: ["plans", householdId, variables.planId] })
+            queryClient.invalidateQueries({ queryKey: queryKeys.plans.byHousehold(householdId) })
+            queryClient.invalidateQueries({ queryKey: queryKeys.plans.detail(householdId, variables.planId) })
+            // Dispatching records the plan in history; refresh the history list too.
+            queryClient.invalidateQueries({ queryKey: queryKeys.plansHistory(householdId) })
             showSuccess(`Plan dispatched. ${result.itemsAdded} items on the list.`)
         },
         onError: (error: Error) => {

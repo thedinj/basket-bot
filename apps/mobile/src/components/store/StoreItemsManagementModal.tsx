@@ -22,6 +22,7 @@ import { add, closeOutline } from "ionicons/icons";
 import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { useStore, useStoreItemsWithDetails } from "../../db/hooks";
+import { queryKeys } from "../../db/queryKeys";
 import { StoreItemWithDetails } from "../../db/types";
 import RefreshConfig from "../../hooks/refresh/RefreshConfig";
 import { useToast } from "../../hooks/useToast";
@@ -183,9 +184,9 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
         <>
             <RefreshConfig
                 queryKeys={[
-                    ["stores", storeId],
-                    ["items", "with-details", storeId],
-                    ["shopping-list-items", storeId],
+                    queryKeys.stores.detail(storeId),
+                    queryKeys.items.withDetails(storeId),
+                    queryKeys.shoppingListItems.byStore(storeId),
                 ]}
             >
                 <IonHeader>

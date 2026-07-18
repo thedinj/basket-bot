@@ -10,6 +10,7 @@ import {
     useStoreSections,
     useUpsertShoppingListItem,
 } from "../../db/hooks";
+import { queryKeys } from "../../db/queryKeys";
 import { useToast } from "../../hooks/useToast";
 import type { ParsedShoppingItem } from "../../llm/features/bulkImport";
 import { useAutoCategorize } from "../../llm/features/useAutoCategorize";
@@ -119,7 +120,7 @@ export function useBulkImport(storeId: string) {
 
                 // Invalidate queries to refresh the list
                 queryClient.invalidateQueries({
-                    queryKey: ["shopping-list-items", storeId],
+                    queryKey: queryKeys.shoppingListItems.byStore(storeId),
                 });
 
                 if (successCount > 0) {
