@@ -41,7 +41,8 @@ async function handlePut(
     try {
         const { storeId, sectionId } = await params;
         const body = await req.json();
-        const { name, aisleId } = body;
+        const { aisleId } = body;
+        const name = typeof body.name === "string" ? body.name.trim() : body.name;
 
         // At least one field must be provided
         if (!name && !aisleId) {
@@ -87,6 +88,15 @@ async function handlePut(
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },
                 { status: 403 }
+            );
+        }
+        if (error.message?.startsWith("SECTION_NAME_CONFLICT")) {
+            return NextResponse.json(
+                {
+                    code: "SECTION_NAME_CONFLICT",
+                    message: error.message.replace("SECTION_NAME_CONFLICT: ", ""),
+                },
+                { status: 409 }
             );
         }
         return NextResponse.json(
@@ -141,6 +151,15 @@ async function handlePatch(
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },
                 { status: 403 }
+            );
+        }
+        if (error.message?.startsWith("SECTION_NAME_CONFLICT")) {
+            return NextResponse.json(
+                {
+                    code: "SECTION_NAME_CONFLICT",
+                    message: error.message.replace("SECTION_NAME_CONFLICT: ", ""),
+                },
+                { status: 409 }
             );
         }
         return NextResponse.json(

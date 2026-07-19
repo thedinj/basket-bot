@@ -41,7 +41,7 @@ async function handlePut(
     try {
         const { storeId, aisleId } = await params;
         const body = await req.json();
-        const { name } = body;
+        const name = typeof body.name === "string" ? body.name.trim() : body.name;
 
         if (!name || typeof name !== "string") {
             return NextResponse.json(
@@ -71,6 +71,15 @@ async function handlePut(
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },
                 { status: 403 }
+            );
+        }
+        if (error.message?.startsWith("AISLE_NAME_CONFLICT")) {
+            return NextResponse.json(
+                {
+                    code: "AISLE_NAME_CONFLICT",
+                    message: error.message.replace("AISLE_NAME_CONFLICT: ", ""),
+                },
+                { status: 409 }
             );
         }
         return NextResponse.json(

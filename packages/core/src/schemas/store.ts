@@ -116,6 +116,7 @@ export const storeAisleSchema = z.object({
     id: z.string().uuid(),
     storeId: z.string().uuid(),
     name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
+    nameNorm: z.string().min(1).max(MAX_NAME_LENGTH),
     sortOrder: z.number().int().min(0),
     ...auditFields,
 });
@@ -152,6 +153,7 @@ export const storeSectionSchema = z.object({
     storeId: z.string().uuid(),
     aisleId: z.string().uuid(),
     name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
+    nameNorm: z.string().min(1).max(MAX_NAME_LENGTH),
     sortOrder: z.number().int().min(0),
     ...auditFields,
 });
@@ -410,13 +412,16 @@ export type StoreInput = Omit<Store, "id" | (typeof serverControlledFields)[numb
     id?: string;
 };
 
-export type StoreAisleInput = Omit<StoreAisle, "id" | (typeof serverControlledFields)[number]> & {
+export type StoreAisleInput = Omit<
+    StoreAisle,
+    "id" | "nameNorm" | (typeof serverControlledFields)[number]
+> & {
     id?: string;
 };
 
 export type StoreSectionInput = Omit<
     StoreSection,
-    "id" | (typeof serverControlledFields)[number]
+    "id" | "nameNorm" | (typeof serverControlledFields)[number]
 > & {
     id?: string;
 };

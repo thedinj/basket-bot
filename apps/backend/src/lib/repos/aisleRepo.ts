@@ -1,5 +1,6 @@
 import type { StoreAisle } from "@basket-bot/core";
 import { db } from "../db/db";
+import { normalizeItemName } from "../utils/stringUtils";
 
 /**
  * Repository for StoreAisle entity operations.
@@ -13,14 +14,16 @@ export function createAisle(params: {
 }): StoreAisle {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
+    const nameNorm = normalizeItemName(params.name);
 
     db.prepare(
-        `INSERT INTO StoreAisle (id, storeId, name, sortOrder, createdById, updatedById, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO StoreAisle (id, storeId, name, nameNorm, sortOrder, createdById, updatedById, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
         id,
         params.storeId,
         params.name,
+        nameNorm,
         params.sortOrder,
         params.createdById,
         params.createdById,
@@ -34,7 +37,7 @@ export function createAisle(params: {
 export function getAisleById(id: string): StoreAisle | null {
     const row = db
         .prepare(
-            `SELECT id, storeId, name, sortOrder, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, storeId, name, nameNorm, sortOrder, createdById, updatedById, createdAt, updatedAt
              FROM StoreAisle
              WHERE id = ?`
         )
@@ -43,10 +46,24 @@ export function getAisleById(id: string): StoreAisle | null {
     return row ?? null;
 }
 
+export function findAisleByNameNorm(
+    storeId: string,
+    nameNorm: string,
+    excludeId: string
+): StoreAisle | undefined {
+    return db
+        .prepare(
+            `SELECT id, storeId, name, nameNorm, sortOrder, createdById, updatedById, createdAt, updatedAt
+             FROM StoreAisle
+             WHERE storeId = ? AND nameNorm = ? AND id != ?`
+        )
+        .get(storeId, nameNorm, excludeId) as StoreAisle | undefined;
+}
+
 export function getAislesByStore(storeId: string): StoreAisle[] {
     return db
         .prepare(
-            `SELECT id, storeId, name, sortOrder, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, storeId, name, nameNorm, sortOrder, createdById, updatedById, createdAt, updatedAt
              FROM StoreAisle
              WHERE storeId = ?
              ORDER BY sortOrder ASC, name ASC`
@@ -60,14 +77,15 @@ export function updateAisle(params: {
     updatedById: string;
 }): StoreAisle | null {
     const now = new Date().toISOString();
+    const nameNorm = normalizeItemName(params.name);
 
     const result = db
         .prepare(
             `UPDATE StoreAisle
-             SET name = ?, updatedById = ?, updatedAt = ?
+             SET name = ?, nameNorm = ?, updatedById = ?, updatedAt = ?
              WHERE id = ?`
         )
-        .run(params.name, params.updatedById, now, params.id);
+        .run(params.name, nameNorm, params.updatedById, now, params.id);
 
     if (result.changes === 0) {
         return null;

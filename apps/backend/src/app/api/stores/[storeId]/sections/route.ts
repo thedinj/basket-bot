@@ -32,7 +32,8 @@ async function handlePost(
     try {
         const { storeId } = await params;
         const body = await req.json();
-        const { name, aisleId } = body;
+        const { aisleId } = body;
+        const name = typeof body.name === "string" ? body.name.trim() : body.name;
 
         if (!name || typeof name !== "string") {
             return NextResponse.json(
@@ -61,6 +62,15 @@ async function handlePost(
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },
                 { status: 403 }
+            );
+        }
+        if (error.message?.startsWith("SECTION_NAME_CONFLICT")) {
+            return NextResponse.json(
+                {
+                    code: "SECTION_NAME_CONFLICT",
+                    message: error.message.replace("SECTION_NAME_CONFLICT: ", ""),
+                },
+                { status: 409 }
             );
         }
         return NextResponse.json(

@@ -1,5 +1,6 @@
 import type { StoreSection } from "@basket-bot/core";
 import { db } from "../db/db";
+import { normalizeItemName } from "../utils/stringUtils";
 
 /**
  * Repository for StoreSection entity operations.
@@ -14,15 +15,17 @@ export function createSection(params: {
 }): StoreSection {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
+    const nameNorm = normalizeItemName(params.name);
 
     db.prepare(
-        `INSERT INTO StoreSection (id, storeId, aisleId, name, sortOrder, createdById, updatedById, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO StoreSection (id, storeId, aisleId, name, nameNorm, sortOrder, createdById, updatedById, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
         id,
         params.storeId,
         params.aisleId,
         params.name,
+        nameNorm,
         params.sortOrder,
         params.createdById,
         params.createdById,
@@ -36,7 +39,7 @@ export function createSection(params: {
 export function getSectionById(id: string): StoreSection | null {
     const row = db
         .prepare(
-            `SELECT id, storeId, aisleId, name, sortOrder, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, storeId, aisleId, name, nameNorm, sortOrder, createdById, updatedById, createdAt, updatedAt
              FROM StoreSection
              WHERE id = ?`
         )
@@ -45,10 +48,25 @@ export function getSectionById(id: string): StoreSection | null {
     return row ?? null;
 }
 
+export function findSectionByNameNorm(
+    storeId: string,
+    aisleId: string,
+    nameNorm: string,
+    excludeId: string
+): StoreSection | undefined {
+    return db
+        .prepare(
+            `SELECT id, storeId, aisleId, name, nameNorm, sortOrder, createdById, updatedById, createdAt, updatedAt
+             FROM StoreSection
+             WHERE storeId = ? AND aisleId = ? AND nameNorm = ? AND id != ?`
+        )
+        .get(storeId, aisleId, nameNorm, excludeId) as StoreSection | undefined;
+}
+
 export function getSectionsByStore(storeId: string): StoreSection[] {
     return db
         .prepare(
-            `SELECT id, storeId, aisleId, name, sortOrder, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, storeId, aisleId, name, nameNorm, sortOrder, createdById, updatedById, createdAt, updatedAt
              FROM StoreSection
              WHERE storeId = ?
              ORDER BY sortOrder ASC, name ASC`
@@ -67,8 +85,8 @@ export function updateSection(params: {
     const values: unknown[] = [];
 
     if (params.name !== undefined) {
-        updates.push("name = ?");
-        values.push(params.name);
+        updates.push("name = ?", "nameNorm = ?");
+        values.push(params.name, normalizeItemName(params.name));
     }
 
     if (params.aisleId !== undefined) {

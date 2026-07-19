@@ -90,6 +90,7 @@ export function initializeDatabase() {
             "id" TEXT NOT NULL PRIMARY KEY,
             "storeId" TEXT NOT NULL,
             "name" TEXT NOT NULL CHECK(length("name") >= 1 AND length("name") <= 100),
+            "nameNorm" TEXT NOT NULL CHECK(length("nameNorm") >= 1 AND length("nameNorm") <= 100),
             "sortOrder" INTEGER NOT NULL DEFAULT 0,
             "createdById" TEXT NOT NULL,
             "updatedById" TEXT NOT NULL,
@@ -97,7 +98,8 @@ export function initializeDatabase() {
             "updatedAt" DATETIME NOT NULL,
             FOREIGN KEY ("storeId") REFERENCES "Store" ("id") ON DELETE CASCADE,
             FOREIGN KEY ("createdById") REFERENCES "User" ("id") ON DELETE RESTRICT,
-            FOREIGN KEY ("updatedById") REFERENCES "User" ("id") ON DELETE RESTRICT
+            FOREIGN KEY ("updatedById") REFERENCES "User" ("id") ON DELETE RESTRICT,
+            UNIQUE ("storeId", "nameNorm")
         );
 
         -- StoreSection table
@@ -106,6 +108,7 @@ export function initializeDatabase() {
             "storeId" TEXT NOT NULL,
             "aisleId" TEXT NOT NULL,
             "name" TEXT NOT NULL CHECK(length("name") >= 1 AND length("name") <= 100),
+            "nameNorm" TEXT NOT NULL CHECK(length("nameNorm") >= 1 AND length("nameNorm") <= 100),
             "sortOrder" INTEGER NOT NULL DEFAULT 0,
             "createdById" TEXT NOT NULL,
             "updatedById" TEXT NOT NULL,
@@ -114,7 +117,8 @@ export function initializeDatabase() {
             FOREIGN KEY ("storeId") REFERENCES "Store" ("id") ON DELETE CASCADE,
             FOREIGN KEY ("aisleId") REFERENCES "StoreAisle" ("id") ON DELETE CASCADE,
             FOREIGN KEY ("createdById") REFERENCES "User" ("id") ON DELETE RESTRICT,
-            FOREIGN KEY ("updatedById") REFERENCES "User" ("id") ON DELETE RESTRICT
+            FOREIGN KEY ("updatedById") REFERENCES "User" ("id") ON DELETE RESTRICT,
+            UNIQUE ("storeId", "aisleId", "nameNorm")
         );
 
         -- StoreItem table

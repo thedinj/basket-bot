@@ -31,6 +31,14 @@ function verifyStoreAccess(storeId: string, userId: string): void {
 export function createAisle(params: { storeId: string; name: string; userId: string }): StoreAisle {
     verifyStoreAccess(params.storeId, params.userId);
 
+    const nameNorm = normalizeItemName(params.name);
+    const conflict = aisleRepo.findAisleByNameNorm(params.storeId, nameNorm, "");
+    if (conflict) {
+        throw new Error(
+            `AISLE_NAME_CONFLICT: An aisle named "${conflict.name}" already exists in this store.`
+        );
+    }
+
     const maxOrder = aisleRepo.getMaxSortOrder(params.storeId);
 
     return aisleRepo.createAisle({
@@ -53,6 +61,14 @@ export function updateAisle(params: {
     userId: string;
 }): StoreAisle | null {
     verifyStoreAccess(params.storeId, params.userId);
+
+    const nameNorm = normalizeItemName(params.name);
+    const conflict = aisleRepo.findAisleByNameNorm(params.storeId, nameNorm, params.id);
+    if (conflict) {
+        throw new Error(
+            `AISLE_NAME_CONFLICT: An aisle named "${conflict.name}" already exists in this store.`
+        );
+    }
 
     return aisleRepo.updateAisle({
         id: params.id,
@@ -100,6 +116,14 @@ export function createSection(params: {
 }): StoreSection {
     verifyStoreAccess(params.storeId, params.userId);
 
+    const nameNorm = normalizeItemName(params.name);
+    const conflict = sectionRepo.findSectionByNameNorm(params.storeId, params.aisleId, nameNorm, "");
+    if (conflict) {
+        throw new Error(
+            `SECTION_NAME_CONFLICT: A section named "${conflict.name}" already exists in this aisle.`
+        );
+    }
+
     const maxOrder = sectionRepo.getMaxSortOrder(params.aisleId);
 
     return sectionRepo.createSection({
@@ -125,6 +149,18 @@ export function updateSection(params: {
 }): StoreSection | null {
     verifyStoreAccess(params.storeId, params.userId);
 
+    if (params.name !== undefined || params.aisleId !== undefined) {
+        const existing = sectionRepo.getSectionById(params.id);
+        const nameNorm = normalizeItemName(params.name ?? existing?.name ?? "");
+        const aisleId = params.aisleId ?? existing?.aisleId ?? "";
+        const conflict = sectionRepo.findSectionByNameNorm(params.storeId, aisleId, nameNorm, params.id);
+        if (conflict) {
+            throw new Error(
+                `SECTION_NAME_CONFLICT: A section named "${conflict.name}" already exists in this aisle.`
+            );
+        }
+    }
+
     return sectionRepo.updateSection({
         id: params.id,
         name: params.name,
@@ -141,6 +177,21 @@ export function updateSectionLocation(params: {
     userId: string;
 }): StoreSection | null {
     verifyStoreAccess(params.storeId, params.userId);
+
+    const existing = sectionRepo.getSectionById(params.id);
+    if (existing) {
+        const conflict = sectionRepo.findSectionByNameNorm(
+            params.storeId,
+            params.aisleId,
+            existing.nameNorm,
+            params.id
+        );
+        if (conflict) {
+            throw new Error(
+                `SECTION_NAME_CONFLICT: A section named "${conflict.name}" already exists in this aisle.`
+            );
+        }
+    }
 
     return sectionRepo.updateSectionLocation({
         id: params.id,
