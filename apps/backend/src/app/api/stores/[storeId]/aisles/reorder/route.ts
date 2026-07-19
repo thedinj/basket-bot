@@ -21,6 +21,7 @@ async function handlePost(
         storeEntityService.reorderAisles({ storeId, updates, userId: req.auth.sub });
         return NextResponse.json({ success: true });
     } catch (error: any) {
+        console.error("POST /api/stores/[storeId]/aisles/reorder error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },

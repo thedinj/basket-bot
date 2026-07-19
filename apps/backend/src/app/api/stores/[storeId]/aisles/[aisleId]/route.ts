@@ -20,6 +20,7 @@ async function handleGet(
 
         return NextResponse.json({ aisle });
     } catch (error: any) {
+        console.error("GET /api/stores/[storeId]/aisles/[aisleId] error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },
@@ -65,6 +66,7 @@ async function handlePut(
 
         return NextResponse.json({ aisle });
     } catch (error: any) {
+        console.error("PUT /api/stores/[storeId]/aisles/[aisleId] error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },
@@ -110,6 +112,7 @@ async function handlePatch(
 
         return NextResponse.json({ aisle });
     } catch (error: any) {
+        console.error("PATCH /api/stores/[storeId]/aisles/[aisleId] error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },
@@ -132,6 +135,7 @@ async function handleDelete(
         storeEntityService.deleteAisle(aisleId, storeId, req.auth.sub);
         return NextResponse.json({ success: true });
     } catch (error: any) {
+        console.error("DELETE /api/stores/[storeId]/aisles/[aisleId] error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },

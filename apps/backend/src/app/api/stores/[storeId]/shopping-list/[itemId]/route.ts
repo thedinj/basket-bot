@@ -13,6 +13,7 @@ async function handleDelete(
         storeEntityService.removeShoppingListItem(itemId, storeId, req.auth.sub);
         return NextResponse.json({ success: true });
     } catch (error: any) {
+        console.error("DELETE /api/stores/[storeId]/shopping-list/[itemId] error:", error);
         if (error instanceof NotFoundError) {
             return NextResponse.json(
                 { code: "ITEM_NOT_FOUND", message: "Shopping list item not found" },

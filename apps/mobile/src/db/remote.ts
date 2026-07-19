@@ -44,7 +44,17 @@ export class RemoteDatabase extends BaseDatabase {
                     method,
                     data,
                 });
-                console.log(`[RemoteDatabase] Queued ${operation} for later retry`);
+                console.log(`[RemoteDatabase] Queued ${operation} for later retry`, {
+                    endpoint,
+                    method,
+                    error: error.message,
+                });
+            } else {
+                console.error(`[RemoteDatabase] ${operation} failed (not a network error):`, {
+                    endpoint,
+                    method,
+                    error,
+                });
             }
             // Re-throw the error so calling code can handle it
             throw error;
@@ -139,6 +149,20 @@ export class RemoteDatabase extends BaseDatabase {
                 return response.store;
             },
             { newStoreName: params.newStoreName, includeItems: params.includeItems }
+        );
+    }
+
+    async reorderStores(
+        updates: Array<{ storeId: string; sortOrder: number }>
+    ): Promise<void> {
+        return this.executeMutation(
+            "reorderStores",
+            "/api/stores/reorder",
+            "POST",
+            async () => {
+                await apiClient.post("/api/stores/reorder", { updates });
+            },
+            { updates }
         );
     }
 

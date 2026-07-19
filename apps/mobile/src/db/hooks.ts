@@ -301,6 +301,28 @@ export function useDuplicateStore() {
 }
 
 /**
+ * Hook to save the user's custom store tab order
+ */
+export function useReorderStores() {
+    const database = useDatabase();
+    const queryClient = useQueryClient();
+    const { showError } = useToast();
+
+    return useTanstackMutation({
+        mutationFn: (updates: Array<{ storeId: string; sortOrder: number }>) =>
+            database.reorderStores(updates),
+        onSuccess: () => {
+            // The stores query carries the per-user sortOrder, so refreshing it
+            // updates both the tab bar and the Stores management modal.
+            queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
+        },
+        onError: (error: Error) => {
+            showError(`Failed to reorder stores: ${error.message}`);
+        },
+    });
+}
+
+/**
  * Hook to save an app setting
  */
 export function useSaveAppSetting() {

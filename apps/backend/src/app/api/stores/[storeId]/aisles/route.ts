@@ -11,6 +11,7 @@ async function handleGet(
         const aisles = storeEntityService.getAislesByStore(storeId, req.auth.sub);
         return NextResponse.json({ aisles });
     } catch (error: any) {
+        console.error("GET /api/stores/[storeId]/aisles error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },
@@ -43,6 +44,7 @@ async function handlePost(
         const aisle = storeEntityService.createAisle({ storeId, name, userId: req.auth.sub });
         return NextResponse.json({ aisle }, { status: 201 });
     } catch (error: any) {
+        console.error("POST /api/stores/[storeId]/aisles error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },

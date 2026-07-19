@@ -12,7 +12,19 @@ export const StoreSelector: React.FC = () => {
     const [canScrollRight, setCanScrollRight] = useState(false);
 
     const visibleStores = useMemo(
-        () => stores?.filter((s) => !s.isHidden || s.id === selectedStoreId) ?? [],
+        () =>
+            (stores?.filter((s) => !s.isHidden || s.id === selectedStoreId) ?? [])
+                .slice()
+                .sort((a, b) => {
+                    // Stores with a custom position come first (ascending); unordered
+                    // stores fall back to alphabetical after them.
+                    const aOrder = a.sortOrder ?? null;
+                    const bOrder = b.sortOrder ?? null;
+                    if (aOrder !== null && bOrder !== null) return aOrder - bOrder;
+                    if (aOrder !== null) return -1;
+                    if (bOrder !== null) return 1;
+                    return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+                }),
         [stores, selectedStoreId]
     );
 

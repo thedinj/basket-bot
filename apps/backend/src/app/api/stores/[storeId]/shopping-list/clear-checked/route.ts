@@ -11,6 +11,7 @@ async function handlePost(
         const count = storeEntityService.clearCheckedShoppingListItems(storeId, req.auth.sub);
         return NextResponse.json({ success: true, count });
     } catch (error: any) {
+        console.error("POST /api/stores/[storeId]/shopping-list/clear-checked error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },

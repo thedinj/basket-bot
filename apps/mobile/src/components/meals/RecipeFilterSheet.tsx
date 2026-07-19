@@ -69,7 +69,8 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
     const setTagMode  = (m: "any" | "all") => onFiltersChange({ ...filters, tagMode: m })
     const toggleTag   = (id: string) => {
         const next = new Set(filters.tagIds)
-        next.has(id) ? next.delete(id) : next.add(id)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
         onFiltersChange({ ...filters, tagIds: next })
     }
     const setMaxTime  = (v: number | null) => onFiltersChange({ ...filters, maxCookingTimeMinutes: v })

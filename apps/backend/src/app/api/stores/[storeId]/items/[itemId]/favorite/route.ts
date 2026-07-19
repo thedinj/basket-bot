@@ -19,6 +19,7 @@ async function handlePost(
 
         return NextResponse.json({ item });
     } catch (error: any) {
+        console.error("POST /api/stores/[storeId]/items/[itemId]/favorite error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },

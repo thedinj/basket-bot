@@ -11,6 +11,7 @@ async function handleGet(
         const sections = storeEntityService.getSectionsByStore(storeId, req.auth.sub);
         return NextResponse.json({ sections });
     } catch (error: any) {
+        console.error("GET /api/stores/[storeId]/sections error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },
@@ -55,6 +56,7 @@ async function handlePost(
         });
         return NextResponse.json({ section }, { status: 201 });
     } catch (error: any) {
+        console.error("POST /api/stores/[storeId]/sections error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },

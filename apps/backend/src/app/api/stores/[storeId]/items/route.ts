@@ -20,6 +20,7 @@ async function handleGet(
         const items = storeEntityService.getItemsByStoreWithDetails(storeId, req.auth.sub);
         return NextResponse.json({ items });
     } catch (error: any) {
+        console.error("GET /api/stores/[storeId]/items error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },
@@ -58,6 +59,7 @@ async function handlePost(
         });
         return NextResponse.json({ item }, { status: 201 });
     } catch (error: any) {
+        console.error("POST /api/stores/[storeId]/items error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },

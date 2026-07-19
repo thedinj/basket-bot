@@ -28,7 +28,9 @@
       "Bash(pnpm install *)",
       "Bash(ls docs *)",
       "Bash(ls apps/mobile/docs)",
-      "Bash(ls apps/mobile/*.md)"
+      "Bash(ls apps/mobile/*.md)",
+      "Bash(pnpm --filter @basket-bot/backend typecheck)",
+      "Bash(pnpm --filter @basket-bot/mobile lint)"
     ]
   }
 }

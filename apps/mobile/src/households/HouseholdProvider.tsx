@@ -1,7 +1,6 @@
 import type { Household } from "@basket-bot/core";
 import { PropsWithChildren, useCallback, useEffect, useState } from "react";
 import { useAuth } from "../auth/useAuth";
-import { useDatabase } from "../db/hooks";
 import { usePreference } from "../hooks/usePreference";
 import { householdApi, invitationApi } from "../lib/api/household";
 import { HouseholdContext } from "./HouseholdContext";
@@ -10,7 +9,6 @@ const ACTIVE_HOUSEHOLD_KEY = "activeHouseholdId";
 
 export const HouseholdProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const { isAuthenticated } = useAuth();
-    const database = useDatabase();
     const [households, setHouseholds] = useState<Household[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [pendingInvitationsCount, setPendingInvitationsCount] = useState(0);
@@ -68,13 +66,6 @@ export const HouseholdProvider: React.FC<PropsWithChildren> = ({ children }) => 
     useEffect(() => {
         loadHouseholds();
     }, [loadHouseholds]);
-
-    // Sync active household with RemoteDatabase whenever it changes
-    useEffect(() => {
-        if (activeHouseholdId && "setActiveHouseholdId" in database) {
-            (database as any).setActiveHouseholdId(activeHouseholdId);
-        }
-    }, [activeHouseholdId, database]);
 
     const value = {
         households,

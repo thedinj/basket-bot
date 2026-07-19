@@ -23,6 +23,7 @@ async function handleGet(
 
         return NextResponse.json({ items });
     } catch (error: any) {
+        console.error("GET /api/stores/[storeId]/items/search error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },

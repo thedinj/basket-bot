@@ -12,6 +12,7 @@ async function handleDelete(
         storeEntityService.deleteShoppingListItem(itemId, storeId, req.auth.sub);
         return NextResponse.json({ success: true });
     } catch (error: any) {
+        console.error("DELETE /api/stores/[storeId]/shopping-list/[itemId]/delete-with-item error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },

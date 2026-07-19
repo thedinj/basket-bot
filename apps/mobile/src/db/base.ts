@@ -52,6 +52,9 @@ export abstract class BaseDatabase implements Database {
         newStoreName: string;
         includeItems: boolean;
     }): Promise<Store>;
+    abstract reorderStores(
+        updates: Array<{ storeId: string; sortOrder: number }>
+    ): Promise<void>;
 
     // ========== App Settings Operations (Abstract) ==========
     abstract getAppSetting(key: string): Promise<AppSetting | null>;

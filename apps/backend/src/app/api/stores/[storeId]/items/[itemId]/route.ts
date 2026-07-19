@@ -20,6 +20,7 @@ async function handleGet(
 
         return NextResponse.json({ item });
     } catch (error: any) {
+        console.error("GET /api/stores/[storeId]/items/[itemId] error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },
@@ -67,6 +68,7 @@ async function handlePut(
 
         return NextResponse.json({ item });
     } catch (error: any) {
+        console.error("PUT /api/stores/[storeId]/items/[itemId] error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },
@@ -95,6 +97,7 @@ async function handleDelete(
         storeEntityService.deleteItem(itemId, storeId, req.auth.sub);
         return NextResponse.json({ success: true });
     } catch (error: any) {
+        console.error("DELETE /api/stores/[storeId]/items/[itemId] error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },

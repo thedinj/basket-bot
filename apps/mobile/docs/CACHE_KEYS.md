@@ -169,6 +169,7 @@ use it when the mutation can affect more than one, or the set is unknown.
 | `useUpdateStore` | store | `["stores"]`, `["stores", id]` |
 | `useDeleteStore` | store | `["stores"]` |
 | `useDuplicateStore` | store (+layout/items) | `["stores"]` |
+| `useReorderStores` | per-user store tab order | `["stores"]` |
 | `useUpdateStoreHousehold` | store sharing | `["stores", storeId]`, `["stores"]` |
 | `useUpdateStoreVisibility` | store hidden flag | `["stores", storeId]`, `["stores"]` |
 | `useSaveAppSetting` | app setting | `["appSettings", key]` |

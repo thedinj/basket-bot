@@ -1,27 +1,27 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
-import * as storeEntityService from "@/lib/services/storeEntityService";
+import * as storeOrderService from "@/lib/services/storeOrderService";
+import { reorderStoresRequestSchema } from "@basket-bot/core";
 import { NextResponse } from "next/server";
 
-async function handlePost(
-    req: AuthenticatedRequest,
-    { params }: { params: Promise<Record<string, string>> }
-) {
+async function handlePost(req: AuthenticatedRequest) {
     try {
-        const { storeId } = await params;
         const body = await req.json();
-        const { updates } = body;
+        const parsed = reorderStoresRequestSchema.safeParse(body);
 
-        if (!Array.isArray(updates)) {
+        if (!parsed.success) {
             return NextResponse.json(
-                { code: "INVALID_INPUT", message: "Updates must be an array" },
+                { code: "INVALID_INPUT", message: "Invalid reorder payload" },
                 { status: 400 }
             );
         }
 
-        storeEntityService.reorderSections({ storeId, updates, userId: req.auth.sub });
+        storeOrderService.setStoreOrder({
+            userId: req.auth.sub,
+            updates: parsed.data.updates,
+        });
         return NextResponse.json({ success: true });
     } catch (error: any) {
-        console.error("POST /api/stores/[storeId]/sections/reorder error:", error);
+        console.error("POST /api/stores/reorder error:", error);
         if (error.message === "Access denied") {
             return NextResponse.json(
                 { code: "ACCESS_DENIED", message: "Access denied" },

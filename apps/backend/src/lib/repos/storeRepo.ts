@@ -51,15 +51,20 @@ export function getStoreById(id: string): Store | null {
 }
 
 export function getStoresByUser(userId: string): Store[] {
+    // uso.sortOrder is the requesting user's custom tab order (null when unordered).
+    // The list stays ordered by name; the mobile tab bar re-sorts by sortOrder client-side.
     const rows = db
         .prepare(
-            `SELECT DISTINCT s.id, s.name, s.householdId, s.isHidden, s.createdById, s.updatedById, s.createdAt, s.updatedAt
+            `SELECT DISTINCT s.id, s.name, s.householdId, s.isHidden, s.createdById, s.updatedById, s.createdAt, s.updatedAt, uso.sortOrder
              FROM Store s
              LEFT JOIN HouseholdMember hm ON s.householdId = hm.householdId AND hm.userId = ?
+             LEFT JOIN UserStoreOrder uso ON uso.storeId = s.id AND uso.userId = ?
              WHERE s.createdById = ? OR hm.userId IS NOT NULL
              ORDER BY s.name ASC`
         )
-        .all(userId, userId) as Array<Omit<Store, "isHidden"> & { isHidden: number | null }>;
+        .all(userId, userId, userId) as Array<
+        Omit<Store, "isHidden"> & { isHidden: number | null }
+    >;
 
     return rows.map((row) => ({
         ...row,

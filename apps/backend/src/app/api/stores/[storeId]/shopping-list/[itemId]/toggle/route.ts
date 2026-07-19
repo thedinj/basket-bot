@@ -33,6 +33,7 @@ async function handlePost(
             conflictUser: result.conflictUser,
         });
     } catch (error: any) {
+        console.error("POST /api/stores/[storeId]/shopping-list/[itemId]/toggle error:", error);
         if (error instanceof NotFoundError) {
             return NextResponse.json(
                 { code: "ITEM_NOT_FOUND", message: "Shopping list item not found" },

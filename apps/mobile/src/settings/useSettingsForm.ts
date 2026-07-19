@@ -58,7 +58,14 @@ export function useSettingsForm() {
                 : undefined,
             defaultMealPlanStore: defaultMealPlanStoreValue || undefined,
         });
-    }, [apiKeyValue, remoteApiUrlValue, themeModeValue, defaultMealPlanSlotsValue, reset]);
+    }, [
+        apiKeyValue,
+        remoteApiUrlValue,
+        themeModeValue,
+        defaultMealPlanSlotsValue,
+        defaultMealPlanStoreValue,
+        reset,
+    ]);
 
     // Performs the actual save — takes validated form data, returns boolean success
     const performSave = useCallback(

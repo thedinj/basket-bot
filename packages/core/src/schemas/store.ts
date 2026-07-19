@@ -45,10 +45,24 @@ export const storeSchema = z.object({
     name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
     householdId: z.string().uuid().nullable(),
     isHidden: z.boolean(),
+    // Per-user tab order; null/undefined = unordered. Only populated on the store list
+    // (GET /api/stores), which joins the requesting user's UserStoreOrder rows.
+    sortOrder: z.number().int().nullable().optional(),
     ...auditFields,
 });
 
 export type Store = z.infer<typeof storeSchema>;
+
+export const reorderStoresRequestSchema = z.object({
+    updates: z.array(
+        z.object({
+            storeId: z.string().uuid(),
+            sortOrder: z.number().int().min(0),
+        })
+    ),
+});
+
+export type ReorderStoresRequest = z.infer<typeof reorderStoresRequestSchema>;
 
 export const createStoreRequestSchema = z.object({
     name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),

@@ -83,6 +83,11 @@ export interface EntityDatabase {
         includeItems: boolean;
     }): Promise<Store>;
 
+    /**
+     * Set the requesting user's custom order for store tabs
+     */
+    reorderStores(updates: Array<{ storeId: string; sortOrder: number }>): Promise<void>;
+
     // ========== App Settings Operations ==========
     /**
      * Get an app setting by key

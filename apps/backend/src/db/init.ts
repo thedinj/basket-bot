@@ -297,6 +297,19 @@ export function initializeDatabase() {
             FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE
         );
 
+        -- UserStoreOrder table (per-user custom ordering of store tabs)
+        CREATE TABLE IF NOT EXISTS "UserStoreOrder" (
+            "id" TEXT NOT NULL PRIMARY KEY,
+            "userId" TEXT NOT NULL,
+            "storeId" TEXT NOT NULL,
+            "sortOrder" INTEGER NOT NULL,
+            "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE,
+            FOREIGN KEY ("storeId") REFERENCES "Store" ("id") ON DELETE CASCADE,
+            UNIQUE ("userId", "storeId")
+        );
+
         -- Indexes
         CREATE INDEX IF NOT EXISTS "ShoppingListItem_storeId_isChecked_updatedAt_idx"
             ON "ShoppingListItem"("storeId", "isChecked", "updatedAt");
@@ -309,6 +322,9 @@ export function initializeDatabase() {
 
         CREATE INDEX IF NOT EXISTS "Store_householdId_idx"
             ON "Store"("householdId");
+
+        CREATE INDEX IF NOT EXISTS "UserStoreOrder_userId_idx"
+            ON "UserStoreOrder"("userId");
 
         CREATE INDEX IF NOT EXISTS "User_email_idx"
             ON "User"("email" COLLATE NOCASE);
