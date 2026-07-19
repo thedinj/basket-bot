@@ -157,6 +157,7 @@ Stores have owners and collaborators. Households exist but are reserved for futu
 ### Anti-patterns to avoid
 
 - No ad-hoc `interface` declarations — define types from Zod schemas in `packages/core`
+- No one-off inline object types in casts (`x as { status?: number }`, `x as unknown as { foo(): void }`) — cast to a standard type from `@basket-bot/core` or an existing exported interface, narrow with `instanceof` (e.g. `error instanceof ApiError`), or drop the cast. If a cast only exists to reach a member that isn't on the real type, fix the type or remove the dead code — don't invent a shape. Avoid `as any` where a concrete type fits.
 - No `useEffect` for data fetching — use TanStack Query
 - No duplicate type definitions across packages
 - Don't use `function` keyword for React components

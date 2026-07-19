@@ -1,4 +1,4 @@
-import type { Plan, PlanWithDetails } from "@basket-bot/core"
+import type { Plan, PlanWithDetails, RecipeIngredient } from "@basket-bot/core"
 import { db } from "../db/db"
 import * as householdRepo from "../repos/householdRepo"
 import * as itemRepo from "../repos/itemRepo"
@@ -243,7 +243,18 @@ export function dispatchPlan(
                      JOIN Recipe r ON r.id = ri.recipeId
                      WHERE ri.id = ?`
                 )
-                .get(route.ingredientId) as { name: string; shoppingName: string | null; qty: number | null; shoppingQty: number | null; unitId: string | null; shoppingUnitId: string | null; recipeId: string; recipeName: string } | undefined
+                .get(route.ingredientId) as
+                | (Pick<
+                      RecipeIngredient,
+                      | "name"
+                      | "shoppingName"
+                      | "qty"
+                      | "shoppingQty"
+                      | "unitId"
+                      | "shoppingUnitId"
+                      | "recipeId"
+                  > & { recipeName: string })
+                | undefined
 
             if (!ingredient) {
                 itemsSkipped++

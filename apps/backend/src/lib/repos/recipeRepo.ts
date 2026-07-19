@@ -180,7 +180,7 @@ export function getRecipeWithDetails(id: string): RecipeWithDetails | null {
              WHERE rta.recipeId = ?
              ORDER BY rt.name ASC`
         )
-        .all(id) as any[];
+        .all(id) as RecipeTag[];
 
     // Get ingredients
     const ingredientRows = db
@@ -194,7 +194,7 @@ export function getRecipeWithDetails(id: string): RecipeWithDetails | null {
 
     return {
         ...recipe,
-        tags: tagRows as RecipeTag[],
+        tags: tagRows,
         ingredients: ingredientRows.map((r) => ({ ...r, excluded: r.excluded === 1 })),
     };
 }

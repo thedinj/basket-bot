@@ -159,6 +159,7 @@ For admin (Mantine):
 - Strict mode; no `any`.
 - Prefer Zod inference over handwritten interfaces.
 - **Never create ad-hoc interface declarations inline.** Always check if a type exists in `packages/core/src/schemas` or existing model files before creating new types.
+- **Never cast to a one-off inline object type** (e.g. `x as { status?: number }` or `x as unknown as { foo(): void }`). Instead: cast to a standard type from `@basket-bot/core` or an existing exported interface; narrow with `instanceof` (see the `ApiError` catch pattern below); or — if the cast only reaches a member that doesn't exist on the real type — fix the type or remove the dead code rather than inventing a shape. Don't reach for `as any` where a concrete type fits. For typed DB rows, reuse the established `Omit<Entity, "boolCol"> & { boolCol: number | null }` row-cast pattern (see `storeRepo.ts`), not a fresh inline shape.
 - If you need a new type, add it to `packages/core/src/schemas` for domain entities or API DTOs.
 - Interfaces for object shapes, types for unions/utilities.
 - Use `as const` for literal types and constant objects.

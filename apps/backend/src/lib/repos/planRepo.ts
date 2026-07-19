@@ -47,7 +47,7 @@ export function getPlanById(id: string): Plan | null {
                     createdById, updatedById, createdAt, updatedAt
              FROM Plan WHERE id = ?`
         )
-        .get(id) as any | undefined;
+        .get(id) as Plan | undefined;
 
     if (!row) return null;
     return mapPlan(row);
@@ -62,7 +62,7 @@ export function getPlansByHousehold(householdId: string): Plan[] {
              WHERE householdId = ?
              ORDER BY createdAt DESC`
         )
-        .all(householdId) as any[];
+        .all(householdId) as Plan[];
 
     return rows.map(mapPlan);
 }

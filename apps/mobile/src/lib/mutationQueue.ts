@@ -1,5 +1,7 @@
 import { Preferences } from "@capacitor/preferences";
 
+import { ApiError } from "./api/client";
+
 /**
  * Queued mutation data structure
  */
@@ -198,8 +200,8 @@ export class MutationQueue {
      */
     private isPermanentFailure(error: unknown): boolean {
         // ApiError with 4xx status (except 408 timeout, 429 rate limit)
-        if (error && typeof error === "object" && "status" in error) {
-            const status = (error as { status?: number }).status;
+        if (error instanceof ApiError) {
+            const status = error.status;
             if (status && status >= 400 && status < 500) {
                 return status !== 408 && status !== 429;
             }

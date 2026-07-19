@@ -2,6 +2,7 @@ import { hashPassword } from "@/lib/auth/password";
 import { checkRateLimit } from "@/lib/auth/rateLimiter";
 import { db } from "@/lib/db/db";
 import * as referenceRepo from "@/lib/repos/referenceRepo";
+import * as userRepo from "@/lib/repos/userRepo";
 import * as storeService from "@/lib/services/storeService";
 import { createUserRequestSchema } from "@basket-bot/core";
 import { randomUUID } from "crypto";
@@ -46,8 +47,9 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // Check if user exists
-        const existingUser = db.prepare("SELECT * FROM User WHERE email = ?").get(email) as any;
+        // Check if user exists (case-insensitive, matching the login lookup so
+        // "Alice@x.com" and "alice@x.com" cannot both register)
+        const existingUser = userRepo.getUserByEmail(email);
         if (existingUser) {
             return NextResponse.json(
                 { code: "CONFLICT", message: "User with this email already exists" },

@@ -48,7 +48,12 @@ export function getItemById(id: string): StoreItem | null {
              FROM StoreItem
              WHERE id = ?`
         )
-        .get(id) as any | undefined;
+        .get(id) as
+        | (Omit<StoreItem, "isHidden" | "isFavorite"> & {
+              isHidden: number | null;
+              isFavorite: number | null;
+          })
+        | undefined;
 
     if (!row) return null;
 
@@ -71,7 +76,12 @@ export function findItemByNameNorm(
              FROM StoreItem
              WHERE storeId = ? AND nameNorm = ? AND id != ?`
         )
-        .get(storeId, nameNorm, excludeId) as any | undefined;
+        .get(storeId, nameNorm, excludeId) as
+        | (Omit<StoreItem, "isHidden" | "isFavorite"> & {
+              isHidden: number | null;
+              isFavorite: number | null;
+          })
+        | undefined;
 
     if (!row) return undefined;
 
@@ -90,7 +100,12 @@ export function getItemsByStore(storeId: string): StoreItem[] {
              WHERE storeId = ?
              ORDER BY name ASC`
         )
-        .all(storeId) as any[];
+        .all(storeId) as Array<
+        Omit<StoreItem, "isHidden" | "isFavorite"> & {
+            isHidden: number | null;
+            isFavorite: number | null;
+        }
+    >;
 
     // Convert SQLite integers to booleans
     return rows.map((row) => ({
@@ -210,7 +225,12 @@ export function searchStoreItems(storeId: string, searchTerm: string, limit = 20
                 nameNorm ASC
              LIMIT ?`
         )
-        .all(storeId, searchPattern, startsWithPattern, limit) as any[];
+        .all(storeId, searchPattern, startsWithPattern, limit) as Array<
+        Omit<StoreItem, "isHidden" | "isFavorite"> & {
+            isHidden: number | null;
+            isFavorite: number | null;
+        }
+    >;
 
     // Convert SQLite integers to booleans
     return rows.map((row) => ({
@@ -237,7 +257,12 @@ export function getOrCreateStoreItemByName(params: {
              FROM StoreItem
              WHERE storeId = ? AND nameNorm = ?`
         )
-        .get(params.storeId, nameNorm) as any | undefined;
+        .get(params.storeId, nameNorm) as
+        | (Omit<StoreItem, "isHidden" | "isFavorite"> & {
+              isHidden: number | null;
+              isFavorite: number | null;
+          })
+        | undefined;
 
     const existing = row
         ? {

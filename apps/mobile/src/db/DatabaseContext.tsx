@@ -1,4 +1,5 @@
 import LoadingFallback from "@/components/LoadingFallback";
+import { ApiError } from "@/lib/api/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React, { PropsWithChildren, useEffect, useState } from "react";
 import { DatabaseContext, type DatabaseContextValue } from "./context";
@@ -19,7 +20,7 @@ export const queryClient = new QueryClient({
             gcTime: 10 * 60 * 1000, // 10 minutes - keep cached data longer
             retry: (failureCount, error: unknown) => {
                 // Don't retry on 4xx errors except 408 (timeout) and 429 (rate limit)
-                const err = error as { status?: number };
+                const err = error instanceof ApiError ? error : undefined;
                 if (err?.status && err.status >= 400 && err.status < 500) {
                     if (err.status === 408 || err.status === 429) {
                         return failureCount < 3;
