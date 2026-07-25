@@ -28,7 +28,10 @@ interface RouteIngredientsModalProps {
     initialDefaultStoreId?: string | null
     isWorking: boolean
     unitMap?: Map<string, string>
-    onConfirm: (routes: Array<{ ingredientId: string; storeId: string | null }>, factor: number) => void
+    onConfirm: (
+        routes: Array<{ ingredientId: string; storeId: string | null; isUnsure: boolean }>,
+        factor: number
+    ) => void
 }
 
 const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
@@ -73,16 +76,21 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
                     qty: ing.qty,
                     scaledQty,
                     unitId: ing.unitId,
+                    isUnsure: routing.unsureSet.has(ing.id),
                 }
             }),
-        [rawIngredients, routing.routeMap, routing.defaultStoreId, factor]
+        [rawIngredients, routing.routeMap, routing.defaultStoreId, routing.unsureSet, factor]
     )
 
     const includedCount = resolvedIngredients.filter((r) => r.storeId !== null).length
 
     const handleConfirm = () => {
         onConfirm(
-            resolvedIngredients.map((r) => ({ ingredientId: r.ingredientId, storeId: r.storeId })),
+            resolvedIngredients.map((r) => ({
+                ingredientId: r.ingredientId,
+                storeId: r.storeId,
+                isUnsure: r.isUnsure,
+            })),
             factor
         )
     }
@@ -111,8 +119,10 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
                     setRouteMap={routing.setRouteMap}
                     defaultStoreId={routing.defaultStoreId}
                     setDefaultStoreId={routing.setDefaultStoreId}
+                    unsureSet={routing.unsureSet}
+                    onToggleUnsure={routing.toggleUnsure}
                     visibleStores={visibleStores}
-unitMap={unitMap}
+                    unitMap={unitMap}
                 />
             </IonContent>
 

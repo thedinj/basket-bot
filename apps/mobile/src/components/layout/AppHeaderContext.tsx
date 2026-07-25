@@ -27,6 +27,8 @@ export interface GlobalActionConfig {
     color?: string;
     disabled?: boolean;
     messageGenerator?: MessageGenerator;
+    /** Extra class(es) applied to the button, e.g. for an "active" glow/pulse treatment */
+    className?: string;
 }
 
 export type ModalName = "settings" | "profile" | "password" | "households" | "stores";

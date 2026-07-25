@@ -18,7 +18,7 @@ import {
 } from "@ionic/react";
 import { addOutline, calendarOutline, filterOutline, restaurantOutline } from "ionicons/icons";
 import pluralize from "pluralize";
-import { Suspense, useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "../components/layout/AppHeader";
 import LoadingFallback from "../components/LoadingFallback";
 import RecipeCard from "../components/meals/RecipeCard";
@@ -44,9 +44,9 @@ import {
     useRecipes,
     useTags,
 } from "../db/mealsHooks";
-import { useHousehold } from "../households/useHousehold";
 import { usePreference } from "../hooks/usePreference";
 import { useUnitItems } from "../hooks/useUnitItems";
+import { useHousehold } from "../households/useHousehold";
 import { LLMFabButton } from "../llm/shared";
 import MealPlanWizard from "./MealPlanWizard";
 
@@ -58,7 +58,9 @@ const RecipesContent: React.FC<{
     householdId: string | null;
     onOpenEditor: (recipeId?: string) => void;
     onAddToList: (recipe: RecipeWithDetails) => void;
-}> = ({ householdId, onOpenEditor, onAddToList }) => {
+    scrollToRecipeId: string | null;
+    onScrolledToRecipe: () => void;
+}> = ({ householdId, onOpenEditor, onAddToList, scrollToRecipeId, onScrolledToRecipe }) => {
     const { data: recipes } = useRecipes(householdId);
     const { data: allTags = [] } = useTags(householdId);
     const [search, setSearch] = useState("");
@@ -68,11 +70,18 @@ const RecipesContent: React.FC<{
     }));
     const [sort, setSort] = useState<RecipeSort>(DEFAULT_SORT);
     const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+    const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
     const handleReset = () => {
         setFilters({ ...DEFAULT_FILTERS, tagIds: new Set() });
         setSort(DEFAULT_SORT);
     };
+
+    useEffect(() => {
+        if (!scrollToRecipeId) return;
+        setSearch("");
+        handleReset();
+    }, [scrollToRecipeId]);
 
     const hasPoolExcludedRecipes = useMemo(
         () => (recipes ?? []).some((r) => r.isPoolExcluded),
@@ -95,9 +104,10 @@ const RecipesContent: React.FC<{
 
         if (search.trim()) {
             const q = search.trim().toLowerCase();
-            result = result.filter((r) =>
-                r.name.toLowerCase().includes(q) ||
-                (r.source?.toLowerCase().includes(q) ?? false)
+            result = result.filter(
+                (r) =>
+                    r.name.toLowerCase().includes(q) ||
+                    (r.source?.toLowerCase().includes(q) ?? false)
             );
         }
         if (filters.tagIds.size > 0) {
@@ -142,6 +152,14 @@ const RecipesContent: React.FC<{
             }
         });
     }, [recipes, search, filters, sort]);
+
+    useEffect(() => {
+        if (!scrollToRecipeId) return;
+        const el = cardRefs.current.get(scrollToRecipeId);
+        if (!el) return;
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        onScrolledToRecipe();
+    }, [scrollToRecipeId, filtered, onScrolledToRecipe]);
 
     if (recipes?.length === 0) {
         return (
@@ -270,6 +288,10 @@ const RecipesContent: React.FC<{
                     {filtered.map((recipe) => (
                         <RecipeCard
                             key={recipe.id}
+                            ref={(el) => {
+                                if (el) cardRefs.current.set(recipe.id, el);
+                                else cardRefs.current.delete(recipe.id);
+                            }}
                             recipe={recipe}
                             onClick={() => onOpenEditor(recipe.id)}
                             onAddToList={() => onAddToList(recipe)}
@@ -391,6 +413,7 @@ const Meals: React.FC = () => {
     const [editingRecipeId, setEditingRecipeId] = useState<string | undefined>();
     const [tagManagerOpen, setTagManagerOpen] = useState(false);
     const [routingRecipe, setRoutingRecipe] = useState<RecipeWithDetails | null>(null);
+    const [scrollToRecipeId, setScrollToRecipeId] = useState<string | null>(null);
 
     const createRecipe = useCreateRecipe(activeHouseholdId);
     const addIngredient = useAddIngredient(activeHouseholdId);
@@ -412,7 +435,9 @@ const Meals: React.FC = () => {
                         name: i.shoppingName ?? i.name,
                         recipeName: routingRecipe!.name,
                         qty: hasShoppingOverride ? i.shoppingQty : i.qty,
-                        unitId: hasShoppingOverride ? (i.shoppingUnitId ?? null) : (i.unitId ?? null),
+                        unitId: hasShoppingOverride
+                            ? (i.shoppingUnitId ?? null)
+                            : (i.unitId ?? null),
                     };
                 }),
         [routingRecipe]
@@ -500,6 +525,8 @@ const Meals: React.FC = () => {
                                 setEditorOpen(true);
                             }}
                             onAddToList={(recipe) => setRoutingRecipe(recipe)}
+                            scrollToRecipeId={scrollToRecipeId}
+                            onScrolledToRecipe={() => setScrollToRecipeId(null)}
                         />
                     </Suspense>
                 ) : (
@@ -553,6 +580,10 @@ const Meals: React.FC = () => {
                 onDismiss={() => {
                     setEditorOpen(false);
                     setEditingRecipeId(undefined);
+                }}
+                onCreated={(recipeId) => {
+                    setSegment("recipes");
+                    setScrollToRecipeId(recipeId);
                 }}
             />
 

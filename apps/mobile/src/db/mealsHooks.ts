@@ -174,11 +174,12 @@ export function useAddRecipeToShoppingList(householdId: string | null, recipeId:
             routes,
             factor = 1,
         }: {
-            routes: Array<{ ingredientId: string; storeId: string | null }>
+            routes: Array<{ ingredientId: string; storeId: string | null; isUnsure: boolean }>
             factor?: number
         }) => {
             const included = routes.filter(
-                (r): r is { ingredientId: string; storeId: string } => r.storeId !== null
+                (r): r is { ingredientId: string; storeId: string; isUnsure: boolean } =>
+                    r.storeId !== null
             )
             return recipeApi.addToShoppingList(householdId!, recipeId!, { routes: included, factor })
         },

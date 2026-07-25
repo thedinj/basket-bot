@@ -62,6 +62,7 @@ async function handlePost(
                 qty: scaledQty,
                 unitId: effectiveUnitId ?? null,
                 notes: recipe.name,
+                isUnsure: route.isUnsure ?? null,
                 userId: req.auth.sub,
             })
 

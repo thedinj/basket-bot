@@ -193,6 +193,7 @@ export function updateRoutes(
         storeId?: string | null
         overridden?: boolean
         checked?: boolean
+        isUnsure?: boolean | null
     }>
 ): PlanWithDetails | null {
     assertMember(householdId, userId)
@@ -280,6 +281,7 @@ export function dispatchPlan(
                 qty: scaledQty,
                 unitId: effectiveUnitId ?? null,
                 notes: ingredient.recipeName,
+                isUnsure: route.isUnsure ?? null,
                 userId,
             })
 

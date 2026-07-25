@@ -188,7 +188,7 @@ export function deleteExtraSlots(planId: string, keepUpTo: number): void {
 export function getRoutesByPlan(planId: string): PlanIngredientRoute[] {
     const rows = db
         .prepare(
-            `SELECT id, planId, ingredientId, storeId, overridden, checked, createdAt, updatedAt
+            `SELECT id, planId, ingredientId, storeId, overridden, checked, isUnsure, createdAt, updatedAt
              FROM PlanIngredientRoute
              WHERE planId = ?`
         )
@@ -204,17 +204,19 @@ export function upsertRoutes(
         storeId?: string | null;
         overridden?: boolean;
         checked?: boolean;
+        isUnsure?: boolean | null;
     }>
 ): void {
     const now = new Date().toISOString();
 
     const upsert = db.prepare(
-        `INSERT INTO PlanIngredientRoute (id, planId, ingredientId, storeId, overridden, checked, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO PlanIngredientRoute (id, planId, ingredientId, storeId, overridden, checked, isUnsure, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(planId, ingredientId) DO UPDATE SET
              storeId = excluded.storeId,
              overridden = excluded.overridden,
              checked = excluded.checked,
+             isUnsure = excluded.isUnsure,
              updatedAt = excluded.updatedAt`
     );
 
@@ -227,6 +229,7 @@ export function upsertRoutes(
                 r.storeId ?? null,
                 boolToInt(r.overridden),
                 boolToInt(r.checked),
+                boolToInt(r.isUnsure ?? null),
                 now,
                 now
             );
@@ -337,6 +340,7 @@ function mapRoute(row: any): PlanIngredientRoute {
         storeId: row.storeId ?? null,
         overridden: intToBool(row.overridden),
         checked: intToBool(row.checked),
+        isUnsure: row.isUnsure != null ? intToBool(row.isUnsure) : null,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };

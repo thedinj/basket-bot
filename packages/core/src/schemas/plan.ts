@@ -41,6 +41,7 @@ export const planIngredientRouteSchema = z.object({
     storeId: z.string().uuid().nullable(),
     overridden: z.boolean(),
     checked: z.boolean(),
+    isUnsure: z.boolean().nullable(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
 })
@@ -94,6 +95,7 @@ export const updateRoutesRequestSchema = z.object({
             storeId: z.string().uuid().nullable(),
             overridden: z.boolean().optional(),
             checked: z.boolean().optional(),
+            isUnsure: z.boolean().nullable().optional(),
         })
     ),
 })

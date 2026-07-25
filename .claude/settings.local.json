@@ -30,7 +30,10 @@
       "Bash(ls apps/mobile/docs)",
       "Bash(ls apps/mobile/*.md)",
       "Bash(pnpm --filter @basket-bot/backend typecheck)",
-      "Bash(pnpm --filter @basket-bot/mobile lint)"
+      "Bash(pnpm --filter @basket-bot/mobile lint)",
+      "Bash(pnpm exec *)",
+      "Bash(pnpm --filter @basket-bot/core build)",
+      "Bash(pnpm --filter backend typecheck)"
     ]
   }
 }

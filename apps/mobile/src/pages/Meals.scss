@@ -185,7 +185,7 @@
 .meals-recipe-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    align-items: start;
+    align-items: stretch;
     gap: 12px;
     padding: 12px 16px;
 }

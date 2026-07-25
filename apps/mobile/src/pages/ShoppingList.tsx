@@ -10,7 +10,7 @@ import {
     IonText,
     useIonAlert,
 } from "@ionic/react";
-import { add, listOutline } from "ionicons/icons";
+import { add, helpCircle, helpCircleOutline, listOutline } from "ionicons/icons";
 import { Suspense, useCallback, useMemo, useState } from "react";
 import { ANIMATION_EFFECTS } from "../animations/effects";
 import { AppHeader } from "../components/layout/AppHeader";
@@ -33,14 +33,20 @@ import RefreshConfig from "../hooks/refresh/RefreshConfig";
 import { useMidnightUpdate } from "../hooks/useMidnightUpdate";
 import { useOverlayAnimation } from "../hooks/useOverlayAnimation";
 import { useShowSnoozedItems } from "../hooks/useShowSnoozedItems";
+import { useShowUnsureItems } from "../hooks/useShowUnsureItems";
 import { LLMFabButton } from "../llm/shared";
 import { isCurrentlySnoozed } from "../utils/dateUtils";
 
 import "./ShoppingList.scss";
 
+// The keep-awake header button hasn't proven useful in practice; disabled rather than
+// removed so the underlying feature (useKeepAwake, GlobalActions support) stays intact.
+const KEEP_AWAKE_BUTTON_ENABLED = false;
+
 const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     const { openCreateModal } = useShoppingListContext();
     const { showSnoozed, toggleShowSnoozed } = useShowSnoozedItems();
+    const { showUnsureOnly, toggleShowUnsureOnly } = useShowUnsureItems();
     const { data: items } = useShoppingListItems(storeId);
     const { data: stores } = useStores();
     const multipleStores = stores && stores.length > 1;
@@ -80,8 +86,20 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
 
     const [hasTriggeredClear, setHasTriggeredClear] = useState(false);
 
-    const uncheckedItems = activeItems?.filter((item) => !item.isChecked) || [];
+    const uncheckedItems = useMemo(
+        () => activeItems?.filter((item) => !item.isChecked) || [],
+        [activeItems]
+    );
     const checkedItems = activeItems?.filter((item) => item.isChecked) || [];
+
+    const unsureCount = useMemo(
+        () => uncheckedItems.filter((item) => item.isUnsure).length,
+        [uncheckedItems]
+    );
+
+    const displayedUncheckedItems = showUnsureOnly
+        ? uncheckedItems.filter((item) => item.isUnsure)
+        : uncheckedItems;
 
     // Reset clear flag when checked items are actually gone
     if (hasTriggeredClear && checkedItems.length === 0) {
@@ -140,6 +158,30 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
             });
         }
 
+        // Unsure items filter toggle — stays visible while the filter is active even if
+        // this store currently has no unsure items (e.g. after switching stores), so the
+        // user can always turn it back off; otherwise only shown when there's something to filter
+        if (unsureCount > 0 || showUnsureOnly) {
+            const countSuffix = unsureCount > 0 ? ` (${unsureCount})` : "";
+            actions.push({
+                id: "toggle-unsure-filter",
+                icon: showUnsureOnly ? helpCircle : helpCircleOutline,
+                title: `${showUnsureOnly ? "Show all items" : "Show only unsure items"}${countSuffix}`,
+                ariaLabel: `${showUnsureOnly ? "Show all items" : "Show only unsure items"}`,
+                onClick: toggleShowUnsureOnly,
+                color: showUnsureOnly ? "warning" : undefined,
+                className: showUnsureOnly ? "unsure-filter-btn--active" : undefined,
+                messageGenerator: () => {
+                    return {
+                        message: showUnsureOnly
+                            ? "Showing all items."
+                            : "Showing only unsure items.",
+                        type: "info" as const,
+                    };
+                },
+            });
+        }
+
         // Store Items quick-add
         actions.push({
             id: "quick-add-store-items",
@@ -150,7 +192,14 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
         });
 
         return actions;
-    }, [currentlySnoozedItemCount, showSnoozed, toggleShowSnoozed]);
+    }, [
+        currentlySnoozedItemCount,
+        showSnoozed,
+        toggleShowSnoozed,
+        unsureCount,
+        showUnsureOnly,
+        toggleShowUnsureOnly,
+    ]);
 
     return (
         <RefreshConfig queryKeys={[queryKeys.shoppingListItems.byStore(storeId)]}>
@@ -158,7 +207,7 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
                 title="Shopping List"
                 subToolbar={multipleStores ? <StoreSelector /> : undefined}
             >
-                <GlobalActions showKeepAwake actions={customActions} />
+                <GlobalActions showKeepAwake={KEEP_AWAKE_BUTTON_ENABLED} actions={customActions} />
             </AppHeader>
             <IonContent fullscreen>
                 <PullToRefresh />
@@ -186,7 +235,18 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
 
                 {activeItems.length > 0 && (
                     <>
-                        <UncheckedItems items={uncheckedItems} />
+                        {showUnsureOnly && (
+                            <div className="unsure-filter-banner">Showing unsure items only</div>
+                        )}
+                        {showUnsureOnly && displayedUncheckedItems.length === 0 ? (
+                            <div className="shopping-list-empty-state">
+                                <IonText color="medium">
+                                    <p>No unsure items left to reconcile.</p>
+                                </IonText>
+                            </div>
+                        ) : (
+                            <UncheckedItems items={displayedUncheckedItems} />
+                        )}
                         {!hasTriggeredClear && (
                             <CheckedItems
                                 items={checkedItems}

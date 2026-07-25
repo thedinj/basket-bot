@@ -2,6 +2,7 @@ import type { Store } from "@basket-bot/core"
 import pluralize from "pluralize"
 import {
     IonCheckbox,
+    IonIcon,
     IonItem,
     IonLabel,
     IonList,
@@ -9,6 +10,8 @@ import {
     IonSelect,
     IonSelectOption,
 } from "@ionic/react"
+import { helpCircle, helpCircleOutline } from "ionicons/icons"
+import clsx from "clsx"
 import { DEFAULT_STORE, type ResolvedIngredient } from "../../hooks/useRouteIngredients"
 
 import "./RouteIngredientsContent.scss"
@@ -19,6 +22,8 @@ interface RouteIngredientsContentProps {
     setRouteMap: (updater: (prev: Map<string, string | null>) => Map<string, string | null>) => void
     defaultStoreId: string | null
     setDefaultStoreId: (id: string | null) => void
+    unsureSet: Set<string>
+    onToggleUnsure: (ingredientId: string) => void
     visibleStores: Store[]
     recipeCount?: number
     unitMap?: Map<string, string>
@@ -30,6 +35,8 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
     setRouteMap,
     defaultStoreId,
     setDefaultStoreId,
+    unsureSet,
+    onToggleUnsure,
     visibleStores,
     recipeCount,
     unitMap,
@@ -100,6 +107,24 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
                                 <p className="route-ingredient-recipe">{ri.recipeName}</p>
                             )}
                         </IonLabel>
+                        {ri.storeId !== null && (
+                            <button
+                                type="button"
+                                className={clsx(
+                                    "route-unsure-toggle",
+                                    unsureSet.has(ri.ingredientId) && "route-unsure-toggle--active"
+                                )}
+                                onClick={() => onToggleUnsure(ri.ingredientId)}
+                                title="Unsure if needed"
+                                aria-pressed={unsureSet.has(ri.ingredientId)}
+                            >
+                                <IonIcon
+                                    icon={
+                                        unsureSet.has(ri.ingredientId) ? helpCircle : helpCircleOutline
+                                    }
+                                />
+                            </button>
+                        )}
                         {ri.storeId !== null && visibleStores.length > 1 && (
                             <IonSelect
                                 className="wizard-store-select"

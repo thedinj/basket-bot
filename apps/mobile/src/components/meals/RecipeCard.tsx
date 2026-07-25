@@ -2,6 +2,7 @@ import type { RecipeWithDetails } from "@basket-bot/core"
 import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonIcon } from "@ionic/react"
 import { cartOutline } from "ionicons/icons"
 import { motion } from "motion/react"
+import { forwardRef } from "react"
 import TagChipList from "./TagChipList"
 
 import "./RecipeCard.scss"
@@ -12,7 +13,7 @@ interface RecipeCardProps {
     onAddToList?: () => void
 }
 
-const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onAddToList }) => {
+const RecipeCard = forwardRef<HTMLDivElement, RecipeCardProps>(({ recipe, onClick, onAddToList }, ref) => {
     const firstTagKey = recipe.tags[0]?.colorKey ?? null
 
     const cardBg = firstTagKey
@@ -23,6 +24,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onAddToList })
 
     return (
         <motion.div
+            ref={ref}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
@@ -85,6 +87,8 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick, onAddToList })
             </IonCard>
         </motion.div>
     )
-}
+})
+
+RecipeCard.displayName = "RecipeCard"
 
 export default RecipeCard

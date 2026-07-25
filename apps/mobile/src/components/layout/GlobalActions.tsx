@@ -86,6 +86,7 @@ export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = fa
             {actions?.map((action) => (
                 <IonButton
                     key={action.id}
+                    className={action.className}
                     onClick={() => handleActionClick(action)}
                     disabled={action.disabled}
                     title={action.title}

@@ -380,12 +380,13 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                         qty: ing.qty,
                         scaledQty: ing.qty != null ? parseFloat((ing.qty * factor).toPrecision(4)) : null,
                         unitId: ing.unitId ?? null,
+                        isUnsure: routing.unsureSet.has(ing.id),
                     });
                 }
             }
         }
         return result;
-    }, [planData, recipeById, routeMap, defaultStoreId, scaleFactors]);
+    }, [planData, recipeById, routeMap, defaultStoreId, scaleFactors, routing.unsureSet]);
 
     const includedCount = routeIngredients.filter((ri) => ri.storeId !== null).length;
 
@@ -594,6 +595,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
             : null;
         const storeId = preferred ?? visibleStores[0]?.id ?? null;
         const newMap = new Map<string, string | null>();
+        const newUnsureSet = new Set<string>();
 
         for (const slot of planData.slots) {
             if (!slot.pickedRecipeId) continue;
@@ -604,11 +606,12 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                     const existing = planData.routes.find((r) => r.ingredientId === ing.id);
                     // Existing explicit routes keep their store; new items default to the sentinel
                     newMap.set(ing.id, existing?.storeId ?? DEFAULT_STORE);
+                    if (existing?.isUnsure) newUnsureSet.add(ing.id);
                 }
             }
         }
 
-        routing.init(newMap, storeId);
+        routing.init(newMap, storeId, newUnsureSet);
         setStep(3);
     };
 
@@ -621,6 +624,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                 storeId: ri.storeId,
                 overridden: false,
                 checked: false,
+                isUnsure: ri.isUnsure,
             }));
             await updateRoutesMut.mutateAsync({ planId, routes });
             setStep(4);
@@ -863,6 +867,8 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                             setRouteMap={setRouteMap}
                             defaultStoreId={defaultStoreId}
                             setDefaultStoreId={routing.setDefaultStoreId}
+                            unsureSet={routing.unsureSet}
+                            onToggleUnsure={routing.toggleUnsure}
                             visibleStores={visibleStores}
                             recipeCount={pickedRecipes.length}
                             unitMap={unitMap}

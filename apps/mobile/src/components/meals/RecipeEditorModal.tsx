@@ -98,6 +98,7 @@ interface RecipeEditorModalProps {
     isOpen: boolean;
     onDismiss: () => void;
     onDeleted?: () => void;
+    onCreated?: (recipeId: string) => void;
     recipeId?: string;
     householdId: string | null;
     initialData?: RecipeInitialData;
@@ -107,6 +108,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
     isOpen,
     onDismiss,
     onDeleted,
+    onCreated,
     recipeId,
     householdId,
     initialData,
@@ -385,6 +387,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
             }
 
             onDismiss();
+            if (isNew) onCreated?.(savedId);
         } catch (e) {
             showError(`Failed to save: ${e instanceof Error ? e.message : "Unknown error"}`);
         } finally {
@@ -514,7 +517,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                         className={`recipe-editor-tag-btn${selectedTagIds.has(tag.id) ? " selected" : ""}`}
                                         onClick={() => toggleTag(tag.id)}
                                     >
-                                        <TagChip tag={tag} />
+                                        <TagChip tag={tag} size="md" />
                                     </button>
                                 ))}
                             </div>

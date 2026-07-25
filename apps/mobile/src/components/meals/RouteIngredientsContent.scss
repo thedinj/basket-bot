@@ -14,3 +14,34 @@
     opacity: 0.7;
     letter-spacing: 0.01em;
 }
+
+// Unsure toggle: mirrors the amber "unsure" treatment used on the shopping list itself
+.route-unsure-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    margin-right: 4px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ion-color-step-500, #a0aec0);
+    font-size: 18px;
+    line-height: 0;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease,
+        transform 0.15s ease;
+
+    &:active {
+        transform: scale(0.9);
+    }
+
+    &--active {
+        color: var(--ion-color-warning);
+        background: color-mix(in srgb, var(--ion-color-warning) 16%, transparent);
+    }
+}

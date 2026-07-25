@@ -166,6 +166,7 @@ export const addRecipeToShoppingListRequestSchema = z.object({
             z.object({
                 ingredientId: z.string().uuid(),
                 storeId: z.string().uuid(),
+                isUnsure: z.boolean().nullable().optional(),
             })
         )
         .min(1, "At least one ingredient route must be provided"),
