@@ -1,4 +1,5 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeEntityService from "@/lib/services/storeEntityService";
 import { NextResponse } from "next/server";
 
@@ -19,18 +20,8 @@ async function handleGet(
         }
 
         return NextResponse.json({ section });
-    } catch (error: any) {
-        console.error("GET /api/stores/[storeId]/sections/[sectionId] error:", error);
-        if (error.message === "Access denied") {
-            return NextResponse.json(
-                { code: "ACCESS_DENIED", message: "Access denied" },
-                { status: 403 }
-            );
-        }
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Internal server error" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 }
 
@@ -82,27 +73,8 @@ async function handlePut(
         }
 
         return NextResponse.json({ section });
-    } catch (error: any) {
-        console.error("PUT /api/stores/[storeId]/sections/[sectionId] error:", error);
-        if (error.message === "Access denied") {
-            return NextResponse.json(
-                { code: "ACCESS_DENIED", message: "Access denied" },
-                { status: 403 }
-            );
-        }
-        if (error.message?.startsWith("SECTION_NAME_CONFLICT")) {
-            return NextResponse.json(
-                {
-                    code: "SECTION_NAME_CONFLICT",
-                    message: error.message.replace("SECTION_NAME_CONFLICT: ", ""),
-                },
-                { status: 409 }
-            );
-        }
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Internal server error" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 }
 
@@ -145,27 +117,8 @@ async function handlePatch(
         }
 
         return NextResponse.json({ section });
-    } catch (error: any) {
-        console.error("PATCH /api/stores/[storeId]/sections/[sectionId] error:", error);
-        if (error.message === "Access denied") {
-            return NextResponse.json(
-                { code: "ACCESS_DENIED", message: "Access denied" },
-                { status: 403 }
-            );
-        }
-        if (error.message?.startsWith("SECTION_NAME_CONFLICT")) {
-            return NextResponse.json(
-                {
-                    code: "SECTION_NAME_CONFLICT",
-                    message: error.message.replace("SECTION_NAME_CONFLICT: ", ""),
-                },
-                { status: 409 }
-            );
-        }
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Internal server error" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 }
 
@@ -177,18 +130,8 @@ async function handleDelete(
         const { storeId, sectionId } = await params;
         storeEntityService.deleteSection(sectionId, storeId, req.auth.sub);
         return NextResponse.json({ success: true });
-    } catch (error: any) {
-        console.error("DELETE /api/stores/[storeId]/sections/[sectionId] error:", error);
-        if (error.message === "Access denied") {
-            return NextResponse.json(
-                { code: "ACCESS_DENIED", message: "Access denied" },
-                { status: 403 }
-            );
-        }
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Internal server error" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 }
 

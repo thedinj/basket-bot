@@ -1,6 +1,9 @@
 import LoadingFallback from "@/components/LoadingFallback";
 import { ApiError } from "@/lib/api/client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { clientErrorLog } from "@/lib/clientErrorLog";
+import { showImperativeToast } from "@/lib/imperativeToast";
+import { formatErrorMessage, isErrorHandled, shouldQueueError } from "@/utils/errorUtils";
+import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React, { PropsWithChildren, useEffect, useState } from "react";
 import { DatabaseContext, type DatabaseContextValue } from "./context";
 import { Database, getDatabase } from "./database";
@@ -12,8 +15,41 @@ import { Database, getDatabase } from "./database";
  * Create QueryClient instance with default options
  * Optimized for mobile with longer cache times and better retry logic
  * Exported for external access (e.g., mutation queue processing)
+ *
+ * All mutation errors are handled centrally here (MutationCache.onError) rather
+ * than per-hook, so no mutation can silently fail to show feedback and no
+ * mutation can double-toast by also defining its own onError.
  */
 export const queryClient = new QueryClient({
+    mutationCache: new MutationCache({
+        onError: (error, _variables, _context, mutation) => {
+            const operation = mutation.options.meta?.operation as string | undefined;
+            const endpoint = error instanceof ApiError ? error.endpoint : undefined;
+
+            // Mutations that already gave the user specific feedback (an inline form
+            // error, a silent cache refresh after a 404) mark the error handled so we
+            // don't also show a generic toast for the same failure.
+            if (!isErrorHandled(error)) {
+                if (shouldQueueError(error)) {
+                    showImperativeToast(
+                        "No connection. This change will sync automatically once reconnected.",
+                        "warning"
+                    );
+                } else {
+                    showImperativeToast(formatErrorMessage(error, operation), "error");
+                }
+            }
+
+            clientErrorLog.record({
+                operation,
+                endpoint,
+                message: error instanceof Error ? error.message : String(error),
+                code: error instanceof ApiError ? error.code : undefined,
+                status: error instanceof ApiError ? error.status : undefined,
+                requestId: error instanceof ApiError ? error.requestId : undefined,
+            });
+        },
+    }),
     defaultOptions: {
         queries: {
             staleTime: 2 * 60 * 1000, // 2 minutes - reduce unnecessary refetches

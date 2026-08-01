@@ -8,6 +8,7 @@ import type {
     StoreItemWithDetails,
     StoreSection,
 } from "@basket-bot/core";
+import { AuthorizationError, ConflictError } from "@basket-bot/core";
 import * as aisleRepo from "../repos/aisleRepo";
 import * as itemRepo from "../repos/itemRepo";
 import * as sectionRepo from "../repos/sectionRepo";
@@ -22,7 +23,9 @@ import * as storeRepo from "../repos/storeRepo";
 
 function verifyStoreAccess(storeId: string, userId: string): void {
     if (!storeRepo.userHasAccessToStore(userId, storeId)) {
-        throw new Error("Access denied");
+        // Message text kept identical to the previous plain Error so routes that
+        // still string-match `error.message === "Access denied"` keep working.
+        throw new AuthorizationError("Access denied");
     }
 }
 
@@ -34,8 +37,9 @@ export function createAisle(params: { storeId: string; name: string; userId: str
     const nameNorm = normalizeItemName(params.name);
     const conflict = aisleRepo.findAisleByNameNorm(params.storeId, nameNorm, "");
     if (conflict) {
-        throw new Error(
-            `AISLE_NAME_CONFLICT: An aisle named "${conflict.name}" already exists in this store.`
+        throw new ConflictError(
+            `An aisle named "${conflict.name}" already exists in this store.`,
+            "AISLE_NAME_CONFLICT"
         );
     }
 
@@ -65,8 +69,9 @@ export function updateAisle(params: {
     const nameNorm = normalizeItemName(params.name);
     const conflict = aisleRepo.findAisleByNameNorm(params.storeId, nameNorm, params.id);
     if (conflict) {
-        throw new Error(
-            `AISLE_NAME_CONFLICT: An aisle named "${conflict.name}" already exists in this store.`
+        throw new ConflictError(
+            `An aisle named "${conflict.name}" already exists in this store.`,
+            "AISLE_NAME_CONFLICT"
         );
     }
 
@@ -119,8 +124,9 @@ export function createSection(params: {
     const nameNorm = normalizeItemName(params.name);
     const conflict = sectionRepo.findSectionByNameNorm(params.storeId, params.aisleId, nameNorm, "");
     if (conflict) {
-        throw new Error(
-            `SECTION_NAME_CONFLICT: A section named "${conflict.name}" already exists in this aisle.`
+        throw new ConflictError(
+            `A section named "${conflict.name}" already exists in this aisle.`,
+            "SECTION_NAME_CONFLICT"
         );
     }
 
@@ -155,8 +161,9 @@ export function updateSection(params: {
         const aisleId = params.aisleId ?? existing?.aisleId ?? "";
         const conflict = sectionRepo.findSectionByNameNorm(params.storeId, aisleId, nameNorm, params.id);
         if (conflict) {
-            throw new Error(
-                `SECTION_NAME_CONFLICT: A section named "${conflict.name}" already exists in this aisle.`
+            throw new ConflictError(
+                `A section named "${conflict.name}" already exists in this aisle.`,
+                "SECTION_NAME_CONFLICT"
             );
         }
     }
@@ -187,8 +194,9 @@ export function updateSectionLocation(params: {
             params.id
         );
         if (conflict) {
-            throw new Error(
-                `SECTION_NAME_CONFLICT: A section named "${conflict.name}" already exists in this aisle.`
+            throw new ConflictError(
+                `A section named "${conflict.name}" already exists in this aisle.`,
+                "SECTION_NAME_CONFLICT"
             );
         }
     }
@@ -261,7 +269,10 @@ export function updateItem(params: {
     const nameNorm = normalizeItemName(params.name);
     const conflict = itemRepo.findItemByNameNorm(params.storeId, nameNorm, params.id);
     if (conflict) {
-        throw new Error(`ITEM_NAME_CONFLICT: An item named "${conflict.name}" already exists in this store.`);
+        throw new ConflictError(
+            `An item named "${conflict.name}" already exists in this store.`,
+            "ITEM_NAME_CONFLICT"
+        );
     }
 
     return itemRepo.updateItem({

@@ -1,4 +1,5 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeEntityService from "@/lib/services/storeEntityService";
 import { NextResponse } from "next/server";
 
@@ -22,18 +23,8 @@ async function handleGet(
         const items = storeEntityService.searchStoreItems(storeId, q, req.auth.sub, limit);
 
         return NextResponse.json({ items });
-    } catch (error: any) {
-        console.error("GET /api/stores/[storeId]/items/search error:", error);
-        if (error.message === "Access denied") {
-            return NextResponse.json(
-                { code: "ACCESS_DENIED", message: "Access denied" },
-                { status: 403 }
-            );
-        }
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Internal server error" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 }
 

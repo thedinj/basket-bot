@@ -1,12 +1,8 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth"
-import * as householdRepo from "@/lib/repos/householdRepo"
-import * as recipeRepo from "@/lib/repos/recipeRepo"
+import { toErrorResponse } from "@/lib/errors/handleRouteError"
+import * as recipeService from "@/lib/services/recipeService"
 import { updateRecipeRequestSchema } from "@basket-bot/core"
 import { NextResponse } from "next/server"
-
-function assertAccess(householdId: string, userId: string) {
-    if (!householdRepo.userIsMember(householdId, userId)) throw new Error("Access denied")
-}
 
 async function handleGet(
     req: AuthenticatedRequest,
@@ -14,18 +10,10 @@ async function handleGet(
 ) {
     try {
         const { householdId, recipeId } = await params
-        assertAccess(householdId, req.auth.sub)
-        const recipe = recipeRepo.getRecipeWithDetails(recipeId)
-        if (!recipe || recipe.householdId !== householdId) {
-            return NextResponse.json({ code: "RECIPE_NOT_FOUND", message: "Recipe not found" }, { status: 404 })
-        }
+        const recipe = recipeService.getRecipe(householdId, recipeId, req.auth.sub)
         return NextResponse.json({ recipe })
-    } catch (error: any) {
-        if (error.message === "Access denied") {
-            return NextResponse.json({ code: "ACCESS_DENIED", message: "Access denied" }, { status: 403 })
-        }
-        console.error("Get recipe error:", error)
-        return NextResponse.json({ code: "INTERNAL_ERROR", message: "Internal server error" }, { status: 500 })
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub })
     }
 }
 
@@ -35,21 +23,12 @@ async function handlePatch(
 ) {
     try {
         const { householdId, recipeId } = await params
-        assertAccess(householdId, req.auth.sub)
-        const existing = recipeRepo.getRecipeById(recipeId)
-        if (!existing || existing.householdId !== householdId) {
-            return NextResponse.json({ code: "RECIPE_NOT_FOUND", message: "Recipe not found" }, { status: 404 })
-        }
         const body = await req.json()
         const data = updateRecipeRequestSchema.parse(body)
-        const recipe = recipeRepo.updateRecipe({ id: recipeId, ...data, updatedById: req.auth.sub })
+        const recipe = recipeService.updateRecipe(householdId, recipeId, data, req.auth.sub)
         return NextResponse.json({ recipe })
-    } catch (error: any) {
-        if (error.message === "Access denied") {
-            return NextResponse.json({ code: "ACCESS_DENIED", message: "Access denied" }, { status: 403 })
-        }
-        console.error("Update recipe error:", error)
-        return NextResponse.json({ code: "INTERNAL_ERROR", message: "Internal server error" }, { status: 500 })
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub })
     }
 }
 
@@ -59,19 +38,10 @@ async function handleDelete(
 ) {
     try {
         const { householdId, recipeId } = await params
-        assertAccess(householdId, req.auth.sub)
-        const existing = recipeRepo.getRecipeById(recipeId)
-        if (!existing || existing.householdId !== householdId) {
-            return NextResponse.json({ code: "RECIPE_NOT_FOUND", message: "Recipe not found" }, { status: 404 })
-        }
-        recipeRepo.deleteRecipe(recipeId)
+        recipeService.deleteRecipe(householdId, recipeId, req.auth.sub)
         return NextResponse.json({ success: true })
-    } catch (error: any) {
-        if (error.message === "Access denied") {
-            return NextResponse.json({ code: "ACCESS_DENIED", message: "Access denied" }, { status: 403 })
-        }
-        console.error("Delete recipe error:", error)
-        return NextResponse.json({ code: "INTERNAL_ERROR", message: "Internal server error" }, { status: 500 })
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub })
     }
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useAdminSession } from "@/lib/admin/useAdminSession";
+import { parseSqliteTimestamp } from "@/lib/utils/sqliteUtils";
 import type { AppSetting } from "@basket-bot/core";
 import {
     Button,
@@ -117,9 +118,14 @@ const AdminDashboardPage: React.FC = () => {
 
             <Group justify="space-between" mb="xl">
                 <Title order={1}>Admin Dashboard</Title>
-                <Button variant="outline" onClick={logout}>
-                    Logout
-                </Button>
+                <Group>
+                    <Button component={Link} href="/admin/error-logs" variant="outline">
+                        Error Logs
+                    </Button>
+                    <Button variant="outline" onClick={logout}>
+                        Logout
+                    </Button>
+                </Group>
             </Group>
 
             {/* Statistics */}
@@ -225,7 +231,7 @@ const AdminDashboardPage: React.FC = () => {
                                 </Table.Td>
                                 <Table.Td>
                                     <Text size="sm" c="dimmed">
-                                        {new Date(setting.updatedAt).toLocaleString()}
+                                        {parseSqliteTimestamp(setting.updatedAt).toLocaleString()}
                                     </Text>
                                 </Table.Td>
                                 <Table.Td>

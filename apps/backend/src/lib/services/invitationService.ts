@@ -1,4 +1,5 @@
 import type { HouseholdInvitation, InvitationDetail } from "@basket-bot/core";
+import { AuthorizationError, ConflictError, NotFoundError } from "@basket-bot/core";
 import * as householdRepo from "../repos/householdRepo";
 import * as invitationRepo from "../repos/invitationRepo";
 
@@ -14,17 +15,17 @@ export function createInvitation(
     // Verify household exists
     const household = householdRepo.getHouseholdById(householdId);
     if (!household) {
-        throw new Error("NOT_FOUND: Household not found");
+        throw new NotFoundError("Household not found");
     }
 
     // Verify inviter is a member
     if (!householdRepo.userIsMember(householdId, invitedById)) {
-        throw new Error("FORBIDDEN: User is not a member of this household");
+        throw new AuthorizationError("User is not a member of this household");
     }
 
     // Check if email is already invited or is already a member
     if (invitationRepo.isEmailInvitedOrMember(householdId, invitedEmail)) {
-        throw new Error("CONFLICT: This email is already a member or has a pending invitation");
+        throw new ConflictError("This email is already a member or has a pending invitation");
     }
 
     return invitationRepo.createInvitation({
@@ -48,16 +49,16 @@ export function acceptInvitation(token: string, userId: string, userEmail: strin
     const invitation = invitationRepo.getInvitationByToken(token);
 
     if (!invitation) {
-        throw new Error("NOT_FOUND: Invitation not found");
+        throw new NotFoundError("Invitation not found");
     }
 
     if (invitation.status !== "pending") {
-        throw new Error("CONFLICT: Invitation has already been processed");
+        throw new ConflictError("Invitation has already been processed");
     }
 
     // Verify the invitation is for this user's email (case-insensitive)
     if (invitation.invitedEmail.toLowerCase() !== userEmail.toLowerCase()) {
-        throw new Error("FORBIDDEN: This invitation is not for your email address");
+        throw new AuthorizationError("This invitation is not for your email address");
     }
 
     // Check if user is already a member (edge case)
@@ -89,16 +90,16 @@ export function declineInvitation(token: string, userEmail: string): void {
     const invitation = invitationRepo.getInvitationByToken(token);
 
     if (!invitation) {
-        throw new Error("NOT_FOUND: Invitation not found");
+        throw new NotFoundError("Invitation not found");
     }
 
     if (invitation.status !== "pending") {
-        throw new Error("CONFLICT: Invitation has already been processed");
+        throw new ConflictError("Invitation has already been processed");
     }
 
     // Verify the invitation is for this user's email (case-insensitive)
     if (invitation.invitedEmail.toLowerCase() !== userEmail.toLowerCase()) {
-        throw new Error("FORBIDDEN: This invitation is not for your email address");
+        throw new AuthorizationError("This invitation is not for your email address");
     }
 
     // Delete invitation when declined
@@ -111,12 +112,12 @@ export function declineInvitation(token: string, userEmail: string): void {
 export function deleteInvitation(invitationId: string, householdId: string, userId: string): void {
     // Verify user has permission
     if (!householdRepo.userIsMember(householdId, userId)) {
-        throw new Error("FORBIDDEN: User is not a member of this household");
+        throw new AuthorizationError("User is not a member of this household");
     }
 
     const deleted = invitationRepo.deleteInvitation(invitationId);
     if (!deleted) {
-        throw new Error("NOT_FOUND: Invitation not found");
+        throw new NotFoundError("Invitation not found");
     }
 }
 
@@ -129,7 +130,7 @@ export function getHouseholdPendingInvitations(
 ): HouseholdInvitation[] {
     // Verify user is a member
     if (!householdRepo.userIsMember(householdId, userId)) {
-        throw new Error("FORBIDDEN: User is not a member of this household");
+        throw new AuthorizationError("User is not a member of this household");
     }
 
     return invitationRepo.getHouseholdPendingInvitations(householdId);

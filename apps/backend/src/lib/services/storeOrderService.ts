@@ -1,3 +1,4 @@
+import { AuthorizationError } from "@basket-bot/core";
 import * as storeRepo from "../repos/storeRepo";
 import * as userStoreOrderRepo from "../repos/userStoreOrderRepo";
 
@@ -12,7 +13,7 @@ export function setStoreOrder(params: {
 }): void {
     for (const update of params.updates) {
         if (!storeRepo.userHasAccessToStore(params.userId, update.storeId)) {
-            throw new Error("Access denied");
+            throw new AuthorizationError("Access denied");
         }
     }
 

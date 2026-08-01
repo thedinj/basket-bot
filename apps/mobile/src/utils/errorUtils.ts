@@ -36,16 +36,38 @@ export const formatErrorMessage = (error: unknown, operation?: string): string =
         }
 
         // Validation or business logic errors (use server message)
-        return error.message;
+        return operation ? `Failed to ${operation}: ${error.message}` : error.message;
     }
 
     // Generic error fallback
     if (error instanceof Error) {
-        return error.message;
+        return operation ? `Failed to ${operation}: ${error.message}` : error.message;
     }
 
     // Unknown error type
     return operation ? `Failed to ${operation}` : "An unexpected error occurred";
+};
+
+/**
+ * Marker used by mutation hooks that already gave the user specific feedback
+ * for an error (e.g. an inline form field message, or a silent cache refresh
+ * after a 404) so the global MutationCache error handler doesn't also show a
+ * generic toast for the same failure.
+ */
+const HANDLED_FLAG = Symbol("errorHandled");
+
+export const markErrorHandled = (error: unknown): void => {
+    if (error && typeof error === "object") {
+        (error as Record<PropertyKey, unknown>)[HANDLED_FLAG] = true;
+    }
+};
+
+export const isErrorHandled = (error: unknown): boolean => {
+    return !!(
+        error &&
+        typeof error === "object" &&
+        (error as Record<PropertyKey, unknown>)[HANDLED_FLAG]
+    );
 };
 
 /**

@@ -1,4 +1,5 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeService from "@/lib/services/storeService";
 import { createStoreRequestSchema } from "@basket-bot/core";
 import { NextResponse } from "next/server";
@@ -12,12 +13,8 @@ async function handleGet(req: AuthenticatedRequest) {
         const stores = storeService.getStoresByUser(req.auth.sub);
 
         return NextResponse.json({ stores });
-    } catch (error: any) {
-        console.error("Get stores error:", error);
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: error.message || "Internal server error" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 }
 
@@ -36,12 +33,8 @@ async function handlePost(req: AuthenticatedRequest) {
         });
 
         return NextResponse.json({ store }, { status: 201 });
-    } catch (error: any) {
-        console.error("Create store error:", error);
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: error.message || "Internal server error" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 }
 

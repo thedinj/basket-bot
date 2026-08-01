@@ -1,10 +1,11 @@
-import { withAuth } from "@/lib/auth/withAuth";
+import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
 import { db } from "@/lib/db/db";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import { getAllUsers } from "@/lib/repos/userRepo";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 export const GET = withAuth(
-    async (req: NextRequest, { params }: { params: Promise<Record<string, string>> }) => {
+    async (req: AuthenticatedRequest, { params }: { params: Promise<Record<string, string>> }) => {
         try {
             const resolvedParams = await params;
             const type = resolvedParams.type;
@@ -75,11 +76,7 @@ export const GET = withAuth(
 
             return NextResponse.json({ data, columns, type });
         } catch (error) {
-            console.error("Error fetching data:", error);
-            return NextResponse.json(
-                { code: "INTERNAL_ERROR", message: "Failed to fetch data" },
-                { status: 500 }
-            );
+            return toErrorResponse(error, req, { userId: req.auth.sub });
         }
     },
     { requireScopes: ["admin"] }

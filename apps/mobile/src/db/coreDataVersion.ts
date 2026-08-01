@@ -5,12 +5,11 @@ import { queryKeys } from "./queryKeys";
 const CORE_DATA_VERSION_KEY = "coreDataVersion";
 
 /**
- * Get the current app version from package.json
- * In production, this should be read from the build process
+ * Get the current app version, stamped from package.json at build time
+ * (see the `define` block in vite.config.ts).
  */
 const getAppVersion = (): string => {
-    // This will be replaced by the build process with the actual version
-    return "0.0.1";
+    return import.meta.env.VITE_APP_VERSION ?? "0.0.1";
 };
 
 /**

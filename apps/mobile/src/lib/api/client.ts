@@ -29,6 +29,13 @@ const DEFAULT_API_BASE_URL = (() => {
 })();
 
 /**
+ * Shape of the `details` field on a 429 RATE_LIMIT_EXCEEDED error response.
+ */
+export interface RateLimitErrorDetails {
+    retryAfter: number;
+}
+
+/**
  * Custom error class that includes response metadata like token status
  */
 export class ApiError extends Error {
@@ -37,7 +44,10 @@ export class ApiError extends Error {
         public code?: string,
         public tokenStatus?: string | null,
         public status?: number,
-        public isNetworkError: boolean = false
+        public isNetworkError: boolean = false,
+        public requestId?: string | null,
+        public endpoint?: string,
+        public details?: unknown
     ) {
         super(message);
         this.name = "ApiError";
@@ -185,7 +195,9 @@ export class ApiClient {
                     "TIMEOUT",
                     null,
                     408,
-                    true
+                    true,
+                    null,
+                    endpoint
                 );
             }
             if (error instanceof TypeError && error.message.includes("fetch")) {
@@ -194,7 +206,9 @@ export class ApiClient {
                     "NETWORK_ERROR",
                     null,
                     undefined,
-                    true
+                    true,
+                    null,
+                    endpoint
                 );
             }
             throw error;
@@ -283,12 +297,16 @@ export class ApiClient {
                 code: "UNKNOWN_ERROR",
                 message: "An unknown error occurred",
             }));
+            const requestId = responseToUse.headers.get("X-Request-Id") ?? error.requestId ?? null;
             throw new ApiError(
                 error.message || "Request failed",
                 error.code || "UNKNOWN_ERROR",
                 tokenStatus,
                 responseToUse.status,
-                false
+                false,
+                requestId,
+                endpoint,
+                error.details
             );
         }
 

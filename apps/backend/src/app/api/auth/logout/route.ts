@@ -1,5 +1,6 @@
 import { withAuth } from "@/lib/auth/withAuth";
 import { db } from "@/lib/db/db";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -24,16 +25,6 @@ export const POST = withAuth(async (req) => {
 
         return NextResponse.json({ message: "Logged out successfully" });
     } catch (error) {
-        if (error instanceof z.ZodError) {
-            return NextResponse.json(
-                { code: "VALIDATION_ERROR", message: "Invalid request body" },
-                { status: 400 }
-            );
-        }
-
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Failed to logout" },
-            { status: 500 }
-        );
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 });

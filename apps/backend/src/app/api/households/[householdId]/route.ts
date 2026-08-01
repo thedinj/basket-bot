@@ -1,4 +1,5 @@
 import { withAuth, type AuthenticatedRequest } from "@/lib/auth/withAuth";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as householdService from "@/lib/services/householdService";
 import { updateHouseholdRequestSchema } from "@basket-bot/core";
 import { NextResponse } from "next/server";
@@ -13,27 +14,8 @@ export const GET = withAuth(async (req: AuthenticatedRequest, context) => {
         const household = householdService.getHouseholdWithMembers(householdId, req.auth.sub);
 
         return NextResponse.json({ household }, { status: 200 });
-    } catch (error: any) {
-        console.error("Error getting household:", error);
-
-        if (error.message?.startsWith("FORBIDDEN")) {
-            return NextResponse.json(
-                { code: "FORBIDDEN", message: error.message.replace("FORBIDDEN: ", "") },
-                { status: 403 }
-            );
-        }
-
-        if (error.message?.startsWith("NOT_FOUND")) {
-            return NextResponse.json(
-                { code: "NOT_FOUND", message: error.message.replace("NOT_FOUND: ", "") },
-                { status: 404 }
-            );
-        }
-
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Failed to get household" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 });
 
@@ -57,38 +39,8 @@ export const PUT = withAuth(async (req: AuthenticatedRequest, context) => {
         const household = householdService.updateHousehold(householdId, name, req.auth.sub);
 
         return NextResponse.json({ household }, { status: 200 });
-    } catch (error: any) {
-        console.error("Error updating household:", error);
-
-        if (error.name === "ZodError") {
-            return NextResponse.json(
-                {
-                    code: "VALIDATION_ERROR",
-                    message: "Invalid request data",
-                    details: error.errors,
-                },
-                { status: 400 }
-            );
-        }
-
-        if (error.message?.startsWith("FORBIDDEN")) {
-            return NextResponse.json(
-                { code: "FORBIDDEN", message: error.message.replace("FORBIDDEN: ", "") },
-                { status: 403 }
-            );
-        }
-
-        if (error.message?.startsWith("NOT_FOUND")) {
-            return NextResponse.json(
-                { code: "NOT_FOUND", message: error.message.replace("NOT_FOUND: ", "") },
-                { status: 404 }
-            );
-        }
-
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Failed to update household" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 });
 
@@ -102,26 +54,7 @@ export const DELETE = withAuth(async (req: AuthenticatedRequest, context) => {
         householdService.deleteHousehold(householdId, req.auth.sub);
 
         return NextResponse.json({ success: true }, { status: 200 });
-    } catch (error: any) {
-        console.error("Error deleting household:", error);
-
-        if (error.message?.startsWith("FORBIDDEN")) {
-            return NextResponse.json(
-                { code: "FORBIDDEN", message: error.message.replace("FORBIDDEN: ", "") },
-                { status: 403 }
-            );
-        }
-
-        if (error.message?.startsWith("NOT_FOUND")) {
-            return NextResponse.json(
-                { code: "NOT_FOUND", message: error.message.replace("NOT_FOUND: ", "") },
-                { status: 404 }
-            );
-        }
-
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Failed to delete household" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 });

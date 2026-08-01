@@ -125,7 +125,7 @@ export function upsertShoppingListItem(params: {
             .get(params.id) as ShoppingListItem | undefined;
 
         if (!existing) {
-            throw new Error(`Shopping list item ${params.id} not found`);
+            throw new NotFoundError(`Shopping list item ${params.id} not found`);
         }
 
         // Compute checkedAt, checkedBy, and checkedUpdatedAt based on state change

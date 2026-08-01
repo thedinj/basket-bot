@@ -1,4 +1,5 @@
 import type { Store } from "@basket-bot/core";
+import { AppError } from "@basket-bot/core";
 import { db } from "../db/db";
 import { boolToInt, intToBool } from "../utils/sqliteUtils";
 import { normalizeItemName } from "../utils/stringUtils";
@@ -182,7 +183,8 @@ export function duplicateStore(params: {
 
             // Fail explicitly if aisle mapping is missing (data integrity issue)
             if (!newAisleId) {
-                throw new Error(
+                throw new AppError(
+                    "DATA_INTEGRITY_ERROR",
                     `Failed to map aisle ID ${section.aisleId} for section "${section.name}". Data integrity issue.`
                 );
             }
@@ -233,7 +235,8 @@ export function duplicateStore(params: {
                 if (item.sectionId) {
                     newSectionId = sectionIdMap.get(item.sectionId) ?? null;
                     if (!newSectionId) {
-                        throw new Error(
+                        throw new AppError(
+                            "DATA_INTEGRITY_ERROR",
                             `Failed to map section ID ${item.sectionId} for item "${item.name}". Data integrity issue.`
                         );
                     }
@@ -242,7 +245,8 @@ export function duplicateStore(params: {
                 } else if (item.aisleId) {
                     newAisleId = aisleIdMap.get(item.aisleId) ?? null;
                     if (!newAisleId) {
-                        throw new Error(
+                        throw new AppError(
+                            "DATA_INTEGRITY_ERROR",
                             `Failed to map aisle ID ${item.aisleId} for item "${item.name}". Data integrity issue.`
                         );
                     }

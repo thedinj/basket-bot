@@ -1,4 +1,5 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeEntityService from "@/lib/services/storeEntityService";
 import { NextResponse } from "next/server";
 
@@ -10,18 +11,8 @@ async function handleGet(
         const { storeId } = await params;
         const aisles = storeEntityService.getAislesByStore(storeId, req.auth.sub);
         return NextResponse.json({ aisles });
-    } catch (error: any) {
-        console.error("GET /api/stores/[storeId]/aisles error:", error);
-        if (error.message === "Access denied") {
-            return NextResponse.json(
-                { code: "ACCESS_DENIED", message: "Access denied" },
-                { status: 403 }
-            );
-        }
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Internal server error" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 }
 
@@ -43,27 +34,8 @@ async function handlePost(
 
         const aisle = storeEntityService.createAisle({ storeId, name, userId: req.auth.sub });
         return NextResponse.json({ aisle }, { status: 201 });
-    } catch (error: any) {
-        console.error("POST /api/stores/[storeId]/aisles error:", error);
-        if (error.message === "Access denied") {
-            return NextResponse.json(
-                { code: "ACCESS_DENIED", message: "Access denied" },
-                { status: 403 }
-            );
-        }
-        if (error.message?.startsWith("AISLE_NAME_CONFLICT")) {
-            return NextResponse.json(
-                {
-                    code: "AISLE_NAME_CONFLICT",
-                    message: error.message.replace("AISLE_NAME_CONFLICT: ", ""),
-                },
-                { status: 409 }
-            );
-        }
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Internal server error" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 }
 

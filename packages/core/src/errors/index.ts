@@ -38,8 +38,8 @@ export class NotFoundError extends AppError {
 }
 
 export class ConflictError extends AppError {
-    constructor(message = "Resource conflict") {
-        super("CONFLICT", message);
+    constructor(message = "Resource conflict", code = "CONFLICT") {
+        super(code, message);
         this.name = "ConflictError";
     }
 }

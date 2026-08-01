@@ -1,6 +1,7 @@
 import { hashPassword } from "@/lib/auth/password";
 import { checkRateLimit } from "@/lib/auth/rateLimiter";
 import { db } from "@/lib/db/db";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as referenceRepo from "@/lib/repos/referenceRepo";
 import * as userRepo from "@/lib/repos/userRepo";
 import * as storeService from "@/lib/services/storeService";
@@ -62,12 +63,13 @@ export async function POST(req: NextRequest) {
 
         // Create user
         const userId = randomUUID();
+        const now = new Date().toISOString();
         db.prepare(
             `
             INSERT INTO User (id, email, name, password, scopes, createdAt, updatedAt)
-            VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         `
-        ).run(userId, email, name, hashedPassword, "");
+        ).run(userId, email, name, hashedPassword, "", now, now);
 
         // Create default example store for new user
         storeService.createDefaultStoreForNewUser(userId, name);
@@ -82,10 +84,6 @@ export async function POST(req: NextRequest) {
             { status: 201 }
         );
     } catch (error) {
-        console.error("Registration error:", error);
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Internal server error" },
-            { status: 500 }
-        );
+        return toErrorResponse(error, req);
     }
 }

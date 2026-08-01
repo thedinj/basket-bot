@@ -1,4 +1,5 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth"
+import { toErrorResponse } from "@/lib/errors/handleRouteError"
 import * as planService from "@/lib/services/planService"
 import { dispatchPlanRequestSchema } from "@basket-bot/core"
 import { NextResponse } from "next/server"
@@ -19,18 +20,8 @@ async function handlePost(
         }
         const result = planService.dispatchPlan(householdId, planId, req.auth.sub, parsed.data.scaleFactors)
         return NextResponse.json(result)
-    } catch (error: any) {
-        if (error.message === "Access denied") {
-            return NextResponse.json({ code: "ACCESS_DENIED", message: "Access denied" }, { status: 403 })
-        }
-        if (error.message === "Plan not found") {
-            return NextResponse.json({ code: "PLAN_NOT_FOUND", message: "Plan not found" }, { status: 404 })
-        }
-        if (error.message === "Only draft plans can be dispatched") {
-            return NextResponse.json({ code: "PLAN_NOT_DRAFT", message: error.message }, { status: 409 })
-        }
-        console.error("Dispatch plan error:", error)
-        return NextResponse.json({ code: "INTERNAL_ERROR", message: "Internal server error" }, { status: 500 })
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub })
     }
 }
 

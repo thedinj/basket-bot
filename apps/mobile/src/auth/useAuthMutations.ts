@@ -2,6 +2,7 @@ import type { CreateUserRequest, LoginRequest, LoginResponse } from "@basket-bot
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/db/queryKeys";
 import { apiClient } from "../lib/api/client";
+import { markErrorHandled } from "../utils/errorUtils";
 import { KEYS, secureStorage } from "../utils/secureStorage";
 
 interface LogoutRequest {
@@ -56,6 +57,11 @@ export const useLoginMutation = () => {
             // Clear shopping list caches specifically to prevent cross-session contamination
             queryClient.removeQueries({ queryKey: queryKeys.shoppingListItems.all() });
         },
+        onError: (error) => {
+            // Login.tsx shows a dedicated inline error message - suppress the
+            // global toast so the failure isn't shown twice.
+            markErrorHandled(error);
+        },
     });
 };
 
@@ -68,6 +74,11 @@ export const useRegisterMutation = () => {
         mutationFn: async (userData: CreateUserRequest) => {
             await apiClient.post("/api/auth/register", userData);
             return { email: userData.email, password: userData.password };
+        },
+        onError: (error) => {
+            // Register.tsx shows a dedicated inline error message - suppress the
+            // global toast so the failure isn't shown twice.
+            markErrorHandled(error);
         },
     });
 };

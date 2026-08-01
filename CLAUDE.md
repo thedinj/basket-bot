@@ -76,6 +76,15 @@ lib/auth/             # JWT, password hashing, withAuth() middleware
 
 Route handlers validate input with Zod, call services, and return JSON. Services call repos and enforce authorization. Repos never contain business logic.
 
+**Error handling — every route's `catch` block must call `toErrorResponse(error, req, { userId })`**
+(from `lib/errors/handleRouteError.ts`), never a hand-rolled `NextResponse.json({ code, message }, { status })`.
+Services and repos must throw typed error classes from `@basket-bot/core`
+(`AuthenticationError`, `AuthorizationError`, `NotFoundError`, `ConflictError`, `ValidationError`) instead of
+`new Error("...")` or a string-prefixed message — `toErrorResponse` maps each type to the right HTTP status,
+logs it (console + the `ErrorLog` table, viewable at `/admin/error-logs`), and returns a `requestId` the client
+can round-trip back to you. Full pattern, status-code table, and a migration checklist:
+[`apps/backend/docs/ERROR_HANDLING.md`](apps/backend/docs/ERROR_HANDLING.md).
+
 ### Mobile State Management
 
 - **TanStack Query** for all server state (never local useState for fetched data)
@@ -104,6 +113,32 @@ recipe detail AND `queryKeys.recipes.byHousehold(householdId)`** (the list carri
 ingredient details).
 **Full registry + cascade tables (keep updated in the same change):**
 [`apps/mobile/docs/CACHE_KEYS.md`](apps/mobile/docs/CACHE_KEYS.md).
+
+**Mutation errors are handled centrally — never add a per-hook `onError` toast.** The
+shared `QueryClient` in [`apps/mobile/src/db/DatabaseContext.tsx`](apps/mobile/src/db/DatabaseContext.tsx)
+has a `MutationCache.onError` that shows the toast and records the failure to the local
+`clientErrorLog` (viewable via Settings → tap the version 7×) for every mutation. When
+adding a new `useMutation`/`useTanstackMutation`/`useOptimisticMutation`, just pass
+`meta: { operation: "short description" }` so the global handler can build a specific
+message — do not write your own `onError: (error) => showError(...)`, that produces a
+double toast (the global handler still fires) or, if the mutation has no `onError` at
+all, historically caused *silent* failures instead. If a mutation needs to react to a
+specific error itself (e.g. an inline form field error, or a silent cache refresh on a
+404) instead of the generic toast, call `markErrorHandled(error)` from
+`apps/mobile/src/utils/errorUtils.ts` inside its `onError` to suppress the global toast
+for that error — see `useUpdateItem` (ITEM_NAME_CONFLICT → inline field error) or
+`useToggleItemChecked` (404 → silent refresh) in
+[`apps/mobile/src/db/hooks.ts`](apps/mobile/src/db/hooks.ts) for the pattern.
+
+**Every `IonFab` needs a `FabSpacer`:** a `slot="fixed"` FAB floats over scrollable
+content, so the last row(s) of any list/table it sits on top of become unclickable unless
+the scrollable content has extra bottom clearance. Always render
+[`<FabSpacer />`](apps/mobile/src/components/shared/FabSpacer.tsx) as the last child inside
+`IonContent`, immediately before the `IonFab` element(s), on every page/modal that renders
+a FAB — even if the FAB only appears conditionally (e.g. per-tab or per-segment), the
+`FabSpacer` must render unconditionally for every state that can show that FAB. Do not
+invent ad-hoc padding — reuse `FabSpacer` so clearance stays consistent with the FAB's
+actual size and safe-area handling.
 
 ### Data Hierarchy
 

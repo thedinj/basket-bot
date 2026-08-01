@@ -1,4 +1,5 @@
 import type { Store } from "@basket-bot/core";
+import { AuthorizationError } from "@basket-bot/core";
 import { createDefaultStoreForUser } from "../db/seedDefaults";
 import * as householdRepo from "../repos/householdRepo";
 import * as storeRepo from "../repos/storeRepo";
@@ -50,7 +51,7 @@ export function getStoreById(id: string, userId: string): Store | null {
 
     // Verify user has access
     if (!storeRepo.userHasAccessToStore(userId, id)) {
-        throw new Error("Access denied");
+        throw new AuthorizationError("Access denied");
     }
 
     return store;
@@ -62,7 +63,7 @@ export function getStoreById(id: string, userId: string): Store | null {
 export function updateStore(params: { id: string; name: string; userId: string }): Store | null {
     // Verify user has access
     if (!storeRepo.userHasAccessToStore(params.userId, params.id)) {
-        throw new Error("Access denied");
+        throw new AuthorizationError("Access denied");
     }
 
     return storeRepo.updateStore({
@@ -78,7 +79,7 @@ export function updateStore(params: { id: string; name: string; userId: string }
 export function deleteStore(id: string, userId: string): boolean {
     // Verify user has access
     if (!storeRepo.userHasAccessToStore(userId, id)) {
-        throw new Error("Access denied");
+        throw new AuthorizationError("Access denied");
     }
 
     return storeRepo.deleteStore(id);
@@ -96,7 +97,7 @@ export function duplicateStore(params: {
 }): Store {
     // Verify user has access to source store
     if (!storeRepo.userHasAccessToStore(params.userId, params.sourceStoreId)) {
-        throw new Error("Access denied");
+        throw new AuthorizationError("Access denied");
     }
 
     return storeRepo.duplicateStore({
@@ -124,13 +125,15 @@ export function updateStoreHousehold(params: {
 
     // Verify user has access to the store
     if (!storeRepo.userHasAccessToStore(params.userId, params.storeId)) {
-        throw new Error("Access denied");
+        throw new AuthorizationError("Access denied");
     }
 
     // If setting a householdId, verify user is a member of that household
     if (params.householdId) {
         if (!householdRepo.userIsMember(params.householdId, params.userId)) {
-            throw new Error("You must be a member of the household to share the store with it");
+            throw new AuthorizationError(
+                "You must be a member of the household to share the store with it"
+            );
         }
     }
 
@@ -158,7 +161,7 @@ export function updateStoreVisibility(params: {
 
     // Verify user has access to the store
     if (!storeRepo.userHasAccessToStore(params.userId, params.storeId)) {
-        throw new Error("Access denied");
+        throw new AuthorizationError("Access denied");
     }
 
     return storeRepo.updateStoreVisibility({

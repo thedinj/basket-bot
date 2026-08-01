@@ -1,6 +1,7 @@
 import type { User } from "@basket-bot/core";
 import { hashPassword, verifyPassword } from "../auth/password";
 import { db } from "../db/db";
+import { parseSqliteTimestamp } from "../utils/sqliteUtils";
 
 /**
  * Get user by email (case-insensitive)
@@ -21,8 +22,8 @@ export function getUserByEmail(email: string): User | null {
         email: row.email,
         name: row.name,
         scopes: row.scopes ? row.scopes.split(",").filter(Boolean) : [],
-        createdAt: new Date(row.createdAt),
-        updatedAt: new Date(row.updatedAt),
+        createdAt: parseSqliteTimestamp(row.createdAt),
+        updatedAt: parseSqliteTimestamp(row.updatedAt),
     };
 }
 
@@ -45,8 +46,8 @@ export function getUserById(id: string): User | null {
         email: row.email,
         name: row.name,
         scopes: row.scopes ? row.scopes.split(",").filter(Boolean) : [],
-        createdAt: new Date(row.createdAt),
-        updatedAt: new Date(row.updatedAt),
+        createdAt: parseSqliteTimestamp(row.createdAt),
+        updatedAt: parseSqliteTimestamp(row.updatedAt),
     };
 }
 
@@ -56,9 +57,9 @@ export function getUserById(id: string): User | null {
 export function updateUserProfile(userId: string, name: string): User | null {
     db.prepare(
         `UPDATE User
-         SET name = ?, updatedAt = datetime('now')
+         SET name = ?, updatedAt = ?
          WHERE id = ?`
-    ).run(name, userId);
+    ).run(name, new Date().toISOString(), userId);
 
     return getUserById(userId);
 }
@@ -96,9 +97,9 @@ export async function changeUserPassword(
     // Update password hash
     db.prepare(
         `UPDATE User
-         SET password = ?, updatedAt = datetime('now')
+         SET password = ?, updatedAt = ?
          WHERE id = ?`
-    ).run(newHash, userId);
+    ).run(newHash, new Date().toISOString(), userId);
 
     return true;
 }
@@ -120,7 +121,7 @@ export function getAllUsers(): User[] {
         email: row.email,
         name: row.name,
         scopes: row.scopes ? row.scopes.split(",").filter(Boolean) : [],
-        createdAt: new Date(row.createdAt),
-        updatedAt: new Date(row.updatedAt),
+        createdAt: parseSqliteTimestamp(row.createdAt),
+        updatedAt: parseSqliteTimestamp(row.updatedAt),
     }));
 }

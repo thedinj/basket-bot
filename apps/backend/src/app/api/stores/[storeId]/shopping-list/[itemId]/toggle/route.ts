@@ -1,6 +1,6 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeEntityService from "@/lib/services/storeEntityService";
-import { NotFoundError } from "@basket-bot/core";
 import { NextResponse } from "next/server";
 
 async function handlePost(
@@ -32,24 +32,8 @@ async function handlePost(
             itemName: result.itemName,
             conflictUser: result.conflictUser,
         });
-    } catch (error: any) {
-        console.error("POST /api/stores/[storeId]/shopping-list/[itemId]/toggle error:", error);
-        if (error instanceof NotFoundError) {
-            return NextResponse.json(
-                { code: "ITEM_NOT_FOUND", message: "Shopping list item not found" },
-                { status: 404 }
-            );
-        }
-        if (error.message === "Access denied") {
-            return NextResponse.json(
-                { code: "ACCESS_DENIED", message: "Access denied" },
-                { status: 403 }
-            );
-        }
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Internal server error" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 }
 

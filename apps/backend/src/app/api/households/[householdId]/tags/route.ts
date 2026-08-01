@@ -1,6 +1,6 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth"
-import * as householdRepo from "@/lib/repos/householdRepo"
-import * as recipeTagRepo from "@/lib/repos/recipeTagRepo"
+import { toErrorResponse } from "@/lib/errors/handleRouteError"
+import * as recipeTagService from "@/lib/services/recipeTagService"
 import { createRecipeTagRequestSchema } from "@basket-bot/core"
 import { NextResponse } from "next/server"
 
@@ -10,14 +10,10 @@ async function handleGet(
 ) {
     try {
         const { householdId } = await params
-        if (!householdRepo.userIsMember(householdId, req.auth.sub)) {
-            return NextResponse.json({ code: "ACCESS_DENIED", message: "Access denied" }, { status: 403 })
-        }
-        const tags = recipeTagRepo.getTagsByHousehold(householdId)
+        const tags = recipeTagService.listTags(householdId, req.auth.sub)
         return NextResponse.json({ tags })
     } catch (error) {
-        console.error("List tags error:", error)
-        return NextResponse.json({ code: "INTERNAL_ERROR", message: "Internal server error" }, { status: 500 })
+        return toErrorResponse(error, req, { userId: req.auth.sub })
     }
 }
 
@@ -27,16 +23,12 @@ async function handlePost(
 ) {
     try {
         const { householdId } = await params
-        if (!householdRepo.userIsMember(householdId, req.auth.sub)) {
-            return NextResponse.json({ code: "ACCESS_DENIED", message: "Access denied" }, { status: 403 })
-        }
         const body = await req.json()
         const data = createRecipeTagRequestSchema.parse(body)
-        const tag = recipeTagRepo.createTag({ householdId, ...data, createdById: req.auth.sub })
+        const tag = recipeTagService.createTag(householdId, data, req.auth.sub)
         return NextResponse.json({ tag }, { status: 201 })
     } catch (error) {
-        console.error("Create tag error:", error)
-        return NextResponse.json({ code: "INTERNAL_ERROR", message: "Internal server error" }, { status: 500 })
+        return toErrorResponse(error, req, { userId: req.auth.sub })
     }
 }
 

@@ -1,4 +1,5 @@
 import { withAuth, type AuthenticatedRequest } from "@/lib/auth/withAuth";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as notificationService from "@/lib/services/notificationService";
 import { notificationCountsSchema } from "@basket-bot/core";
 import { NextResponse } from "next/server";
@@ -23,11 +24,7 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
         const validated = notificationCountsSchema.parse(counts);
 
         return NextResponse.json(validated, { status: 200 });
-    } catch (error: any) {
-        console.error("Error getting notification counts:", error);
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Failed to get notification counts" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 });

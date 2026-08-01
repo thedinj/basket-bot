@@ -15,6 +15,8 @@ export function middleware(request: NextRequest) {
 
     // Handle CORS for API routes
     if (request.nextUrl.pathname.startsWith("/api")) {
+        const requestId = crypto.randomUUID();
+
         // Handle preflight OPTIONS request
         if (request.method === "OPTIONS") {
             return new NextResponse(null, {
@@ -24,21 +26,26 @@ export function middleware(request: NextRequest) {
                     "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
                     "Access-Control-Allow-Headers":
                         "Content-Type, Authorization, X-Retry-After-Refresh",
-                    "Access-Control-Expose-Headers": "X-Token-Status",
+                    "Access-Control-Expose-Headers": "X-Token-Status, X-Request-Id",
                     "Access-Control-Max-Age": "86400",
                 },
             });
         }
 
+        // Forward the request ID to route handlers via a request header
+        const forwardedHeaders = new Headers(request.headers);
+        forwardedHeaders.set("x-request-id", requestId);
+
         // Add CORS headers to actual requests
-        const response = NextResponse.next();
+        const response = NextResponse.next({ request: { headers: forwardedHeaders } });
         response.headers.set("Access-Control-Allow-Origin", "*");
         response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
         response.headers.set(
             "Access-Control-Allow-Headers",
             "Content-Type, Authorization, X-Retry-After-Refresh"
         );
-        response.headers.set("Access-Control-Expose-Headers", "X-Token-Status");
+        response.headers.set("Access-Control-Expose-Headers", "X-Token-Status, X-Request-Id");
+        response.headers.set("X-Request-Id", requestId);
 
         // Security headers
         setSecurityHeaders(response, isHttps);

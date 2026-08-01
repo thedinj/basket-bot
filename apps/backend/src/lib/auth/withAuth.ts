@@ -1,5 +1,6 @@
 import { AuthenticationError, AuthorizationError, JwtPayload } from "@basket-bot/core";
 import { NextRequest, NextResponse } from "next/server";
+import { toErrorResponse } from "../errors/handleRouteError";
 import { verifyAccessToken } from "./jwt";
 
 export type AuthenticatedRequest = NextRequest & {
@@ -38,23 +39,15 @@ export function withAuth(handler: RouteHandler, options?: { requireScopes?: stri
 
             return handler(authenticatedReq, context);
         } catch (error) {
-            if (error instanceof AuthenticationError || error instanceof AuthorizationError) {
-                const response = NextResponse.json(
-                    { code: error.code, message: error.message },
-                    { status: error instanceof AuthenticationError ? 401 : 403 }
-                );
+            const userId = (req as AuthenticatedRequest).auth?.sub;
+            const response = toErrorResponse(error, req, { userId });
 
-                // Add header to help client distinguish token failures
-                if (error instanceof AuthenticationError) {
-                    response.headers.set("X-Token-Status", "invalid");
-                }
-
-                return response;
+            // Add header to help client distinguish token failures
+            if (error instanceof AuthenticationError) {
+                response.headers.set("X-Token-Status", "invalid");
             }
-            return NextResponse.json(
-                { code: "INTERNAL_ERROR", message: "Internal server error" },
-                { status: 500 }
-            );
+
+            return response;
         }
     };
 }

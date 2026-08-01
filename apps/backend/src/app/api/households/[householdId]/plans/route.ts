@@ -1,4 +1,5 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth"
+import { toErrorResponse } from "@/lib/errors/handleRouteError"
 import * as planService from "@/lib/services/planService"
 import { createPlanRequestSchema } from "@basket-bot/core"
 import { NextResponse } from "next/server"
@@ -11,12 +12,8 @@ async function handleGet(
         const { householdId } = await params
         const plans = planService.getPlansByHousehold(householdId, req.auth.sub)
         return NextResponse.json({ plans })
-    } catch (error: any) {
-        if (error.message === "Access denied") {
-            return NextResponse.json({ code: "ACCESS_DENIED", message: "Access denied" }, { status: 403 })
-        }
-        console.error("List plans error:", error)
-        return NextResponse.json({ code: "INTERNAL_ERROR", message: "Internal server error" }, { status: 500 })
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub })
     }
 }
 
@@ -30,12 +27,8 @@ async function handlePost(
         const data = createPlanRequestSchema.parse(body)
         const plan = planService.createPlan({ householdId, slotCount: data.slotCount, userId: req.auth.sub })
         return NextResponse.json({ plan }, { status: 201 })
-    } catch (error: any) {
-        if (error.message === "Access denied") {
-            return NextResponse.json({ code: "ACCESS_DENIED", message: "Access denied" }, { status: 403 })
-        }
-        console.error("Create plan error:", error)
-        return NextResponse.json({ code: "INTERNAL_ERROR", message: "Internal server error" }, { status: 500 })
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub })
     }
 }
 

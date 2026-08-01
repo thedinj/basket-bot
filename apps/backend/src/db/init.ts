@@ -315,7 +315,28 @@ export function initializeDatabase() {
             UNIQUE ("userId", "storeId")
         );
 
+        -- ErrorLog table
+        CREATE TABLE IF NOT EXISTS "ErrorLog" (
+            "id" TEXT NOT NULL PRIMARY KEY,
+            "requestId" TEXT NOT NULL CHECK(length("requestId") <= 100),
+            "userId" TEXT,
+            "route" TEXT NOT NULL CHECK(length("route") <= 255),
+            "method" TEXT NOT NULL CHECK(length("method") <= 10),
+            "statusCode" INTEGER NOT NULL,
+            "code" TEXT NOT NULL CHECK(length("code") <= 100),
+            "message" TEXT NOT NULL CHECK(length("message") <= 1000),
+            "stack" TEXT CHECK("stack" IS NULL OR length("stack") <= 4000),
+            "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE SET NULL
+        );
+
         -- Indexes
+        CREATE INDEX IF NOT EXISTS "ErrorLog_createdAt_idx"
+            ON "ErrorLog"("createdAt" DESC);
+
+        CREATE INDEX IF NOT EXISTS "ErrorLog_requestId_idx"
+            ON "ErrorLog"("requestId");
+
         CREATE INDEX IF NOT EXISTS "ShoppingListItem_storeId_isChecked_updatedAt_idx"
             ON "ShoppingListItem"("storeId", "isChecked", "updatedAt");
 

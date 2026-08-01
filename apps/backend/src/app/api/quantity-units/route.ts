@@ -1,14 +1,12 @@
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as referenceRepo from "@/lib/repos/referenceRepo";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     try {
         const units = referenceRepo.getAllQuantityUnits();
         return NextResponse.json({ units });
-    } catch (error: any) {
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Internal server error" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req);
     }
 }

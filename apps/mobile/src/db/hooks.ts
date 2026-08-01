@@ -21,7 +21,7 @@ import { useRefreshContext } from "../hooks/refresh/useRefreshContext";
 import { useToast } from "../hooks/useToast";
 import { householdApi, invitationApi } from "../lib/api/household";
 import * as storeSharingApi from "../lib/api/storeSharing";
-import { formatErrorMessage } from "../utils/errorUtils";
+import { markErrorHandled } from "../utils/errorUtils";
 import { DatabaseContext } from "./context";
 import { checkAndInvalidateCoreDataCache } from "./coreDataVersion";
 import { useOptimisticMutation } from "./optimisticUpdates";
@@ -222,15 +222,12 @@ export function useAppSetting(key: string) {
 export function useCreateStore() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: (name: string) => database.insertStore(name),
+        meta: { operation: "create store" },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
-        },
-        onError: (error: Error) => {
-            showError(`Failed to create store: ${error.message}`);
         },
     });
 }
@@ -241,18 +238,15 @@ export function useCreateStore() {
 export function useUpdateStore() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: ({ id, name }: { id: string; name: string }) => database.updateStore(id, name),
+        meta: { operation: "update store" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
             queryClient.invalidateQueries({
                 queryKey: queryKeys.stores.detail(variables.id),
             });
-        },
-        onError: (error: Error) => {
-            showError(`Failed to update store: ${error.message}`);
         },
     });
 }
@@ -263,15 +257,12 @@ export function useUpdateStore() {
 export function useDeleteStore() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: (id: string) => database.deleteStore(id),
+        meta: { operation: "delete store" },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
-        },
-        onError: (error: Error) => {
-            showError(`Failed to delete store: ${error.message}`);
         },
     });
 }
@@ -282,7 +273,7 @@ export function useDeleteStore() {
 export function useDuplicateStore() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError, showSuccess } = useToast();
+    const { showSuccess } = useToast();
 
     return useTanstackMutation({
         mutationFn: (params: {
@@ -290,12 +281,10 @@ export function useDuplicateStore() {
             newStoreName: string;
             includeItems: boolean;
         }) => database.duplicateStore(params),
+        meta: { operation: "duplicate store" },
         onSuccess: (newStore) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
             showSuccess(`Store "${newStore.name}" created successfully`);
-        },
-        onError: (error: Error) => {
-            showError(`Failed to duplicate store: ${error.message}`);
         },
     });
 }
@@ -306,18 +295,15 @@ export function useDuplicateStore() {
 export function useReorderStores() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: (updates: Array<{ storeId: string; sortOrder: number }>) =>
             database.reorderStores(updates),
+        meta: { operation: "reorder stores" },
         onSuccess: () => {
             // The stores query carries the per-user sortOrder, so refreshing it
             // updates both the tab bar and the Stores management modal.
             queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
-        },
-        onError: (error: Error) => {
-            showError(`Failed to reorder stores: ${error.message}`);
         },
     });
 }
@@ -328,18 +314,15 @@ export function useReorderStores() {
 export function useSaveAppSetting() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: ({ key, value }: { key: string; value: string }) =>
             database.setAppSetting(key, value),
+        meta: { operation: "save setting" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.appSettings.detail(variables.key),
             });
-        },
-        onError: (error: Error) => {
-            showError(`Failed to save setting: ${error.message}`);
         },
     });
 }
@@ -366,18 +349,15 @@ export function useStoreAisles(storeId: string) {
 export function useCreateAisle() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: ({ storeId, name }: { storeId: string; name: string }) =>
             database.insertAisle(storeId, name),
+        meta: { operation: "create aisle" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.aisles.byStore(variables.storeId),
             });
-        },
-        onError: (error: Error) => {
-            showError(`Failed to create aisle: ${error.message}`);
         },
     });
 }
@@ -388,11 +368,11 @@ export function useCreateAisle() {
 export function useUpdateAisle() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: ({ storeId, id, name }: { id: string; name: string; storeId: string }) =>
             database.updateAisle(storeId, id, name),
+        meta: { operation: "update aisle" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.aisles.byStore(variables.storeId),
@@ -412,9 +392,6 @@ export function useUpdateAisle() {
                 queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
-        onError: (error: Error) => {
-            showError(`Failed to update aisle: ${error.message}`);
-        },
     });
 }
 
@@ -424,11 +401,11 @@ export function useUpdateAisle() {
 export function useDeleteAisle() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: ({ storeId, id }: { id: string; storeId: string }) =>
             database.deleteAisle(storeId, id),
+        meta: { operation: "delete aisle" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.aisles.byStore(variables.storeId),
@@ -441,9 +418,6 @@ export function useDeleteAisle() {
                 queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
-        onError: (error: Error) => {
-            showError(`Failed to delete aisle: ${error.message}`);
-        },
     });
 }
 
@@ -453,7 +427,6 @@ export function useDeleteAisle() {
 export function useReorderAisles() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: ({
@@ -463,6 +436,7 @@ export function useReorderAisles() {
             storeId: string;
             updates: Array<{ id: string; sortOrder: number }>;
         }) => database.reorderAisles(storeId, updates),
+        meta: { operation: "reorder aisles" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.aisles.byStore(variables.storeId),
@@ -471,9 +445,6 @@ export function useReorderAisles() {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
-        },
-        onError: (error: Error) => {
-            showError(`Failed to reorder aisles: ${error.message}`);
         },
     });
 }
@@ -512,7 +483,6 @@ export function useSection(id: string) {
 export function useCreateSection() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: ({
@@ -524,13 +494,11 @@ export function useCreateSection() {
             name: string;
             aisleId: string;
         }) => database.insertSection(storeId, name, aisleId),
+        meta: { operation: "create section" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.sections.byStore(variables.storeId),
             });
-        },
-        onError: (error: Error) => {
-            showError(`Failed to create section: ${error.message}`);
         },
     });
 }
@@ -541,7 +509,6 @@ export function useCreateSection() {
 export function useUpdateSection() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: ({
@@ -555,6 +522,7 @@ export function useUpdateSection() {
             name: string;
             aisleId: string;
         }) => database.updateSection(storeId, id, name, aisleId),
+        meta: { operation: "update section" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.sections.byStore(variables.storeId),
@@ -571,9 +539,6 @@ export function useUpdateSection() {
                 queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
-        onError: (error: Error) => {
-            showError(`Failed to update section: ${error.message}`);
-        },
     });
 }
 
@@ -583,11 +548,11 @@ export function useUpdateSection() {
 export function useDeleteSection() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: ({ storeId, id }: { id: string; storeId: string }) =>
             database.deleteSection(storeId, id),
+        meta: { operation: "delete section" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.sections.byStore(variables.storeId),
@@ -600,9 +565,6 @@ export function useDeleteSection() {
                 queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
-        onError: (error: Error) => {
-            showError(`Failed to delete section: ${error.message}`);
-        },
     });
 }
 
@@ -612,9 +574,9 @@ export function useDeleteSection() {
 export function useMoveSection() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
+        meta: { operation: "move section" },
         mutationFn: async ({
             storeId,
             sectionId,
@@ -657,9 +619,6 @@ export function useMoveSection() {
                 queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
-        onError: (error: Error) => {
-            showError(`Failed to move section: ${error.message}`);
-        },
     });
 }
 
@@ -669,7 +628,6 @@ export function useMoveSection() {
 export function useReorderSections() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: ({
@@ -679,6 +637,7 @@ export function useReorderSections() {
             storeId: string;
             updates: Array<{ id: string; sortOrder: number }>;
         }) => database.reorderSections(storeId, updates),
+        meta: { operation: "reorder sections" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.sections.byStore(variables.storeId),
@@ -687,9 +646,6 @@ export function useReorderSections() {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
-        },
-        onError: (error: Error) => {
-            showError(`Failed to reorder sections: ${error.message}`);
         },
     });
 }
@@ -996,7 +952,6 @@ export function useItem(id: string) {
 export function useCreateItem() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: ({
@@ -1010,6 +965,7 @@ export function useCreateItem() {
             aisleId?: string | null;
             sectionId?: string | null;
         }) => database.insertItem(storeId, name, aisleId, sectionId),
+        meta: { operation: "create item" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.items.byStore(variables.storeId),
@@ -1017,9 +973,6 @@ export function useCreateItem() {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.items.withDetails(variables.storeId),
             });
-        },
-        onError: (error: Error) => {
-            showError(`Failed to create item: ${error.message}`);
         },
     });
 }
@@ -1030,7 +983,6 @@ export function useCreateItem() {
 export function useUpdateItem() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: ({
@@ -1046,6 +998,7 @@ export function useUpdateItem() {
             aisleId?: string | null;
             sectionId?: string | null;
         }) => database.updateItem(storeId, id, name, aisleId, sectionId),
+        meta: { operation: "update item" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.items.byStore(variables.storeId),
@@ -1061,9 +1014,11 @@ export function useUpdateItem() {
                 queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
-        onError: (error: Error) => {
-            if (error instanceof ApiError && error.code === "ITEM_NAME_CONFLICT") return;
-            showError(`Failed to update item: ${error.message}`);
+        onError: (error) => {
+            // ItemEditorModal shows this as an inline field error instead of a toast.
+            if (error instanceof ApiError && error.code === "ITEM_NAME_CONFLICT") {
+                markErrorHandled(error);
+            }
         },
     });
 }
@@ -1075,7 +1030,6 @@ export function useUpdateItem() {
 export function useGetOrCreateStoreItem() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: ({
@@ -1089,6 +1043,7 @@ export function useGetOrCreateStoreItem() {
             aisleId?: string | null;
             sectionId?: string | null;
         }) => database.getOrCreateStoreItemByName(storeId, name, aisleId, sectionId),
+        meta: { operation: "get or create item" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.items.byStore(variables.storeId),
@@ -1096,9 +1051,6 @@ export function useGetOrCreateStoreItem() {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.items.withDetails(variables.storeId),
             });
-        },
-        onError: (error: Error) => {
-            showError(`Failed to get or create item: ${error.message}`);
         },
     });
 }
@@ -1109,11 +1061,11 @@ export function useGetOrCreateStoreItem() {
 export function useDeleteItem() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation({
         mutationFn: ({ id, storeId }: { id: string; storeId: string }) =>
             database.deleteItem(storeId, id),
+        meta: { operation: "delete item" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.items.byStore(variables.storeId),
@@ -1126,9 +1078,6 @@ export function useDeleteItem() {
                 queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
-        onError: (error: Error) => {
-            showError(`Failed to delete item: ${error.message}`);
-        },
     });
 }
 
@@ -1138,12 +1087,12 @@ export function useDeleteItem() {
  */
 export function useToggleFavorite() {
     const database = useDatabase();
-    const { showError } = useToast();
     const refreshContext = useRefreshContext();
 
     return useOptimisticMutation({
         mutationFn: ({ id, storeId }: { id: string; storeId: string }) =>
             database.toggleItemFavorite(storeId, id),
+        meta: { operation: "update favorite" },
         queryKeys: (vars) => [
             queryKeys.items.byStore(vars.storeId),
             queryKeys.items.withDetails(vars.storeId),
@@ -1174,6 +1123,7 @@ export function useToggleFavorite() {
         onError: async (error, vars) => {
             // Gracefully handle 404 - item was deleted
             if (error instanceof ApiError && error.status === 404) {
+                markErrorHandled(error);
                 // Silently refresh to sync with server state
                 if (refreshContext) {
                     await refreshContext?.refresh([
@@ -1181,11 +1131,7 @@ export function useToggleFavorite() {
                         queryKeys.items.withDetails(vars.storeId),
                     ]);
                 }
-                return;
             }
-            showError(
-                `Failed to update favorite: ${error instanceof Error ? error.message : "Unknown error"}`
-            );
         },
     });
 }
@@ -1227,11 +1173,11 @@ export function useStoreItemAutocomplete(storeId: string, searchTerm: string) {
 export function useUpsertShoppingListItem() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
 
     return useTanstackMutation<ShoppingListItem, Error, ShoppingListItemInput>({
         mutationFn: (params) =>
             database.upsertShoppingListItem(params) as Promise<ShoppingListItem>,
+        meta: { operation: "save item" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
@@ -1247,9 +1193,6 @@ export function useUpsertShoppingListItem() {
                 queryKey: queryKeys.storeItemSearch.byStore(variables.storeId),
             });
         },
-        onError: (error: Error) => {
-            showError(formatErrorMessage(error, "save item"));
-        },
     });
 }
 
@@ -1260,13 +1203,13 @@ export function useUpsertShoppingListItem() {
  */
 export function useToggleItemChecked() {
     const database = useDatabase();
-    const { showError } = useToast();
     const [presentAlert] = useIonAlert();
     const refreshContext = useRefreshContext();
 
     return useOptimisticMutation({
         mutationFn: (params: { id: string; isChecked: boolean; storeId: string }) =>
             database.toggleShoppingListItemChecked(params.storeId, params.id, params.isChecked),
+        meta: { operation: "update item" },
         queryKeys: (vars) => [queryKeys.shoppingListItems.byStore(vars.storeId)],
         updateCache: (vars) => ({
             queryKey: queryKeys.shoppingListItems.byStore(vars.storeId),
@@ -1299,13 +1242,12 @@ export function useToggleItemChecked() {
         onError: async (error, vars) => {
             // Gracefully handle 404 - item was already deleted
             if (error instanceof ApiError && error.status === 404) {
+                markErrorHandled(error);
                 // Silently refresh to sync with server state
                 if (refreshContext) {
                     await refreshContext.refresh([queryKeys.shoppingListItems.byStore(vars.storeId)]);
                 }
-                return;
             }
-            showError(formatErrorMessage(error, "update item"));
         },
     });
 }
@@ -1316,12 +1258,12 @@ export function useToggleItemChecked() {
 export function useDeleteShoppingListItem() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
     const refreshContext = useRefreshContext();
 
     return useTanstackMutation({
         mutationFn: (params: { id: string; storeId: string }) =>
             database.deleteShoppingListItem(params.storeId, params.id),
+        meta: { operation: "delete item" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
@@ -1330,13 +1272,12 @@ export function useDeleteShoppingListItem() {
         onError: async (error: unknown, variables) => {
             // Gracefully handle 404 - item was already deleted
             if (error instanceof ApiError && error.status === 404) {
+                markErrorHandled(error);
                 // Silently refresh to sync with server state
                 if (refreshContext) {
                     await refreshContext.refresh([queryKeys.shoppingListItems.byStore(variables.storeId)]);
                 }
-                return;
             }
-            showError(formatErrorMessage(error, "delete item"));
         },
     });
 }
@@ -1348,12 +1289,12 @@ export function useDeleteShoppingListItem() {
 export function useRemoveShoppingListItem() {
     const database = useDatabase();
     const queryClient = useQueryClient();
-    const { showError } = useToast();
     const refreshContext = useRefreshContext();
 
     return useTanstackMutation({
         mutationFn: (params: { id: string; storeId: string }) =>
             database.removeShoppingListItem(params.storeId, params.id),
+        meta: { operation: "remove item" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
@@ -1362,15 +1303,12 @@ export function useRemoveShoppingListItem() {
         onError: async (error: unknown, variables) => {
             // Gracefully handle 404 - item was already removed
             if (error instanceof ApiError && error.status === 404) {
+                markErrorHandled(error);
                 // Silently refresh to sync with server state
                 if (refreshContext) {
                     await refreshContext.refresh([queryKeys.shoppingListItems.byStore(variables.storeId)]);
                 }
-                return;
             }
-            showError(
-                `Failed to remove item: ${error instanceof Error ? error.message : "Unknown error"}`
-            );
         },
     });
 }
@@ -1381,11 +1319,12 @@ export function useRemoveShoppingListItem() {
  */
 export function useClearCheckedItems() {
     const database = useDatabase();
-    const { showError, showSuccess } = useToast();
+    const { showSuccess } = useToast();
 
     return useOptimisticMutation({
         mutationFn: ({ storeId }: { storeId: string }) =>
             database.clearCheckedShoppingListItems(storeId),
+        meta: { operation: "clear checked items" },
         queryKeys: (vars) => [queryKeys.shoppingListItems.byStore(vars.storeId)],
         updateCache: (vars) => ({
             queryKey: queryKeys.shoppingListItems.byStore(vars.storeId),
@@ -1400,7 +1339,6 @@ export function useClearCheckedItems() {
                 showSuccess(`Cleared ${count} ${pluralize("item", count)}`);
             }
         },
-        onError: (error) => showError(formatErrorMessage(error, "clear checked items")),
     });
 }
 
@@ -1458,11 +1396,24 @@ export function useMoveItemToStore() {
                 });
             }
 
-            // Remove from current store (without removing the store item)
-            await database.removeShoppingListItem(params.sourceStoreId, item.id);
+            // Remove from current store (without removing the store item). If this
+            // fails after the item was already created at the target store, the item
+            // now exists in both places - surface that explicitly rather than the
+            // generic "failed to move item" message, since a plain retry would
+            // duplicate it further.
+            try {
+                await database.removeShoppingListItem(params.sourceStoreId, item.id);
+            } catch (removeError) {
+                const reason =
+                    removeError instanceof Error ? removeError.message : "an unknown error";
+                throw new Error(
+                    `"${itemName}" was copied to ${targetStoreName} but could not be removed from its original list (${reason}). Check both lists.`
+                );
+            }
 
             return { itemName, targetStoreName };
         },
+        meta: { operation: "move item" },
         onSuccess: (_, variables) => {
             // Invalidate both source and target store queries
             queryClient.invalidateQueries({
@@ -1502,11 +1453,12 @@ export function useNotificationCounts() {
  */
 export function useUpdateStoreHousehold() {
     const queryClient = useQueryClient();
-    const { showSuccess, showError } = useToast();
+    const { showSuccess } = useToast();
 
     return useTanstackMutation({
         mutationFn: (params: { storeId: string; householdId: string | null }) =>
             storeSharingApi.updateStoreHousehold(params.storeId, params.householdId),
+        meta: { operation: "update store sharing" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.stores.detail(variables.storeId) });
             queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
@@ -1516,9 +1468,6 @@ export function useUpdateStoreHousehold() {
                 showSuccess("Store is now private");
             }
         },
-        onError: (error: Error) => {
-            showError(`Failed to update store sharing: ${error.message}`);
-        },
     });
 }
 
@@ -1527,11 +1476,12 @@ export function useUpdateStoreHousehold() {
  */
 export function useUpdateStoreVisibility() {
     const queryClient = useQueryClient();
-    const { showSuccess, showError } = useToast();
+    const { showSuccess } = useToast();
 
     return useTanstackMutation({
         mutationFn: (params: { storeId: string; isHidden: boolean }) =>
             storeSharingApi.updateStoreVisibility(params.storeId, params.isHidden),
+        meta: { operation: "update store visibility" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.stores.detail(variables.storeId) });
             queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
@@ -1540,9 +1490,6 @@ export function useUpdateStoreVisibility() {
             } else {
                 showSuccess("Store is now visible");
             }
-        },
-        onError: (error: Error) => {
-            showError(`Failed to update store visibility: ${error.message}`);
         },
     });
 }
@@ -1622,16 +1569,14 @@ export function usePendingInvitations() {
  */
 export function useCreateHousehold() {
     const queryClient = useQueryClient();
-    const { showSuccess, showError } = useToast();
+    const { showSuccess } = useToast();
 
     return useTanstackMutation({
         mutationFn: (name: string) => householdApi.createHousehold(name),
+        meta: { operation: "create household" },
         onSuccess: (household) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.households() });
             showSuccess(`Household "${household.name}" created!`);
-        },
-        onError: (error: Error) => {
-            showError(formatErrorMessage(error));
         },
     });
 }
@@ -1641,18 +1586,16 @@ export function useCreateHousehold() {
  */
 export function useUpdateHousehold() {
     const queryClient = useQueryClient();
-    const { showSuccess, showError } = useToast();
+    const { showSuccess } = useToast();
 
     return useTanstackMutation({
         mutationFn: (params: { householdId: string; name: string }) =>
             householdApi.updateHousehold(params.householdId, params.name),
+        meta: { operation: "update household" },
         onSuccess: (household) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.household.detail(household.id) });
             queryClient.invalidateQueries({ queryKey: queryKeys.households() });
             showSuccess("Household updated!");
-        },
-        onError: (error: Error) => {
-            showError(formatErrorMessage(error));
         },
     });
 }
@@ -1662,18 +1605,16 @@ export function useUpdateHousehold() {
  */
 export function useDeleteHousehold() {
     const queryClient = useQueryClient();
-    const { showSuccess, showError } = useToast();
+    const { showSuccess } = useToast();
 
     return useTanstackMutation({
         mutationFn: (householdId: string) => householdApi.deleteHousehold(householdId),
+        meta: { operation: "delete household" },
         onSuccess: (_, householdId) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.household.detail(householdId) });
             queryClient.invalidateQueries({ queryKey: queryKeys.households() });
             queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() }); // Stores may be affected
             showSuccess("Household deleted");
-        },
-        onError: (error: Error) => {
-            showError(formatErrorMessage(error));
         },
     });
 }
@@ -1683,17 +1624,15 @@ export function useDeleteHousehold() {
  */
 export function useInviteMember() {
     const queryClient = useQueryClient();
-    const { showSuccess, showError } = useToast();
+    const { showSuccess } = useToast();
 
     return useTanstackMutation({
         mutationFn: (params: { householdId: string; email: string }) =>
             householdApi.createInvitation(params.householdId, params.email),
+        meta: { operation: "invite member" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.household.detail(variables.householdId) });
             showSuccess(`Invitation sent to ${variables.email}`);
-        },
-        onError: (error: Error) => {
-            showError(formatErrorMessage(error));
         },
     });
 }
@@ -1703,19 +1642,17 @@ export function useInviteMember() {
  */
 export function useRemoveMember() {
     const queryClient = useQueryClient();
-    const { showSuccess, showError } = useToast();
+    const { showSuccess } = useToast();
 
     return useTanstackMutation({
         mutationFn: (params: { householdId: string; userId: string }) =>
             householdApi.removeMember(params.householdId, params.userId),
+        meta: { operation: "remove member" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.household.detail(variables.householdId) });
             queryClient.invalidateQueries({ queryKey: queryKeys.households() });
             queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
             showSuccess("Member removed");
-        },
-        onError: (error: Error) => {
-            showError(formatErrorMessage(error));
         },
     });
 }
@@ -1725,19 +1662,17 @@ export function useRemoveMember() {
  */
 export function useAcceptInvitation() {
     const queryClient = useQueryClient();
-    const { showSuccess, showError } = useToast();
+    const { showSuccess } = useToast();
 
     return useTanstackMutation({
         mutationFn: (token: string) => invitationApi.acceptInvitation(token),
+        meta: { operation: "accept invitation" },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.invitations() });
             queryClient.invalidateQueries({ queryKey: queryKeys.households() });
             // Accepting clears a pending invite → refresh the notification badge count.
             queryClient.invalidateQueries({ queryKey: queryKeys.notificationCounts() });
             showSuccess("Invitation accepted!");
-        },
-        onError: (error: Error) => {
-            showError(formatErrorMessage(error));
         },
     });
 }
@@ -1747,18 +1682,16 @@ export function useAcceptInvitation() {
  */
 export function useDeclineInvitation() {
     const queryClient = useQueryClient();
-    const { showSuccess, showError } = useToast();
+    const { showSuccess } = useToast();
 
     return useTanstackMutation({
         mutationFn: (token: string) => invitationApi.declineInvitation(token),
+        meta: { operation: "decline invitation" },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.invitations() });
             // Declining clears a pending invite → refresh the notification badge count.
             queryClient.invalidateQueries({ queryKey: queryKeys.notificationCounts() });
             showSuccess("Invitation declined");
-        },
-        onError: (error: Error) => {
-            showError(formatErrorMessage(error));
         },
     });
 }
@@ -1791,19 +1724,17 @@ export function useHouseholdInvitations(householdId: string | null) {
  */
 export function useCancelInvitation() {
     const queryClient = useQueryClient();
-    const { showSuccess, showError } = useToast();
+    const { showSuccess } = useToast();
 
     return useTanstackMutation({
         mutationFn: (params: { householdId: string; invitationId: string }) =>
             householdApi.cancelInvitation(params.householdId, params.invitationId),
+        meta: { operation: "cancel invitation" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.household.invitations(variables.householdId),
             });
             showSuccess("Invitation cancelled");
-        },
-        onError: (error: Error) => {
-            showError(formatErrorMessage(error));
         },
     });
 }

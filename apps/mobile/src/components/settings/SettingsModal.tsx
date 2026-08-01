@@ -34,6 +34,7 @@ import { useSettingsForm } from "../../settings/useSettingsForm";
 import { applyTheme } from "../../theme/applyTheme";
 import { FormPasswordInput } from "../form/FormPasswordInput";
 import { useAppHeader } from "../layout/useAppHeader";
+import AboutSection from "./AboutSection";
 
 const SettingsModal: React.FC = () => {
     const { form, performSave, isSubmitting } = useSettingsForm();
@@ -243,6 +244,8 @@ const SettingsModal: React.FC = () => {
                         </div>
                     </IonList>
                 </form>
+
+                <AboutSection />
             </IonContent>
         </IonModal>
     );

@@ -1,4 +1,5 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeEntityService from "@/lib/services/storeEntityService";
 import { shoppingListItemInputSchema } from "@basket-bot/core";
 import { NextResponse } from "next/server";
@@ -11,17 +12,8 @@ async function handleGet(
         const { storeId } = await params;
         const items = storeEntityService.getShoppingListItems(storeId, req.auth.sub);
         return NextResponse.json({ items });
-    } catch (error: any) {
-        if (error.message === "Access denied") {
-            return NextResponse.json(
-                { code: "ACCESS_DENIED", message: "Access denied" },
-                { status: 403 }
-            );
-        }
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Internal server error" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 }
 
@@ -44,24 +36,8 @@ async function handlePost(
             userId: req.auth.sub,
         });
         return NextResponse.json({ item }, { status: body.id ? 200 : 201 });
-    } catch (error: any) {
-        console.error("POST shopping-list error:", error);
-        if (error.message === "Access denied") {
-            return NextResponse.json(
-                { code: "ACCESS_DENIED", message: "Access denied" },
-                { status: 403 }
-            );
-        }
-        if (error.name === "ZodError") {
-            return NextResponse.json(
-                { code: "INVALID_INPUT", message: "Invalid input", details: error.errors },
-                { status: 400 }
-            );
-        }
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Internal server error" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 }
 

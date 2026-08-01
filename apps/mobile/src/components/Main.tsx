@@ -6,7 +6,7 @@ import { Route } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { usePreloadCoreData } from "../db/hooks";
 import { HouseholdProvider } from "../households/HouseholdProvider";
-import Meals from "../pages/Meals";
+import RecipesAndPlans from "../pages/RecipesAndPlans";
 import RecipeDetail from "../pages/RecipeDetail";
 import ShoppingList from "../pages/ShoppingList";
 import { AppHeaderProvider } from "./layout/AppHeaderProvider";
@@ -50,10 +50,10 @@ const Main: React.FC = () => {
             label: "Shopping List",
         },
         {
-            tab: "meals",
-            href: "/meals",
+            tab: "recipesPlans",
+            href: "/recipes-plans",
             icon: restaurantOutline,
-            label: "Meals",
+            label: "Recipes & Plans",
         },
     ];
 
@@ -83,10 +83,14 @@ const Main: React.FC = () => {
                                 <Route exact path="/shoppinglist" component={ShoppingList} />
                                 <Route
                                     exact
-                                    path="/meals/recipes/:recipeId"
+                                    path="/recipes-plans/recipes/:recipeId"
                                     component={RecipeDetail}
                                 />
-                                <Route exact path="/meals" component={Meals} />
+                                <Route
+                                    exact
+                                    path="/recipes-plans"
+                                    component={RecipesAndPlans}
+                                />
                             </IonRouterOutlet>
 
                             {tabs.length > 1 && (

@@ -1,5 +1,6 @@
 "use client";
 
+import { parseSqliteTimestamp } from "@/lib/utils/sqliteUtils";
 import { Badge, Button, Container, Paper, Table, Text, Title } from "@mantine/core";
 import Link from "next/link";
 
@@ -38,7 +39,7 @@ const formatValue = (key: string, value: any): React.ReactNode => {
     // Dates
     if (key.includes("At") || key.includes("Date")) {
         try {
-            return <Text size="sm">{new Date(value).toLocaleString()}</Text>;
+            return <Text size="sm">{parseSqliteTimestamp(String(value)).toLocaleString()}</Text>;
         } catch {
             return <Text size="sm">{value}</Text>;
         }

@@ -1,4 +1,5 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth"
+import { toErrorResponse } from "@/lib/errors/handleRouteError"
 import * as planService from "@/lib/services/planService"
 import { NextResponse } from "next/server"
 
@@ -16,12 +17,8 @@ async function handleGet(
 
         const result = planService.getPlansHistory(householdId, req.auth.sub, limit, offset)
         return NextResponse.json(result)
-    } catch (error: any) {
-        if (error.message === "Access denied") {
-            return NextResponse.json({ code: "ACCESS_DENIED", message: "Access denied" }, { status: 403 })
-        }
-        console.error("Plan history error:", error)
-        return NextResponse.json({ code: "INTERNAL_ERROR", message: "Internal server error" }, { status: 500 })
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub })
     }
 }
 

@@ -87,7 +87,9 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
             });
             toast.showSuccess(`Moved "${result.itemName}" to ${result.targetStoreName}`);
         } catch (_error) {
-            // Error already handled by mutation
+            // Toast is shown by the global MutationCache error handler; this catch
+            // only exists so mutateAsync's rejection doesn't surface as an unhandled
+            // promise rejection.
         }
     }, [
         pendingMoveStore,

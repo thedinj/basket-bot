@@ -1,4 +1,5 @@
 import { withAuth, type AuthenticatedRequest } from "@/lib/auth/withAuth";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as invitationService from "@/lib/services/invitationService";
 import { NextResponse } from "next/server";
 
@@ -19,11 +20,7 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
         const invitations = invitationService.getUserPendingInvitations(userEmail);
 
         return NextResponse.json({ invitations }, { status: 200 });
-    } catch (error: any) {
-        console.error("Error getting invitations:", error);
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Failed to get invitations" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 });

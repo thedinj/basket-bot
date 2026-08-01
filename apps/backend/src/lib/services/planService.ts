@@ -1,4 +1,5 @@
 import type { Plan, PlanWithDetails, RecipeIngredient } from "@basket-bot/core"
+import { AuthorizationError, ConflictError, NotFoundError } from "@basket-bot/core"
 import { db } from "../db/db"
 import * as householdRepo from "../repos/householdRepo"
 import * as itemRepo from "../repos/itemRepo"
@@ -12,12 +13,12 @@ import { roundFactor } from "../utils/math"
  */
 function assertMember(householdId: string, userId: string): void {
     if (!householdRepo.userIsMember(householdId, userId)) {
-        throw new Error("Access denied")
+        throw new AuthorizationError("Access denied")
     }
 }
 
 function assertPlanBelongs(plan: Plan | null, householdId: string): asserts plan is Plan {
-    if (!plan || plan.householdId !== householdId) throw new Error("Plan not found")
+    if (!plan || plan.householdId !== householdId) throw new NotFoundError("Plan not found")
 }
 
 // ========== Plan CRUD ==========
@@ -65,7 +66,7 @@ export function updatePlan(
 
     const existing = planRepo.getPlanById(planId)
     assertPlanBelongs(existing, householdId)
-    if (existing.state !== "draft") throw new Error("Only draft plans can be edited")
+    if (existing.state !== "draft") throw new ConflictError("Only draft plans can be edited")
 
     planRepo.updatePlan({ id: planId, ...updates, updatedById: userId })
 
@@ -90,7 +91,7 @@ export function deletePlan(householdId: string, planId: string, userId: string):
 
     const existing = planRepo.getPlanById(planId)
     if (!existing || existing.householdId !== householdId) return false
-    if (existing.state === "active") throw new Error("Cannot delete an active plan")
+    if (existing.state === "active") throw new ConflictError("Cannot delete an active plan")
 
     return planRepo.deletePlan(planId)
 }
@@ -113,7 +114,7 @@ export function updateSlots(
 
     const plan = planRepo.getPlanById(planId)
     assertPlanBelongs(plan, householdId)
-    if (plan.state !== "draft") throw new Error("Only draft plans can be edited")
+    if (plan.state !== "draft") throw new ConflictError("Only draft plans can be edited")
 
     planRepo.upsertSlots(planId, slots)
     planRepo.updatePlan({ id: planId, updatedById: userId })
@@ -139,7 +140,7 @@ export function rerollSlots(
 
     const plan = planRepo.getPlanWithDetails(planId)
     assertPlanBelongs(plan, householdId)
-    if (plan.state !== "draft") throw new Error("Only draft plans can be rerolled")
+    if (plan.state !== "draft") throw new ConflictError("Only draft plans can be rerolled")
 
     // Collect recipe IDs that are pinned in slots we're NOT rerolling, so we don't duplicate
     const reservedIds = new Set<string>()
@@ -200,7 +201,7 @@ export function updateRoutes(
 
     const plan = planRepo.getPlanById(planId)
     assertPlanBelongs(plan, householdId)
-    if (plan.state !== "draft") throw new Error("Only draft plans can be edited")
+    if (plan.state !== "draft") throw new ConflictError("Only draft plans can be edited")
 
     planRepo.upsertRoutes(planId, routes)
     planRepo.updatePlan({ id: planId, updatedById: userId })
@@ -224,7 +225,7 @@ export function dispatchPlan(
 
     const plan = planRepo.getPlanWithDetails(planId)
     assertPlanBelongs(plan, householdId)
-    if (plan.state !== "draft") throw new Error("Only draft plans can be dispatched")
+    if (plan.state !== "draft") throw new ConflictError("Only draft plans can be dispatched")
 
     let itemsAdded = 0
     let itemsSkipped = 0

@@ -17,6 +17,7 @@ import { z } from "zod";
 import { useAuth } from "../auth/useAuth";
 import { FormPasswordInput } from "../components/form/FormPasswordInput";
 import { FormTextInput } from "../components/form/FormTextInput";
+import { ApiError, RateLimitErrorDetails } from "../lib/api/client";
 import "./AuthPages.scss";
 
 const loginSchema = z.object({
@@ -47,11 +48,15 @@ const Login: React.FC = () => {
         try {
             await login(data.email, data.password);
             // Navigation will be handled by AuthRoute in App.tsx
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (err: any) {
-            // Handle rate limit (429)
-            if (err?.response?.status === 429) {
-                const retryAfter = err.response.data?.details?.retryAfter;
+        } catch (err: unknown) {
+            if (err instanceof ApiError && err.isNetworkError) {
+                setError(
+                    err.code === "TIMEOUT"
+                        ? "Request timed out. Please check your connection and try again."
+                        : "Network error. Please check your connection and try again."
+                );
+            } else if (err instanceof ApiError && err.status === 429) {
+                const retryAfter = (err.details as RateLimitErrorDetails | undefined)?.retryAfter;
                 if (retryAfter) {
                     const minutes = Math.ceil(retryAfter / 60);
                     setError(

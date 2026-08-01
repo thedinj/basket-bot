@@ -1,19 +1,16 @@
-import { withAuth } from "@/lib/auth/withAuth";
+import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import { statsRepository } from "@/lib/repos/statsRepository";
 import { NextResponse } from "next/server";
 
 export const GET = withAuth(
-    async () => {
+    async (req: AuthenticatedRequest) => {
         try {
             const stats = statsRepository.getSystemStats();
 
             return NextResponse.json(stats);
         } catch (error) {
-            console.error("Error fetching stats:", error);
-            return NextResponse.json(
-                { code: "INTERNAL_ERROR", message: "Failed to fetch system statistics" },
-                { status: 500 }
-            );
+            return toErrorResponse(error, req, { userId: req.auth.sub });
         }
     },
     { requireScopes: ["admin"] }

@@ -1,4 +1,5 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import { updateUserProfile } from "@/lib/repos/userRepo";
 import { updateProfileRequestSchema, updateProfileResponseSchema } from "@basket-bot/core";
 import { NextResponse } from "next/server";
@@ -25,22 +26,8 @@ async function handlePatch(req: AuthenticatedRequest) {
         const response = updateProfileResponseSchema.parse(updatedUser);
 
         return NextResponse.json(response);
-    } catch (error: any) {
-        if (error.name === "ZodError") {
-            return NextResponse.json(
-                {
-                    code: "VALIDATION_ERROR",
-                    message: "Invalid request data",
-                    details: error.errors,
-                },
-                { status: 400 }
-            );
-        }
-        console.error("Update profile error:", error);
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Internal server error" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 }
 

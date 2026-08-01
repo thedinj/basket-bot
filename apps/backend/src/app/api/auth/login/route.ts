@@ -2,6 +2,7 @@ import { generateAccessToken, generateRefreshToken, getRefreshTokenExpiry } from
 import { verifyPassword } from "@/lib/auth/password";
 import { checkRateLimit } from "@/lib/auth/rateLimiter";
 import { db } from "@/lib/db/db";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import { loginRequestSchema, LoginResponse } from "@basket-bot/core";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
@@ -69,10 +70,6 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(response);
     } catch (error) {
-        console.error("Login error:", error);
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Internal server error" },
-            { status: 500 }
-        );
+        return toErrorResponse(error, req);
     }
 }

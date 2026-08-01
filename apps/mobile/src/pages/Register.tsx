@@ -20,7 +20,7 @@ import { z } from "zod";
 import { useAuth } from "../auth/useAuth";
 import { FormPasswordInput } from "../components/form/FormPasswordInput";
 import { FormTextInput } from "../components/form/FormTextInput";
-import { apiClient } from "../lib/api/client";
+import { apiClient, ApiError, RateLimitErrorDetails } from "../lib/api/client";
 import "./AuthPages.scss";
 
 const registerSchema = z
@@ -79,11 +79,15 @@ const Register: React.FC = () => {
                 data.invitationCode || undefined
             );
             // Auto-login happens in registerUser, App.tsx will handle navigation
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (err: any) {
-            // Handle rate limit (429)
-            if (err?.response?.status === 429) {
-                const retryAfter = err.response.data?.details?.retryAfter;
+        } catch (err: unknown) {
+            if (err instanceof ApiError && err.isNetworkError) {
+                setError(
+                    err.code === "TIMEOUT"
+                        ? "Request timed out. Please check your connection and try again."
+                        : "Network error. Please check your connection and try again."
+                );
+            } else if (err instanceof ApiError && err.status === 429) {
+                const retryAfter = (err.details as RateLimitErrorDetails | undefined)?.retryAfter;
                 if (retryAfter) {
                     const minutes = Math.ceil(retryAfter / 60);
                     setError(
@@ -92,13 +96,12 @@ const Register: React.FC = () => {
                 } else {
                     setError("Too many registration attempts. Please try again later.");
                 }
-            } else if (err?.response?.status === 409) {
+            } else if (err instanceof ApiError && err.status === 409) {
                 setError("An account with this email already exists");
-            } else if (err?.response?.status === 400) {
-                const code = err?.response?.data?.code;
-                if (code === "INVITATION_CODE_REQUIRED") {
+            } else if (err instanceof ApiError && err.status === 400) {
+                if (err.code === "INVITATION_CODE_REQUIRED") {
                     setError("Registration requires an invitation code");
-                } else if (code === "INVALID_INVITATION_CODE") {
+                } else if (err.code === "INVALID_INVITATION_CODE") {
                     setError("Invalid invitation code");
                 } else {
                     setError("Registration failed. Please try again.");

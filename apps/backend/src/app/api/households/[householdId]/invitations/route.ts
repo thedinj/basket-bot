@@ -1,4 +1,5 @@
 import { withAuth, type AuthenticatedRequest } from "@/lib/auth/withAuth";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as invitationService from "@/lib/services/invitationService";
 import { NextResponse } from "next/server";
 
@@ -15,19 +16,7 @@ export const GET = withAuth(async (req: AuthenticatedRequest, context) => {
         );
 
         return NextResponse.json({ invitations }, { status: 200 });
-    } catch (error: any) {
-        console.error("Error getting household invitations:", error);
-
-        if (error.message?.startsWith("FORBIDDEN")) {
-            return NextResponse.json(
-                { code: "FORBIDDEN", message: error.message.replace("FORBIDDEN: ", "") },
-                { status: 403 }
-            );
-        }
-
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Failed to get invitations" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 });

@@ -1,5 +1,6 @@
 import { generateAccessToken } from "@/lib/auth/jwt";
 import { db } from "@/lib/db/db";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import { LoginResponse, refreshTokenRequestSchema } from "@basket-bot/core";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -61,10 +62,6 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(response);
     } catch (error) {
-        console.error("Refresh token error:", error);
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Internal server error" },
-            { status: 500 }
-        );
+        return toErrorResponse(error, req);
     }
 }

@@ -1,4 +1,5 @@
 import { withAuth, type AuthenticatedRequest } from "@/lib/auth/withAuth";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeService from "@/lib/services/storeService";
 import { updateStoreVisibilityRequestSchema } from "@basket-bot/core";
 import { NextResponse } from "next/server";
@@ -7,9 +8,12 @@ import { NextResponse } from "next/server";
  * PATCH /api/stores/[storeId]/visibility
  * Update a store's visibility (hide/show in dropdowns)
  */
-export const PATCH = withAuth(async (req: AuthenticatedRequest, context: any) => {
+async function handlePatch(
+    req: AuthenticatedRequest,
+    { params }: { params: Promise<Record<string, string>> }
+) {
     try {
-        const storeId = context.params.storeId;
+        const { storeId } = await params;
         const userId = req.auth.sub;
 
         const body = await req.json();
@@ -29,19 +33,9 @@ export const PATCH = withAuth(async (req: AuthenticatedRequest, context: any) =>
         }
 
         return NextResponse.json(updatedStore, { status: 200 });
-    } catch (error: any) {
-        console.error("Error updating store visibility:", error);
-
-        if (error.message?.includes("Access denied")) {
-            return NextResponse.json(
-                { code: "FORBIDDEN", message: error.message },
-                { status: 403 }
-            );
-        }
-
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Failed to update store visibility" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
-});
+}
+
+export const PATCH = withAuth(handlePatch);

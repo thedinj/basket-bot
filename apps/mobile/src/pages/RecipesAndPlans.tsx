@@ -50,7 +50,7 @@ import { useHousehold } from "../households/useHousehold";
 import { LLMFabButton } from "../llm/shared";
 import MealPlanWizard from "./MealPlanWizard";
 
-import "./Meals.scss";
+import "./RecipesAndPlans.scss";
 
 type Segment = "recipes" | "plans";
 
@@ -405,7 +405,7 @@ const PlansContent: React.FC<{ householdId: string | null }> = ({ householdId })
     );
 };
 
-const Meals: React.FC = () => {
+const RecipesAndPlans: React.FC = () => {
     const { households, activeHouseholdId, setActiveHouseholdId } = useHousehold();
     const [segment, setSegment] = useState<Segment>("recipes");
     const [wizardOpen, setWizardOpen] = useState(false);
@@ -498,7 +498,7 @@ const Meals: React.FC = () => {
 
     return (
         <IonPage>
-            <AppHeader title="Meals">{householdSelector}</AppHeader>
+            <AppHeader title="Recipes & Plans">{householdSelector}</AppHeader>
 
             <IonSegment
                 className="meals-segment-bar"
@@ -513,7 +513,7 @@ const Meals: React.FC = () => {
                 </IonSegmentButton>
             </IonSegment>
 
-            <IonContent className="meals-page">
+            <IonContent className="recipes-and-plans-page">
                 <PullToRefresh />
 
                 {segment === "recipes" ? (
@@ -614,4 +614,4 @@ const Meals: React.FC = () => {
     );
 };
 
-export default Meals;
+export default RecipesAndPlans;

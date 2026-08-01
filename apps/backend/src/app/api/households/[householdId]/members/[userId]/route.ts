@@ -1,4 +1,5 @@
 import { withAuth, type AuthenticatedRequest } from "@/lib/auth/withAuth";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as householdService from "@/lib/services/householdService";
 import { NextResponse } from "next/server";
 
@@ -12,26 +13,7 @@ export const DELETE = withAuth(async (req: AuthenticatedRequest, context) => {
         householdService.removeMember(householdId, userId, req.auth.sub);
 
         return NextResponse.json({ success: true }, { status: 200 });
-    } catch (error: any) {
-        console.error("Error removing member:", error);
-
-        if (error.message?.startsWith("FORBIDDEN")) {
-            return NextResponse.json(
-                { code: "FORBIDDEN", message: error.message.replace("FORBIDDEN: ", "") },
-                { status: 403 }
-            );
-        }
-
-        if (error.message?.startsWith("NOT_FOUND")) {
-            return NextResponse.json(
-                { code: "NOT_FOUND", message: error.message.replace("NOT_FOUND: ", "") },
-                { status: 404 }
-            );
-        }
-
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Failed to remove member" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 });

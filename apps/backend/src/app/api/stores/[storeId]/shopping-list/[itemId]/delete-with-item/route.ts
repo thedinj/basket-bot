@@ -1,4 +1,5 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
+import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeEntityService from "@/lib/services/storeEntityService";
 import { NextResponse } from "next/server";
 
@@ -11,18 +12,8 @@ async function handleDelete(
         const { storeId, itemId } = await params;
         storeEntityService.deleteShoppingListItem(itemId, storeId, req.auth.sub);
         return NextResponse.json({ success: true });
-    } catch (error: any) {
-        console.error("DELETE /api/stores/[storeId]/shopping-list/[itemId]/delete-with-item error:", error);
-        if (error.message === "Access denied") {
-            return NextResponse.json(
-                { code: "ACCESS_DENIED", message: "Access denied" },
-                { status: 403 }
-            );
-        }
-        return NextResponse.json(
-            { code: "INTERNAL_ERROR", message: "Internal server error" },
-            { status: 500 }
-        );
+    } catch (error) {
+        return toErrorResponse(error, req, { userId: req.auth.sub });
     }
 }
 

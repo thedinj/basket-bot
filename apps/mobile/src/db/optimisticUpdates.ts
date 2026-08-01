@@ -96,6 +96,12 @@ export interface OptimisticMutationConfig<TVariables, TData, TError = Error> {
      * Optional success handler
      */
     onSuccess?: (data: TData, variables: TVariables) => void;
+
+    /**
+     * Mutation metadata (e.g. { operation: "update favorite" }) read by the
+     * global MutationCache error handler to build a specific toast message.
+     */
+    meta?: Record<string, unknown>;
 }
 
 /**
@@ -133,6 +139,7 @@ export const useOptimisticMutation = <TVariables, TData = void, TError = Error>(
 
     const mutationOptions: UseMutationOptions<TData, TError, TVariables, MutationContext> = {
         mutationFn: config.mutationFn,
+        meta: config.meta,
 
         onMutate: async (variables) => {
             // Normalize cache updates to array

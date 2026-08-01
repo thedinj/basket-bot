@@ -36,7 +36,7 @@ const RecipeDetail: React.FC = () => {
             <IonHeader>
                 <IonToolbar>
                     <IonButtons slot="start">
-                        <IonBackButton defaultHref="/meals" />
+                        <IonBackButton defaultHref="/recipes-plans" />
                     </IonButtons>
                     <IonTitle>{recipe?.name ?? "Recipe"}</IonTitle>
                     {recipe && (
@@ -64,7 +64,7 @@ const RecipeDetail: React.FC = () => {
                 recipeId={recipeId}
                 householdId={activeHouseholdId}
                 onDismiss={() => setEditorOpen(false)}
-                onDeleted={() => history.replace("/meals")}
+                onDeleted={() => history.replace("/recipes-plans")}
             />
         </IonPage>
     )
