@@ -30,7 +30,6 @@ const AboutSection: React.FC = () => {
             </IonListHeader>
             <IonItem button detail={false} onClick={handleVersionTap}>
                 <IonLabel>
-                    <p>Version {import.meta.env.VITE_APP_VERSION}</p>
                     <p>
                         Build {import.meta.env.VITE_GIT_HASH} ·{" "}
                         {new Date(import.meta.env.VITE_BUILD_TIME).toLocaleString()}
