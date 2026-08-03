@@ -2,6 +2,16 @@ import type { Plan, PlanIngredientRoute, PlanSlot, PlanWithDetails } from "@bask
 import { db } from "../db/db";
 import { boolToInt, intToBool } from "../utils/sqliteUtils";
 
+type PlanSlotRow = Omit<PlanSlot, "tagIds" | "pinned"> & { tagIds: string; pinned: number | null };
+type PlanIngredientRouteRow = Omit<
+    PlanIngredientRoute,
+    "overridden" | "checked" | "isUnsure"
+> & {
+    overridden: number | null;
+    checked: number | null;
+    isUnsure: number | null;
+};
+
 // ========== Plan CRUD ==========
 
 export function createPlan(params: {
@@ -122,7 +132,7 @@ export function getSlotsByPlan(planId: string): PlanSlot[] {
              WHERE planId = ?
              ORDER BY slotNumber ASC`
         )
-        .all(planId) as any[];
+        .all(planId) as PlanSlotRow[];
 
     return rows.map(mapSlot);
 }
@@ -192,7 +202,7 @@ export function getRoutesByPlan(planId: string): PlanIngredientRoute[] {
              FROM PlanIngredientRoute
              WHERE planId = ?`
         )
-        .all(planId) as any[];
+        .all(planId) as PlanIngredientRouteRow[];
 
     return rows.map(mapRoute);
 }
@@ -265,7 +275,7 @@ export function getPlansHistory(
              ORDER BY dispatchedAt DESC
              LIMIT ? OFFSET ?`
         )
-        .all(householdId, limit, offset) as any[];
+        .all(householdId, limit, offset) as Plan[];
 
     if (planRows.length === 0) return { plans: [], total };
 
@@ -303,7 +313,7 @@ export function getPlansHistory(
 
 // ========== Row mappers ==========
 
-function mapPlan(row: any): Plan {
+function mapPlan(row: Plan): Plan {
     return {
         id: row.id,
         householdId: row.householdId,
@@ -318,7 +328,7 @@ function mapPlan(row: any): Plan {
     };
 }
 
-function mapSlot(row: any): PlanSlot {
+function mapSlot(row: PlanSlotRow): PlanSlot {
     return {
         id: row.id,
         planId: row.planId,
@@ -332,7 +342,7 @@ function mapSlot(row: any): PlanSlot {
     };
 }
 
-function mapRoute(row: any): PlanIngredientRoute {
+function mapRoute(row: PlanIngredientRouteRow): PlanIngredientRoute {
     return {
         id: row.id,
         planId: row.planId,

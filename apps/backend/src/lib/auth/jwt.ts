@@ -47,7 +47,7 @@ export function verifyAccessToken(token: string): JwtPayload {
             audience: JWT_AUDIENCE,
         });
         return decoded as JwtPayload;
-    } catch (error) {
+    } catch {
         throw new AuthenticationError("Invalid or expired token");
     }
 }

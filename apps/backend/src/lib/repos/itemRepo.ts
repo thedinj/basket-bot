@@ -138,7 +138,12 @@ export function getItemsByStoreWithDetails(storeId: string): StoreItemWithDetail
                 COALESCE(s.sortOrder, 999999) ASC,
                 si.nameNorm ASC`
         )
-        .all(storeId) as any[];
+        .all(storeId) as Array<
+        Omit<StoreItemWithDetails, "isHidden" | "isFavorite"> & {
+            isHidden: number | null;
+            isFavorite: number | null;
+        }
+    >;
 
     // Convert SQLite integers to booleans
     return rows.map((row) => ({

@@ -11,7 +11,7 @@ export const GET = withAuth(
             const type = resolvedParams.type;
             const limit = 100;
 
-            let data: any[] = [];
+            let data: Record<string, unknown>[] = [];
             let columns: string[] = [];
 
             switch (type) {
@@ -30,7 +30,7 @@ export const GET = withAuth(
                          ORDER BY s.createdAt DESC
                          LIMIT ?`
                         )
-                        .all(limit) as any[];
+                        .all(limit) as Record<string, unknown>[];
                     columns = ["name", "createdBy", "createdAt"];
                     break;
 
@@ -45,7 +45,7 @@ export const GET = withAuth(
                          ORDER BY si.createdAt DESC
                          LIMIT ?`
                         )
-                        .all(limit) as any[];
+                        .all(limit) as Record<string, unknown>[];
                     columns = ["name", "storeName", "usageCount", "isFavorite", "createdAt"];
                     break;
 
@@ -63,7 +63,7 @@ export const GET = withAuth(
                          ORDER BY sli.createdAt DESC
                          LIMIT ?`
                         )
-                        .all(limit) as any[];
+                        .all(limit) as Record<string, unknown>[];
                     columns = ["itemName", "storeName", "qty", "unit", "isChecked", "createdAt"];
                     break;
 

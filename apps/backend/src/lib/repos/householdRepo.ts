@@ -19,7 +19,12 @@ export function getUserHouseholds(userId: string): Household[] {
              WHERE hm.userId = ?
              ORDER BY h.createdAt DESC`
         )
-        .all(userId) as any[];
+        .all(userId) as Array<
+        Omit<Household, "createdAt" | "updatedAt"> & {
+            createdAt: string;
+            updatedAt: string;
+        }
+    >;
 
     return rows.map((row) => ({
         id: row.id,
@@ -41,7 +46,12 @@ export function getHouseholdById(householdId: string): Household | null {
              FROM Household
              WHERE id = ?`
         )
-        .get(householdId) as any;
+        .get(householdId) as
+        | (Omit<Household, "createdAt" | "updatedAt"> & {
+              createdAt: string;
+              updatedAt: string;
+          })
+        | undefined;
 
     if (!row) return null;
 
@@ -70,7 +80,7 @@ export function getHouseholdWithMembers(householdId: string): HouseholdWithMembe
              WHERE hm.householdId = ?
              ORDER BY hm.createdAt ASC`
         )
-        .all(householdId) as any[];
+        .all(householdId) as Array<Omit<HouseholdMemberDetail, "createdAt"> & { createdAt: string }>;
 
     const members: HouseholdMemberDetail[] = memberRows.map((row) => ({
         id: row.id,
@@ -191,7 +201,7 @@ export function getHouseholdMembers(householdId: string): HouseholdMemberDetail[
              WHERE hm.householdId = ?
              ORDER BY hm.createdAt ASC`
         )
-        .all(householdId) as any[];
+        .all(householdId) as Array<Omit<HouseholdMemberDetail, "createdAt"> & { createdAt: string }>;
 
     return rows.map((row) => ({
         id: row.id,
@@ -227,7 +237,7 @@ export function countMembers(householdId: string): number {
              FROM HouseholdMember
              WHERE householdId = ?`
         )
-        .get(householdId) as any;
+        .get(householdId) as { count: number };
 
     return row.count;
 }

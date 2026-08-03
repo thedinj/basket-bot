@@ -3,6 +3,12 @@ import { hashPassword, verifyPassword } from "../auth/password";
 import { db } from "../db/db";
 import { parseSqliteTimestamp } from "../utils/sqliteUtils";
 
+type UserRow = Omit<User, "scopes" | "createdAt" | "updatedAt"> & {
+    scopes: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
 /**
  * Get user by email (case-insensitive)
  */
@@ -13,7 +19,7 @@ export function getUserByEmail(email: string): User | null {
              FROM User
              WHERE email = ? COLLATE NOCASE`
         )
-        .get(email.toLowerCase()) as any;
+        .get(email.toLowerCase()) as UserRow | undefined;
 
     if (!row) return null;
 
@@ -37,7 +43,7 @@ export function getUserById(id: string): User | null {
              FROM User
              WHERE id = ?`
         )
-        .get(id) as any;
+        .get(id) as UserRow | undefined;
 
     if (!row) return null;
 
@@ -114,7 +120,7 @@ export function getAllUsers(): User[] {
              FROM User
              ORDER BY createdAt DESC`
         )
-        .all() as any[];
+        .all() as UserRow[];
 
     return rows.map((row) => ({
         id: row.id,

@@ -1,8 +1,15 @@
 import { generateAccessToken } from "@/lib/auth/jwt";
 import { db } from "@/lib/db/db";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
-import { LoginResponse, refreshTokenRequestSchema } from "@basket-bot/core";
+import { LoginResponse, refreshTokenRequestSchema, User } from "@basket-bot/core";
 import { NextRequest, NextResponse } from "next/server";
+
+type RefreshTokenRow = Pick<User, "email" | "name"> & {
+    id: string;
+    userId: string;
+    expiresAt: string;
+    scopes: string | null;
+};
 
 export async function POST(req: NextRequest) {
     try {
@@ -17,7 +24,7 @@ export async function POST(req: NextRequest) {
                  JOIN User u ON rt.userId = u.id
                  WHERE rt.token = ?`
             )
-            .get(refreshToken) as any;
+            .get(refreshToken) as RefreshTokenRow | undefined;
 
         if (!tokenRow) {
             const response = NextResponse.json(

@@ -5,7 +5,7 @@ import { Badge, Button, Container, Paper, Table, Text, Title } from "@mantine/co
 import Link from "next/link";
 
 interface DataTableProps {
-    data: any[];
+    data: Record<string, unknown>[];
     columns: string[];
     type: string;
 }
@@ -17,7 +17,7 @@ const typeLabels: Record<string, string> = {
     "shopping-list-items": "Shopping List Items",
 };
 
-const formatValue = (key: string, value: any): React.ReactNode => {
+const formatValue = (key: string, value: unknown): React.ReactNode => {
     if (value === null || value === undefined) {
         return (
             <Text c="dimmed" size="sm">
@@ -41,7 +41,7 @@ const formatValue = (key: string, value: any): React.ReactNode => {
         try {
             return <Text size="sm">{parseSqliteTimestamp(String(value)).toLocaleString()}</Text>;
         } catch {
-            return <Text size="sm">{value}</Text>;
+            return <Text size="sm">{String(value)}</Text>;
         }
     }
 
@@ -112,7 +112,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, columns, type }) => {
                     </Table.Thead>
                     <Table.Tbody>
                         {data.map((row, idx) => (
-                            <Table.Tr key={row.id || idx}>
+                            <Table.Tr key={typeof row.id === "string" ? row.id : idx}>
                                 {columns.map((col) => (
                                     <Table.Td key={col}>{formatValue(col, row[col])}</Table.Td>
                                 ))}

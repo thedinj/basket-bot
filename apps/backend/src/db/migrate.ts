@@ -1,6 +1,7 @@
 import type { Database } from "better-sqlite3";
 import * as fs from "fs";
 import * as path from "path";
+import { pathToFileURL } from "url";
 import { db } from "../lib/db/db";
 
 interface Migration {
@@ -86,7 +87,7 @@ export async function runMigrations(): Promise<void> {
         console.log(`  Applying: ${filename}...`);
 
         const migrationPath = path.join(MIGRATIONS_DIR, filename);
-        const migration = require(migrationPath) as Migration;
+        const migration = (await import(pathToFileURL(migrationPath).href)) as Migration;
 
         if (!migration.up) {
             throw new Error(`Migration ${filename} does not export an 'up' function`);
@@ -135,7 +136,7 @@ export async function rollbackLastMigration(): Promise<void> {
     console.log(`  Rolling back: ${lastMigration}...`);
 
     const migrationPath = path.join(MIGRATIONS_DIR, lastMigration);
-    const migration = require(migrationPath) as Migration;
+    const migration = (await import(pathToFileURL(migrationPath).href)) as Migration;
 
     if (!migration.down) {
         throw new Error(`Migration ${lastMigration} does not export a 'down' function`);

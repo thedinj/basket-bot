@@ -2,6 +2,9 @@ import type { HouseholdInvitation, InvitationDetail, InvitationStatus } from "@b
 import { randomUUID } from "crypto";
 import { db } from "../db/db";
 
+type HouseholdInvitationRow = Omit<HouseholdInvitation, "createdAt"> & { createdAt: string };
+type InvitationDetailRow = Omit<InvitationDetail, "createdAt"> & { createdAt: string };
+
 /**
  * Create a new invitation
  */
@@ -47,7 +50,7 @@ export function getInvitationByToken(token: string): HouseholdInvitation | null 
              FROM HouseholdInvitation
              WHERE token = ?`
         )
-        .get(token) as any;
+        .get(token) as HouseholdInvitationRow | undefined;
 
     if (!row) return null;
 
@@ -84,7 +87,7 @@ export function getUserPendingInvitations(email: string): InvitationDetail[] {
              WHERE i.invitedEmail = ? COLLATE NOCASE AND i.status = 'pending'
              ORDER BY i.createdAt DESC`
         )
-        .all(email.toLowerCase()) as any[];
+        .all(email.toLowerCase()) as InvitationDetailRow[];
 
     return rows.map((row) => ({
         id: row.id,
@@ -110,7 +113,7 @@ export function getHouseholdPendingInvitations(householdId: string): HouseholdIn
              WHERE householdId = ? AND status = 'pending'
              ORDER BY createdAt DESC`
         )
-        .all(householdId) as any[];
+        .all(householdId) as HouseholdInvitationRow[];
 
     return rows.map((row) => ({
         id: row.id,
@@ -146,7 +149,7 @@ export function updateInvitationStatus(
              FROM HouseholdInvitation
              WHERE id = ?`
         )
-        .get(invitationId) as any;
+        .get(invitationId) as HouseholdInvitationRow;
 
     return {
         id: row.id,

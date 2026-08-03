@@ -11,7 +11,28 @@ import { boolToInt, intToBool } from "../utils/sqliteUtils";
  * Repository for ShoppingListItem entity operations.
  */
 
-function mapRowToShoppingListItem(row: any): ShoppingListItem {
+type ShoppingListItemRow = Omit<
+    ShoppingListItem,
+    "isChecked" | "isSample" | "isUnsure" | "isIdea"
+> & {
+    isChecked: number;
+    isSample: number | null;
+    isUnsure: number | null;
+    isIdea: number;
+};
+
+type ShoppingListItemWithDetailsRow = Omit<
+    ShoppingListItemWithDetails,
+    "isChecked" | "isSample" | "isUnsure" | "isIdea" | "isFavorite"
+> & {
+    isChecked: number;
+    isSample: number | null;
+    isUnsure: number | null;
+    isIdea: number;
+    isFavorite: number | null;
+};
+
+function mapRowToShoppingListItem(row: ShoppingListItemRow): ShoppingListItem {
     const isIdea = intToBool(row.isIdea);
     return {
         ...row,
@@ -26,7 +47,9 @@ function mapRowToShoppingListItem(row: any): ShoppingListItem {
     };
 }
 
-function mapRowToShoppingListItemWithDetails(row: any): ShoppingListItemWithDetails {
+function mapRowToShoppingListItemWithDetails(
+    row: ShoppingListItemWithDetailsRow
+): ShoppingListItemWithDetails {
     const isIdea = intToBool(row.isIdea);
     return {
         ...row,
@@ -82,7 +105,7 @@ export function getShoppingListItems(storeId: string): ShoppingListItemWithDetai
                 COALESCE(s.sortOrder, 999999) ASC,
                 sli.createdAt ASC`
         )
-        .all(storeId) as any[];
+        .all(storeId) as ShoppingListItemWithDetailsRow[];
 
     return rows.map(mapRowToShoppingListItemWithDetails);
 }
@@ -218,7 +241,7 @@ export function getShoppingListItemById(id: string): ShoppingListItem | null {
              FROM ShoppingListItem
              WHERE id = ?`
         )
-        .get(id) as any | undefined;
+        .get(id) as ShoppingListItemRow | undefined;
 
     if (!row) return null;
     return mapRowToShoppingListItem(row);

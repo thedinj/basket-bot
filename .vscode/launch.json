@@ -34,5 +34,15 @@
             "runtimeArgs": ["--new-window", "--disable-features=IsolateOrigins,site-per-process"],
             "postDebugTask": "Terminate All Tasks"
         }
+    ],
+    "compounds": [
+        {
+            "name": "Debug: Full Stack (Backend + Mobile)",
+            "configurations": ["Debug: Backend (Hot-reload)", "Debug: Mobile (Hot-reload)"],
+            "stopAll": true,
+            "presentation": {
+                "order": 1
+            }
+        }
     ]
 }

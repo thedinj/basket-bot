@@ -3,9 +3,16 @@ import { verifyPassword } from "@/lib/auth/password";
 import { checkRateLimit } from "@/lib/auth/rateLimiter";
 import { db } from "@/lib/db/db";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
-import { loginRequestSchema, LoginResponse } from "@basket-bot/core";
+import { loginRequestSchema, LoginResponse, User } from "@basket-bot/core";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+
+type UserRow = Omit<User, "scopes" | "createdAt" | "updatedAt"> & {
+    password: string;
+    scopes: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
 
 export async function POST(req: NextRequest) {
     // Rate limit: 5 attempts per 15 minutes
@@ -19,7 +26,9 @@ export async function POST(req: NextRequest) {
         const { email, password } = loginRequestSchema.parse(body);
 
         // Find user
-        const user = db.prepare("SELECT * FROM User WHERE email = ?").get(email) as any;
+        const user = db.prepare("SELECT * FROM User WHERE email = ?").get(email) as
+            | UserRow
+            | undefined;
         if (!user) {
             return NextResponse.json(
                 { code: "AUTHENTICATION_FAILED", message: "Invalid credentials" },

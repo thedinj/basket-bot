@@ -279,7 +279,7 @@ export type ShoppingListItemWithDetails = z.infer<typeof shoppingListItemWithDet
 // These schemas are used by the mobile app for local database operations
 // Server-controlled fields (createdById, updatedById, createdAt, updatedAt) are excluded
 
-const serverControlledFields = ["createdById", "updatedById", "createdAt", "updatedAt"] as const;
+type ServerControlledField = "createdById" | "updatedById" | "createdAt" | "updatedAt";
 
 // ========== Store Item Input Schemas ==========
 
@@ -408,21 +408,15 @@ export type ItemFormData = ShoppingListItemInput;
 export type StoreItemFormData = StoreItemInput;
 
 // Legacy type exports (for backward compatibility)
-export type StoreInput = Omit<Store, "id" | (typeof serverControlledFields)[number]> & {
+export type StoreInput = Omit<Store, "id" | ServerControlledField> & {
     id?: string;
 };
 
-export type StoreAisleInput = Omit<
-    StoreAisle,
-    "id" | "nameNorm" | (typeof serverControlledFields)[number]
-> & {
+export type StoreAisleInput = Omit<StoreAisle, "id" | "nameNorm" | ServerControlledField> & {
     id?: string;
 };
 
-export type StoreSectionInput = Omit<
-    StoreSection,
-    "id" | "nameNorm" | (typeof serverControlledFields)[number]
-> & {
+export type StoreSectionInput = Omit<StoreSection, "id" | "nameNorm" | ServerControlledField> & {
     id?: string;
 };
 

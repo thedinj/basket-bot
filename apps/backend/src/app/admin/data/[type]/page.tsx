@@ -10,7 +10,7 @@ const DataPage: React.FC = () => {
     const params = useParams();
     const type = params.type as string;
     const { accessToken } = useAdminSession();
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<Record<string, unknown>[]>([]);
     const [columns, setColumns] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
