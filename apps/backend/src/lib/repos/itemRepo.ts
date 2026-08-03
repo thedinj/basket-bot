@@ -208,6 +208,65 @@ export function deleteItem(id: string): boolean {
     return result.changes > 0;
 }
 
+/**
+ * Merges loserId into winnerId: repoints the loser's shopping list rows onto the winner
+ * (multiple rows for the same item are fine, e.g. separate entries from different recipes),
+ * combines usage/visibility state, fills in the winner's aisle/section from the loser if the
+ * winner has neither set, then deletes the loser. Otherwise leaves the winner's name/aisle/
+ * section untouched.
+ */
+export function mergeItemInto(loserId: string, winnerId: string): StoreItem | null {
+    const merge = db.transaction(() => {
+        const loser = getItemById(loserId);
+        const winner = getItemById(winnerId);
+        if (!loser || !winner) {
+            return winner;
+        }
+
+        db.prepare(`UPDATE ShoppingListItem SET storeItemId = ? WHERE storeItemId = ?`).run(
+            winnerId,
+            loserId
+        );
+
+        const now = new Date().toISOString();
+        const lastUsedAt =
+            !winner.lastUsedAt || (loser.lastUsedAt && loser.lastUsedAt > winner.lastUsedAt)
+                ? loser.lastUsedAt
+                : winner.lastUsedAt;
+
+        // Winner's own location wins if it has one; otherwise adopt the loser's, keeping
+        // aisle/section mutually exclusive (section implies null aisle) like createItem/updateItem.
+        const winnerHasLocation = winner.aisleId !== null || winner.sectionId !== null;
+        const aisleId = winnerHasLocation
+            ? winner.aisleId
+            : loser.sectionId
+              ? null
+              : loser.aisleId;
+        const sectionId = winnerHasLocation ? winner.sectionId : loser.sectionId;
+
+        db.prepare(
+            `UPDATE StoreItem
+             SET aisleId = ?, sectionId = ?, usageCount = ?, lastUsedAt = ?, isFavorite = ?, isHidden = ?, updatedAt = ?
+             WHERE id = ?`
+        ).run(
+            aisleId,
+            sectionId,
+            (winner.usageCount || 0) + (loser.usageCount || 0),
+            lastUsedAt,
+            winner.isFavorite || loser.isFavorite ? 1 : 0,
+            winner.isHidden && loser.isHidden ? 1 : 0,
+            now,
+            winnerId
+        );
+
+        db.prepare(`DELETE FROM StoreItem WHERE id = ?`).run(loserId);
+
+        return getItemById(winnerId);
+    });
+
+    return merge();
+}
+
 export function searchStoreItems(storeId: string, searchTerm: string, limit = 20): StoreItem[] {
     const normalizedSearch = normalizeItemName(searchTerm);
     const searchPattern = `%${normalizedSearch}%`;

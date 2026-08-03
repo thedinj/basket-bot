@@ -269,10 +269,11 @@ export function updateItem(params: {
     const nameNorm = normalizeItemName(params.name);
     const conflict = itemRepo.findItemByNameNorm(params.storeId, nameNorm, params.id);
     if (conflict) {
-        throw new ConflictError(
-            `An item named "${conflict.name}" already exists in this store.`,
-            "ITEM_NAME_CONFLICT"
-        );
+        // The rename collides with an existing item — merge into it rather than blocking.
+        // mergeItemInto already reconciles name/location/stats, so nothing further to apply here;
+        // reapplying params.aisleId/sectionId would incorrectly overwrite the winner's location
+        // with whatever the edit form happened to show for the item being renamed (the loser).
+        return itemRepo.mergeItemInto(params.id, conflict.id);
     }
 
     return itemRepo.updateItem({

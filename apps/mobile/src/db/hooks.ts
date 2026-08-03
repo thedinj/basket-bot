@@ -1014,12 +1014,6 @@ export function useUpdateItem() {
                 queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });
         },
-        onError: (error) => {
-            // ItemEditorModal shows this as an inline field error instead of a toast.
-            if (error instanceof ApiError && error.code === "ITEM_NAME_CONFLICT") {
-                markErrorHandled(error);
-            }
-        },
     });
 }
 

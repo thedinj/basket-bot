@@ -30,7 +30,6 @@ import {
     useUpdateItem,
     useUpsertShoppingListItem,
 } from "../../db/hooks";
-import { ApiError } from "../../lib/api/client";
 import { isCurrentlySnoozed } from "../../utils/dateUtils";
 import ItemInfoModal from "../shared/ItemInfoModal";
 import { ItemEditorProvider } from "./ItemEditorContext";
@@ -60,7 +59,6 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
         control,
         handleSubmit,
         reset,
-        setError,
         setValue,
         watch,
         formState: { errors, isValid },
@@ -161,22 +159,16 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
             let storeItemId: string;
 
             if (editingItem) {
-                // Update existing store item
-                try {
-                    await updateItem.mutateAsync({
-                        id: editingItem.storeItemId!,
-                        name: data.name || "",
-                        aisleId: data.aisleId || null,
-                        sectionId: data.sectionId || null,
-                        storeId,
-                    });
-                } catch (error: unknown) {
-                    if (error instanceof ApiError && error.code === "ITEM_NAME_CONFLICT") {
-                        setError("name", { type: "server", message: error.message });
-                    }
-                    return;
-                }
-                storeItemId = editingItem.storeItemId!;
+                // Update existing store item. If the new name collides with another item in
+                // this store, the backend merges into it and returns that item's id instead.
+                const updatedStoreItem = await updateItem.mutateAsync({
+                    id: editingItem.storeItemId!,
+                    name: data.name || "",
+                    aisleId: data.aisleId || null,
+                    sectionId: data.sectionId || null,
+                    storeId,
+                });
+                storeItemId = updatedStoreItem!.id;
             } else {
                 // Get or create store item
                 const storeItem = await getOrCreateStoreItem.mutateAsync({

@@ -1,6 +1,7 @@
 import type { StoreItem } from "@basket-bot/core";
-import { IonInput, IonItem, IonLabel, IonList, IonText } from "@ionic/react";
-import { useCallback, useEffect, useState } from "react";
+import { IonIcon, IonInput, IonItem, IonLabel, IonList, IonText } from "@ionic/react";
+import { closeOutline } from "ionicons/icons";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Controller } from "react-hook-form";
 import { useDebounce } from "use-debounce";
 import { useStoreItemAutocomplete } from "../../db/hooks";
@@ -13,6 +14,8 @@ export const NameAutocomplete: React.FC = () => {
     const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
     const { data: autocompleteResults } = useStoreItemAutocomplete(storeId, debouncedSearchTerm);
     const [showAutocomplete, setShowAutocomplete] = useState(false);
+    const [dismissed, setDismissed] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     // Sync searchTerm with form value (important for editing existing items)
     const nameValue = watch("name");
@@ -22,14 +25,37 @@ export const NameAutocomplete: React.FC = () => {
         }
     }, [nameValue, searchTerm]);
 
+    // Click/tap outside the field or dropdown dismisses it
+    useEffect(() => {
+        if (!showAutocomplete) return;
+
+        const handleOutsideClick = (event: PointerEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setShowAutocomplete(false);
+                setDismissed(true);
+            }
+        };
+
+        document.addEventListener("pointerdown", handleOutsideClick);
+        return () => document.removeEventListener("pointerdown", handleOutsideClick);
+    }, [showAutocomplete]);
+
     const handleSearchChange = useCallback(
         (value: string) => {
             setSearchTerm(value);
             setValue("name", value, { shouldValidate: true });
-            setShowAutocomplete(value.length > 2);
+            if (value.length <= 2) {
+                setDismissed(false);
+            }
+            setShowAutocomplete(!dismissed && value.length > 2);
         },
-        [setValue]
+        [setValue, dismissed]
     );
+
+    const handleDismiss = useCallback(() => {
+        setShowAutocomplete(false);
+        setDismissed(true);
+    }, []);
 
     const handleAutocompleteSelect = useCallback(
         (item: StoreItem) => {
@@ -51,6 +77,7 @@ export const NameAutocomplete: React.FC = () => {
 
             setSearchTerm(item.name);
             setShowAutocomplete(false);
+            setDismissed(false);
         },
         [setValue, sections]
     );
@@ -60,14 +87,17 @@ export const NameAutocomplete: React.FC = () => {
             name="name"
             control={control}
             render={() => (
-                <div style={{ position: "relative" }}>
+                <div ref={containerRef} style={{ position: "relative" }}>
                     <IonItem>
                         <IonLabel position="stacked">Item</IonLabel>
                         <IonInput
                             value={searchTerm}
                             placeholder="Enter item name"
                             onIonInput={(e) => handleSearchChange(e.detail.value || "")}
-                            onIonFocus={() => setShowAutocomplete(searchTerm.length >= 2)}
+                            onIonFocus={() => {
+                                setDismissed(false);
+                                setShowAutocomplete(searchTerm.length >= 2);
+                            }}
                             autocapitalize="sentences"
                         />
                     </IonItem>
@@ -98,8 +128,44 @@ export const NameAutocomplete: React.FC = () => {
                                 border: "1px solid var(--ion-color-medium)",
                                 borderRadius: "4px",
                                 backgroundColor: "var(--ion-background-color)",
+                                paddingTop: 0,
+                                paddingBottom: 0,
                             }}
                         >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    padding: "2px 12px",
+                                    borderBottom: "1px solid var(--ion-color-medium)",
+                                }}
+                            >
+                                <span
+                                    style={{ fontSize: "11px", color: "var(--ion-color-medium)" }}
+                                >
+                                    Suggestions
+                                </span>
+                                <span
+                                    onClick={handleDismiss}
+                                    role="button"
+                                    aria-label="Dismiss suggestions"
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        width: "20px",
+                                        height: "20px",
+                                        flexShrink: 0,
+                                        cursor: "pointer",
+                                    }}
+                                >
+                                    <IonIcon
+                                        icon={closeOutline}
+                                        style={{ fontSize: "16px" }}
+                                    />
+                                </span>
+                            </div>
                             {autocompleteResults.map((item) => {
                                 const section = sections?.find((s) => s.id === item.sectionId);
                                 const aisle = aisles?.find((a) => a.id === section?.aisleId);
