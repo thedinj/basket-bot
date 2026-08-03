@@ -33,7 +33,9 @@
       "Bash(pnpm --filter @basket-bot/mobile lint)",
       "Bash(pnpm exec *)",
       "Bash(pnpm --filter @basket-bot/core build)",
-      "Bash(pnpm --filter backend typecheck)"
+      "Bash(pnpm --filter backend typecheck)",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)"
     ]
   }
 }

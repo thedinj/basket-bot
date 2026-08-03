@@ -47,13 +47,15 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
     const visibleStores = useMemo(() => stores.filter((s) => !s.isHidden), [stores])
     const routing = useRouteIngredients()
     const [factor, setFactor] = useState(1)
+    const [showPantryItems, setShowPantryItems] = useState(false)
 
     useEffect(() => {
         if (!isOpen) return
         setFactor(1)
+        setShowPantryItems(false)
         const initialMap = new Map<string, string | null>()
         for (const ing of rawIngredients) {
-            initialMap.set(ing.id, DEFAULT_STORE)
+            initialMap.set(ing.id, ing.excluded ? null : DEFAULT_STORE)
         }
         const defStore =
             initialDefaultStoreId != null
@@ -61,6 +63,24 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
                 : (visibleStores[0]?.id ?? null)
         routing.init(initialMap, defStore)
     }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    const handleToggleShowPantryItems = () => {
+        setShowPantryItems((prev) => {
+            const next = !prev
+            if (!next) {
+                // Hiding pantry items again — uncheck any that were checked so a
+                // hidden item can never be silently included in the submission.
+                routing.setRouteMap((prevMap) => {
+                    const nextMap = new Map(prevMap)
+                    for (const ing of rawIngredients) {
+                        if (ing.excluded) nextMap.set(ing.id, null)
+                    }
+                    return nextMap
+                })
+            }
+            return next
+        })
+    }
 
     const resolvedIngredients = useMemo(
         () =>
@@ -77,6 +97,7 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
                     scaledQty,
                     unitId: ing.unitId,
                     isUnsure: routing.unsureSet.has(ing.id),
+                    excluded: ing.excluded,
                 }
             }),
         [rawIngredients, routing.routeMap, routing.defaultStoreId, routing.unsureSet, factor]
@@ -123,6 +144,8 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
                     onToggleUnsure={routing.toggleUnsure}
                     visibleStores={visibleStores}
                     unitMap={unitMap}
+                    showPantryItems={showPantryItems}
+                    onToggleShowPantryItems={handleToggleShowPantryItems}
                 />
             </IonContent>
 

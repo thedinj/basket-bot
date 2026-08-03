@@ -251,6 +251,30 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
     const routeMap = routing.routeMap;
     const setRouteMap = routing.setRouteMap;
     const defaultStoreId = routing.defaultStoreId;
+    const [showPantryItems, setShowPantryItems] = useState(false);
+
+    const handleToggleShowPantryItems = () => {
+        setShowPantryItems((prev) => {
+            const next = !prev;
+            if (!next) {
+                // Hiding pantry items again — uncheck any that were checked so a
+                // hidden item can never be silently included in the submission.
+                setRouteMap((prevMap) => {
+                    const nextMap = new Map(prevMap);
+                    for (const slot of planData?.slots ?? []) {
+                        if (!slot.pickedRecipeId) continue;
+                        const recipe = recipeById.get(slot.pickedRecipeId);
+                        if (!recipe) continue;
+                        for (const ing of recipe.ingredients) {
+                            if (ing.excluded) nextMap.set(ing.id, null);
+                        }
+                    }
+                    return nextMap;
+                });
+            }
+            return next;
+        });
+    };
 
     // Step 3: per-recipe scale factors (recipeId → multiplier)
     const [scaleFactors, setScaleFactors] = useState<Map<string, number>>(new Map());
@@ -369,20 +393,19 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
             if (!recipe) continue;
             const factor = scaleFactors.get(recipe.id) ?? 1;
             for (const ing of recipe.ingredients) {
-                if (!ing.excluded) {
-                    const raw = routeMap.get(ing.id) ?? null;
-                    result.push({
-                        ingredientId: ing.id,
-                        recipeId: recipe.id,
-                        name: ing.name,
-                        recipeName: recipe.name,
-                        storeId: raw === DEFAULT_STORE ? (defaultStoreId ?? null) : raw,
-                        qty: ing.qty,
-                        scaledQty: ing.qty != null ? parseFloat((ing.qty * factor).toPrecision(4)) : null,
-                        unitId: ing.unitId ?? null,
-                        isUnsure: routing.unsureSet.has(ing.id),
-                    });
-                }
+                const raw = routeMap.get(ing.id) ?? null;
+                result.push({
+                    ingredientId: ing.id,
+                    recipeId: recipe.id,
+                    name: ing.name,
+                    recipeName: recipe.name,
+                    storeId: raw === DEFAULT_STORE ? (defaultStoreId ?? null) : raw,
+                    qty: ing.qty,
+                    scaledQty: ing.qty != null ? parseFloat((ing.qty * factor).toPrecision(4)) : null,
+                    unitId: ing.unitId ?? null,
+                    isUnsure: routing.unsureSet.has(ing.id),
+                    excluded: ing.excluded,
+                });
             }
         }
         return result;
@@ -602,15 +625,15 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
             const recipe = recipeById.get(slot.pickedRecipeId);
             if (!recipe) continue;
             for (const ing of recipe.ingredients) {
-                if (!ing.excluded) {
-                    const existing = planData.routes.find((r) => r.ingredientId === ing.id);
-                    // Existing explicit routes keep their store; new items default to the sentinel
-                    newMap.set(ing.id, existing?.storeId ?? DEFAULT_STORE);
-                    if (existing?.isUnsure) newUnsureSet.add(ing.id);
-                }
+                const existing = planData.routes.find((r) => r.ingredientId === ing.id);
+                // Existing explicit routes keep their store; new non-pantry items default to
+                // the sentinel, new pantry items default to unchecked.
+                newMap.set(ing.id, existing?.storeId ?? (ing.excluded ? null : DEFAULT_STORE));
+                if (existing?.isUnsure) newUnsureSet.add(ing.id);
             }
         }
 
+        setShowPantryItems(false);
         routing.init(newMap, storeId, newUnsureSet);
         setStep(3);
     };
@@ -872,6 +895,8 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                             visibleStores={visibleStores}
                             recipeCount={pickedRecipes.length}
                             unitMap={unitMap}
+                            showPantryItems={showPantryItems}
+                            onToggleShowPantryItems={handleToggleShowPantryItems}
                         />
                     </>
                 )}

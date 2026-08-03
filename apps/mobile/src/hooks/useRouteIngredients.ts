@@ -9,6 +9,7 @@ export interface RawIngredient {
     recipeName: string
     qty: number | null
     unitId: string | null
+    excluded: boolean
 }
 
 export interface ResolvedIngredient {
@@ -21,6 +22,7 @@ export interface ResolvedIngredient {
     scaledQty: number | null
     unitId: string | null
     isUnsure: boolean
+    excluded: boolean
 }
 
 export function useRouteIngredients() {

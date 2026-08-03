@@ -20,8 +20,8 @@ import {
 import { ClickableSelectionModal } from "../shared/ClickableSelectionModal";
 import {
     addOutline,
+    archive,
     cart,
-    cartOutline,
     closeOutline,
     pricetagOutline,
     trashOutline,
@@ -41,6 +41,7 @@ import {
     useUpdateRecipe,
 } from "../../db/mealsHooks";
 import { useToast } from "../../hooks/useToast";
+import PantryBadge from "../shared/PantryBadge";
 import TagChip from "./TagChip";
 import TagManagerModal from "./TagManagerModal";
 
@@ -527,8 +528,10 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                         <div className="recipe-editor-ingredients-header">
                             <p className="recipe-editor-section-label">Ingredients</p>
                             <span className="recipe-editor-ingredients-hint">
-                                <IonIcon icon={cartOutline} />
-                                &nbsp;= shopping list
+                                <IonIcon icon={cart} />
+                                &nbsp;shopping list&nbsp;&nbsp;
+                                <IonIcon icon={archive} />
+                                &nbsp;pantry
                             </span>
                         </div>
                         <div className="recipe-editor-ingredients">
@@ -544,20 +547,21 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                             }
                                             autocapitalize="sentences"
                                         />
+                                        {row.excluded && <PantryBadge />}
                                         <IonButton
                                             fill="clear"
                                             size="small"
-                                            className={`recipe-editor-cart-btn${!row.excluded ? " included" : ""}`}
+                                            className={`recipe-editor-pantry-toggle-btn${!row.excluded ? " included" : ""}`}
                                             onClick={() => toggleRowExcluded(row.rowKey)}
                                             aria-label={
                                                 row.excluded
-                                                    ? "Not in shopping list"
-                                                    : "In shopping list"
+                                                    ? "Add to shopping list"
+                                                    : "Mark as pantry item"
                                             }
                                         >
                                             <IonIcon
                                                 slot="icon-only"
-                                                icon={row.excluded ? cartOutline : cart}
+                                                icon={row.excluded ? archive : cart}
                                             />
                                         </IonButton>
                                         <IonButton
@@ -591,7 +595,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                             {row.unitId ? unitMap.get(row.unitId) ?? "Unit" : "Unit"}
                                         </button>
                                     </div>
-                                    {row.name.trim() && !row.excluded && !row.shopExpanded && (
+                                    {row.name.trim() && !row.shopExpanded && (
                                         <IonButton
                                             fill="clear"
                                             size="small"

@@ -163,7 +163,9 @@ export function addRecipeToShoppingList(
     verifyHouseholdAccess(householdId, userId);
     const recipe = getOwnedRecipeWithDetails(householdId, recipeId);
 
-    const ingredientSet = new Set(recipe.ingredients.filter((i) => !i.excluded).map((i) => i.id));
+    // Validates that submitted ingredientIds belong to this recipe — pantry (excluded)
+    // ingredients are allowed here since the client explicitly opted them in.
+    const ingredientSet = new Set(recipe.ingredients.map((i) => i.id));
 
     let itemsCreated = 0;
     let itemsSkipped = 0;

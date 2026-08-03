@@ -1,5 +1,6 @@
 import { IonCheckbox, IonItem, IonLabel, IonList, IonText } from "@ionic/react";
 import type { ParsedRecipe, ParsedRecipeIngredient } from "../../llm/features/recipeImport";
+import PantryBadge from "../shared/PantryBadge";
 import "./RecipeImportPreview.scss";
 
 interface RecipeImportPreviewProps {
@@ -60,11 +61,7 @@ const RecipeImportPreview: React.FC<RecipeImportPreviewProps> = ({
                                 </span>
                                 <span className="recipe-import-preview__ing-name">
                                     {ing.name}
-                                    {ing.isPantryItem && (
-                                        <span className="recipe-import-preview__pantry-badge">
-                                            pantry
-                                        </span>
-                                    )}
+                                    {ing.isPantryItem && <PantryBadge />}
                                 </span>
                             </IonLabel>
                         </IonItem>

@@ -425,21 +425,18 @@ const RecipesAndPlans: React.FC = () => {
 
     const rawIngredients = useMemo(
         () =>
-            (routingRecipe?.ingredients ?? [])
-                .filter((i) => !i.excluded)
-                .map((i) => {
-                    const hasShoppingOverride = i.shoppingQty !== null || i.shoppingUnitId !== null;
-                    return {
-                        id: i.id,
-                        recipeId: i.recipeId,
-                        name: i.shoppingName ?? i.name,
-                        recipeName: routingRecipe!.name,
-                        qty: hasShoppingOverride ? i.shoppingQty : i.qty,
-                        unitId: hasShoppingOverride
-                            ? (i.shoppingUnitId ?? null)
-                            : (i.unitId ?? null),
-                    };
-                }),
+            (routingRecipe?.ingredients ?? []).map((i) => {
+                const hasShoppingOverride = i.shoppingQty !== null || i.shoppingUnitId !== null;
+                return {
+                    id: i.id,
+                    recipeId: i.recipeId,
+                    name: i.shoppingName ?? i.name,
+                    recipeName: routingRecipe!.name,
+                    qty: hasShoppingOverride ? i.shoppingQty : i.qty,
+                    unitId: hasShoppingOverride ? (i.shoppingUnitId ?? null) : (i.unitId ?? null),
+                    excluded: i.excluded,
+                };
+            }),
         [routingRecipe]
     );
 
