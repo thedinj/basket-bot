@@ -13,23 +13,25 @@ import { boolToInt, intToBool } from "../utils/sqliteUtils";
 
 type ShoppingListItemRow = Omit<
     ShoppingListItem,
-    "isChecked" | "isSample" | "isUnsure" | "isIdea"
+    "isChecked" | "isSample" | "isUnsure" | "isIdea" | "isPrivate"
 > & {
     isChecked: number;
     isSample: number | null;
     isUnsure: number | null;
     isIdea: number;
+    isPrivate: number | null;
 };
 
 type ShoppingListItemWithDetailsRow = Omit<
     ShoppingListItemWithDetails,
-    "isChecked" | "isSample" | "isUnsure" | "isIdea" | "isFavorite"
+    "isChecked" | "isSample" | "isUnsure" | "isIdea" | "isFavorite" | "isPrivate"
 > & {
     isChecked: number;
     isSample: number | null;
     isUnsure: number | null;
     isIdea: number;
     isFavorite: number | null;
+    isPrivate: number | null;
 };
 
 function mapRowToShoppingListItem(row: ShoppingListItemRow): ShoppingListItem {
@@ -40,6 +42,7 @@ function mapRowToShoppingListItem(row: ShoppingListItemRow): ShoppingListItem {
         isChecked: intToBool(row.isChecked),
         isSample: row.isSample != null ? intToBool(row.isSample) : null,
         isUnsure: row.isUnsure != null ? intToBool(row.isUnsure) : null,
+        isPrivate: row.isPrivate != null ? intToBool(row.isPrivate) : null,
         // Ideas have no store item, quantity, or unit
         storeItemId: isIdea ? null : row.storeItemId,
         qty: isIdea ? null : row.qty,
@@ -58,6 +61,7 @@ function mapRowToShoppingListItemWithDetails(
         isSample: row.isSample != null ? intToBool(row.isSample) : null,
         isUnsure: row.isUnsure != null ? intToBool(row.isUnsure) : null,
         isFavorite: row.isFavorite != null ? intToBool(row.isFavorite) : null,
+        isPrivate: row.isPrivate != null ? intToBool(row.isPrivate) : null,
         // Ideas have no store item, quantity, or unit
         storeItemId: isIdea ? null : row.storeItemId,
         qty: isIdea ? null : row.qty,
@@ -66,12 +70,15 @@ function mapRowToShoppingListItemWithDetails(
     };
 }
 
-export function getShoppingListItems(storeId: string): ShoppingListItemWithDetails[] {
+export function getShoppingListItems(
+    storeId: string,
+    userId: string
+): ShoppingListItemWithDetails[] {
     const rows = db
         .prepare(
             `SELECT
                 sli.id, sli.storeId, sli.storeItemId, sli.qty, sli.unitId, sli.notes,
-                sli.isChecked, sli.checkedAt, sli.checkedBy, sli.checkedUpdatedAt, sli.isSample, sli.isUnsure, sli.isIdea, sli.snoozedUntil,
+                sli.isChecked, sli.checkedAt, sli.checkedBy, sli.checkedUpdatedAt, sli.isSample, sli.isUnsure, sli.isIdea, sli.snoozedUntil, sli.isPrivate,
                 sli.createdById, sli.updatedById, sli.createdAt, sli.updatedAt,
                 si.name as itemName,
                 si.isFavorite as isFavorite,
@@ -99,15 +106,33 @@ export function getShoppingListItems(storeId: string): ShoppingListItemWithDetai
              LEFT JOIN User sli_updater ON sli.updatedById = sli_updater.id
              LEFT JOIN User si_creator ON si.createdById = si_creator.id
              LEFT JOIN User si_updater ON si.updatedById = si_updater.id
-             WHERE sli.storeId = ?
+             WHERE sli.storeId = ? AND (sli.isPrivate IS NULL OR sli.isPrivate = 0 OR sli.createdById = ?)
              ORDER BY
                 COALESCE(a.sortOrder, 999999) ASC,
                 COALESCE(s.sortOrder, 999999) ASC,
                 sli.createdAt ASC`
         )
-        .all(storeId) as ShoppingListItemWithDetailsRow[];
+        .all(storeId, userId) as ShoppingListItemWithDetailsRow[];
 
     return rows.map(mapRowToShoppingListItemWithDetails);
+}
+
+/**
+ * Throws NotFoundError if the item is private and belongs to someone other than userId,
+ * so a collaborator who learns/guesses the id can't distinguish "private" from "doesn't exist".
+ */
+function assertOwnerIfPrivate(id: string, userId: string): void {
+    const row = db
+        .prepare(`SELECT isPrivate, createdById FROM ShoppingListItem WHERE id = ?`)
+        .get(id) as { isPrivate: number | null; createdById: string } | undefined;
+
+    if (!row) {
+        throw new NotFoundError("Shopping list item not found");
+    }
+
+    if (intToBool(row.isPrivate) && row.createdById !== userId) {
+        throw new NotFoundError("Shopping list item not found");
+    }
 }
 
 export function upsertShoppingListItem(params: {
@@ -121,6 +146,7 @@ export function upsertShoppingListItem(params: {
     isIdea?: boolean;
     isSample?: boolean | null;
     isUnsure?: boolean | null;
+    isPrivate?: boolean | null;
     snoozedUntil?: string | null;
     userId: string;
 }): ShoppingListItem {
@@ -131,6 +157,7 @@ export function upsertShoppingListItem(params: {
     const isIdea = params.isIdea ?? false;
     const isSample = params.isSample ?? null;
     const isUnsure = params.isUnsure ?? null;
+    const isPrivate = params.isPrivate ?? null;
 
     // Ideas have no store item, quantity, or unit
     const storeItemId = isIdea ? null : (params.storeItemId ?? null);
@@ -141,7 +168,7 @@ export function upsertShoppingListItem(params: {
         // Update existing
         const existing = db
             .prepare(
-                `SELECT id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, checkedBy, checkedUpdatedAt, isSample, isUnsure, isIdea, snoozedUntil, createdById, updatedById, createdAt, updatedAt
+                `SELECT id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, checkedBy, checkedUpdatedAt, isSample, isUnsure, isIdea, snoozedUntil, isPrivate, createdById, updatedById, createdAt, updatedAt
                  FROM ShoppingListItem
                  WHERE id = ?`
             )
@@ -150,6 +177,11 @@ export function upsertShoppingListItem(params: {
         if (!existing) {
             throw new NotFoundError(`Shopping list item ${params.id} not found`);
         }
+
+        // Only the item's creator may change its privacy — otherwise silently keep the
+        // existing value so a non-owner can't hide someone else's item from them via update.
+        const isPrivateToPersist =
+            existing.createdById === params.userId ? boolToInt(isPrivate) : existing.isPrivate;
 
         // Compute checkedAt, checkedBy, and checkedUpdatedAt based on state change
         let checkedAt = existing.checkedAt;
@@ -167,7 +199,7 @@ export function upsertShoppingListItem(params: {
         db.prepare(
             `UPDATE ShoppingListItem
              SET storeItemId = ?, qty = ?, unitId = ?, notes = ?, isChecked = ?, checkedAt = ?, checkedBy = ?, checkedUpdatedAt = ?,
-                 isSample = ?, isUnsure = ?, isIdea = ?, snoozedUntil = ?, updatedById = ?, updatedAt = ?
+                 isSample = ?, isUnsure = ?, isIdea = ?, snoozedUntil = ?, isPrivate = ?, updatedById = ?, updatedAt = ?
              WHERE id = ?`
         ).run(
             storeItemId,
@@ -182,6 +214,7 @@ export function upsertShoppingListItem(params: {
             boolToInt(isUnsure),
             boolToInt(isIdea),
             snoozedUntil,
+            isPrivateToPersist,
             params.userId,
             now,
             params.id
@@ -207,8 +240,8 @@ export function upsertShoppingListItem(params: {
         }
 
         db.prepare(
-            `INSERT INTO ShoppingListItem (id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, checkedBy, checkedUpdatedAt, isSample, isUnsure, isIdea, snoozedUntil, createdById, updatedById, createdAt, updatedAt)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            `INSERT INTO ShoppingListItem (id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, checkedBy, checkedUpdatedAt, isSample, isUnsure, isIdea, snoozedUntil, isPrivate, createdById, updatedById, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).run(
             id,
             params.storeId,
@@ -224,6 +257,7 @@ export function upsertShoppingListItem(params: {
             boolToInt(isUnsure),
             boolToInt(isIdea),
             snoozedUntil,
+            boolToInt(isPrivate),
             params.userId,
             params.userId,
             now,
@@ -237,7 +271,7 @@ export function upsertShoppingListItem(params: {
 export function getShoppingListItemById(id: string): ShoppingListItem | null {
     const row = db
         .prepare(
-            `SELECT id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, checkedBy, checkedUpdatedAt, isSample, isUnsure, isIdea, snoozedUntil, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, storeId, storeItemId, qty, unitId, notes, isChecked, checkedAt, checkedBy, checkedUpdatedAt, isSample, isUnsure, isIdea, snoozedUntil, isPrivate, createdById, updatedById, createdAt, updatedAt
              FROM ShoppingListItem
              WHERE id = ?`
         )
@@ -252,6 +286,8 @@ export function toggleShoppingListItemChecked(
     isChecked: boolean,
     userId: string
 ): CheckConflictResult {
+    assertOwnerIfPrivate(id, userId);
+
     const now = new Date().toISOString();
 
     if (isChecked) {
@@ -325,7 +361,9 @@ export function toggleShoppingListItemChecked(
 /**
  * Remove a shopping list item (does NOT delete the store item)
  */
-export function removeShoppingListItem(id: string): void {
+export function removeShoppingListItem(id: string, userId: string): void {
+    assertOwnerIfPrivate(id, userId);
+
     const result = db.prepare(`DELETE FROM ShoppingListItem WHERE id = ?`).run(id);
 
     if (result.changes === 0) {
@@ -336,7 +374,9 @@ export function removeShoppingListItem(id: string): void {
 /**
  * Delete a shopping list item AND its associated store item
  */
-export function deleteShoppingListItem(id: string): boolean {
+export function deleteShoppingListItem(id: string, userId: string): boolean {
+    assertOwnerIfPrivate(id, userId);
+
     // Get the store item ID before deleting the shopping list item
     const shoppingListItem = db
         .prepare(`SELECT storeItemId FROM ShoppingListItem WHERE id = ?`)
@@ -357,10 +397,14 @@ export function deleteShoppingListItem(id: string): boolean {
     return result.changes > 0;
 }
 
-export function clearCheckedShoppingListItems(storeId: string): number {
+export function clearCheckedShoppingListItems(storeId: string, userId: string): number {
     const result = db
-        .prepare(`DELETE FROM ShoppingListItem WHERE storeId = ? AND isChecked = 1`)
-        .run(storeId);
+        .prepare(
+            `DELETE FROM ShoppingListItem
+             WHERE storeId = ? AND isChecked = 1
+                 AND (isPrivate IS NULL OR isPrivate = 0 OR createdById = ?)`
+        )
+        .run(storeId, userId);
 
     return result.changes;
 }

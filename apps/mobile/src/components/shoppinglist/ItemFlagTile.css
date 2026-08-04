@@ -1,0 +1,69 @@
+.item-flag-tile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--ion-color-step-50);
+    border: 1px solid var(--ion-color-step-150);
+    cursor: pointer;
+    transition:
+        background-color 0.15s ease-out,
+        border-color 0.15s ease-out;
+}
+
+.item-flag-tile__icon {
+    flex-shrink: 0;
+    font-size: 1.15em;
+    color: var(--ion-color-step-400);
+    transition: color 0.15s ease-out;
+}
+
+.item-flag-tile__label {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.9em;
+    /* Tall enough that overflow:hidden below doesn't clip descenders (e.g. the "g" in "Incognito") */
+    line-height: 1.4;
+    color: var(--ion-color-step-500);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 0.15s ease-out;
+}
+
+.item-flag-tile__toggle {
+    flex-shrink: 0;
+    --width: 32px;
+    --height: 20px;
+    transform: scale(0.85);
+    transform-origin: right center;
+}
+
+.item-flag-tile--warning.item-flag-tile--active {
+    background: color-mix(in oklch, var(--ion-color-warning) 16%, var(--ion-color-step-50));
+    border-color: color-mix(in oklch, var(--ion-color-warning) 45%, transparent);
+}
+
+.item-flag-tile--warning.item-flag-tile--active .item-flag-tile__icon,
+.item-flag-tile--warning.item-flag-tile--active .item-flag-tile__label {
+    color: var(--ion-color-warning);
+}
+
+.item-flag-tile--secondary.item-flag-tile--active {
+    background: color-mix(in oklch, var(--ion-color-secondary) 16%, var(--ion-color-step-50));
+    border-color: color-mix(in oklch, var(--ion-color-secondary) 45%, transparent);
+}
+
+.item-flag-tile--secondary.item-flag-tile--active .item-flag-tile__icon,
+.item-flag-tile--secondary.item-flag-tile--active .item-flag-tile__label {
+    color: var(--ion-color-secondary);
+}
+
+.item-flags-row {
+    display: flex;
+    gap: 8px;
+    margin: 8px 16px 16px;
+}

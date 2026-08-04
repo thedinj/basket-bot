@@ -241,6 +241,7 @@ const shoppingContextFields = {
     isSample: z.boolean().nullable(),
     isUnsure: z.boolean().nullable(),
     isIdea: z.boolean(),
+    isPrivate: z.boolean().nullable(),
     snoozedUntil: z.string().datetime().nullable(),
 };
 
@@ -363,6 +364,7 @@ export const shoppingListItemInputSchema = z
         isIdea: z.boolean().nullable().optional(),
         isSample: z.boolean().nullable().optional(),
         isUnsure: z.boolean().nullable().optional(),
+        isPrivate: z.boolean().nullable().optional(),
         snoozedUntil: z.string().datetime().nullable().optional(),
     })
     .superRefine((data, ctx) => {

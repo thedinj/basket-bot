@@ -35,7 +35,12 @@
       "Bash(pnpm --filter @basket-bot/core build)",
       "Bash(pnpm --filter backend typecheck)",
       "Bash(npx tsc *)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(pnpm --filter mobile typecheck)",
+      "Bash(pnpm --filter mobile lint)",
+      "Bash(pnpm --filter backend lint)",
+      "Bash(npx prettier *)",
+      "Bash(pnpm --filter @basket-bot/core test)"
     ]
   }
 }

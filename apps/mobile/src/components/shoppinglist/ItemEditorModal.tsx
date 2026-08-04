@@ -24,6 +24,7 @@ import {
 } from "ionicons/icons";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useAuth } from "../../auth/useAuth";
 import {
     useDeleteShoppingListItem,
     useGetOrCreateStoreItem,
@@ -36,6 +37,7 @@ import { ItemEditorProvider } from "./ItemEditorContext";
 import { LocationSelectors } from "./LocationSelectors";
 import { NameAutocomplete } from "./NameAutocomplete";
 import { NotesInput } from "./NotesInput";
+import { PrivateToggle } from "./PrivateToggle";
 import { QuantityInput } from "./QuantityInput";
 import { SnoozeDateSelector } from "./SnoozeDateSelector";
 import { UnitSelector } from "./UnitSelector";
@@ -48,6 +50,10 @@ interface ItemEditorModalProps {
 
 export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
     const { isItemModalOpen, editingItem, closeItemModal } = useShoppingListContext();
+    const { user } = useAuth();
+    // Only the item's creator can make it private — a new item's creator will be the
+    // current user, but an existing item may belong to someone else on a shared store.
+    const canTogglePrivate = !editingItem || editingItem.createdById === user?.id;
     const upsertItem = useUpsertShoppingListItem();
     const getOrCreateStoreItem = useGetOrCreateStoreItem();
     const updateItem = useUpdateItem();
@@ -74,6 +80,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
             sectionId: null,
             isIdea: false,
             isUnsure: false,
+            isPrivate: false,
             snoozedUntil: null,
         },
     });
@@ -96,6 +103,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 sectionId: editingItem.sectionId,
                 isIdea: editingItem.isIdea,
                 isUnsure: editingItem.isUnsure ?? false,
+                isPrivate: editingItem.isPrivate ?? false,
                 // Clear snoozedUntil if item is checked (checked items cannot be snoozed) or if date is in the past
                 snoozedUntil:
                     editingItem.isChecked || !isCurrentlySnoozed(editingItem.snoozedUntil)
@@ -113,6 +121,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 sectionId: null,
                 isIdea: false,
                 isUnsure: false,
+                isPrivate: false,
                 snoozedUntil: null,
             });
         }
@@ -152,6 +161,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 notes: data.notes || null,
                 isIdea: true,
                 isUnsure: data.isUnsure ?? false,
+                isPrivate: data.isPrivate ?? false,
                 snoozedUntil,
             });
         } else {
@@ -189,6 +199,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 unitId: data.unitId || null,
                 notes: data.notes || null,
                 isUnsure: data.isUnsure ?? false,
+                isPrivate: data.isPrivate ?? false,
                 snoozedUntil,
             });
         }
@@ -291,7 +302,10 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                             // Idea mode - only notes and snooze date
                             <>
                                 <NotesInput />
-                                <UnsureToggle />
+                                <div className="item-flags-row">
+                                    <UnsureToggle />
+                                    {canTogglePrivate && <PrivateToggle />}
+                                </div>
                                 {/* Hide snooze selector if editing a checked idea */}
                                 {!editingItem?.isChecked && <SnoozeDateSelector />}
                             </>
@@ -302,7 +316,10 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                                 <QuantityInput />
                                 <UnitSelector />
                                 <LocationSelectors />
-                                <UnsureToggle />
+                                <div className="item-flags-row">
+                                    <UnsureToggle />
+                                    {canTogglePrivate && <PrivateToggle />}
+                                </div>
                                 {/* Hide snooze selector if editing a checked item */}
                                 {!editingItem?.isChecked && <SnoozeDateSelector />}
                                 <NotesInput />

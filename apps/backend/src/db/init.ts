@@ -161,6 +161,7 @@ export function initializeDatabase() {
             "isUnsure" BOOLEAN,
             "isIdea" BOOLEAN,
             "snoozedUntil" DATETIME,
+            "isPrivate" INTEGER,
             "createdById" TEXT NOT NULL,
             "updatedById" TEXT NOT NULL,
             "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

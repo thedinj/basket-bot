@@ -1,23 +1,22 @@
-import { helpCircle, helpCircleOutline } from "ionicons/icons";
 import { Controller } from "react-hook-form";
 import { ItemFlagTile } from "./ItemFlagTile";
 import { useItemEditorContext } from "./useItemEditorContext";
 
-export const UnsureToggle = () => {
+export const PrivateToggle = () => {
     const { control } = useItemEditorContext();
 
     return (
         <Controller
-            name="isUnsure"
+            name="isPrivate"
             control={control}
             render={({ field }) => (
                 <ItemFlagTile
-                    icon={field.value ? helpCircleOutline : helpCircle}
-                    label="Unsure"
-                    description="Unsure if needed — double-check before you buy it"
+                    src={field.value ? "/img/private.svg" : "/img/private-filled.svg"}
+                    label="Incognito"
+                    description="Incognito — hidden from everyone else on this store"
                     checked={field.value ?? false}
                     onChange={field.onChange}
-                    tone="warning"
+                    tone="secondary"
                 />
             )}
         />

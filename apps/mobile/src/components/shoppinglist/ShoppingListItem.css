@@ -81,6 +81,28 @@
     --background: color-mix(in srgb, var(--ion-color-warning) 9%, var(--ion-background-color));
 }
 
+/* Private (surprise) icon */
+.private-icon {
+    font-size: 1.05em;
+    color: var(--ion-color-secondary);
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+/* Private items: subtle purple background tint, so a surprise reads differently at a glance */
+.shopping-list-item--private:not(.shopping-list-item--checked) {
+    --background: color-mix(in srgb, var(--ion-color-secondary) 9%, var(--ion-background-color));
+}
+
+/* Unsure AND private: blend both tints into their own distinct signature */
+.shopping-list-item--unsure.shopping-list-item--private:not(.shopping-list-item--checked) {
+    --background: color-mix(
+        in srgb,
+        var(--ion-color-warning) 7%,
+        color-mix(in srgb, var(--ion-color-secondary) 7%, var(--ion-background-color))
+    );
+}
+
 /* Move to store confirmation */
 .store-name-highlight {
     color: var(--ion-color-primary);
