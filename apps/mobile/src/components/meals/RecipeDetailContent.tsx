@@ -1,6 +1,6 @@
 import type { RecipeWithDetails } from "@basket-bot/core"
 import TagChip from "./TagChip"
-import "../../pages/RecipeDetail.scss"
+import "./RecipeDetailContent.scss"
 
 interface RecipeDetailContentProps {
     recipe: RecipeWithDetails

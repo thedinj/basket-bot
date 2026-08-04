@@ -1,11 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import type { PropsWithChildren } from "react";
 import { useCallback, useMemo, useState } from "react";
-import { RefreshContext } from "./RefreshContext";
+import { RefreshContext, type RefreshQueryKey } from "./RefreshContext";
 
 interface RefreshConfigProps {
     /** Query keys to use for refresh operations in this context */
-    queryKeys?: string[][];
+    queryKeys?: RefreshQueryKey[];
 }
 
 /**
@@ -28,11 +28,11 @@ const RefreshConfig: React.FC<PropsWithChildren<RefreshConfigProps>> = ({
 }) => {
     const queryClient = useQueryClient();
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [refreshQueryKeys, setRefreshQueryKeys] = useState<string[][] | null>(null);
+    const [refreshQueryKeys, setRefreshQueryKeys] = useState<RefreshQueryKey[] | null>(null);
     const configuredQueryKeys = queryKeys || null;
 
     const refresh = useCallback(
-        async (explicitQueryKeys?: string[][]) => {
+        async (explicitQueryKeys?: RefreshQueryKey[]) => {
             // If already refreshing, skip (TanStack Query will dedupe but we can avoid extra state updates)
             if (isRefreshing) {
                 return;

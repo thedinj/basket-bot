@@ -1,0 +1,46 @@
+.meals-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 64px 32px;
+    text-align: center;
+
+    p {
+        font-size: 15px;
+        color: var(--ion-color-step-500, #a0aec0);
+        margin: 0;
+    }
+}
+
+.meals-empty-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(124, 58, 237, 0.12);
+    color: var(--ion-color-primary, #7c3aed);
+    margin-bottom: 4px;
+
+    ion-icon {
+        font-size: 36px;
+    }
+}
+
+.meals-empty-title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ion-text-color);
+    margin: 0 0 4px;
+}
+
+.meals-empty-body {
+    font-size: 14px;
+    color: var(--ion-color-step-500, #a0aec0);
+    margin: 0;
+    max-width: 260px;
+}

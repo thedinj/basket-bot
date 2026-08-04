@@ -5,22 +5,16 @@ import {
     IonFab,
     IonFabButton,
     IonIcon,
-    IonLabel,
-    IonNote,
     IonPage,
     IonSearchbar,
-    IonSegment,
-    IonSegmentButton,
-    IonSelect,
-    IonSelectOption,
-    IonSpinner,
-    IonText,
 } from "@ionic/react";
-import { addOutline, calendarOutline, filterOutline, restaurantOutline } from "ionicons/icons";
+import { addOutline, filterOutline, restaurantOutline } from "ionicons/icons";
 import pluralize from "pluralize";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "../components/layout/AppHeader";
 import LoadingFallback from "../components/LoadingFallback";
+import { HouseholdSelect } from "../components/households/HouseholdSelect";
+import MealsEmptyState from "../components/meals/MealsEmptyState";
 import RecipeCard from "../components/meals/RecipeCard";
 import RecipeEditorModal, { type RecipeInitialData } from "../components/meals/RecipeEditorModal";
 import RecipeFilterSheet, {
@@ -30,7 +24,6 @@ import RecipeFilterSheet, {
     type RecipeSort,
 } from "../components/meals/RecipeFilterSheet";
 import RouteIngredientsModal from "../components/meals/RouteIngredientsModal";
-import TagManagerModal from "../components/meals/TagManagerModal";
 import { useRecipeImportModal } from "../components/meals/useRecipeImportModal";
 import { FabSpacer } from "../components/shared/FabSpacer";
 import PullToRefresh from "../components/shared/PullToRefresh";
@@ -40,21 +33,19 @@ import {
     useAddIngredient,
     useAddRecipeToShoppingList,
     useCreateRecipe,
-    usePlansHistory,
     useRecipes,
     useTags,
 } from "../db/mealsHooks";
+import { queryKeys } from "../db/queryKeys";
+import RefreshConfig from "../hooks/refresh/RefreshConfig";
 import { usePreference } from "../hooks/usePreference";
 import { useUnitItems } from "../hooks/useUnitItems";
 import { useHousehold } from "../households/useHousehold";
 import { LLMFabButton } from "../llm/shared";
-import MealPlanWizard from "./MealPlanWizard";
 
-import "./RecipesAndPlans.scss";
+import "./Recipes.scss";
 
-type Segment = "recipes" | "plans";
-
-const RecipesContent: React.FC<{
+const RecipesList: React.FC<{
     householdId: string | null;
     onOpenEditor: (recipeId?: string) => void;
     onAddToList: (recipe: RecipeWithDetails) => void;
@@ -163,18 +154,12 @@ const RecipesContent: React.FC<{
 
     if (recipes?.length === 0) {
         return (
-            <div className="meals-segment-empty">
-                <div className="meals-empty-icon">
-                    <IonIcon icon={restaurantOutline} />
-                </div>
-                <IonText>
-                    <h2 className="meals-empty-title">No recipes yet</h2>
-                    <p className="meals-empty-body">
-                        Add a recipe. The planner needs something to work with.
-                    </p>
-                </IonText>
-                <IonButton onClick={() => onOpenEditor()}>Add Recipe</IonButton>
-            </div>
+            <MealsEmptyState
+                icon={restaurantOutline}
+                title="No recipes yet"
+                body="Add a recipe. The planner needs something to work with."
+                action={<IonButton onClick={() => onOpenEditor()}>Add Recipe</IonButton>}
+            />
         );
     }
 
@@ -276,13 +261,9 @@ const RecipesContent: React.FC<{
             )}
 
             {filtered.length === 0 ? (
-                <div className="meals-segment-empty">
-                    <IonText>
-                        <p>
-                            {`No recipes match${search.trim() ? ` "${search.trim()}"` : ""}${activeFilterCount > 0 ? " with the active filters." : "."}`}
-                        </p>
-                    </IonText>
-                </div>
+                <MealsEmptyState
+                    body={`No recipes match${search.trim() ? ` "${search.trim()}"` : ""}${activeFilterCount > 0 ? " with the active filters." : "."}`}
+                />
             ) : (
                 <div className="meals-recipe-grid">
                     {filtered.map((recipe) => (
@@ -315,103 +296,10 @@ const RecipesContent: React.FC<{
     );
 };
 
-const PlansContent: React.FC<{ householdId: string | null }> = ({ householdId }) => {
-    const { data, isFetching, fetchNextPage, hasNextPage } = usePlansHistory(householdId);
-
-    const plans = data?.pages.flatMap((p) => p.plans) ?? [];
-    const total = data?.pages[0]?.total ?? 0;
-
-    if (data !== undefined && !isFetching && plans.length === 0) {
-        return (
-            <div className="meals-segment-empty">
-                <div className="meals-empty-icon">
-                    <IonIcon icon={calendarOutline} />
-                </div>
-                <IonText>
-                    <h2 className="meals-empty-title">No plans yet</h2>
-                    <p className="meals-empty-body">
-                        No dispatch history. Run the wizard when you're ready to commit.
-                    </p>
-                </IonText>
-            </div>
-        );
-    }
-
-    return (
-        <div className="plans-history">
-            <div className="plans-history-meta">
-                {data && (
-                    <IonNote>
-                        {total} dispatched {pluralize("plan", total)}
-                    </IonNote>
-                )}
-            </div>
-
-            {plans.map((plan) => {
-                const date = plan.dispatchedAt
-                    ? new Date(plan.dispatchedAt).toLocaleString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
-                      })
-                    : null;
-
-                return (
-                    <div key={plan.id} className="plan-history-card">
-                        <div className="plan-history-card__header">
-                            <span className="plan-history-card__date">{date ?? "—"}</span>
-                            <span className="plan-history-card__count">
-                                {plan.slotCount} {pluralize("meal", plan.slotCount)}
-                            </span>
-                        </div>
-                        <div className="plan-history-card__slots">
-                            {plan.slots.map((slot) => (
-                                <div key={slot.slotNumber} className="plan-history-slot">
-                                    <span className="plan-history-slot__num">
-                                        {slot.slotNumber}
-                                    </span>
-                                    <span className="plan-history-slot__name">
-                                        {slot.recipeName ?? <em>empty</em>}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                );
-            })}
-
-            {hasNextPage && (
-                <div className="plans-history-more">
-                    <IonButton
-                        fill="clear"
-                        size="small"
-                        color="medium"
-                        onClick={() => fetchNextPage()}
-                        disabled={isFetching}
-                    >
-                        {isFetching ? <IonSpinner name="dots" /> : "Load more"}
-                    </IonButton>
-                </div>
-            )}
-
-            {isFetching && plans.length === 0 && (
-                <div className="meals-segment-empty">
-                    <IonSpinner />
-                </div>
-            )}
-        </div>
-    );
-};
-
-const RecipesAndPlans: React.FC = () => {
-    const { households, activeHouseholdId, setActiveHouseholdId } = useHousehold();
-    const [segment, setSegment] = useState<Segment>("recipes");
-    const [wizardOpen, setWizardOpen] = useState(false);
+const Recipes: React.FC = () => {
+    const { activeHouseholdId } = useHousehold();
     const [editorOpen, setEditorOpen] = useState(false);
     const [editingRecipeId, setEditingRecipeId] = useState<string | undefined>();
-    const [tagManagerOpen, setTagManagerOpen] = useState(false);
     const [routingRecipe, setRoutingRecipe] = useState<RecipeWithDetails | null>(null);
     const [scrollToRecipeId, setScrollToRecipeId] = useState<string | null>(null);
 
@@ -477,45 +365,23 @@ const RecipesAndPlans: React.FC = () => {
 
     const { openRecipeImport } = useRecipeImportModal(handleImportAccepted);
 
-    const householdSelector =
-        households.length > 1 ? (
-            <IonSelect
-                value={activeHouseholdId}
-                onIonChange={(e) => setActiveHouseholdId(e.detail.value)}
-                interface="action-sheet"
-                className="meals-household-select"
-            >
-                {households.map((h) => (
-                    <IonSelectOption key={h.id} value={h.id}>
-                        {h.name}
-                    </IonSelectOption>
-                ))}
-            </IonSelect>
-        ) : null;
-
     return (
-        <IonPage>
-            <AppHeader title="Recipes & Plans">{householdSelector}</AppHeader>
+        <RefreshConfig
+            queryKeys={[
+                queryKeys.recipes.byHousehold(activeHouseholdId),
+                queryKeys.tags(activeHouseholdId),
+            ]}
+        >
+            <IonPage>
+                <AppHeader title="Recipes">
+                    <HouseholdSelect />
+                </AppHeader>
 
-            <IonSegment
-                className="meals-segment-bar"
-                value={segment}
-                onIonChange={(e) => setSegment(e.detail.value as Segment)}
-            >
-                <IonSegmentButton value="recipes">
-                    <IonLabel>Recipes</IonLabel>
-                </IonSegmentButton>
-                <IonSegmentButton value="plans">
-                    <IonLabel>Plans</IonLabel>
-                </IonSegmentButton>
-            </IonSegment>
+                <IonContent className="recipes-page">
+                    <PullToRefresh />
 
-            <IonContent className="recipes-and-plans-page">
-                <PullToRefresh />
-
-                {segment === "recipes" ? (
                     <Suspense fallback={<LoadingFallback />}>
-                        <RecipesContent
+                        <RecipesList
                             householdId={activeHouseholdId}
                             onOpenEditor={(id) => {
                                 setEditingRecipeId(id);
@@ -526,89 +392,58 @@ const RecipesAndPlans: React.FC = () => {
                             onScrolledToRecipe={() => setScrollToRecipeId(null)}
                         />
                     </Suspense>
-                ) : (
-                    <PlansContent householdId={activeHouseholdId} />
-                )}
 
-                <FabSpacer />
-            </IonContent>
+                    <FabSpacer />
+                </IonContent>
 
-            {segment === "recipes" && (
-                <>
-                    <IonFab
-                        vertical="bottom"
-                        horizontal="end"
-                        slot="fixed"
-                        className="meals-import-fab"
-                    >
-                        <LLMFabButton aria-label="Import recipe" onClick={openRecipeImport} />
-                    </IonFab>
-                    <IonFab vertical="bottom" horizontal="end" slot="fixed">
-                        <IonFabButton
-                            color="primary"
-                            onClick={() => {
-                                setEditingRecipeId(undefined);
-                                setEditorOpen(true);
-                            }}
-                            aria-label="Add recipe"
-                        >
-                            <IonIcon icon={addOutline} />
-                        </IonFabButton>
-                    </IonFab>
-                </>
-            )}
-
-            {segment === "plans" && (
+                <IonFab
+                    vertical="bottom"
+                    horizontal="end"
+                    slot="fixed"
+                    className="meals-import-fab"
+                >
+                    <LLMFabButton aria-label="Import recipe" onClick={openRecipeImport} />
+                </IonFab>
                 <IonFab vertical="bottom" horizontal="end" slot="fixed">
                     <IonFabButton
                         color="primary"
-                        onClick={() => setWizardOpen(true)}
-                        aria-label="Start new plan"
+                        onClick={() => {
+                            setEditingRecipeId(undefined);
+                            setEditorOpen(true);
+                        }}
+                        aria-label="Add recipe"
                     >
                         <IonIcon icon={addOutline} />
                     </IonFabButton>
                 </IonFab>
-            )}
 
-            <RecipeEditorModal
-                isOpen={editorOpen}
-                recipeId={editingRecipeId}
-                householdId={activeHouseholdId}
-                onDismiss={() => {
-                    setEditorOpen(false);
-                    setEditingRecipeId(undefined);
-                }}
-                onCreated={(recipeId) => {
-                    setSegment("recipes");
-                    setScrollToRecipeId(recipeId);
-                }}
-            />
+                <RecipeEditorModal
+                    isOpen={editorOpen}
+                    recipeId={editingRecipeId}
+                    householdId={activeHouseholdId}
+                    onDismiss={() => {
+                        setEditorOpen(false);
+                        setEditingRecipeId(undefined);
+                    }}
+                    onCreated={(recipeId) => setScrollToRecipeId(recipeId)}
+                />
 
-            <RouteIngredientsModal
-                isOpen={routingRecipe !== null}
-                onDismiss={() => setRoutingRecipe(null)}
-                rawIngredients={rawIngredients}
-                stores={stores}
-                initialDefaultStoreId={defaultStoreValue ?? null}
-                isWorking={addToListMutation.isPending}
-                unitMap={unitMap}
-                onConfirm={async (routes, factor) => {
-                    await addToListMutation.mutateAsync({ routes, factor });
-                    setRoutingRecipe(null);
-                }}
-            />
-
-            <TagManagerModal
-                isOpen={tagManagerOpen}
-                householdId={activeHouseholdId}
-                onDismiss={() => setTagManagerOpen(false)}
-            />
-
-            <Suspense>
-                <MealPlanWizard isOpen={wizardOpen} onDismiss={() => setWizardOpen(false)} />
-            </Suspense>
-        </IonPage>
+                <RouteIngredientsModal
+                    isOpen={routingRecipe !== null}
+                    onDismiss={() => setRoutingRecipe(null)}
+                    rawIngredients={rawIngredients}
+                    stores={stores}
+                    initialDefaultStoreId={defaultStoreValue ?? null}
+                    isWorking={addToListMutation.isPending}
+                    unitMap={unitMap}
+                    onConfirm={async (routes, factor) => {
+                        await addToListMutation.mutateAsync({ routes, factor });
+                        setRoutingRecipe(null);
+                    }}
+                />
+            </IonPage>
+        </RefreshConfig>
     );
 };
 
-export default RecipesAndPlans;
+export default Recipes;

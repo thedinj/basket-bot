@@ -1,13 +1,13 @@
 import { LLMModalProvider } from "@/llm/shared";
 import { IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } from "@ionic/react";
-import { cartOutline, restaurantOutline } from "ionicons/icons";
+import { calendarOutline, cartOutline, restaurantOutline } from "ionicons/icons";
 import { useEffect, useRef } from "react";
 import { Route } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { usePreloadCoreData } from "../db/hooks";
 import { HouseholdProvider } from "../households/HouseholdProvider";
-import RecipesAndPlans from "../pages/RecipesAndPlans";
-import RecipeDetail from "../pages/RecipeDetail";
+import Plans from "../pages/Plans";
+import Recipes from "../pages/Recipes";
 import ShoppingList from "../pages/ShoppingList";
 import { AppHeaderProvider } from "./layout/AppHeaderProvider";
 import { AppMenu } from "./layout/AppMenu";
@@ -50,10 +50,16 @@ const Main: React.FC = () => {
             label: "Shopping List",
         },
         {
-            tab: "recipesPlans",
-            href: "/recipes-plans",
+            tab: "recipes",
+            href: "/recipes",
             icon: restaurantOutline,
-            label: "Recipes & Plans",
+            label: "Recipes",
+        },
+        {
+            tab: "plans",
+            href: "/plans",
+            icon: calendarOutline,
+            label: "Meal Plans",
         },
     ];
 
@@ -81,16 +87,8 @@ const Main: React.FC = () => {
                             <IonRouterOutlet id="main-content" animated={false}>
                                 {/* REMEMBER: Most specific routes first */}
                                 <Route exact path="/shoppinglist" component={ShoppingList} />
-                                <Route
-                                    exact
-                                    path="/recipes-plans/recipes/:recipeId"
-                                    component={RecipeDetail}
-                                />
-                                <Route
-                                    exact
-                                    path="/recipes-plans"
-                                    component={RecipesAndPlans}
-                                />
+                                <Route exact path="/recipes" component={Recipes} />
+                                <Route exact path="/plans" component={Plans} />
                             </IonRouterOutlet>
 
                             {tabs.length > 1 && (

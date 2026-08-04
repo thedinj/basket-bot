@@ -18,8 +18,9 @@
  * `["items", "with-details", storeId]` for every store) so a mutation can invalidate a
  * whole namespace at once.
  *
- * Keys are intentionally plain (non-`readonly`) `string[]` arrays so they stay assignable
- * to the mutable `string[][]` refresh helpers and the `unknown[]` optimistic-update config.
+ * Keys are intentionally plain (non-`readonly`) arrays so they stay assignable to the mutable
+ * `RefreshQueryKey[]` refresh helpers and the `unknown[]` optimistic-update config. Household-
+ * scoped keys carry a `string | null` id, since the household is null while it loads.
  *
  * See `apps/mobile/docs/CACHE_KEYS.md` for the full registry + mutation cascade tables.
  * When you add or change a key here, update that document in the same change.
