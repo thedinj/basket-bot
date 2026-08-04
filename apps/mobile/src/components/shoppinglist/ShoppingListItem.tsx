@@ -211,7 +211,7 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                         ) : null}
                         {item.isPrivate ? (
                             <IonIcon
-                                src={isChecked ? "/img/private.svg" : "/img/private-filled.svg"}
+                                src="/img/private.svg"
                                 className="private-icon"
                                 title="Incognito — only visible to you"
                             />

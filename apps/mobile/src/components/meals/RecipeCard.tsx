@@ -51,9 +51,6 @@ const RecipeCard = forwardRef<HTMLDivElement, RecipeCardProps>(({ recipe, onClic
                     )}
                 </IonCardHeader>
                 <IonCardContent className="recipe-card__content">
-                    {recipe.description ? (
-                        <p className="recipe-card__description">{recipe.description}</p>
-                    ) : null}
                     {(ingredientCount > 0 || recipe.cookingTimeMinutes) && (
                         <div className="recipe-card__meta">
                             {ingredientCount > 0 && (
