@@ -165,6 +165,7 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                 isChecked && "shopping-list-item--checked",
                 item.isIdea && "shopping-list-item--idea",
                 item.isUnsure && "shopping-list-item--unsure",
+                item.isPrivate && "shopping-list-item--private",
                 justChecked && "shopping-list-item--just-checked"
             )}
             button={false}
@@ -206,6 +207,13 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                                 icon={isChecked ? helpCircleOutline : helpCircle}
                                 className="unsure-icon"
                                 title="Unsure if needed"
+                            />
+                        ) : null}
+                        {item.isPrivate ? (
+                            <IonIcon
+                                src={isChecked ? "/img/private.svg" : "/img/private-filled.svg"}
+                                className="private-icon"
+                                title="Incognito — only visible to you"
                             />
                         ) : null}
                     </h2>

@@ -122,7 +122,12 @@ export function createSection(params: {
     verifyStoreAccess(params.storeId, params.userId);
 
     const nameNorm = normalizeItemName(params.name);
-    const conflict = sectionRepo.findSectionByNameNorm(params.storeId, params.aisleId, nameNorm, "");
+    const conflict = sectionRepo.findSectionByNameNorm(
+        params.storeId,
+        params.aisleId,
+        nameNorm,
+        ""
+    );
     if (conflict) {
         throw new ConflictError(
             `A section named "${conflict.name}" already exists in this aisle.`,
@@ -159,7 +164,12 @@ export function updateSection(params: {
         const existing = sectionRepo.getSectionById(params.id);
         const nameNorm = normalizeItemName(params.name ?? existing?.name ?? "");
         const aisleId = params.aisleId ?? existing?.aisleId ?? "";
-        const conflict = sectionRepo.findSectionByNameNorm(params.storeId, aisleId, nameNorm, params.id);
+        const conflict = sectionRepo.findSectionByNameNorm(
+            params.storeId,
+            aisleId,
+            nameNorm,
+            params.id
+        );
         if (conflict) {
             throw new ConflictError(
                 `A section named "${conflict.name}" already exists in this aisle.`,
@@ -330,7 +340,7 @@ export function getShoppingListItems(
     userId: string
 ): ShoppingListItemWithDetails[] {
     verifyStoreAccess(storeId, userId);
-    return shoppingListRepo.getShoppingListItems(storeId);
+    return shoppingListRepo.getShoppingListItems(storeId, userId);
 }
 
 export function upsertShoppingListItem(
@@ -349,6 +359,7 @@ export function upsertShoppingListItem(
         isIdea: params.isIdea === true,
         isSample: params.isSample ?? null,
         isUnsure: params.isUnsure ?? null,
+        isPrivate: params.isPrivate ?? null,
         snoozedUntil: params.snoozedUntil ?? null,
         userId: params.userId,
     });
@@ -369,7 +380,7 @@ export function toggleShoppingListItemChecked(
  */
 export function removeShoppingListItem(id: string, storeId: string, userId: string): void {
     verifyStoreAccess(storeId, userId);
-    shoppingListRepo.removeShoppingListItem(id);
+    shoppingListRepo.removeShoppingListItem(id, userId);
 }
 
 /**
@@ -377,7 +388,7 @@ export function removeShoppingListItem(id: string, storeId: string, userId: stri
  */
 export function deleteShoppingListItem(id: string, storeId: string, userId: string): boolean {
     verifyStoreAccess(storeId, userId);
-    return shoppingListRepo.deleteShoppingListItem(id);
+    return shoppingListRepo.deleteShoppingListItem(id, userId);
 }
 
 export function clearCheckedShoppingListItems(storeId: string, userId: string): number {
