@@ -3,6 +3,7 @@ import type {
     ShoppingListItem,
     ShoppingListItemInput,
     ShoppingListItemWithDetails,
+    Store,
     StoreItemWithDetails,
 } from "@basket-bot/core";
 import { KeepAwake } from "@capacitor-community/keep-awake";
@@ -13,6 +14,7 @@ import {
     useMutation as useTanstackMutation,
     useQuery as useTanstackQuery,
     useSuspenseQuery as useTanstackSuspenseQuery,
+    useSuspenseQueries as useTanstackSuspenseQueries,
 } from "@tanstack/react-query";
 import pluralize from "pluralize";
 import { use, useCallback, useMemo } from "react";
@@ -22,6 +24,7 @@ import { useToast } from "../hooks/useToast";
 import { householdApi, invitationApi } from "../lib/api/household";
 import * as storeSharingApi from "../lib/api/storeSharing";
 import { markErrorHandled } from "../utils/errorUtils";
+import { sortStoresByPreference } from "../utils/storeSort";
 import { DatabaseContext } from "./context";
 import { checkAndInvalidateCoreDataCache } from "./coreDataVersion";
 import { useOptimisticMutation } from "./optimisticUpdates";
@@ -755,7 +758,10 @@ export function useBulkApplyAislesAndSections() {
                                 await database.deleteAisle(storeId, existingAisle.id);
                                 aisleDeletedCount++;
                             } catch (error) {
-                                console.error(`Failed to delete aisle "${existingAisle.name}":`, error);
+                                console.error(
+                                    `Failed to delete aisle "${existingAisle.name}":`,
+                                    error
+                                );
                                 errorCount++;
                             }
                         }
@@ -1148,6 +1154,35 @@ export function useShoppingListItems(storeId: string) {
 }
 
 /**
+ * Hook to get shopping list items across every visible store, grouped by store and in the
+ * same order as the store tab bar. Reuses `queryKeys.shoppingListItems.byStore` for each
+ * store so results share cache (and invalidations) with `useShoppingListItems`.
+ */
+export function useShoppingListItemsAllStores(): Array<{
+    store: Store;
+    items: ShoppingListItemWithDetails[];
+}> {
+    const database = useDatabase();
+    const { data: allStores } = useStores();
+    const stores = useMemo(
+        () => sortStoresByPreference(allStores.filter((store) => !store.isHidden)),
+        [allStores]
+    );
+
+    const results = useTanstackSuspenseQueries({
+        queries: stores.map((store) => ({
+            queryKey: queryKeys.shoppingListItems.byStore(store.id),
+            queryFn: async () => sortNamedItems(await database.getShoppingListItems(store.id)),
+        })),
+    });
+
+    return useMemo(
+        () => stores.map((store, index) => ({ store, items: results[index].data })),
+        [stores, results]
+    );
+}
+
+/**
  * Hook to search store items for autocomplete
  */
 export function useStoreItemAutocomplete(storeId: string, searchTerm: string) {
@@ -1239,7 +1274,9 @@ export function useToggleItemChecked() {
                 markErrorHandled(error);
                 // Silently refresh to sync with server state
                 if (refreshContext) {
-                    await refreshContext.refresh([queryKeys.shoppingListItems.byStore(vars.storeId)]);
+                    await refreshContext.refresh([
+                        queryKeys.shoppingListItems.byStore(vars.storeId),
+                    ]);
                 }
             }
         },
@@ -1269,7 +1306,9 @@ export function useDeleteShoppingListItem() {
                 markErrorHandled(error);
                 // Silently refresh to sync with server state
                 if (refreshContext) {
-                    await refreshContext.refresh([queryKeys.shoppingListItems.byStore(variables.storeId)]);
+                    await refreshContext.refresh([
+                        queryKeys.shoppingListItems.byStore(variables.storeId),
+                    ]);
                 }
             }
         },
@@ -1300,7 +1339,9 @@ export function useRemoveShoppingListItem() {
                 markErrorHandled(error);
                 // Silently refresh to sync with server state
                 if (refreshContext) {
-                    await refreshContext.refresh([queryKeys.shoppingListItems.byStore(variables.storeId)]);
+                    await refreshContext.refresh([
+                        queryKeys.shoppingListItems.byStore(variables.storeId),
+                    ]);
                 }
             }
         },
@@ -1353,6 +1394,10 @@ export function useMoveItemToStore() {
                 qty: number | null;
                 unitId: string | null;
                 isIdea: boolean;
+                isSample: boolean | null;
+                isUnsure: boolean | null;
+                isPrivate: boolean | null;
+                snoozedUntil: string | null;
             };
             sourceStoreId: string;
             targetStoreId: string;
@@ -1369,6 +1414,10 @@ export function useMoveItemToStore() {
                     qty: 1,
                     notes: item.notes,
                     isIdea: true,
+                    isSample: item.isSample,
+                    isUnsure: item.isUnsure,
+                    isPrivate: item.isPrivate,
+                    snoozedUntil: item.snoozedUntil,
                 });
             } else {
                 // Move regular item - get or create store item at target store
@@ -1387,6 +1436,10 @@ export function useMoveItemToStore() {
                     qty: item.qty,
                     unitId: item.unitId,
                     notes: item.notes,
+                    isSample: item.isSample,
+                    isUnsure: item.isUnsure,
+                    isPrivate: item.isPrivate,
+                    snoozedUntil: item.snoozedUntil,
                 });
             }
 
@@ -1625,7 +1678,9 @@ export function useInviteMember() {
             householdApi.createInvitation(params.householdId, params.email),
         meta: { operation: "invite member" },
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: queryKeys.household.detail(variables.householdId) });
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.household.detail(variables.householdId),
+            });
             showSuccess(`Invitation sent to ${variables.email}`);
         },
     });
@@ -1643,7 +1698,9 @@ export function useRemoveMember() {
             householdApi.removeMember(params.householdId, params.userId),
         meta: { operation: "remove member" },
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: queryKeys.household.detail(variables.householdId) });
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.household.detail(variables.householdId),
+            });
             queryClient.invalidateQueries({ queryKey: queryKeys.households() });
             queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
             showSuccess("Member removed");

@@ -31,7 +31,13 @@ export interface GlobalActionConfig {
     className?: string;
 }
 
-export type ModalName = "settings" | "profile" | "password" | "households" | "stores";
+export type ModalName =
+    | "settings"
+    | "profile"
+    | "password"
+    | "households"
+    | "stores"
+    | "unsureItems";
 
 export interface AppHeaderContextValue {
     currentModal: ModalName | null;

@@ -17,10 +17,18 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { homeOutline, keyOutline, logOut, person, settings } from "ionicons/icons";
+import {
+    helpCircleOutline,
+    homeOutline,
+    keyOutline,
+    logOut,
+    person,
+    settings,
+} from "ionicons/icons";
 import { useCallback } from "react";
 import { useAuth } from "../../auth/useAuth";
 import { usePendingInvitations } from "../../db/hooks";
+import { UnsureItemsModal } from "../shoppinglist/UnsureItemsModal";
 import { useAppHeader } from "./useAppHeader";
 
 export const AppMenu: React.FC = () => {
@@ -33,6 +41,7 @@ export const AppMenu: React.FC = () => {
     const handleOpenPassword = useCallback(() => openModal("password"), [openModal]);
     const handleOpenHouseholds = useCallback(() => openModal("households"), [openModal]);
     const handleOpenStores = useCallback(() => openModal("stores"), [openModal]);
+    const handleOpenUnsureItems = useCallback(() => openModal("unsureItems"), [openModal]);
 
     const handleLogout = async () => {
         try {
@@ -129,6 +138,12 @@ export const AppMenu: React.FC = () => {
                                 <IonLabel>Stores</IonLabel>
                             </IonItem>
                         </IonMenuToggle>
+                        <IonMenuToggle autoHide={false}>
+                            <IonItem button onClick={handleOpenUnsureItems} lines="none">
+                                <IonIcon icon={helpCircleOutline} slot="start" />
+                                <IonLabel>Unsure Items</IonLabel>
+                            </IonItem>
+                        </IonMenuToggle>
                     </IonList>
                     <div style={{ padding: "16px", marginTop: "auto" }}>
                         <IonButton expand="block" color="danger" onClick={handleLogout}>
@@ -143,6 +158,7 @@ export const AppMenu: React.FC = () => {
             <PasswordChangeModal />
             <StoreListModal />
             <HouseholdManagementModal />
+            <UnsureItemsModal />
         </>
     );
 };

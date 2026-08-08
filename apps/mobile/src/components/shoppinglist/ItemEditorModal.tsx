@@ -50,6 +50,10 @@ interface ItemEditorModalProps {
 
 export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
     const { isItemModalOpen, editingItem, closeItemModal } = useShoppingListContext();
+    // Editing an item always saves/deletes to the store it actually belongs to, not
+    // whichever store's page this modal happens to be mounted under — `storeId` is only
+    // the default used when creating a brand-new item.
+    const effectiveStoreId = editingItem?.storeId ?? storeId;
     const { user } = useAuth();
     // Only the item's creator can make it private — a new item's creator will be the
     // current user, but an existing item may belong to someone else on a shared store.
@@ -94,7 +98,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
     useEffect(() => {
         if (isItemModalOpen && editingItem) {
             reset({
-                storeId,
+                storeId: effectiveStoreId,
                 name: editingItem.itemName || "",
                 qty: editingItem.qty,
                 unitId: editingItem.unitId,
@@ -125,7 +129,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 snoozedUntil: null,
             });
         }
-    }, [isItemModalOpen, editingItem, reset, storeId]);
+    }, [isItemModalOpen, editingItem, reset, storeId, effectiveStoreId]);
 
     // Handle mode toggle - transfer notes between modes
     const handleModeToggle = (newMode: boolean) => {
@@ -156,7 +160,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
             // Idea - no store item needed
             await upsertItem.mutateAsync({
                 id: editingItem?.id,
-                storeId,
+                storeId: effectiveStoreId,
                 storeItemId: null,
                 notes: data.notes || null,
                 isIdea: true,
@@ -176,13 +180,13 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                     name: data.name || "",
                     aisleId: data.aisleId || null,
                     sectionId: data.sectionId || null,
-                    storeId,
+                    storeId: effectiveStoreId,
                 });
                 storeItemId = updatedStoreItem!.id;
             } else {
                 // Get or create store item
                 const storeItem = await getOrCreateStoreItem.mutateAsync({
-                    storeId,
+                    storeId: effectiveStoreId,
                     name: data.name || "",
                     aisleId: data.aisleId || null,
                     sectionId: data.sectionId || null,
@@ -193,7 +197,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
             // Update or create shopping list item
             await upsertItem.mutateAsync({
                 id: editingItem?.id,
-                storeId: storeId,
+                storeId: effectiveStoreId,
                 storeItemId: storeItemId,
                 qty: data.qty ?? null,
                 unitId: data.unitId || null,
@@ -212,7 +216,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
         try {
             await deleteItem.mutateAsync({
                 id: editingItem.id,
-                storeId: storeId,
+                storeId: effectiveStoreId,
             });
             setShowDeleteAlert(false);
             closeItemModal();
@@ -291,7 +295,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 )}
 
                 <ItemEditorProvider
-                    storeId={storeId}
+                    storeId={effectiveStoreId}
                     control={control}
                     errors={errors}
                     setValue={setValue}

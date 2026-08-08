@@ -2,7 +2,13 @@ import type { ShoppingListItemWithDetails, Store } from "@basket-bot/core";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import { IonButton, IonCheckbox, IonIcon, IonItem, IonLabel } from "@ionic/react";
 import clsx from "clsx";
-import { arrowRedoOutline, helpCircle, helpCircleOutline } from "ionicons/icons";
+import {
+    arrowRedoOutline,
+    checkmarkCircleOutline,
+    closeCircleOutline,
+    helpCircle,
+    helpCircleOutline,
+} from "ionicons/icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../auth/useAuth";
 import { useMoveItemToStore, useStores, useToggleItemChecked } from "../../db/hooks";
@@ -19,6 +25,16 @@ import "./ShoppingListItem.css";
 interface ShoppingListItemProps {
     item: ShoppingListItemWithDetails;
     isChecked: boolean;
+    /**
+     * When provided (together with `onRejectUnsure`), this is the Unsure Items review view:
+     * the checkbox and move-to-store button are replaced with "I don't need this" /
+     * "Confirm — I need this" actions, and calling this handler is the confirm side.
+     */
+    onConfirmUnsure?: () => void;
+    isConfirmingUnsure?: boolean;
+    /** The reject side of unsure review — deletes the item outright. See `onConfirmUnsure`. */
+    onRejectUnsure?: () => void;
+    isRejectingUnsure?: boolean;
 }
 
 const useSnoozeStatus = (snoozedUntil: string | null) => {
@@ -34,7 +50,14 @@ const useSnoozeStatus = (snoozedUntil: string | null) => {
     }, [snoozedUntil, currentDate]);
 };
 
-export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => {
+export const ShoppingListItem = ({
+    item,
+    isChecked,
+    onConfirmUnsure,
+    isConfirmingUnsure,
+    onRejectUnsure,
+    isRejectingUnsure,
+}: ShoppingListItemProps) => {
     const toast = useToast();
     const { user } = useAuth();
     const { openEditModal } = useShoppingListContext();
@@ -43,6 +66,7 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
     const moveItemToStore = useMoveItemToStore();
     const { data: stores } = useStores();
     const [isMoveToStoreModalOpen, setIsMoveToStoreModalOpen] = useState(false);
+    const [isRejectConfirmOpen, setIsRejectConfirmOpen] = useState(false);
     const [justChecked, setJustChecked] = useState(false);
     const [showZzz, setShowZzz] = useState(false);
     const prevSnoozedRef = useRef<boolean>(false);
@@ -80,6 +104,10 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                     qty: item.qty,
                     unitId: item.unitId,
                     isIdea: item.isIdea,
+                    isSample: item.isSample,
+                    isUnsure: item.isUnsure,
+                    isPrivate: item.isPrivate,
+                    snoozedUntil: item.snoozedUntil,
                 },
                 sourceStoreId: item.storeId,
                 targetStoreId: pendingMoveStore.id,
@@ -96,9 +124,13 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
         moveItemToStore,
         item.id,
         item.isIdea,
+        item.isPrivate,
+        item.isSample,
+        item.isUnsure,
         item.itemName,
         item.notes,
         item.qty,
+        item.snoozedUntil,
         item.storeId,
         item.unitId,
         toast,
@@ -124,6 +156,19 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
     const handleDismissConfirmModal = useCallback(() => {
         setPendingMoveStore(null);
     }, []);
+
+    const handleRejectIconClick = useCallback(() => {
+        setIsRejectConfirmOpen(true);
+    }, []);
+
+    const handleDismissRejectConfirm = useCallback(() => {
+        setIsRejectConfirmOpen(false);
+    }, []);
+
+    const handleConfirmReject = useCallback(() => {
+        setIsRejectConfirmOpen(false);
+        onRejectUnsure?.();
+    }, [onRejectUnsure]);
 
     const handleCheckboxChange = (checked: boolean) => {
         toggleChecked.mutate({
@@ -170,20 +215,25 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
             )}
             button={false}
         >
-            <div
-                slot="start"
-                className={clsx("checkbox-container", justChecked && "checkbox-container--bounce")}
-                onClick={handleCheckboxClick}
-            >
-                <IonCheckbox checked={isChecked} style={{ pointerEvents: "none" }} />
-                {showZzz && (
-                    <div className="zzz-particles" aria-hidden="true">
-                        <span className="zzz-particle zzz-particle--1">z</span>
-                        <span className="zzz-particle zzz-particle--2">z</span>
-                        <span className="zzz-particle zzz-particle--3">Z</span>
-                    </div>
-                )}
-            </div>
+            {!onConfirmUnsure && (
+                <div
+                    slot="start"
+                    className={clsx(
+                        "checkbox-container",
+                        justChecked && "checkbox-container--bounce"
+                    )}
+                    onClick={handleCheckboxClick}
+                >
+                    <IonCheckbox checked={isChecked} style={{ pointerEvents: "none" }} />
+                    {showZzz && (
+                        <div className="zzz-particles" aria-hidden="true">
+                            <span className="zzz-particle zzz-particle--1">z</span>
+                            <span className="zzz-particle zzz-particle--2">z</span>
+                            <span className="zzz-particle zzz-particle--3">Z</span>
+                        </div>
+                    )}
+                </div>
+            )}
             <IonLabel
                 className={clsx(
                     "item-label",
@@ -236,15 +286,40 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                 </>
             </IonLabel>
 
-            {stores && stores.length > 1 && !isChecked && (
-                <IonButton
-                    slot="end"
-                    fill="clear"
-                    onClick={handleMoveIconClick}
-                    title="Move to another store"
-                >
-                    <IonIcon icon={arrowRedoOutline} color="medium" />
-                </IonButton>
+            {onConfirmUnsure ? (
+                <>
+                    <IonButton
+                        slot="end"
+                        fill="clear"
+                        onClick={handleRejectIconClick}
+                        disabled={isRejectingUnsure}
+                        title="I don't need this — remove it"
+                    >
+                        <IonIcon icon={closeCircleOutline} color="danger" />
+                    </IonButton>
+                    <IonButton
+                        slot="end"
+                        fill="clear"
+                        onClick={onConfirmUnsure}
+                        disabled={isConfirmingUnsure}
+                        title="Confirm — I need this"
+                    >
+                        <IonIcon icon={checkmarkCircleOutline} color="success" />
+                    </IonButton>
+                </>
+            ) : (
+                stores &&
+                stores.length > 1 &&
+                !isChecked && (
+                    <IonButton
+                        slot="end"
+                        fill="clear"
+                        onClick={handleMoveIconClick}
+                        title="Move to another store"
+                    >
+                        <IonIcon icon={arrowRedoOutline} color="medium" />
+                    </IonButton>
+                )
             )}
 
             <ClickableSelectionModal
@@ -273,6 +348,18 @@ export const ShoppingListItem = ({ item, isChecked }: ShoppingListItemProps) => 
                 onConfirm={handleConfirmMove}
                 onCancel={handleDismissConfirmModal}
             />
+            {onRejectUnsure && (
+                <ConfirmModal
+                    isOpen={isRejectConfirmOpen}
+                    onDidDismiss={handleDismissRejectConfirm}
+                    title="Remove Item?"
+                    message={<p>Remove &quot;{titleToUse}&quot; from your shopping list?</p>}
+                    confirmText="Remove"
+                    confirmColor="danger"
+                    onConfirm={handleConfirmReject}
+                    onCancel={handleDismissRejectConfirm}
+                />
+            )}
         </IonItem>
     );
 };
