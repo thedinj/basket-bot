@@ -185,17 +185,23 @@ export function getRecipeWithDetails(id: string): RecipeWithDetails | null {
     // Get ingredients
     const ingredientRows = db
         .prepare(
-            `SELECT id, recipeId, name, shoppingName, qty, shoppingQty, unitId, shoppingUnitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, recipeId, name, shoppingName, qty, shoppingQty, unitId, shoppingUnitId, sortOrder, notes, excluded, isUnsure, createdById, updatedById, createdAt, updatedAt
              FROM RecipeIngredient
              WHERE recipeId = ?
              ORDER BY sortOrder ASC`
         )
-        .all(id) as Array<Omit<RecipeIngredient, "excluded"> & { excluded: 1 | null }>;
+        .all(id) as Array<
+        Omit<RecipeIngredient, "excluded" | "isUnsure"> & { excluded: 1 | null; isUnsure: 1 | null }
+    >;
 
     return {
         ...recipe,
         tags: tagRows,
-        ingredients: ingredientRows.map((r) => ({ ...r, excluded: r.excluded === 1 })),
+        ingredients: ingredientRows.map((r) => ({
+            ...r,
+            excluded: r.excluded === 1,
+            isUnsure: r.isUnsure === 1 ? true : null,
+        })),
     };
 }
 
@@ -218,13 +224,17 @@ export function getRecipesWithDetailsByHousehold(householdId: string): RecipeWit
 
     const ingRows = db
         .prepare(
-            `SELECT id, recipeId, name, shoppingName, qty, shoppingQty, unitId, shoppingUnitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, recipeId, name, shoppingName, qty, shoppingQty, unitId, shoppingUnitId, sortOrder, notes, excluded, isUnsure, createdById, updatedById, createdAt, updatedAt
              FROM RecipeIngredient
              WHERE recipeId IN (${ph})
              ORDER BY sortOrder ASC, name ASC`
         )
         .all(...ids) as Array<
-        Omit<RecipeIngredient, "excluded"> & { recipeId: string; excluded: 1 | null }
+        Omit<RecipeIngredient, "excluded" | "isUnsure"> & {
+            recipeId: string;
+            excluded: 1 | null;
+            isUnsure: 1 | null;
+        }
     >;
 
     const tagsByRecipe = new Map<string, RecipeTag[]>();
@@ -238,7 +248,12 @@ export function getRecipesWithDetailsByHousehold(householdId: string): RecipeWit
     for (const row of ingRows) {
         const { recipeId, ...rest } = row;
         if (!ingsByRecipe.has(recipeId)) ingsByRecipe.set(recipeId, []);
-        ingsByRecipe.get(recipeId)!.push({ ...rest, recipeId, excluded: rest.excluded === 1 });
+        ingsByRecipe.get(recipeId)!.push({
+            ...rest,
+            recipeId,
+            excluded: rest.excluded === 1,
+            isUnsure: rest.isUnsure === 1 ? true : null,
+        });
     }
 
     return recipes.map((recipe) => ({

@@ -113,6 +113,7 @@ export const recipeIngredientSchema = z.object({
     sortOrder: z.number().int().min(0),
     notes: maxLengthString(MAX_RECIPE_INGREDIENT_NOTES_LENGTH, "Ingredient notes").nullable(),
     excluded: z.boolean(),
+    isUnsure: z.boolean().nullable(),
     ...auditFields,
 });
 
@@ -130,6 +131,7 @@ export const addRecipeIngredientRequestSchema = z.object({
         .nullable()
         .optional(),
     excluded: z.boolean().optional().default(false),
+    isUnsure: z.boolean().nullable().optional(),
 });
 
 export type AddRecipeIngredientRequest = z.infer<typeof addRecipeIngredientRequestSchema>;

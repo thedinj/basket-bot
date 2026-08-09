@@ -54,14 +54,16 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
         setFactor(1)
         setShowPantryItems(false)
         const initialMap = new Map<string, string | null>()
+        const initialUnsure = new Set<string>()
         for (const ing of rawIngredients) {
             initialMap.set(ing.id, ing.excluded ? null : DEFAULT_STORE)
+            if (ing.isUnsure) initialUnsure.add(ing.id)
         }
         const defStore =
             initialDefaultStoreId != null
                 ? (visibleStores.find((s) => s.id === initialDefaultStoreId)?.id ?? visibleStores[0]?.id ?? null)
                 : (visibleStores[0]?.id ?? null)
-        routing.init(initialMap, defStore)
+        routing.init(initialMap, defStore, initialUnsure)
     }, [isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleToggleShowPantryItems = () => {

@@ -194,7 +194,7 @@ export function addRecipeToShoppingList(
             qty: scaledQty,
             unitId: effectiveUnitId ?? null,
             notes: recipe.name,
-            isUnsure: route.isUnsure ?? null,
+            isUnsure: route.isUnsure ?? ingredient.isUnsure ?? null,
             userId,
         });
 

@@ -10,6 +10,7 @@ export interface RawIngredient {
     qty: number | null
     unitId: string | null
     excluded: boolean
+    isUnsure: boolean
 }
 
 export interface ResolvedIngredient {

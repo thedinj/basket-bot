@@ -629,7 +629,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                 // Existing explicit routes keep their store; new non-pantry items default to
                 // the sentinel, new pantry items default to unchecked.
                 newMap.set(ing.id, existing?.storeId ?? (ing.excluded ? null : DEFAULT_STORE));
-                if (existing?.isUnsure) newUnsureSet.add(ing.id);
+                if (existing ? existing.isUnsure : ing.isUnsure) newUnsureSet.add(ing.id);
             }
         }
 

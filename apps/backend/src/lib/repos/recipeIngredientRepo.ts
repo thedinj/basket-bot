@@ -7,10 +7,13 @@ import { normalizeItemName } from "../utils/stringUtils";
  * Handles ingredients for recipes with sortOrder for display.
  */
 
-type RawRow = Omit<RecipeIngredient, "excluded"> & { excluded: 1 | null };
+type RawRow = Omit<RecipeIngredient, "excluded" | "isUnsure"> & {
+    excluded: 1 | null;
+    isUnsure: 1 | null;
+};
 
 function mapRow(row: RawRow): RecipeIngredient {
-    return { ...row, excluded: row.excluded === 1 };
+    return { ...row, excluded: row.excluded === 1, isUnsure: row.isUnsure === 1 ? true : null };
 }
 
 // ========== RecipeIngredient CRUD Operations ==========
@@ -26,6 +29,7 @@ export function addIngredient(params: {
     sortOrder?: number;
     notes?: string | null;
     excluded?: boolean;
+    isUnsure?: boolean | null;
     createdById: string;
 }): RecipeIngredient {
     const id = crypto.randomUUID();
@@ -44,8 +48,8 @@ export function addIngredient(params: {
     const shoppingUnitId = sameAsRecipe ? null : rawShoppingUnitId;
 
     db.prepare(
-        `INSERT INTO RecipeIngredient (id, recipeId, name, shoppingName, qty, shoppingQty, unitId, shoppingUnitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO RecipeIngredient (id, recipeId, name, shoppingName, qty, shoppingQty, unitId, shoppingUnitId, sortOrder, notes, excluded, isUnsure, createdById, updatedById, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
         id,
         params.recipeId,
@@ -58,6 +62,7 @@ export function addIngredient(params: {
         params.sortOrder ?? 0,
         params.notes ?? null,
         params.excluded ? 1 : null,
+        params.isUnsure ? 1 : null,
         params.createdById,
         params.createdById,
         now,
@@ -70,7 +75,7 @@ export function addIngredient(params: {
 export function getIngredientById(id: string): RecipeIngredient | null {
     const row = db
         .prepare(
-            `SELECT id, recipeId, name, shoppingName, qty, shoppingQty, unitId, shoppingUnitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, recipeId, name, shoppingName, qty, shoppingQty, unitId, shoppingUnitId, sortOrder, notes, excluded, isUnsure, createdById, updatedById, createdAt, updatedAt
              FROM RecipeIngredient
              WHERE id = ?`
         )
@@ -82,7 +87,7 @@ export function getIngredientById(id: string): RecipeIngredient | null {
 export function getIngredientsByRecipe(recipeId: string): RecipeIngredient[] {
     const rows = db
         .prepare(
-            `SELECT id, recipeId, name, shoppingName, qty, shoppingQty, unitId, shoppingUnitId, sortOrder, notes, excluded, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, recipeId, name, shoppingName, qty, shoppingQty, unitId, shoppingUnitId, sortOrder, notes, excluded, isUnsure, createdById, updatedById, createdAt, updatedAt
              FROM RecipeIngredient
              WHERE recipeId = ?
              ORDER BY sortOrder ASC, name ASC`
@@ -103,6 +108,7 @@ export function updateIngredient(params: {
     sortOrder?: number;
     notes?: string | null;
     excluded?: boolean;
+    isUnsure?: boolean | null;
     updatedById: string;
 }): RecipeIngredient | null {
     const existing = getIngredientById(params.id);
@@ -115,6 +121,8 @@ export function updateIngredient(params: {
 
     const excluded =
         params.excluded !== undefined ? (params.excluded ? 1 : null) : existing.excluded ? 1 : null;
+    const isUnsure =
+        params.isUnsure !== undefined ? (params.isUnsure ? 1 : null) : existing.isUnsure ? 1 : null;
 
     let shoppingName: string | null;
     if (params.shoppingName !== undefined) {
@@ -141,7 +149,7 @@ export function updateIngredient(params: {
 
     db.prepare(
         `UPDATE RecipeIngredient
-         SET name = ?, shoppingName = ?, qty = ?, shoppingQty = ?, unitId = ?, shoppingUnitId = ?, sortOrder = ?, notes = ?, excluded = ?, updatedById = ?, updatedAt = ?
+         SET name = ?, shoppingName = ?, qty = ?, shoppingQty = ?, unitId = ?, shoppingUnitId = ?, sortOrder = ?, notes = ?, excluded = ?, isUnsure = ?, updatedById = ?, updatedAt = ?
          WHERE id = ?`
     ).run(
         resolvedName,
@@ -153,6 +161,7 @@ export function updateIngredient(params: {
         params.sortOrder !== undefined ? params.sortOrder : existing.sortOrder,
         params.notes !== undefined ? params.notes : existing.notes,
         excluded,
+        isUnsure,
         params.updatedById,
         now,
         params.id

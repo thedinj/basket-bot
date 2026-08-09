@@ -323,6 +323,7 @@ const Recipes: React.FC = () => {
                     qty: hasShoppingOverride ? i.shoppingQty : i.qty,
                     unitId: hasShoppingOverride ? (i.shoppingUnitId ?? null) : (i.unitId ?? null),
                     excluded: i.excluded,
+                    isUnsure: !!i.isUnsure,
                 };
             }),
         [routingRecipe]

@@ -232,6 +232,7 @@ export function initializeDatabase() {
             "sortOrder" INTEGER NOT NULL DEFAULT 0,
             "notes" TEXT CHECK("notes" IS NULL OR length("notes") <= 500),
             "excluded" INTEGER,
+            "isUnsure" INTEGER,
             "createdById" TEXT NOT NULL,
             "updatedById" TEXT NOT NULL,
             "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

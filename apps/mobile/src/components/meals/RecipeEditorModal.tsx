@@ -23,6 +23,8 @@ import {
     archive,
     cart,
     closeOutline,
+    helpCircle,
+    helpCircleOutline,
     pricetagOutline,
     trashOutline,
 } from "ionicons/icons";
@@ -57,6 +59,7 @@ interface IngredientRow {
     unitId: string | null;
     shoppingUnitId: string | null;
     excluded: boolean;
+    isUnsure: boolean;
     shopExpanded: boolean;
 }
 
@@ -92,6 +95,7 @@ const emptyRow = (): IngredientRow => ({
     unitId: null,
     shoppingUnitId: null,
     excluded: false,
+    isUnsure: false,
     shopExpanded: false,
 });
 
@@ -194,6 +198,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                             unitId: ing.unitId,
                             shoppingUnitId: ing.shoppingUnitId ?? null,
                             excluded: ing.excluded,
+                            isUnsure: false,
                             shopExpanded: !!(ing.shoppingName || ing.shoppingQty != null || ing.shoppingUnitId),
                         })))
                     );
@@ -230,6 +235,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                       unitId: ing.unitId ?? null,
                       shoppingUnitId: ing.shoppingUnitId ?? null,
                       excluded: !!ing.excluded,
+                      isUnsure: !!ing.isUnsure,
                       shopExpanded: !!(ing.shoppingName || ing.shoppingQty !== null || ing.shoppingUnitId !== null),
                   })))
                 : [emptyRow()];
@@ -249,7 +255,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
 
     const updateRow = (
         rowKey: string,
-        field: keyof Omit<IngredientRow, "rowKey" | "id" | "excluded">,
+        field: keyof Omit<IngredientRow, "rowKey" | "id" | "excluded" | "isUnsure">,
         value: string | null
     ) => {
         setIngredients((prev) =>
@@ -259,7 +265,17 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
 
     const toggleRowExcluded = (rowKey: string) => {
         setIngredients((prev) =>
-            prev.map((r) => (r.rowKey === rowKey ? { ...r, excluded: !r.excluded } : r))
+            prev.map((r) =>
+                r.rowKey === rowKey
+                    ? { ...r, excluded: !r.excluded, isUnsure: r.excluded ? r.isUnsure : false }
+                    : r
+            )
+        );
+    };
+
+    const toggleRowIsUnsure = (rowKey: string) => {
+        setIngredients((prev) =>
+            prev.map((r) => (r.rowKey === rowKey ? { ...r, isUnsure: !r.isUnsure } : r))
         );
     };
 
@@ -312,6 +328,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                         unitId: row.unitId || null,
                         shoppingUnitId: parsedShoppingQty ? (row.shoppingUnitId || null) : null,
                         excluded: row.excluded,
+                        isUnsure: row.isUnsure,
                     });
                 }
                 for (const tagId of selectedTagIds) {
@@ -358,6 +375,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                             unitId: row.unitId || null,
                             shoppingUnitId: resolvedShoppingUnitId,
                             excluded: row.excluded,
+                            isUnsure: row.isUnsure,
                         });
                     } else {
                         const orig = origById.get(row.id);
@@ -369,7 +387,8 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                 row.shoppingQty !== orig.shoppingQty ||
                                 row.unitId !== orig.unitId ||
                                 row.shoppingUnitId !== orig.shoppingUnitId ||
-                                row.excluded !== orig.excluded)
+                                row.excluded !== orig.excluded ||
+                                row.isUnsure !== orig.isUnsure)
                         ) {
                             await updateIngredientMutation.mutateAsync({
                                 recipeId: savedId,
@@ -381,6 +400,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                 unitId: row.unitId || null,
                                 shoppingUnitId: resolvedShoppingUnitId,
                                 excluded: row.excluded,
+                                isUnsure: row.isUnsure,
                             });
                         }
                     }
@@ -564,6 +584,24 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                                 icon={row.excluded ? archive : cart}
                                             />
                                         </IonButton>
+                                        {!row.excluded && (
+                                            <IonButton
+                                                fill="clear"
+                                                size="small"
+                                                className={`recipe-editor-unsure-toggle-btn${row.isUnsure ? " active" : ""}`}
+                                                onClick={() => toggleRowIsUnsure(row.rowKey)}
+                                                aria-label={
+                                                    row.isUnsure
+                                                        ? "Marked unsure if needed"
+                                                        : "Mark unsure if needed"
+                                                }
+                                            >
+                                                <IonIcon
+                                                    slot="icon-only"
+                                                    icon={row.isUnsure ? helpCircle : helpCircleOutline}
+                                                />
+                                            </IonButton>
+                                        )}
                                         <IonButton
                                             fill="clear"
                                             size="small"

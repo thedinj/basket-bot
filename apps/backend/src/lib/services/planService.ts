@@ -240,7 +240,7 @@ export function dispatchPlan(
 
             const ingredient = db
                 .prepare(
-                    `SELECT ri.name, ri.shoppingName, ri.qty, ri.shoppingQty, ri.unitId, ri.shoppingUnitId, ri.recipeId, r.name AS recipeName
+                    `SELECT ri.name, ri.shoppingName, ri.qty, ri.shoppingQty, ri.unitId, ri.shoppingUnitId, ri.recipeId, ri.isUnsure, r.name AS recipeName
                      FROM RecipeIngredient ri
                      JOIN Recipe r ON r.id = ri.recipeId
                      WHERE ri.id = ?`
@@ -255,7 +255,7 @@ export function dispatchPlan(
                       | "unitId"
                       | "shoppingUnitId"
                       | "recipeId"
-                  > & { recipeName: string })
+                  > & { recipeName: string; isUnsure: 1 | null })
                 | undefined
 
             if (!ingredient) {
@@ -282,7 +282,7 @@ export function dispatchPlan(
                 qty: scaledQty,
                 unitId: effectiveUnitId ?? null,
                 notes: ingredient.recipeName,
-                isUnsure: route.isUnsure ?? null,
+                isUnsure: route.isUnsure ?? (ingredient.isUnsure === 1 ? true : null),
                 userId,
             })
 

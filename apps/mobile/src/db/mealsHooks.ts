@@ -308,6 +308,7 @@ export function useAddIngredient(householdId: string | null) {
             sortOrder?: number
             notes?: string | null
             excluded?: boolean
+            isUnsure?: boolean | null
         }) => {
             const { recipeId, ...fields } = params
             return recipeApi.addIngredient(householdId!, recipeId, fields)
@@ -343,6 +344,7 @@ export function useUpdateIngredient(householdId: string | null) {
             sortOrder?: number
             notes?: string | null
             excluded?: boolean
+            isUnsure?: boolean | null
         }) => {
             const { recipeId, ingredientId, ...fields } = params
             return recipeApi.updateIngredient(householdId!, recipeId, ingredientId, fields)
