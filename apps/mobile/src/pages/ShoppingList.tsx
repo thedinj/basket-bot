@@ -1,5 +1,4 @@
 import StoreItemsManagementModal from "@/components/store/StoreItemsManagementModal";
-import pluralize from "pluralize";
 import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
 import {
     IonContent,
@@ -11,6 +10,7 @@ import {
     useIonAlert,
 } from "@ionic/react";
 import { add, helpCircle, helpCircleOutline, listOutline } from "ionicons/icons";
+import pluralize from "pluralize";
 import { Suspense, useCallback, useMemo, useState } from "react";
 import { ANIMATION_EFFECTS } from "../animations/effects";
 import { AppHeader } from "../components/layout/AppHeader";
@@ -42,6 +42,8 @@ import "./ShoppingList.scss";
 // The keep-awake header button hasn't proven useful in practice; disabled rather than
 // removed so the underlying feature (useKeepAwake, GlobalActions support) stays intact.
 const KEEP_AWAKE_BUTTON_ENABLED = false;
+
+const SHOW_UNSURE_ONLY_FILTER: boolean = false;
 
 const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
     const { openCreateModal } = useShoppingListContext();
@@ -161,7 +163,7 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
         // Unsure items filter toggle — stays visible while the filter is active even if
         // this store currently has no unsure items (e.g. after switching stores), so the
         // user can always turn it back off; otherwise only shown when there's something to filter
-        if (unsureCount > 0 || showUnsureOnly) {
+        if (SHOW_UNSURE_ONLY_FILTER && (unsureCount > 0 || showUnsureOnly)) {
             const countSuffix = unsureCount > 0 ? ` (${unsureCount})` : "";
             actions.push({
                 id: "toggle-unsure-filter",

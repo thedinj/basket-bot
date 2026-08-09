@@ -8,6 +8,8 @@ import { useSync } from "../../hooks/useRefreshAndSync";
 import { useToast } from "../../hooks/useToast";
 import type { GlobalActionConfig } from "./AppHeaderContext";
 
+const SHOW_REFRESH_BUTTON = false;
+
 interface GlobalActionsProps {
     /** Whether to show the keep-awake button (per-page opt-in) */
     showKeepAwake?: boolean;
@@ -106,7 +108,7 @@ export const GlobalActions: React.FC<GlobalActionsProps> = ({ showKeepAwake = fa
                     <IonIcon slot="icon-only" icon={keepAwakeEnabled ? sunny : sunnyOutline} />
                 </IonButton>
             )}
-            {refreshContext?.configuredQueryKeys && (
+            {SHOW_REFRESH_BUTTON && refreshContext?.configuredQueryKeys && (
                 <IonButton
                     onClick={handleRefresh}
                     disabled={refreshContext.isRefreshing}

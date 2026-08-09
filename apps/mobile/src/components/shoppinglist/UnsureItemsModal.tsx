@@ -29,6 +29,8 @@ import { ItemEditorModal } from "./ItemEditorModal";
 import { ShoppingListItem } from "./ShoppingListItem";
 import { ShoppingListProvider } from "./ShoppingListProvider";
 
+const MODAL_TITLE = "Review Unsure Items";
+
 const UnsureItemsModalContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const storesWithItems = useShoppingListItemsAllStores();
     const upsertItem = useUpsertShoppingListItem();
@@ -85,7 +87,7 @@ const UnsureItemsModalContent: React.FC<{ onClose: () => void }> = ({ onClose })
             >
                 <IonHeader>
                     <IonToolbar>
-                        <IonTitle>Unsure Items</IonTitle>
+                        <IonTitle>{MODAL_TITLE}</IonTitle>
                         <IonButtons slot="end">
                             <IonButton onClick={onClose}>
                                 <IonIcon icon={closeOutline} />
@@ -111,7 +113,7 @@ const LoadingFallback: React.FC = () => (
     <>
         <IonHeader>
             <IonToolbar>
-                <IonTitle>Unsure Items</IonTitle>
+                <IonTitle>{MODAL_TITLE}</IonTitle>
             </IonToolbar>
         </IonHeader>
         <IonContent fullscreen>

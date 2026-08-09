@@ -141,7 +141,7 @@ export const AppMenu: React.FC = () => {
                         <IonMenuToggle autoHide={false}>
                             <IonItem button onClick={handleOpenUnsureItems} lines="none">
                                 <IonIcon icon={helpCircleOutline} slot="start" />
-                                <IonLabel>Unsure Items</IonLabel>
+                                <IonLabel>Review Unsure Items</IonLabel>
                             </IonItem>
                         </IonMenuToggle>
                     </IonList>

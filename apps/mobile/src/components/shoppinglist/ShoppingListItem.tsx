@@ -26,9 +26,11 @@ interface ShoppingListItemProps {
     item: ShoppingListItemWithDetails;
     isChecked: boolean;
     /**
-     * When provided (together with `onRejectUnsure`), this is the Unsure Items review view:
+     * When provided (together with `onRejectUnsure`), this is the Review Unsure Items view:
      * the checkbox and move-to-store button are replaced with "I don't need this" /
-     * "Confirm — I need this" actions, and calling this handler is the confirm side.
+     * "Confirm — I need this" actions, and calling this handler is the confirm side. Every
+     * row here is already known to be unsure, so the unsure icon/styling is redundant and
+     * suppressed too.
      */
     onConfirmUnsure?: () => void;
     isConfirmingUnsure?: boolean;
@@ -209,7 +211,7 @@ export const ShoppingListItem = ({
             className={clsx(
                 isChecked && "shopping-list-item--checked",
                 item.isIdea && "shopping-list-item--idea",
-                item.isUnsure && "shopping-list-item--unsure",
+                item.isUnsure && !onConfirmUnsure && "shopping-list-item--unsure",
                 item.isPrivate && "shopping-list-item--private",
                 justChecked && "shopping-list-item--just-checked"
             )}
@@ -252,7 +254,7 @@ export const ShoppingListItem = ({
                             </span>
                         )}{" "}
                         {item.isSample ? <span className="sample-badge">[sample]</span> : null}
-                        {item.isUnsure ? (
+                        {item.isUnsure && !onConfirmUnsure ? (
                             <IonIcon
                                 icon={isChecked ? helpCircleOutline : helpCircle}
                                 className="unsure-icon"
