@@ -306,7 +306,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                 source: source.trim() || null,
                 description: description.trim() || undefined,
                 steps: steps.trim() || undefined,
-                isPoolExcluded: isPoolExcluded || undefined,
+                isPoolExcluded,
                 cookingTimeMinutes:
                     cookingTime !== null && !Number.isNaN(cookingTime) ? cookingTime : null,
             };
