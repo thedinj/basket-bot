@@ -2,6 +2,15 @@
     padding: 24px 20px;
 }
 
+.recipe-detail-title {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--ion-text-color);
+    margin: 0 0 16px;
+    overflow-wrap: break-word;
+}
+
 .recipe-detail-source {
     font-size: 13px;
     color: var(--ion-color-step-400, #718096);

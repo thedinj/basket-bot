@@ -25,11 +25,10 @@ import pluralize from "pluralize";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import RecipeDetailContent from "../components/meals/RecipeDetailContent";
-import RouteIngredientsContent from "../components/meals/RouteIngredientsContent";
 import RecipePickerModal from "../components/meals/RecipePickerModal";
+import RouteIngredientsContent from "../components/meals/RouteIngredientsContent";
 import ScaleFactorControl from "../components/meals/ScaleFactorControl";
 import TagChip from "../components/meals/TagChip";
-import { DEFAULT_STORE, type ResolvedIngredient, useRouteIngredients } from "../hooks/useRouteIngredients";
 import { useQuantityUnits, useStores } from "../db/hooks";
 import {
     useCreatePlan,
@@ -45,6 +44,11 @@ import {
     useUpdatePlanSlots,
 } from "../db/mealsHooks";
 import { usePreference } from "../hooks/usePreference";
+import {
+    DEFAULT_STORE,
+    type ResolvedIngredient,
+    useRouteIngredients,
+} from "../hooks/useRouteIngredients";
 import { useToast } from "../hooks/useToast";
 import { useHousehold } from "../households/useHousehold";
 
@@ -79,7 +83,9 @@ const SlotPoolCount: React.FC<{
     const { data: count } = usePoolCount(householdId, tagIds, maxCookingTimeMinutes);
     if (count === undefined) return null;
     return (
-        <span className={`wizard-slot-pool-count${count === 0 ? " wizard-slot-pool-count--empty" : ""}`}>
+        <span
+            className={`wizard-slot-pool-count${count === 0 ? " wizard-slot-pool-count--empty" : ""}`}
+        >
             {count === 0 ? "0 in pool" : `${count} in pool`}
         </span>
     );
@@ -169,7 +175,10 @@ const SlotFilterSheet: React.FC<SlotFilterSheetProps> = ({
                             onChange={(e) => {
                                 const raw = e.target.value;
                                 const parsed = raw.trim() ? parseInt(raw, 10) : null;
-                                const val = parsed !== null && !Number.isNaN(parsed) ? Math.max(1, parsed) : null;
+                                const val =
+                                    parsed !== null && !Number.isNaN(parsed)
+                                        ? Math.max(1, parsed)
+                                        : null;
                                 onUpdateMaxTime(val);
                             }}
                             placeholder="Any"
@@ -185,7 +194,13 @@ const SlotFilterSheet: React.FC<SlotFilterSheetProps> = ({
             <IonToolbar>
                 <div className="slot-filter-footer-btns">
                     <IonButton expand="block" onClick={onReroll} disabled={isWorking}>
-                        {isWorking ? <IonSpinner name="dots" /> : hasRecipe ? "Reroll this slot" : "Fill this slot"}
+                        {isWorking ? (
+                            <IonSpinner name="dots" />
+                        ) : hasRecipe ? (
+                            "Reroll this slot"
+                        ) : (
+                            "Fill this slot"
+                        )}
                     </IonButton>
                     <IonButton expand="block" fill="clear" onClick={onDismiss}>
                         Done
@@ -215,7 +230,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
     const visibleStores = useMemo(() => stores.filter((s) => !s.isHidden), [stores]);
     const unitMap = useMemo(
         () => new Map(units?.map((u) => [u.id, u.abbreviation]) ?? []),
-        [units],
+        [units]
     );
 
     // ── State ───────────────────────────────────────────────────────────────
@@ -352,7 +367,8 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
     const pinnedCount = slots.filter((s) => s.pinned).length;
     const filledCount = slots.filter((s) => s.pickedRecipeId != null).length;
     const allSlotsPinned = pinnedCount === mealCount && filledCount === mealCount;
-    const allSlotsFilled = slots.length === mealCount && slots.every((s) => s.pickedRecipeId != null);
+    const allSlotsFilled =
+        slots.length === mealCount && slots.every((s) => s.pickedRecipeId != null);
     const canReview = slots.some((s) => s.pickedRecipeId != null);
 
     const pickerSlotFilters =
@@ -401,7 +417,8 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                     recipeName: recipe.name,
                     storeId: raw === DEFAULT_STORE ? (defaultStoreId ?? null) : raw,
                     qty: ing.qty,
-                    scaledQty: ing.qty != null ? parseFloat((ing.qty * factor).toPrecision(4)) : null,
+                    scaledQty:
+                        ing.qty != null ? parseFloat((ing.qty * factor).toPrecision(4)) : null,
                     unitId: ing.unitId ?? null,
                     isUnsure: routing.unsureSet.has(ing.id),
                     excluded: ing.excluded,
@@ -489,7 +506,10 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
             const slotConfig = Array.from({ length: mealCount }, (_, i) => {
                 const n = i + 1;
                 const existing = planData?.slots.find((s) => s.slotNumber === n);
-                const f = effectiveSlotFilters.get(n) ?? { tagIds: [], maxCookingTimeMinutes: null };
+                const f = effectiveSlotFilters.get(n) ?? {
+                    tagIds: [],
+                    maxCookingTimeMinutes: null,
+                };
                 return {
                     slotNumber: n,
                     tagIds: f.tagIds,
@@ -614,7 +634,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
         if (!planData) return;
 
         const preferred = defaultMealPlanStoreValue
-            ? visibleStores.find((s) => s.id === defaultMealPlanStoreValue)?.id ?? null
+            ? (visibleStores.find((s) => s.id === defaultMealPlanStoreValue)?.id ?? null)
             : null;
         const storeId = preferred ?? visibleStores[0]?.id ?? null;
         const newMap = new Map<string, string | null>();
@@ -662,7 +682,10 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
         if (!planId) return;
         setIsWorking(true);
         try {
-            await dispatchMut.mutateAsync({ planId, scaleFactors: Object.fromEntries(scaleFactors) });
+            await dispatchMut.mutateAsync({
+                planId,
+                scaleFactors: Object.fromEntries(scaleFactors),
+            });
             onDismiss();
         } catch (e) {
             showError(`Failed to dispatch: ${e instanceof Error ? e.message : "Unknown error"}`);
@@ -756,11 +779,15 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                         "wizard-slot--enter",
                                         slot?.pinned ? "pinned" : "",
                                         isWorking && !recipe ? "wizard-slot--scanning" : "",
-                                    ].filter(Boolean).join(" ")}
-                                    style={{
-                                        "--slot-n": slotNumber - 1,
-                                        ...(cardBg ? { background: cardBg } : {}),
-                                    } as React.CSSProperties}
+                                    ]
+                                        .filter(Boolean)
+                                        .join(" ")}
+                                    style={
+                                        {
+                                            "--slot-n": slotNumber - 1,
+                                            ...(cardBg ? { background: cardBg } : {}),
+                                        } as React.CSSProperties
+                                    }
                                 >
                                     <div className="wizard-slot-num">{slotNumber}</div>
                                     <div className="wizard-slot-body">
@@ -768,23 +795,33 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                             <div
                                                 key={recipe.id}
                                                 className="wizard-slot-name wizard-slot-name--link"
-                                                onClick={(e) => { e.stopPropagation(); setPeekRecipe(recipe); }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setPeekRecipe(recipe);
+                                                }}
                                             >
                                                 {recipe.name}
                                                 {recipe.source && (
-                                                    <span className="wizard-slot-source">{recipe.source}</span>
+                                                    <span className="wizard-slot-source">
+                                                        {recipe.source}
+                                                    </span>
                                                 )}
                                             </div>
                                         ) : (
                                             <div className="wizard-slot-empty">
                                                 Empty
-                                                <span className="wizard-slot-empty-hint"> — pick or roll</span>
+                                                <span className="wizard-slot-empty-hint">
+                                                    {" "}
+                                                    — pick or roll
+                                                </span>
                                             </div>
                                         )}
                                         <div className="wizard-slot-filters">
                                             {filters.tagIds.map((tagId) => {
                                                 const tag = allTags.find((t) => t.id === tagId);
-                                                return tag ? <TagChip key={tagId} tag={tag} /> : null;
+                                                return tag ? (
+                                                    <TagChip key={tagId} tag={tag} />
+                                                ) : null;
                                             })}
                                             {filters.maxCookingTimeMinutes != null && (
                                                 <span className="wizard-slot-time-chip">
@@ -795,7 +832,9 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                                 <SlotPoolCount
                                                     householdId={activeHouseholdId}
                                                     tagIds={filters.tagIds}
-                                                    maxCookingTimeMinutes={filters.maxCookingTimeMinutes}
+                                                    maxCookingTimeMinutes={
+                                                        filters.maxCookingTimeMinutes
+                                                    }
                                                 />
                                             )}
                                         </div>
@@ -811,7 +850,11 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                                 }}
                                                 disabled={isWorking}
                                             >
-                                                <IonIcon slot="icon-only" icon={closeOutline} color="medium" />
+                                                <IonIcon
+                                                    slot="icon-only"
+                                                    icon={closeOutline}
+                                                    color="medium"
+                                                />
                                             </IonButton>
                                         )}
                                         <IonButton
@@ -823,7 +866,11 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                             }}
                                             disabled={isWorking}
                                         >
-                                            <IonIcon slot="icon-only" icon={filterOutline} color="medium" />
+                                            <IonIcon
+                                                slot="icon-only"
+                                                icon={filterOutline}
+                                                color="medium"
+                                            />
                                         </IonButton>
                                         <IonButton
                                             fill="clear"
@@ -834,7 +881,11 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                             }}
                                             disabled={isWorking}
                                         >
-                                            <IonIcon slot="icon-only" icon={searchOutline} color="medium" />
+                                            <IonIcon
+                                                slot="icon-only"
+                                                icon={searchOutline}
+                                                color="medium"
+                                            />
                                         </IonButton>
                                         {slot?.pickedRecipeId && (
                                             <IonButton
@@ -842,13 +893,20 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                                 size="small"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    handleTogglePin(slotNumber, slot?.pinned ?? false);
+                                                    handleTogglePin(
+                                                        slotNumber,
+                                                        slot?.pinned ?? false
+                                                    );
                                                 }}
                                                 disabled={isWorking}
                                             >
                                                 <IonIcon
                                                     slot="icon-only"
-                                                    src={slot?.pinned ? "/img/pin-filled.svg" : "/img/pin.svg"}
+                                                    src={
+                                                        slot?.pinned
+                                                            ? "/img/pin-filled.svg"
+                                                            : "/img/pin.svg"
+                                                    }
                                                     color={slot?.pinned ? "primary" : "medium"}
                                                 />
                                             </IonButton>
@@ -863,8 +921,8 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                 {allSlotsFilled
                                     ? `> ${mealCount} ${pluralize("meal", mealCount)} locked. Proceed, or keep second-guessing yourself.`
                                     : pinnedCount > 0
-                                    ? `> ${pinnedCount} locked in. Roll the rest or review as-is. I don't judge. Much.`
-                                    : "> Partially filled. Commit to what you've got or roll the rest."}
+                                      ? `> ${pinnedCount} locked in. Roll the rest or review as-is. I don't judge. Much.`
+                                      : "> Partially filled. Commit to what you've got or roll the rest."}
                             </div>
                         )}
                     </>
@@ -942,7 +1000,9 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                     <span>
                                         {recipe.name}
                                         {recipe.source && (
-                                            <span className="wizard-confirm-source">{recipe.source}</span>
+                                            <span className="wizard-confirm-source">
+                                                {recipe.source}
+                                            </span>
                                         )}
                                     </span>
                                     {(scaleFactors.get(recipe.id) ?? 1) !== 1 && (
@@ -985,7 +1045,11 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                     }}
                                     disabled={isWorking || !canReview}
                                 >
-                                    {isWorking ? <IonSpinner name="dots" /> : "Review ingredients →"}
+                                    {isWorking ? (
+                                        <IonSpinner name="dots" />
+                                    ) : (
+                                        "Review ingredients →"
+                                    )}
                                 </IonButton>
                             </IonButtons>
                         </>
@@ -1050,7 +1114,6 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                     <>
                         <IonHeader>
                             <IonToolbar>
-                                <IonTitle>{peekRecipe.name}</IonTitle>
                                 <IonButtons slot="end">
                                     <IonButton onClick={() => setPeekRecipe(null)}>
                                         <IonIcon slot="icon-only" icon={closeOutline} />
@@ -1093,7 +1156,10 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                             }
                         }
                         allTags={allTags}
-                        hasRecipe={!!planData?.slots.find((s) => s.slotNumber === filterPopoverSlot)?.pickedRecipeId}
+                        hasRecipe={
+                            !!planData?.slots.find((s) => s.slotNumber === filterPopoverSlot)
+                                ?.pickedRecipeId
+                        }
                         isWorking={isWorking}
                         onToggleTag={(tagId) => toggleSlotTag(filterPopoverSlot, tagId)}
                         onUpdateMaxTime={(val) => updateSlotMaxTime(filterPopoverSlot, val)}

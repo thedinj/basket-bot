@@ -9,6 +9,7 @@ interface RecipeDetailContentProps {
 
 const RecipeDetailContent: React.FC<RecipeDetailContentProps> = ({ recipe, unitMap }) => (
     <div className="recipe-detail-content">
+        <h1 className="recipe-detail-title">{recipe.name}</h1>
         {recipe.source && (
             <p className="recipe-detail-source">{recipe.source}</p>
         )}
