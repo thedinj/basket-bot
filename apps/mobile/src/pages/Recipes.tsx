@@ -1,18 +1,14 @@
 import type { RecipeWithDetails } from "@basket-bot/core";
 import {
     IonButton,
-    IonButtons,
     IonContent,
     IonFab,
     IonFabButton,
-    IonHeader,
     IonIcon,
-    IonModal,
     IonPage,
     IonSearchbar,
-    IonToolbar,
 } from "@ionic/react";
-import { addOutline, closeOutline, filterOutline, restaurantOutline } from "ionicons/icons";
+import { addOutline, filterOutline, restaurantOutline } from "ionicons/icons";
 import pluralize from "pluralize";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "../components/layout/AppHeader";
@@ -20,7 +16,6 @@ import LoadingFallback from "../components/LoadingFallback";
 import { HouseholdSelect } from "../components/households/HouseholdSelect";
 import MealsEmptyState from "../components/meals/MealsEmptyState";
 import RecipeCard from "../components/meals/RecipeCard";
-import RecipeDetailContent from "../components/meals/RecipeDetailContent";
 import RecipeEditorModal, { type RecipeInitialData } from "../components/meals/RecipeEditorModal";
 import RecipeFilterSheet, {
     DEFAULT_FILTERS,
@@ -28,6 +23,7 @@ import RecipeFilterSheet, {
     type RecipeFilters,
     type RecipeSort,
 } from "../components/meals/RecipeFilterSheet";
+import RecipeViewSheet from "../components/meals/RecipeViewSheet";
 import RouteIngredientsModal from "../components/meals/RouteIngredientsModal";
 import { useRecipeImportModal } from "../components/meals/useRecipeImportModal";
 import { FabSpacer } from "../components/shared/FabSpacer";
@@ -452,30 +448,11 @@ const Recipes: React.FC = () => {
                     }}
                 />
 
-                <IonModal
-                    isOpen={viewingRecipe !== null}
-                    onDidDismiss={() => setViewingRecipe(null)}
-                    breakpoints={[0, 0.85]}
-                    initialBreakpoint={0.85}
-                    handle={true}
-                >
-                    {viewingRecipe && (
-                        <>
-                            <IonHeader>
-                                <IonToolbar>
-                                    <IonButtons slot="end">
-                                        <IonButton onClick={() => setViewingRecipe(null)}>
-                                            <IonIcon slot="icon-only" icon={closeOutline} />
-                                        </IonButton>
-                                    </IonButtons>
-                                </IonToolbar>
-                            </IonHeader>
-                            <IonContent>
-                                <RecipeDetailContent recipe={viewingRecipe} unitMap={unitMap} />
-                            </IonContent>
-                        </>
-                    )}
-                </IonModal>
+                <RecipeViewSheet
+                    recipe={viewingRecipe}
+                    unitMap={unitMap}
+                    onDismiss={() => setViewingRecipe(null)}
+                />
             </IonPage>
         </RefreshConfig>
     );

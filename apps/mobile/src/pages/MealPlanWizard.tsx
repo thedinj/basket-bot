@@ -24,8 +24,8 @@ import {
 import pluralize from "pluralize";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/useAuth";
-import RecipeDetailContent from "../components/meals/RecipeDetailContent";
 import RecipePickerModal from "../components/meals/RecipePickerModal";
+import RecipeViewSheet from "../components/meals/RecipeViewSheet";
 import RouteIngredientsContent from "../components/meals/RouteIngredientsContent";
 import ScaleFactorControl from "../components/meals/ScaleFactorControl";
 import TagChip from "../components/meals/TagChip";
@@ -1103,30 +1103,11 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                 title={pickerSlot !== null ? `Slot ${pickerSlot} — Pick a recipe` : "Pick a recipe"}
             />
 
-            <IonModal
-                isOpen={peekRecipe !== null}
-                onDidDismiss={() => setPeekRecipe(null)}
-                breakpoints={[0, 0.85]}
-                initialBreakpoint={0.85}
-                handle={true}
-            >
-                {peekRecipe && (
-                    <>
-                        <IonHeader>
-                            <IonToolbar>
-                                <IonButtons slot="end">
-                                    <IonButton onClick={() => setPeekRecipe(null)}>
-                                        <IonIcon slot="icon-only" icon={closeOutline} />
-                                    </IonButton>
-                                </IonButtons>
-                            </IonToolbar>
-                        </IonHeader>
-                        <IonContent>
-                            <RecipeDetailContent recipe={peekRecipe} unitMap={unitMap} />
-                        </IonContent>
-                    </>
-                )}
-            </IonModal>
+            <RecipeViewSheet
+                recipe={peekRecipe}
+                unitMap={unitMap}
+                onDismiss={() => setPeekRecipe(null)}
+            />
 
             <IonAlert
                 isOpen={showPartialAlert}
