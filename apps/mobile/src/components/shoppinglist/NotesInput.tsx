@@ -1,4 +1,4 @@
-import { IonInput, IonItem, IonLabel, IonText } from "@ionic/react";
+import { IonItem, IonLabel, IonText, IonTextarea } from "@ionic/react";
 import { Controller, useWatch } from "react-hook-form";
 import { useItemEditorContext } from "./useItemEditorContext";
 
@@ -13,9 +13,11 @@ export const NotesInput = () => {
             render={({ field }) => (
                 <IonItem>
                     <IonLabel position="stacked">{isIdea ? "Idea" : "Notes"}</IonLabel>
-                    <IonInput
+                    <IonTextarea
                         value={field.value || ""}
                         autocapitalize="sentences"
+                        autoGrow
+                        rows={1}
                         placeholder={isIdea ? "Enter your idea" : "Enter notes"}
                         onIonInput={(e) => field.onChange(e.detail.value || null)}
                     />

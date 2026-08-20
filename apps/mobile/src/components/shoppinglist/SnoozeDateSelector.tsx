@@ -1,86 +1,17 @@
-import { IonButton, IonDatetime, IonInput, IonItem, IonLabel, IonModal } from "@ionic/react";
-import { useState } from "react";
 import { Controller } from "react-hook-form";
-import { formatSnoozeDate, formatSnoozeDateForStorage } from "../../utils/dateUtils";
+import { SnoozeChips } from "./SnoozeChips";
 import { useItemEditorContext } from "./useItemEditorContext";
 
 export const SnoozeDateSelector: React.FC = () => {
-    const { control, setValue, watch } = useItemEditorContext();
-    const snoozedUntil = watch("snoozedUntil");
-    const [showModal, setShowModal] = useState(false);
-
-    // Calculate tomorrow's date at 12AM as minimum
-    const tomorrow = new Date();
-    tomorrow.setHours(0, 0, 0, 0); // Set to start of today
-    tomorrow.setDate(tomorrow.getDate() + 1); // Move to start of tomorrow
-    const minDate = tomorrow.toISOString().split("T")[0];
-
-    const clearSnooze = () => {
-        setValue("snoozedUntil", null);
-    };
+    const { control } = useItemEditorContext();
 
     return (
-        <>
-            <IonItem>
-                <IonLabel position="stacked">Snooze Until</IonLabel>
-                {snoozedUntil ? (
-                    <div
-                        style={{
-                            display: "flex",
-                            gap: "8px",
-                            alignItems: "center",
-                            width: "100%",
-                        }}
-                    >
-                        <IonInput
-                            value={formatSnoozeDate(snoozedUntil)}
-                            readonly
-                            style={{ flex: 1 }}
-                        />
-                        <IonButton size="small" fill="clear" onClick={() => setShowModal(true)}>
-                            Change
-                        </IonButton>
-                        <IonButton size="small" fill="clear" onClick={clearSnooze}>
-                            Clear
-                        </IonButton>
-                    </div>
-                ) : (
-                    <IonInput
-                        onClick={() => setShowModal(true)}
-                        readonly
-                        placeholder="Set snooze date"
-                        style={{
-                            flex: 1,
-                        }}
-                    />
-                )}
-            </IonItem>
-            <Controller
-                name="snoozedUntil"
-                control={control}
-                render={({ field }) => (
-                    <IonModal
-                        isOpen={showModal}
-                        onDidDismiss={() => setShowModal(false)}
-                        initialBreakpoint={0.5}
-                        breakpoints={[0, 0.5, 0.75]}
-                    >
-                        <IonDatetime
-                            presentation="date"
-                            min={minDate}
-                            value={field.value || undefined}
-                            onIonChange={(e) => {
-                                const value = e.detail.value;
-                                if (typeof value === "string") {
-                                    // Normalize to midnight UTC for consistent date-only storage
-                                    field.onChange(formatSnoozeDateForStorage(value));
-                                    setShowModal(false);
-                                }
-                            }}
-                        />
-                    </IonModal>
-                )}
-            />
-        </>
+        <Controller
+            name="snoozedUntil"
+            control={control}
+            render={({ field }) => (
+                <SnoozeChips value={field.value ?? null} onChange={field.onChange} />
+            )}
+        />
     );
 };

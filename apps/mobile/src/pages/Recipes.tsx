@@ -1,14 +1,18 @@
 import type { RecipeWithDetails } from "@basket-bot/core";
 import {
     IonButton,
+    IonButtons,
     IonContent,
     IonFab,
     IonFabButton,
+    IonHeader,
     IonIcon,
+    IonModal,
     IonPage,
     IonSearchbar,
+    IonToolbar,
 } from "@ionic/react";
-import { addOutline, filterOutline, restaurantOutline } from "ionicons/icons";
+import { addOutline, closeOutline, filterOutline, restaurantOutline } from "ionicons/icons";
 import pluralize from "pluralize";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "../components/layout/AppHeader";
@@ -16,6 +20,7 @@ import LoadingFallback from "../components/LoadingFallback";
 import { HouseholdSelect } from "../components/households/HouseholdSelect";
 import MealsEmptyState from "../components/meals/MealsEmptyState";
 import RecipeCard from "../components/meals/RecipeCard";
+import RecipeDetailContent from "../components/meals/RecipeDetailContent";
 import RecipeEditorModal, { type RecipeInitialData } from "../components/meals/RecipeEditorModal";
 import RecipeFilterSheet, {
     DEFAULT_FILTERS,
@@ -49,9 +54,10 @@ const RecipesList: React.FC<{
     householdId: string | null;
     onOpenEditor: (recipeId?: string) => void;
     onAddToList: (recipe: RecipeWithDetails) => void;
+    onView: (recipe: RecipeWithDetails) => void;
     scrollToRecipeId: string | null;
     onScrolledToRecipe: () => void;
-}> = ({ householdId, onOpenEditor, onAddToList, scrollToRecipeId, onScrolledToRecipe }) => {
+}> = ({ householdId, onOpenEditor, onAddToList, onView, scrollToRecipeId, onScrolledToRecipe }) => {
     const { data: recipes } = useRecipes(householdId);
     const { data: allTags = [] } = useTags(householdId);
     const [search, setSearch] = useState("");
@@ -276,6 +282,7 @@ const RecipesList: React.FC<{
                             recipe={recipe}
                             onClick={() => onOpenEditor(recipe.id)}
                             onAddToList={() => onAddToList(recipe)}
+                            onView={() => onView(recipe)}
                         />
                     ))}
                 </div>
@@ -301,6 +308,7 @@ const Recipes: React.FC = () => {
     const [editorOpen, setEditorOpen] = useState(false);
     const [editingRecipeId, setEditingRecipeId] = useState<string | undefined>();
     const [routingRecipe, setRoutingRecipe] = useState<RecipeWithDetails | null>(null);
+    const [viewingRecipe, setViewingRecipe] = useState<RecipeWithDetails | null>(null);
     const [scrollToRecipeId, setScrollToRecipeId] = useState<string | null>(null);
 
     const createRecipe = useCreateRecipe(activeHouseholdId);
@@ -389,6 +397,7 @@ const Recipes: React.FC = () => {
                                 setEditorOpen(true);
                             }}
                             onAddToList={(recipe) => setRoutingRecipe(recipe)}
+                            onView={(recipe) => setViewingRecipe(recipe)}
                             scrollToRecipeId={scrollToRecipeId}
                             onScrolledToRecipe={() => setScrollToRecipeId(null)}
                         />
@@ -442,6 +451,31 @@ const Recipes: React.FC = () => {
                         setRoutingRecipe(null);
                     }}
                 />
+
+                <IonModal
+                    isOpen={viewingRecipe !== null}
+                    onDidDismiss={() => setViewingRecipe(null)}
+                    breakpoints={[0, 0.85]}
+                    initialBreakpoint={0.85}
+                    handle={true}
+                >
+                    {viewingRecipe && (
+                        <>
+                            <IonHeader>
+                                <IonToolbar>
+                                    <IonButtons slot="end">
+                                        <IonButton onClick={() => setViewingRecipe(null)}>
+                                            <IonIcon slot="icon-only" icon={closeOutline} />
+                                        </IonButton>
+                                    </IonButtons>
+                                </IonToolbar>
+                            </IonHeader>
+                            <IonContent>
+                                <RecipeDetailContent recipe={viewingRecipe} unitMap={unitMap} />
+                            </IonContent>
+                        </>
+                    )}
+                </IonModal>
             </IonPage>
         </RefreshConfig>
     );

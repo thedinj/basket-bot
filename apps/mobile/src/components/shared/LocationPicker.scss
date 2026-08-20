@@ -1,0 +1,35 @@
+// Visual hierarchy between aisles (parents) and sections (children) in the
+// combined location picker: aisles read like the app's existing group-header
+// convention (uppercase, bold, letter-spaced); sections are indented and lighter.
+
+.location-picker__aisle-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.location-picker__section-item {
+    --padding-start: 32px;
+}
+
+.location-picker__section-label {
+    font-size: 0.95rem;
+    font-weight: 400;
+}
+
+.location-picker__no-section-item {
+    --padding-start: 32px;
+}
+
+.location-picker__no-section-label {
+    font-style: italic;
+}
+
+.location-picker__search-subtitle {
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    opacity: 0.65;
+}

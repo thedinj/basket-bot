@@ -38,9 +38,8 @@ import { LocationSelectors } from "./LocationSelectors";
 import { NameAutocomplete } from "./NameAutocomplete";
 import { NotesInput } from "./NotesInput";
 import { PrivateToggle } from "./PrivateToggle";
-import { QuantityInput } from "./QuantityInput";
+import { QuantityAndUnitRow } from "./QuantityAndUnitRow";
 import { SnoozeDateSelector } from "./SnoozeDateSelector";
-import { UnitSelector } from "./UnitSelector";
 import { UnsureToggle } from "./UnsureToggle";
 import { useShoppingListContext } from "./useShoppingListContext";
 
@@ -317,8 +316,8 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                             // Regular Item mode - all fields
                             <>
                                 <NameAutocomplete />
-                                <QuantityInput />
-                                <UnitSelector />
+                                <NotesInput />
+                                <QuantityAndUnitRow />
                                 <LocationSelectors />
                                 <div className="item-flags-row">
                                     <UnsureToggle />
@@ -326,7 +325,6 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                                 </div>
                                 {/* Hide snooze selector if editing a checked item */}
                                 {!editingItem?.isChecked && <SnoozeDateSelector />}
-                                <NotesInput />
                             </>
                         )}
 

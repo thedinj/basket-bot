@@ -1,22 +1,23 @@
 import type { StoreAisle, StoreSection } from "@basket-bot/core";
-import { IonAlert } from "@ionic/react";
+import { IonChip, IonIcon, IonLabel } from "@ionic/react";
+import { closeCircle } from "ionicons/icons";
 import { useMemo, useState } from "react";
 import {
     Control,
-    Controller,
     FieldValues,
     Path,
     PathValue,
     UseFormSetValue,
     UseFormWatch,
+    useController,
 } from "react-hook-form";
 import { useStoreAisles, useStoreSections } from "../../db/hooks";
 import { useToast } from "../../hooks/useToast";
 import { useAutoCategorize } from "../../llm/features/useAutoCategorize";
-import { LLMButton } from "../../llm/shared";
+import { LLM_COLOR, LLM_ICON_SRC } from "../../llm/shared/constants";
 import { naturalSort } from "../../utils/stringUtils";
-import { ClickableSelectionField } from "./ClickableSelectionField";
-import type { SelectableItem } from "./ClickableSelectionModal";
+import AislesSectionsManagementModal from "../store/AislesSectionsManagementModal";
+import { LocationPicker } from "./LocationPicker";
 
 interface LocationSelectorsProps<T extends FieldValues = FieldValues> {
     control: Control<T>;
@@ -27,86 +28,69 @@ interface LocationSelectorsProps<T extends FieldValues = FieldValues> {
     itemName?: string;
 }
 
-export function LocationSelectors<T extends FieldValues = FieldValues>({
-    control,
-    setValue,
-    watch,
-    storeId,
-    disabled = false,
-    itemName,
-}: LocationSelectorsProps<T>) {
+export function LocationSelectors<T extends FieldValues = FieldValues>(
+    props: LocationSelectorsProps<T>
+) {
+    const { control, setValue, storeId, disabled = false, itemName } = props;
+
     const { data: aisles } = useStoreAisles(storeId);
     const { data: sections } = useStoreSections(storeId);
 
-    const [showOverrideAlert, setShowOverrideAlert] = useState(false);
+    const [isPickerOpen, setIsPickerOpen] = useState(false);
+    const [isManageOpen, setIsManageOpen] = useState(false);
 
     const { showError, showSuccess } = useToast();
     const autoCategorize = useAutoCategorize();
 
-    const currentAisleId = watch("aisleId" as Path<T>);
-    const currentSectionId = watch("sectionId" as Path<T>);
+    const { field: aisleField } = useController({ name: "aisleId" as Path<T>, control });
+    const { field: sectionField } = useController({ name: "sectionId" as Path<T>, control });
 
-    // Filter and sort sections by selected aisle, then alphabetically
-    const filteredSections = useMemo(() => {
-        // Use objectSortFn for natural sorting by section name
-        // Import objectSortFn from utils/stringUtils if not already
-        return sections
-            ?.filter(
-                (section: StoreSection) => !currentAisleId || section.aisleId === currentAisleId
-            )
-            .sort(naturalSort((section: StoreSection) => section.name));
-    }, [sections, currentAisleId]);
+    const currentAisleId = aisleField.value as string | null | undefined;
+    const currentSectionId = sectionField.value as string | null | undefined;
 
-    // Sort aisles alphabetically
-    const sortedAisles = useMemo(() => {
-        return aisles?.slice().sort(naturalSort((aisle: StoreAisle) => aisle.name));
-    }, [aisles]);
+    // Per the normalization rule, an item with a section stores aisleId as NULL
+    // (the section's aisle is authoritative). Derive the aisle here so the picker
+    // still expands/scrolls to the right aisle on open for that common case.
+    const effectiveAisleId =
+        currentAisleId ?? sections?.find((s: StoreSection) => s.id === currentSectionId)?.aisleId ?? null;
 
-    // Convert to SelectableItem format
-    const aisleItems: SelectableItem[] = useMemo(() => {
-        return (
-            sortedAisles?.map((aisle) => ({
-                id: aisle.id,
-                label: aisle.name,
-            })) || []
-        );
-    }, [sortedAisles]);
+    const sortedAisles = useMemo(
+        () => aisles?.slice().sort(naturalSort((aisle: StoreAisle) => aisle.name)) ?? [],
+        [aisles]
+    );
 
-    const sectionItems: SelectableItem[] = useMemo(() => {
-        const aisleMap = new Map(aisles?.map((a) => [a.id, a.name]) ?? []);
-        return (
-            filteredSections?.map((section) => ({
-                id: section.id,
-                label: section.name,
-                subtitle: !currentAisleId ? aisleMap.get(section.aisleId) : undefined,
-            })) || []
-        );
-    }, [filteredSections, aisles, currentAisleId]);
+    const currentAisle = sortedAisles.find((a) => a.id === currentAisleId);
+    const currentSection = sections?.find((s: StoreSection) => s.id === currentSectionId);
 
-    const handleAutoCategorize = async (force = false) => {
+    const setLocation = (aisleId: string | null, sectionId: string | null) => {
+        setValue("aisleId" as Path<T>, aisleId as PathValue<T, Path<T>>, {
+            shouldDirty: true,
+            shouldTouch: true,
+            shouldValidate: true,
+        });
+        setValue("sectionId" as Path<T>, sectionId as PathValue<T, Path<T>>, {
+            shouldDirty: true,
+            shouldTouch: true,
+            shouldValidate: true,
+        });
+    };
+
+    // Only offered while nothing is set — the chip that triggers this is hidden once
+    // an aisle/section is chosen, so there's no override-existing-value case to handle.
+    const handleAutoCategorize = async () => {
         if (!itemName?.trim()) {
             showError("Please enter an item name first");
-            return;
-        }
-
-        // Check if values already exist and we're not forcing
-        if (!force && (currentAisleId || currentSectionId)) {
-            setShowOverrideAlert(true);
             return;
         }
 
         try {
             const result = await autoCategorize({
                 itemName,
-                fullAisles: sortedAisles || [],
+                fullAisles: sortedAisles,
                 fullSections: sections || [],
             });
 
-            // Apply categorization
-            setValue("aisleId" as Path<T>, result.aisleId as PathValue<T, Path<T>>);
-            if (result.sectionId) {
-                setValue("sectionId" as Path<T>, result.sectionId as PathValue<T, Path<T>>);
-            }
+            setLocation(result.aisleId, result.sectionId);
 
             showSuccess(
                 `Auto-categorized to ${result.aisleName}${
@@ -118,121 +102,117 @@ export function LocationSelectors<T extends FieldValues = FieldValues>({
         }
     };
 
+    const hasLocation = Boolean(currentAisle || currentSection);
+
     return (
         <>
-            {/* Override Alert */}
-            <IonAlert
-                isOpen={showOverrideAlert}
-                onDidDismiss={() => setShowOverrideAlert(false)}
-                header="Override Location?"
-                message="This item already has an aisle/section selected. Do you want to override it with the AI suggestion?"
-                buttons={[
-                    {
-                        text: "Cancel",
-                        role: "cancel",
-                    },
-                    {
-                        text: "Override",
-                        handler: () => handleAutoCategorize(true),
-                    },
-                ]}
-            />
-
-            {/* Aisle & Section Fields with Auto-Locate Button */}
+            {/* Location row: chips, with Auto-Locate folded in as one of them */}
             <div
                 style={{
+                    padding: "8px 16px",
                     display: "flex",
-                    gap: 0,
-                    alignItems: "stretch",
+                    flexDirection: "column",
+                    gap: "4px",
                 }}
+                onClick={() => !disabled && setIsPickerOpen(true)}
             >
-                {/* Fields Column */}
+                <div style={{ fontSize: "0.75rem", color: "var(--ion-color-medium)" }}>
+                    Location
+                </div>
                 <div
                     style={{
-                        flex: 1,
                         display: "flex",
-                        flexDirection: "column",
+                        flexWrap: "wrap",
+                        alignItems: "center",
+                        gap: "6px",
+                        cursor: disabled ? "default" : "pointer",
                     }}
                 >
-                    {/* Aisle */}
-                    <Controller
-                        name={"aisleId" as Path<T>}
-                        control={control}
-                        render={({ field }) => (
-                            <ClickableSelectionField
-                                items={aisleItems}
-                                value={field.value}
-                                onSelect={(aisleId) => {
-                                    field.onChange(aisleId);
-                                    // Clear section if aisle changed and section doesn't belong to new aisle
-                                    if (currentSectionId) {
-                                        const section = sections?.find(
-                                            (s: StoreSection) => s.id === currentSectionId
-                                        );
-                                        if (section && section.aisleId !== aisleId) {
-                                            setValue(
-                                                "sectionId" as Path<T>,
-                                                null as PathValue<T, Path<T>>
-                                            );
-                                        }
-                                    }
-                                }}
-                                label="Aisle"
-                                placeholder="None"
-                                modalTitle="Select Aisle"
-                                showSearch={true}
-                                searchPlaceholder="Search aisles..."
-                                disabled={disabled}
-                            />
-                        )}
-                    />
+                    {!hasLocation ? (
+                        <span
+                            style={{
+                                color: disabled
+                                    ? "var(--ion-color-medium)"
+                                    : "var(--ion-color-primary)",
+                                textDecoration: disabled ? "none" : "underline",
+                                fontSize: "0.95rem",
+                            }}
+                        >
+                            Set location
+                        </span>
+                    ) : (
+                        <>
+                            {currentAisle && (
+                                <IonChip disabled={disabled} outline>
+                                    <IonLabel>{currentAisle.name}</IonLabel>
+                                    {!disabled && (
+                                        <IonIcon
+                                            icon={closeCircle}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setLocation(null, null);
+                                            }}
+                                        />
+                                    )}
+                                </IonChip>
+                            )}
+                            {currentSection && (
+                                <IonChip disabled={disabled} outline>
+                                    <IonLabel>{currentSection.name}</IonLabel>
+                                    {!disabled && (
+                                        <IonIcon
+                                            icon={closeCircle}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setLocation(currentAisleId ?? null, null);
+                                            }}
+                                        />
+                                    )}
+                                </IonChip>
+                            )}
+                        </>
+                    )}
 
-                    {/* Section */}
-                    <Controller
-                        name={"sectionId" as Path<T>}
-                        control={control}
-                        render={({ field }) => (
-                            <ClickableSelectionField
-                                items={sectionItems}
-                                value={field.value}
-                                onSelect={(sectionId) => {
-                                    field.onChange(sectionId);
-                                    // If a section is selected, automatically set its aisle
-                                    if (sectionId && sections) {
-                                        const section = sections.find(
-                                            (s: StoreSection) => s.id === sectionId
-                                        );
-                                        if (section) {
-                                            setValue(
-                                                "aisleId" as Path<T>,
-                                                section.aisleId as PathValue<T, Path<T>>
-                                            );
-                                        }
-                                    }
-                                }}
-                                label="Section"
-                                placeholder="None"
-                                modalTitle="Select Section"
-                                showSearch={true}
-                                searchPlaceholder="Search sections..."
-                                disabled={disabled}
-                            />
-                        )}
-                    />
-                </div>
-
-                {/* Auto-Locate Icon Button */}
-                <div style={{ display: "flex", alignItems: "stretch" }}>
-                    <LLMButton
-                        iconOnly
-                        onClick={() => handleAutoCategorize()}
-                        disabled={
-                            disabled || !itemName || !sortedAisles || sortedAisles.length === 0
-                        }
-                        title="Auto-Locate"
-                    />
+                    {!hasLocation && (
+                        <IonChip
+                            outline
+                            disabled={disabled || !itemName || sortedAisles.length === 0}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleAutoCategorize();
+                            }}
+                            title="Auto-Locate: guess the aisle/section from the item name"
+                            style={{
+                                "--color": LLM_COLOR,
+                                borderColor: LLM_COLOR,
+                            }}
+                        >
+                            <IonIcon src={LLM_ICON_SRC} style={{ fontSize: "16px" }} />
+                            <IonLabel>Auto-Locate</IonLabel>
+                        </IonChip>
+                    )}
                 </div>
             </div>
+
+            <LocationPicker
+                isOpen={isPickerOpen}
+                onDismiss={() => setIsPickerOpen(false)}
+                aisles={sortedAisles}
+                sections={sections ?? []}
+                currentAisleId={effectiveAisleId}
+                currentSectionId={currentSectionId}
+                onSelect={setLocation}
+                onManageAisles={() => {
+                    setIsPickerOpen(false);
+                    setIsManageOpen(true);
+                }}
+            />
+
+            <AislesSectionsManagementModal
+                isOpen={isManageOpen}
+                onClose={() => setIsManageOpen(false)}
+                storeId={storeId}
+            />
         </>
     );
 }

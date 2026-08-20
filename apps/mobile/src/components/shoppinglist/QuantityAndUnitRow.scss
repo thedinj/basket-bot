@@ -1,0 +1,56 @@
+.qty-unit-row {
+    padding: 8px 16px;
+}
+
+.qty-unit-row__label {
+    font-size: 0.75rem;
+    color: var(--ion-color-medium);
+    margin-bottom: 6px;
+}
+
+.qty-unit-row__fields {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    // Fixed height, shared by both fields below via height: 100% — the two are
+    // different Ionic components (ion-input vs. ion-item) with different default
+    // sizing math, so pinning both to one explicit height is what actually keeps
+    // them visually level, rather than trying to match their paddings.
+    height: 44px;
+}
+
+.qty-unit-row__qty {
+    flex: 0 0 92px;
+    height: 100%;
+    // Ionic's outline fill hardcodes `min-height: 56px` (not a custom property, so it
+    // can't be overridden via --min-height) directly on .input-fill-outline, which beat
+    // our height: 100% and made the qty box taller than the unit box next to it.
+    min-height: 44px !important;
+    --border-radius: 8px;
+    --padding-top: 0;
+    --padding-bottom: 0;
+    --padding-start: 12px;
+    --padding-end: 12px;
+}
+
+.qty-unit-row__unit {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+}
+
+.qty-unit-row__unit ion-item {
+    height: 100%;
+    --background: transparent;
+    --border-radius: 8px;
+    --padding-start: 12px;
+    --inner-padding-end: 12px;
+    --min-height: 0;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 8px;
+}
+
+.qty-unit-row__error {
+    font-size: 12px;
+    margin: 4px 0 0;
+}
