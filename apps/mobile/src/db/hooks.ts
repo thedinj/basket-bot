@@ -1226,6 +1226,36 @@ export function useUpsertShoppingListItem() {
 }
 
 /**
+ * Hook to update a shopping list item's `isUnsure` / `snoozedUntil` fields from the swipe
+ * actions on the list row. Goes through the same full-replace upsert as the editor modal
+ * (callers must send the item's other current field values via `toUpsertPayload`), but with
+ * an optimistic cache update so the gesture feels instant. `operation` labels the mutation
+ * for the global error toast (e.g. "mark item unsure", "snooze item").
+ */
+export function useSwipeUpdateShoppingListItem(operation: string) {
+    const database = useDatabase();
+
+    return useOptimisticMutation<ShoppingListItemInput, ShoppingListItem>({
+        mutationFn: (params) =>
+            database.upsertShoppingListItem(params) as Promise<ShoppingListItem>,
+        meta: { operation },
+        queryKeys: (vars) => [queryKeys.shoppingListItems.byStore(vars.storeId)],
+        updateCache: (vars) => ({
+            queryKey: queryKeys.shoppingListItems.byStore(vars.storeId),
+            updateFn: (old: unknown) => {
+                const items = old as ShoppingListItemWithDetails[] | undefined;
+                if (!items) return items;
+                return items.map((item) =>
+                    item.id === vars.id
+                        ? { ...item, isUnsure: vars.isUnsure, snoozedUntil: vars.snoozedUntil }
+                        : item
+                );
+            },
+        }),
+    });
+}
+
+/**
  * Hook to toggle shopping list item checked status
  * Uses optimistic updates for instant UI feedback
  * Shows alert if item was already checked by another user (requires dismissal)

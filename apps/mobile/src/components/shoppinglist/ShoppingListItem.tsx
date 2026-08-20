@@ -1,6 +1,15 @@
 import type { ShoppingListItemWithDetails, Store } from "@basket-bot/core";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
-import { IonButton, IonCheckbox, IonIcon, IonItem, IonLabel } from "@ionic/react";
+import {
+    IonButton,
+    IonCheckbox,
+    IonIcon,
+    IonItem,
+    IonItemOption,
+    IonItemOptions,
+    IonItemSliding,
+    IonLabel,
+} from "@ionic/react";
 import clsx from "clsx";
 import {
     arrowRedoOutline,
@@ -11,13 +20,24 @@ import {
 } from "ionicons/icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../auth/useAuth";
-import { useMoveItemToStore, useStores, useToggleItemChecked } from "../../db/hooks";
+import {
+    useMoveItemToStore,
+    useStores,
+    useSwipeUpdateShoppingListItem,
+    useToggleItemChecked,
+} from "../../db/hooks";
 import { useMidnightUpdate } from "../../hooks/useMidnightUpdate";
 import { useToast } from "../../hooks/useToast";
-import { formatSnoozeDate, isCurrentlySnoozed } from "../../utils/dateUtils";
+import {
+    formatSnoozeDate,
+    formatSnoozeDateForStorage,
+    isCurrentlySnoozed,
+} from "../../utils/dateUtils";
+import { toUpsertPayload } from "../../utils/shoppingListItemPayload";
 import type { SelectableItem } from "../shared/ClickableSelectionModal";
 import { ClickableSelectionModal } from "../shared/ClickableSelectionModal";
 import ConfirmModal from "../shared/ConfirmModal";
+import { SNOOZE_PRESETS } from "./SnoozeChips";
 import { useShoppingListContext } from "./useShoppingListContext";
 
 import "./ShoppingListItem.css";
@@ -72,6 +92,36 @@ export const ShoppingListItem = ({
     const [justChecked, setJustChecked] = useState(false);
     const [showZzz, setShowZzz] = useState(false);
     const prevSnoozedRef = useRef<boolean>(false);
+    const slidingRef = useRef<HTMLIonItemSlidingElement>(null);
+    const markUnsure = useSwipeUpdateShoppingListItem("mark item unsure");
+    const snoozeItem = useSwipeUpdateShoppingListItem("snooze item");
+    const { isSnoozed } = useSnoozeStatus(item.snoozedUntil);
+
+    const swipePresetDates = useMemo(
+        () =>
+            SNOOZE_PRESETS.map((preset) => {
+                const date = new Date();
+                date.setHours(0, 0, 0, 0);
+                date.setDate(date.getDate() + preset.days);
+                return { ...preset, date: formatSnoozeDateForStorage(date.toISOString()) };
+            }),
+        []
+    );
+
+    const handleSwipeToggleUnsure = useCallback(() => {
+        slidingRef.current?.close();
+        markUnsure.mutate(toUpsertPayload(item, { isUnsure: !item.isUnsure }));
+        Haptics.impact({ style: ImpactStyle.Light }).catch(() => undefined);
+    }, [item, markUnsure]);
+
+    const handleSwipeSnooze = useCallback(
+        (snoozedUntil: string | null) => {
+            slidingRef.current?.close();
+            snoozeItem.mutate(toUpsertPayload(item, { snoozedUntil }));
+            Haptics.impact({ style: ImpactStyle.Light }).catch(() => undefined);
+        },
+        [item, snoozeItem]
+    );
 
     const storeItems: SelectableItem[] = useMemo(() => {
         if (!stores) return [];
@@ -193,7 +243,7 @@ export const ShoppingListItem = ({
     const titleToUse = item.isIdea ? item.notes : item.itemName;
     const notesToUse = item.isIdea ? "" : item.notes;
 
-    const { isSnoozed, formattedSnoozeDate } = useSnoozeStatus(item.snoozedUntil);
+    const formattedSnoozeDate = isSnoozed ? formatSnoozeDate(item.snoozedUntil!) : null;
 
     // Trigger Zzz animation when item transitions into snoozed state
     useEffect(() => {
@@ -206,122 +256,170 @@ export const ShoppingListItem = ({
         prevSnoozedRef.current = isSnoozed;
     }, [isSnoozed]);
 
+    // Swipe actions only make sense on unchecked rows and outside the unsure-review UI,
+    // which already has its own explicit confirm/reject buttons.
+    const swipeActionsEnabled = !isChecked && !onConfirmUnsure;
+
     return (
-        <IonItem
-            className={clsx(
-                isChecked && "shopping-list-item--checked",
-                item.isIdea && "shopping-list-item--idea",
-                item.isUnsure && !onConfirmUnsure && "shopping-list-item--unsure",
-                item.isPrivate && "shopping-list-item--private",
-                justChecked && "shopping-list-item--just-checked"
-            )}
-            button={false}
-        >
-            {!onConfirmUnsure && (
-                <div
-                    slot="start"
-                    className={clsx(
-                        "checkbox-container",
-                        justChecked && "checkbox-container--bounce"
-                    )}
-                    onClick={handleCheckboxClick}
-                >
-                    <IonCheckbox checked={isChecked} style={{ pointerEvents: "none" }} />
-                    {showZzz && (
-                        <div className="zzz-particles" aria-hidden="true">
-                            <span className="zzz-particle zzz-particle--1">z</span>
-                            <span className="zzz-particle zzz-particle--2">z</span>
-                            <span className="zzz-particle zzz-particle--3">Z</span>
-                        </div>
-                    )}
-                </div>
-            )}
-            <IonLabel
+        <IonItemSliding ref={slidingRef} disabled={!swipeActionsEnabled}>
+            <IonItem
                 className={clsx(
-                    "item-label",
-                    isChecked && "item-text--checked",
-                    isSnoozed && "item-text--snoozed"
+                    isChecked && "shopping-list-item--checked",
+                    item.isIdea && "shopping-list-item--idea",
+                    item.isUnsure && !onConfirmUnsure && "shopping-list-item--unsure",
+                    item.isPrivate && "shopping-list-item--private",
+                    justChecked && "shopping-list-item--just-checked"
                 )}
-                onClick={() => openEditModal(item as ShoppingListItemWithDetails)}
+                button={false}
             >
-                <>
-                    <h2 className={clsx("item-title")}>
-                        {titleToUse}{" "}
-                        {(item.qty !== null || item.unitAbbreviation) && (
-                            <span className="item-qty">
-                                ({item.qty !== null ? item.qty : ""}
-                                {item.unitAbbreviation && ` ${item.unitAbbreviation}`})
-                            </span>
-                        )}{" "}
-                        {item.isSample ? <span className="sample-badge">[sample]</span> : null}
-                        {item.isUnsure && !onConfirmUnsure ? (
-                            <IonIcon
-                                icon={isChecked ? helpCircleOutline : helpCircle}
-                                className="unsure-icon"
-                                title="Unsure if needed"
-                            />
-                        ) : null}
-                        {item.isPrivate ? (
-                            <IonIcon
-                                src="/img/private.svg"
-                                className="private-icon"
-                                title="Incognito — only visible to you"
-                            />
-                        ) : null}
-                    </h2>
+                {!onConfirmUnsure && (
+                    <div
+                        slot="start"
+                        className={clsx(
+                            "checkbox-container",
+                            justChecked && "checkbox-container--bounce"
+                        )}
+                        onClick={handleCheckboxClick}
+                    >
+                        <IonCheckbox checked={isChecked} style={{ pointerEvents: "none" }} />
+                        {showZzz && (
+                            <div className="zzz-particles" aria-hidden="true">
+                                <span className="zzz-particle zzz-particle--1">z</span>
+                                <span className="zzz-particle zzz-particle--2">z</span>
+                                <span className="zzz-particle zzz-particle--3">Z</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+                <IonLabel
+                    className={clsx(
+                        "item-label",
+                        isChecked && "item-text--checked",
+                        isSnoozed && "item-text--snoozed"
+                    )}
+                    onClick={() => openEditModal(item as ShoppingListItemWithDetails)}
+                >
+                    <>
+                        <h2 className={clsx("item-title")}>
+                            {titleToUse}{" "}
+                            {(item.qty !== null || item.unitAbbreviation) && (
+                                <span className="item-qty">
+                                    ({item.qty !== null ? item.qty : ""}
+                                    {item.unitAbbreviation && ` ${item.unitAbbreviation}`})
+                                </span>
+                            )}{" "}
+                            {item.isSample ? <span className="sample-badge">[sample]</span> : null}
+                            {item.isUnsure && !onConfirmUnsure ? (
+                                <IonIcon
+                                    icon={isChecked ? helpCircleOutline : helpCircle}
+                                    className="unsure-icon"
+                                    title="Unsure if needed"
+                                />
+                            ) : null}
+                            {item.isPrivate ? (
+                                <IonIcon
+                                    src="/img/private.svg"
+                                    className="private-icon"
+                                    title="Incognito — only visible to you"
+                                />
+                            ) : null}
+                        </h2>
 
-                    {notesToUse && (
-                        <p className={clsx("item-notes", isChecked && "item-text--checked")}>
-                            {notesToUse}
-                        </p>
-                    )}
-                    {isSnoozed && (
-                        <p className={clsx("item-snoozed-info", isChecked && "item-text--checked")}>
-                            Snoozed until {formattedSnoozeDate}
-                        </p>
-                    )}
-                    {item.isChecked && item.checkedBy !== user?.id && item.checkedByName && (
-                        <p className={clsx("item-checked-by", isChecked && "item-text--checked")}>
-                            Checked by {item.checkedByName}
-                        </p>
-                    )}
-                </>
-            </IonLabel>
+                        {notesToUse && (
+                            <p className={clsx("item-notes", isChecked && "item-text--checked")}>
+                                {notesToUse}
+                            </p>
+                        )}
+                        {isSnoozed && (
+                            <p
+                                className={clsx(
+                                    "item-snoozed-info",
+                                    isChecked && "item-text--checked"
+                                )}
+                            >
+                                Snoozed until {formattedSnoozeDate}
+                            </p>
+                        )}
+                        {item.isChecked && item.checkedBy !== user?.id && item.checkedByName && (
+                            <p
+                                className={clsx(
+                                    "item-checked-by",
+                                    isChecked && "item-text--checked"
+                                )}
+                            >
+                                Checked by {item.checkedByName}
+                            </p>
+                        )}
+                    </>
+                </IonLabel>
 
-            {onConfirmUnsure ? (
-                <>
-                    <IonButton
-                        slot="end"
-                        fill="clear"
-                        onClick={handleRejectIconClick}
-                        disabled={isRejectingUnsure}
-                        title="I don't need this — remove it"
+                {onConfirmUnsure ? (
+                    <>
+                        <IonButton
+                            slot="end"
+                            fill="clear"
+                            onClick={handleRejectIconClick}
+                            disabled={isRejectingUnsure}
+                            title="I don't need this — remove it"
+                        >
+                            <IonIcon icon={closeCircleOutline} color="danger" />
+                        </IonButton>
+                        <IonButton
+                            slot="end"
+                            fill="clear"
+                            onClick={onConfirmUnsure}
+                            disabled={isConfirmingUnsure}
+                            title="Confirm — I need this"
+                        >
+                            <IonIcon icon={checkmarkCircleOutline} color="success" />
+                        </IonButton>
+                    </>
+                ) : (
+                    stores &&
+                    stores.length > 1 &&
+                    !isChecked && (
+                        <IonButton
+                            slot="end"
+                            fill="clear"
+                            onClick={handleMoveIconClick}
+                            title="Move to another store"
+                        >
+                            <IonIcon icon={arrowRedoOutline} color="medium" />
+                        </IonButton>
+                    )
+                )}
+            </IonItem>
+
+            {swipeActionsEnabled && (
+                <IonItemOptions side="end">
+                    <IonItemOption
+                        className="swipe-option swipe-option--unsure"
+                        onClick={handleSwipeToggleUnsure}
                     >
-                        <IonIcon icon={closeCircleOutline} color="danger" />
-                    </IonButton>
-                    <IonButton
-                        slot="end"
-                        fill="clear"
-                        onClick={onConfirmUnsure}
-                        disabled={isConfirmingUnsure}
-                        title="Confirm — I need this"
-                    >
-                        <IonIcon icon={checkmarkCircleOutline} color="success" />
-                    </IonButton>
-                </>
-            ) : (
-                stores &&
-                stores.length > 1 &&
-                !isChecked && (
-                    <IonButton
-                        slot="end"
-                        fill="clear"
-                        onClick={handleMoveIconClick}
-                        title="Move to another store"
-                    >
-                        <IonIcon icon={arrowRedoOutline} color="medium" />
-                    </IonButton>
-                )
+                        <IonIcon slot="top" icon={item.isUnsure ? helpCircle : helpCircleOutline} />
+                        {item.isUnsure ? "Confirm" : "Unsure"}
+                    </IonItemOption>
+                    {isSnoozed ? (
+                        <IonItemOption
+                            className="swipe-option swipe-option--snooze"
+                            onClick={() => handleSwipeSnooze(null)}
+                        >
+                            <IonIcon slot="top" src="/img/ZzzIcon.svg" />
+                            Un-snooze
+                        </IonItemOption>
+                    ) : (
+                        swipePresetDates.map((preset) => (
+                            <IonItemOption
+                                key={preset.label}
+                                className="swipe-option swipe-option--snooze"
+                                onClick={() => handleSwipeSnooze(preset.date)}
+                            >
+                                <IonIcon slot="top" src="/img/ZzzIcon.svg" />
+                                {preset.days === 1 ? "1d" : "1w"}
+                            </IonItemOption>
+                        ))
+                    )}
+                </IonItemOptions>
             )}
 
             <ClickableSelectionModal
@@ -362,6 +460,6 @@ export const ShoppingListItem = ({
                     onCancel={handleDismissRejectConfirm}
                 />
             )}
-        </IonItem>
+        </IonItemSliding>
     );
 };

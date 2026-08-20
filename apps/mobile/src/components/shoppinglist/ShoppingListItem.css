@@ -108,6 +108,22 @@
     color: var(--ion-color-primary);
 }
 
+/* Swipe action buttons (unsure toggle + snooze presets): muted tint rather than a
+   fully-saturated Ionic semantic color, consistent with the soft row tints above. */
+.swipe-option {
+    font-size: 0.85em;
+    text-transform: none;
+    --color: var(--ion-text-color);
+}
+
+.swipe-option--unsure {
+    --background: color-mix(in srgb, var(--ion-color-warning) 45%, var(--ion-color-step-100));
+}
+
+.swipe-option--snooze {
+    --background: color-mix(in srgb, var(--ion-color-secondary) 22%, var(--ion-color-step-100));
+}
+
 /* Left accent border for idea items (connects visually to the amber Ideas header) */
 .shopping-list-item--idea:not(.shopping-list-item--checked)::part(native) {
     box-shadow: inset 3px 0 0 var(--app-color-ideas);
