@@ -15,6 +15,7 @@ import {
 import { ellipsisVertical } from "ionicons/icons";
 import { useState } from "react";
 import { PageMenuItemConfig } from "./AppHeaderContext";
+import { ProgressLine } from "./ProgressLine";
 
 interface AppHeaderProps {
     title: string | React.ReactNode;
@@ -23,6 +24,8 @@ interface AppHeaderProps {
     children?: React.ReactNode;
     menuItems?: PageMenuItemConfig[];
     subToolbar?: React.ReactNode;
+    /** 0-1 progress to show as a thin line under the header. `null`/undefined renders nothing. */
+    progress?: number | null;
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
@@ -32,6 +35,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     children,
     menuItems = [],
     subToolbar,
+    progress,
 }) => {
     const [showPageMenu, setShowPageMenu] = useState(false);
     const [popoverEvent, setPopoverEvent] = useState<unknown>(undefined);
@@ -90,6 +94,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 </IonButtons>
             </IonToolbar>
             {subToolbar && <IonToolbar>{subToolbar}</IonToolbar>}
+            {progress !== null && progress !== undefined && <ProgressLine progress={progress} />}
         </IonHeader>
     );
 };

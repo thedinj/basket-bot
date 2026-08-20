@@ -103,6 +103,9 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
         ? uncheckedItems.filter((item) => item.isUnsure)
         : uncheckedItems;
 
+    const tripProgress =
+        activeItems.length > 0 ? checkedItems.length / activeItems.length : null;
+
     // Reset clear flag when checked items are actually gone
     if (hasTriggeredClear && checkedItems.length === 0) {
         setHasTriggeredClear(false);
@@ -208,10 +211,11 @@ const ShoppingListWithItems: React.FC<{ storeId: string }> = ({ storeId }) => {
             <AppHeader
                 title="Shopping List"
                 subToolbar={multipleStores ? <StoreSelector /> : undefined}
+                progress={tripProgress}
             >
                 <GlobalActions showKeepAwake={KEEP_AWAKE_BUTTON_ENABLED} actions={customActions} />
             </AppHeader>
-            <IonContent fullscreen>
+            <IonContent fullscreen className="shopping-list-content">
                 <PullToRefresh />
                 {activeItems.length === 0 && (
                     <div className="shopping-list-empty-state">

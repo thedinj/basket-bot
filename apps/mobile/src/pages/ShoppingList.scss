@@ -4,6 +4,13 @@
     padding: 20px;
 }
 
+// Ionic's ion-list carries a default 8px top padding, which reads as an odd gap
+// directly under the progress line. Only the first list needs it removed.
+.shopping-list-content ion-list:first-of-type {
+    --padding-top: 0;
+    padding-top: 0;
+}
+
 .bulk-import-fab {
     margin-right: 70px;
 }
