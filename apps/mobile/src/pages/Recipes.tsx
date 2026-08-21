@@ -306,6 +306,11 @@ const Recipes: React.FC = () => {
     const [routingRecipe, setRoutingRecipe] = useState<RecipeWithDetails | null>(null);
     const [viewingRecipe, setViewingRecipe] = useState<RecipeWithDetails | null>(null);
     const [scrollToRecipeId, setScrollToRecipeId] = useState<string | null>(null);
+    // The import flow creates the recipe itself (not via the editor's own "new recipe"
+    // save path), then opens the editor in edit mode to let the user review it — so the
+    // editor's onCreated callback never fires for this recipe. Track it separately and
+    // scroll to it whenever that editor session closes.
+    const pendingImportScrollId = useRef<string | null>(null);
 
     const createRecipe = useCreateRecipe(activeHouseholdId);
     const addIngredient = useAddIngredient(activeHouseholdId);
@@ -357,6 +362,7 @@ const Recipes: React.FC = () => {
                         excluded: ing.excluded,
                     });
                 }
+                pendingImportScrollId.current = recipe.id;
                 setEditingRecipeId(recipe.id);
                 setEditorOpen(true);
             } catch {
@@ -430,6 +436,10 @@ const Recipes: React.FC = () => {
                     onDismiss={() => {
                         setEditorOpen(false);
                         setEditingRecipeId(undefined);
+                        if (pendingImportScrollId.current) {
+                            setScrollToRecipeId(pendingImportScrollId.current);
+                            pendingImportScrollId.current = null;
+                        }
                     }}
                     onCreated={(recipeId) => setScrollToRecipeId(recipeId)}
                 />
