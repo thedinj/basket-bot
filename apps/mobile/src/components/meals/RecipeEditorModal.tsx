@@ -489,16 +489,14 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                     min="1"
                                 />
                             </IonItem>
-                            {!isNew && (
-                                <IonItem>
-                                    <IonLabel>Include in meal randomizer</IonLabel>
-                                    <IonToggle
-                                        slot="end"
-                                        checked={!isPoolExcluded}
-                                        onIonChange={(e) => setIsPoolExcluded(!e.detail.checked)}
-                                    />
-                                </IonItem>
-                            )}
+                            <IonItem>
+                                <IonLabel>Include in meal randomizer</IonLabel>
+                                <IonToggle
+                                    slot="end"
+                                    checked={!isPoolExcluded}
+                                    onIonChange={(e) => setIsPoolExcluded(!e.detail.checked)}
+                                />
+                            </IonItem>
                         </IonList>
 
                         {/* Notes */}
