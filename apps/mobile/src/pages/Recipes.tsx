@@ -276,9 +276,9 @@ const RecipesList: React.FC<{
                                 else cardRefs.current.delete(recipe.id);
                             }}
                             recipe={recipe}
-                            onClick={() => onOpenEditor(recipe.id)}
+                            onClick={() => onView(recipe)}
                             onAddToList={() => onAddToList(recipe)}
-                            onView={() => onView(recipe)}
+                            onEdit={() => onOpenEditor(recipe.id)}
                         />
                     ))}
                 </div>

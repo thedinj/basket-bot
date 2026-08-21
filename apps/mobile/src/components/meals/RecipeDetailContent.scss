@@ -43,9 +43,6 @@
 }
 
 .recipe-detail-ingredient {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
     padding: 8px 0;
     border-bottom: 1px solid var(--ion-border-color, #2d3748);
 
@@ -54,13 +51,18 @@
     }
 }
 
+// inline-block (not flex/grid) so the qty and name stay on one line when
+// copied via innerText — flex/grid children are always forced onto their
+// own line, even though they'd render inline.
 .recipe-detail-ingredient-qty {
+    display: inline-block;
+    min-width: 72px;
+    margin-right: 12px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 13px;
     color: var(--ion-color-secondary, #a78bfa);
     white-space: nowrap;
-    min-width: 72px;
-    flex-shrink: 0;
+    vertical-align: baseline;
 }
 
 .recipe-detail-ingredient-name {

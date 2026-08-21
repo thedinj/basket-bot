@@ -1,6 +1,6 @@
 import type { RecipeWithDetails } from "@basket-bot/core";
 import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonIcon } from "@ionic/react";
-import { cartOutline, glassesOutline } from "ionicons/icons";
+import { cartOutline, createOutline } from "ionicons/icons";
 import { motion } from "motion/react";
 import { forwardRef } from "react";
 import TagChipList from "./TagChipList";
@@ -11,11 +11,11 @@ interface RecipeCardProps {
     recipe: RecipeWithDetails;
     onClick: () => void;
     onAddToList?: () => void;
-    onView?: () => void;
+    onEdit?: () => void;
 }
 
 const RecipeCard = forwardRef<HTMLDivElement, RecipeCardProps>(
-    ({ recipe, onClick, onAddToList, onView }, ref) => {
+    ({ recipe, onClick, onAddToList, onEdit }, ref) => {
         const firstTagKey = recipe.tags[0]?.colorKey ?? null;
 
         const cardBg = firstTagKey
@@ -63,19 +63,19 @@ const RecipeCard = forwardRef<HTMLDivElement, RecipeCardProps>(
                             </div>
                         )}
                     </IonCardContent>
-                    {(onView || onAddToList) && (
+                    {(onEdit || onAddToList) && (
                         <div className="recipe-card__footer">
-                            {onView && (
+                            {onEdit && (
                                 <button
                                     type="button"
                                     className="recipe-card__add-btn"
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        onView();
+                                        onEdit();
                                     }}
-                                    aria-label="View recipe"
+                                    aria-label="Edit recipe"
                                 >
-                                    <IonIcon icon={glassesOutline} className="recipe-card__add-icon" />
+                                    <IonIcon icon={createOutline} className="recipe-card__add-icon" />
                                 </button>
                             )}
                             {onAddToList && (
