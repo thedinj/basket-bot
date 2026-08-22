@@ -55,8 +55,12 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
     const { data: store, isLoading: storeLoading } = useStore(storeId);
     const { data: items, isLoading } = useStoreItemsWithDetails(storeId);
     const shoppingListItemMap = useShoppingListItemMap(storeId);
-    const { handleToggleFavorite, handleAddToShoppingList, handleRemoveFromShoppingList } =
-        useStoreItemOperations(storeId);
+    const {
+        handleToggleFavorite,
+        handleAddToShoppingList,
+        handleMarkUnsure,
+        handleRemoveFromShoppingList,
+    } = useStoreItemOperations(storeId);
     const { showError } = useToast();
 
     const [isEditorModalOpen, setIsEditorModalOpen] = useState(false);
@@ -127,13 +131,13 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
 
     const confirmRemoveFromShoppingList = useCallback(
         (item: StoreItemWithDetails) => {
-            const shoppingListItemId = shoppingListItemMap.get(item.id);
-            if (!shoppingListItemId) return;
+            const shoppingListItem = shoppingListItemMap.get(item.id);
+            if (!shoppingListItem) return;
 
             setRemoveFromListAlert({
                 itemId: item.id,
                 itemName: item.name,
-                shoppingListItemId,
+                shoppingListItemId: shoppingListItem.id,
             });
         },
         [shoppingListItemMap]
@@ -146,17 +150,29 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
         setRemoveFromListAlert(null);
     }, [removeFromListAlert, handleRemoveFromShoppingList]);
 
+    const handleMarkItemUnsure = useCallback(
+        (item: StoreItemWithDetails) => {
+            const shoppingListItem = shoppingListItemMap.get(item.id);
+            if (!shoppingListItem) return;
+
+            return handleMarkUnsure(shoppingListItem);
+        },
+        [shoppingListItemMap, handleMarkUnsure]
+    );
+
     const renderItem = useCallback(
         (item: StoreItemWithDetails) => {
-            const isInShoppingList = shoppingListItemMap.has(item.id);
+            const shoppingListItem = shoppingListItemMap.get(item.id);
 
             return (
                 <StoreItemRow
                     key={item.id}
                     item={item}
-                    isInShoppingList={isInShoppingList}
+                    isInShoppingList={!!shoppingListItem}
+                    isUnsure={!!shoppingListItem?.isUnsure}
                     onToggleFavorite={handleToggleFavorite}
                     onAddToShoppingList={handleAddToShoppingList}
+                    onMarkUnsure={handleMarkItemUnsure}
                     onRemoveFromShoppingList={(item) => confirmRemoveFromShoppingList(item)}
                     onEditItem={openEditModal}
                 />
@@ -166,6 +182,7 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
             shoppingListItemMap,
             handleToggleFavorite,
             handleAddToShoppingList,
+            handleMarkItemUnsure,
             confirmRemoveFromShoppingList,
             openEditModal,
         ]

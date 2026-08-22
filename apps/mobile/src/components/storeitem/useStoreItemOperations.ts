@@ -1,3 +1,4 @@
+import type { ShoppingListItemWithDetails } from "@basket-bot/core";
 import { useCallback } from "react";
 import {
     useRemoveShoppingListItem,
@@ -7,6 +8,7 @@ import {
 import type { StoreItemWithDetails } from "../../db/types";
 import { useToast } from "../../hooks/useToast";
 import { ApiError } from "../../lib/api/client";
+import { toUpsertPayload } from "../../utils/shoppingListItemPayload";
 
 /**
  * Shared hook for store item operations (favorite, add/remove from shopping list)
@@ -48,15 +50,41 @@ export const useStoreItemOperations = (storeId: string) => {
             } catch (error) {
                 console.error("[useStoreItemOperations] addToShoppingList error:", error);
                 if (error instanceof ApiError && error.isNetworkError) {
-                    showWarning("No connection — will add to shopping list automatically once reconnected", {
-                        position: "bottom",
-                    });
+                    showWarning(
+                        "No connection — will add to shopping list automatically once reconnected",
+                        {
+                            position: "bottom",
+                        }
+                    );
                 } else {
                     showError("Failed to add to shopping list");
                 }
             }
         },
         [storeId, upsertShoppingListItem, showSuccess, showWarning, showError]
+    );
+
+    const handleMarkUnsure = useCallback(
+        async (shoppingListItem: ShoppingListItemWithDetails) => {
+            try {
+                await upsertShoppingListItem.mutateAsync(
+                    toUpsertPayload(shoppingListItem, { isUnsure: true })
+                );
+            } catch (error) {
+                console.error("[useStoreItemOperations] markUnsure error:", error);
+                if (error instanceof ApiError && error.isNetworkError) {
+                    showWarning(
+                        "No connection — will mark item unsure automatically once reconnected",
+                        {
+                            position: "bottom",
+                        }
+                    );
+                } else {
+                    showError("Failed to mark item unsure");
+                }
+            }
+        },
+        [upsertShoppingListItem, showWarning, showError]
     );
 
     const handleRemoveFromShoppingList = useCallback(
@@ -70,7 +98,9 @@ export const useStoreItemOperations = (storeId: string) => {
             } catch (error) {
                 console.error("[useStoreItemOperations] removeFromShoppingList error:", error);
                 if (error instanceof ApiError && error.isNetworkError) {
-                    showWarning("No connection — will remove from shopping list automatically once reconnected");
+                    showWarning(
+                        "No connection — will remove from shopping list automatically once reconnected"
+                    );
                 } else {
                     showError("Failed to remove from shopping list");
                 }
@@ -82,6 +112,7 @@ export const useStoreItemOperations = (storeId: string) => {
     return {
         handleToggleFavorite,
         handleAddToShoppingList,
+        handleMarkUnsure,
         handleRemoveFromShoppingList,
     };
 };
