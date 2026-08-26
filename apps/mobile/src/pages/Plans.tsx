@@ -14,9 +14,11 @@ import { Suspense, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { AppHeader } from "../components/layout/AppHeader";
 import { HouseholdSelect } from "../components/households/HouseholdSelect";
+import LoadingFallback from "../components/LoadingFallback";
 import MealsEmptyState from "../components/meals/MealsEmptyState";
 import { FabSpacer } from "../components/shared/FabSpacer";
 import PullToRefresh from "../components/shared/PullToRefresh";
+import RobotLoadingContent from "../components/shared/RobotLoadingContent";
 import { usePlansHistory, useRecipes } from "../db/mealsHooks";
 import { queryKeys } from "../db/queryKeys";
 import RefreshConfig from "../hooks/refresh/RefreshConfig";
@@ -66,7 +68,7 @@ const PlansHistory: React.FC<{ householdId: string | null }> = ({ householdId })
             <Suspense
                 fallback={
                     <div className="plans-history-loading">
-                        <IonSpinner />
+                        <RobotLoadingContent />
                     </div>
                 }
             >
@@ -136,7 +138,7 @@ const PlansHistory: React.FC<{ householdId: string | null }> = ({ householdId })
 
             {isFetching && plans.length === 0 && (
                 <div className="plans-history-loading">
-                    <IonSpinner />
+                    <RobotLoadingContent />
                 </div>
             )}
         </div>
@@ -146,6 +148,10 @@ const PlansHistory: React.FC<{ householdId: string | null }> = ({ householdId })
 const Plans: React.FC = () => {
     const { activeHouseholdId } = useHousehold();
     const [wizardOpen, setWizardOpen] = useState(false);
+    // Mounted lazily on first open (so its Suspense-based useRecipes query doesn't fire, and
+    // can't blank the page, before the wizard is ever used) but never unmounted afterward, so
+    // closing the modal doesn't cut off IonModal's dismiss animation mid-flight.
+    const [hasOpenedWizard, setHasOpenedWizard] = useState(false);
 
     return (
         <RefreshConfig
@@ -170,16 +176,24 @@ const Plans: React.FC = () => {
                 <IonFab vertical="bottom" horizontal="end" slot="fixed">
                     <IonFabButton
                         color="primary"
-                        onClick={() => setWizardOpen(true)}
+                        onClick={() => {
+                            setHasOpenedWizard(true);
+                            setWizardOpen(true);
+                        }}
                         aria-label="Start new plan"
                     >
                         <IonIcon icon={addOutline} />
                     </IonFabButton>
                 </IonFab>
 
-                <Suspense>
-                    <MealPlanWizard isOpen={wizardOpen} onDismiss={() => setWizardOpen(false)} />
-                </Suspense>
+                {hasOpenedWizard && (
+                    <Suspense fallback={<LoadingFallback />}>
+                        <MealPlanWizard
+                            isOpen={wizardOpen}
+                            onDismiss={() => setWizardOpen(false)}
+                        />
+                    </Suspense>
+                )}
             </IonPage>
         </RefreshConfig>
     );

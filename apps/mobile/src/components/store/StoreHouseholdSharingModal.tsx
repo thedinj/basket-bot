@@ -13,7 +13,6 @@ import {
     IonNote,
     IonRadio,
     IonRadioGroup,
-    IonSpinner,
     IonText,
     IonTitle,
     IonToolbar,
@@ -21,6 +20,7 @@ import {
 import { closeOutline } from "ionicons/icons";
 import React, { useState } from "react";
 import { useHouseholds, useUpdateStoreHousehold } from "../../db/hooks";
+import RobotLoadingContent from "../shared/RobotLoadingContent";
 
 interface StoreHouseholdSharingModalProps {
     store: Store | null;
@@ -77,8 +77,18 @@ const StoreHouseholdSharingModal: React.FC<StoreHouseholdSharingModalProps> = ({
             </IonHeader>
             <IonContent className="ion-padding">
                 {isLoading ? (
-                    <div className="ion-text-center ion-padding">
-                        <IonSpinner />
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "1rem",
+                            minHeight: "50vh",
+                            padding: "32px 16px",
+                        }}
+                    >
+                        <RobotLoadingContent />
                     </div>
                 ) : null}
 

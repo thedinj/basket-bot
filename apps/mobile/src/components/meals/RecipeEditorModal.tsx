@@ -18,6 +18,7 @@ import {
     IonToolbar,
 } from "@ionic/react";
 import { ClickableSelectionModal } from "../shared/ClickableSelectionModal";
+import RobotLoadingContent from "../shared/RobotLoadingContent";
 import {
     addOutline,
     archive,
@@ -454,7 +455,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
             <IonContent className="ion-padding">
                 {isLoadingEdit ? (
                     <div className="recipe-editor-loading">
-                        <IonSpinner />
+                        <RobotLoadingContent />
                     </div>
                 ) : (
                     <>

@@ -516,6 +516,11 @@ export function useDispatchPlan(householdId: string | null) {
             queryClient.invalidateQueries({ queryKey: queryKeys.plans.detail(householdId, variables.planId) })
             // Dispatching records the plan in history; refresh the history list too.
             queryClient.invalidateQueries({ queryKey: queryKeys.plansHistory(householdId) })
+            // Dispatching upserts shopping-list items (and may create store items) across
+            // one or more stores, so invalidate every store's list and item caches — same as
+            // useAddToShoppingList above.
+            queryClient.invalidateQueries({ queryKey: queryKeys.shoppingListItems.all() })
+            queryClient.invalidateQueries({ queryKey: queryKeys.items.all() })
             showSuccess(`Plan dispatched. ${result.itemsAdded} items on the list.`)
         },
         onError: (error: Error) => {

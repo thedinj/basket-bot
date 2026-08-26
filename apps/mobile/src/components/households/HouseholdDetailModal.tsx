@@ -11,7 +11,6 @@ import {
     IonListHeader,
     IonModal,
     IonNote,
-    IonSpinner,
     IonText,
     IonTitle,
     IonToolbar,
@@ -29,6 +28,7 @@ import {
 } from "../../db/hooks";
 import { useHousehold } from "../../households/useHousehold";
 import TagManagerModal from "../meals/TagManagerModal";
+import RobotLoadingContent from "../shared/RobotLoadingContent";
 import EditHouseholdDetailsModal from "./EditHouseholdDetailsModal";
 import InviteMemberModal from "./InviteMemberModal";
 
@@ -158,8 +158,18 @@ const HouseholdDetailModal: React.FC<HouseholdDetailModalProps> = ({
                 </IonHeader>
                 <IonContent className="ion-padding">
                     {isLoading ? (
-                        <div className="ion-text-center ion-padding">
-                            <IonSpinner />
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "1rem",
+                                minHeight: "50vh",
+                                padding: "32px 16px",
+                            }}
+                        >
+                            <RobotLoadingContent />
                         </div>
                     ) : null}
 

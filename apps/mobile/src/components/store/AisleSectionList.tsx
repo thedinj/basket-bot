@@ -10,10 +10,10 @@ import {
 } from "../../db/hooks";
 import type { StoreSection } from "../../db/types";
 import { AisleItem } from "./AisleItem";
+import { AisleSectionListSkeleton } from "./AisleSectionListSkeleton";
 import { DeleteConfirmationAlert } from "./DeleteConfirmationAlert";
 import { EmptyState } from "./EmptyState";
 import { EntityFormModal } from "./EntityFormModal";
-import { LoadingState } from "./LoadingState";
 import { SectionItem } from "./SectionItem";
 import { ReorderMode, useStoreManagement } from "./StoreManagementContext";
 
@@ -155,7 +155,7 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
     if (isLoading) {
         return (
             <>
-                <LoadingState />
+                <AisleSectionListSkeleton />
                 <EntityFormModal storeId={storeId} aisles={aisles} />
                 <DeleteConfirmationAlert storeId={storeId} />
             </>

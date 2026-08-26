@@ -17,7 +17,6 @@ import {
     IonModal,
     IonReorder,
     IonReorderGroup,
-    IonSkeletonText,
     IonText,
     IonTitle,
     IonToolbar,
@@ -36,6 +35,7 @@ import {
 } from "../../db/hooks";
 import { ClickableSelectionField } from "../shared/ClickableSelectionField";
 import type { SelectableItem } from "../shared/ClickableSelectionModal";
+import { SkeletonListItem } from "../shared/skeleton/SkeletonListItem";
 import { ListHandle } from "./types";
 
 const sectionFormSchema = z.object({
@@ -179,11 +179,11 @@ const SectionList = forwardRef<ListHandle, SectionListProps>(({ storeId }, ref) 
         return (
             <IonList>
                 {[1, 2, 3].map((i) => (
-                    <IonItem key={i}>
-                        <IonLabel>
-                            <IonSkeletonText animated style={{ width: "60%" }} />
-                        </IonLabel>
-                    </IonItem>
+                    <SkeletonListItem
+                        key={i}
+                        widths={["50%", "35%"]}
+                        endSlot={<div style={{ width: 24, height: 24 }} />}
+                    />
                 ))}
             </IonList>
         );
