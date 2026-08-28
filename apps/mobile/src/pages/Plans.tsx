@@ -77,6 +77,14 @@ const PlansHistory: React.FC<{ householdId: string | null }> = ({ householdId })
         );
     }
 
+    if (isFetching && plans.length === 0) {
+        return (
+            <div className="plans-history-loading">
+                <RobotLoadingContent />
+            </div>
+        );
+    }
+
     return (
         <div className="plans-history">
             <div className="plans-history-meta">
@@ -133,12 +141,6 @@ const PlansHistory: React.FC<{ householdId: string | null }> = ({ householdId })
                     >
                         {isFetching ? <IonSpinner name="dots" /> : "Load more"}
                     </IonButton>
-                </div>
-            )}
-
-            {isFetching && plans.length === 0 && (
-                <div className="plans-history-loading">
-                    <RobotLoadingContent />
                 </div>
             )}
         </div>

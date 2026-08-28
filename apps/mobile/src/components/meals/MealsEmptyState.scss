@@ -4,7 +4,9 @@
     align-items: center;
     justify-content: center;
     gap: 12px;
+    min-height: 100%;
     padding: 64px 32px;
+    box-sizing: border-box;
     text-align: center;
 
     p {
