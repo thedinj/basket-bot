@@ -24,16 +24,14 @@ import { useStoreManagement } from "./StoreManagementContext";
 import { StoreManagementProvider } from "./StoreManagementProvider";
 
 interface AislesSectionsManagementModalContentProps {
-    storeId: string;
     onClose: () => void;
 }
 
 const AislesSectionsManagementModalContent: React.FC<AislesSectionsManagementModalContentProps> = ({
-    storeId,
     onClose,
 }) => {
+    const { storeId, openCreateModal, mode } = useStoreManagement();
     const { data: store, isLoading } = useStore(storeId);
-    const { openCreateModal, mode } = useStoreManagement();
     const { showError } = useToast();
 
     const handleFabClick = useCallback(() => {
@@ -72,7 +70,7 @@ const AislesSectionsManagementModalContent: React.FC<AislesSectionsManagementMod
             </IonHeader>
             <IonContent fullscreen>
                 <PullToRefresh />
-                <AisleSectionList storeId={storeId} />
+                <AisleSectionList />
                 <FabSpacer />
                 <IonFab slot="fixed" vertical="bottom" horizontal="end">
                     <IonFabButton onClick={handleFabClick}>
@@ -97,8 +95,8 @@ const AislesSectionsManagementModal: React.FC<AislesSectionsManagementModalProps
 }) => {
     return (
         <IonModal isOpen={isOpen} onDidDismiss={onClose}>
-            <StoreManagementProvider>
-                <AislesSectionsManagementModalContent storeId={storeId} onClose={onClose} />
+            <StoreManagementProvider storeId={storeId}>
+                <AislesSectionsManagementModalContent onClose={onClose} />
             </StoreManagementProvider>
         </IonModal>
     );

@@ -24,7 +24,6 @@ import {
 } from "ionicons/icons";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useAuth } from "../../auth/useAuth";
 import {
     useDeleteShoppingListItem,
     useGetOrCreateStoreItem,
@@ -41,6 +40,7 @@ import { PrivateToggle } from "./PrivateToggle";
 import { QuantityAndUnitRow } from "./QuantityAndUnitRow";
 import { SnoozeDateSelector } from "./SnoozeDateSelector";
 import { UnsureToggle } from "./UnsureToggle";
+import { useItemEditorContext } from "./useItemEditorContext";
 import { useShoppingListContext } from "./useShoppingListContext";
 
 interface ItemEditorModalProps {
@@ -53,10 +53,6 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
     // whichever store's page this modal happens to be mounted under — `storeId` is only
     // the default used when creating a brand-new item.
     const effectiveStoreId = editingItem?.storeId ?? storeId;
-    const { user } = useAuth();
-    // Only the item's creator can make it private — a new item's creator will be the
-    // current user, but an existing item may belong to someone else on a shared store.
-    const canTogglePrivate = !editingItem || editingItem.createdById === user?.id;
     const upsertItem = useUpsertShoppingListItem();
     const getOrCreateStoreItem = useGetOrCreateStoreItem();
     const updateItem = useUpdateItem();
@@ -307,7 +303,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                                 <NotesInput />
                                 <div className="item-flags-row">
                                     <UnsureToggle />
-                                    {canTogglePrivate && <PrivateToggle />}
+                                    <PrivateToggle />
                                 </div>
                                 {/* Hide snooze selector if editing a checked idea */}
                                 {!editingItem?.isChecked && <SnoozeDateSelector />}
@@ -321,19 +317,14 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                                 <LocationSelectors />
                                 <div className="item-flags-row">
                                     <UnsureToggle />
-                                    {canTogglePrivate && <PrivateToggle />}
+                                    <PrivateToggle />
                                 </div>
                                 {/* Hide snooze selector if editing a checked item */}
                                 {!editingItem?.isChecked && <SnoozeDateSelector />}
                             </>
                         )}
 
-                        <SaveButton
-                            isValid={isValid}
-                            upsertItem={upsertItem}
-                            editingItem={editingItem}
-                            isIdea={!!isIdea}
-                        />
+                        <SaveButton isValid={isValid} upsertItem={upsertItem} isIdea={!!isIdea} />
                     </form>
                 </ItemEditorProvider>
 
@@ -372,9 +363,9 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
 const SaveButton: React.FC<{
     isValid: boolean;
     upsertItem: UseMutationResult<ShoppingListItem, Error, ItemFormData>;
-    editingItem: ShoppingListItem | null;
     isIdea: boolean | undefined;
-}> = ({ isValid, upsertItem, editingItem, isIdea }) => {
+}> = ({ isValid, upsertItem, isIdea }) => {
+    const { editingItem } = useItemEditorContext();
     return (
         <IonButton
             expand="block"

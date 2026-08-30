@@ -14,5 +14,5 @@
  * "Checked by" line).
  */
 export const FabSpacer: React.FC = () => {
-    return <div style={{ height: "132px" }} />;
+    return <div style={{ height: "var(--fab-spacer-height)" }} />;
 };

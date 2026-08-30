@@ -2,14 +2,8 @@ import { IonAlert } from "@ionic/react";
 import { useStoreManagement } from "./StoreManagementContext";
 import { useDeleteAisle, useDeleteSection } from "../../db/hooks";
 
-interface DeleteConfirmationAlertProps {
-    storeId: string;
-}
-
-export const DeleteConfirmationAlert = ({
-    storeId,
-}: DeleteConfirmationAlertProps) => {
-    const { deleteAlert, closeDeleteAlert } = useStoreManagement();
+export const DeleteConfirmationAlert = () => {
+    const { storeId, deleteAlert, closeDeleteAlert } = useStoreManagement();
     const deleteAisle = useDeleteAisle();
     const deleteSection = useDeleteSection();
 

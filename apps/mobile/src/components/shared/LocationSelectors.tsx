@@ -1,7 +1,7 @@
-import type { StoreAisle, StoreSection } from "@basket-bot/core";
+import type { StoreSection } from "@basket-bot/core";
 import { IonChip, IonIcon, IonLabel } from "@ionic/react";
 import { closeCircle } from "ionicons/icons";
-import { useMemo, useState } from "react";
+import { Suspense, useState } from "react";
 import {
     Control,
     FieldValues,
@@ -15,7 +15,6 @@ import { useStoreAisles, useStoreSections } from "../../db/hooks";
 import { useToast } from "../../hooks/useToast";
 import { useAutoCategorize } from "../../llm/features/useAutoCategorize";
 import { LLM_COLOR, LLM_ICON_SRC } from "../../llm/shared/constants";
-import { naturalSort } from "../../utils/stringUtils";
 import AislesSectionsManagementModal from "../store/AislesSectionsManagementModal";
 import { LocationPicker } from "./LocationPicker";
 
@@ -52,14 +51,11 @@ export function LocationSelectors<T extends FieldValues = FieldValues>(
     // (the section's aisle is authoritative). Derive the aisle here so the picker
     // still expands/scrolls to the right aisle on open for that common case.
     const effectiveAisleId =
-        currentAisleId ?? sections?.find((s: StoreSection) => s.id === currentSectionId)?.aisleId ?? null;
+        currentAisleId ??
+        sections?.find((s: StoreSection) => s.id === currentSectionId)?.aisleId ??
+        null;
 
-    const sortedAisles = useMemo(
-        () => aisles?.slice().sort(naturalSort((aisle: StoreAisle) => aisle.name)) ?? [],
-        [aisles]
-    );
-
-    const currentAisle = sortedAisles.find((a) => a.id === currentAisleId);
+    const currentAisle = aisles?.find((a) => a.id === currentAisleId);
     const currentSection = sections?.find((s: StoreSection) => s.id === currentSectionId);
 
     const setLocation = (aisleId: string | null, sectionId: string | null) => {
@@ -86,7 +82,7 @@ export function LocationSelectors<T extends FieldValues = FieldValues>(
         try {
             const result = await autoCategorize({
                 itemName,
-                fullAisles: sortedAisles,
+                fullAisles: aisles ?? [],
                 fullSections: sections || [],
             });
 
@@ -176,7 +172,7 @@ export function LocationSelectors<T extends FieldValues = FieldValues>(
                     {!hasLocation && (
                         <IonChip
                             outline
-                            disabled={disabled || !itemName || sortedAisles.length === 0}
+                            disabled={disabled || !itemName || (aisles?.length ?? 0) === 0}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 handleAutoCategorize();
@@ -194,19 +190,21 @@ export function LocationSelectors<T extends FieldValues = FieldValues>(
                 </div>
             </div>
 
-            <LocationPicker
-                isOpen={isPickerOpen}
-                onDismiss={() => setIsPickerOpen(false)}
-                aisles={sortedAisles}
-                sections={sections ?? []}
-                currentAisleId={effectiveAisleId}
-                currentSectionId={currentSectionId}
-                onSelect={setLocation}
-                onManageAisles={() => {
-                    setIsPickerOpen(false);
-                    setIsManageOpen(true);
-                }}
-            />
+            <Suspense fallback={null}>
+                <LocationPicker
+                    isOpen={isPickerOpen}
+                    onDismiss={() => setIsPickerOpen(false)}
+                    aisles={aisles ?? []}
+                    sections={sections ?? []}
+                    currentAisleId={effectiveAisleId}
+                    currentSectionId={currentSectionId}
+                    onSelect={setLocation}
+                    onManageAisles={() => {
+                        setIsPickerOpen(false);
+                        setIsManageOpen(true);
+                    }}
+                />
+            </Suspense>
 
             <AislesSectionsManagementModal
                 isOpen={isManageOpen}

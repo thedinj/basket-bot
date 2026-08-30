@@ -9,10 +9,11 @@ import {
 } from "./StoreManagementContext";
 
 interface StoreManagementProviderProps {
+    storeId: string;
     children: ReactNode;
 }
 
-export const StoreManagementProvider = ({ children }: StoreManagementProviderProps) => {
+export const StoreManagementProvider = ({ storeId, children }: StoreManagementProviderProps) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingEntity, setEditingEntity] = useState<EditingEntity | null>(null);
     const [forcedType, setForcedType] = useState<EntityType | null>(null);
@@ -54,6 +55,7 @@ export const StoreManagementProvider = ({ children }: StoreManagementProviderPro
     };
 
     const value: StoreManagementContextType = {
+        storeId,
         isModalOpen,
         editingEntity,
         forcedType,

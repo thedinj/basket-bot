@@ -53,13 +53,16 @@ interface ShoppingListHeaderExtrasProps {
     showUnsureOnly: boolean;
     toggleShowUnsureOnly: () => void;
     onProgressChange: (progress: number | null) => void;
+    onActionsChange: (actions: GlobalActionConfig[]) => void;
 }
 
 /**
  * The header pieces that need item data (trip progress, the snoozed-items toggle). Rendered
  * inside its own Suspense boundary with a `null` fallback so the rest of AppHeader (title,
  * StoreSelector, the always-available quick-add button) never has to wait on it — this is
- * exactly what let the header disappear entirely behind the list skeleton before.
+ * exactly what let the header disappear entirely behind the list skeleton before. Reports its
+ * computed actions up via `onActionsChange` rather than rendering its own `GlobalActions`, so
+ * the header only ever mounts one `GlobalActions` (and therefore one sync/failure icon).
  */
 const ShoppingListHeaderExtras: React.FC<ShoppingListHeaderExtrasProps> = ({
     storeId,
@@ -68,6 +71,7 @@ const ShoppingListHeaderExtras: React.FC<ShoppingListHeaderExtrasProps> = ({
     showUnsureOnly,
     toggleShowUnsureOnly,
     onProgressChange,
+    onActionsChange,
 }) => {
     const { data: items } = useShoppingListItems(storeId);
 
@@ -152,7 +156,11 @@ const ShoppingListHeaderExtras: React.FC<ShoppingListHeaderExtrasProps> = ({
         toggleShowUnsureOnly,
     ]);
 
-    return <GlobalActions actions={actions} />;
+    useEffect(() => {
+        onActionsChange(actions);
+    }, [actions, onActionsChange]);
+
+    return null;
 };
 
 interface ShoppingListBodyProps {
@@ -264,7 +272,7 @@ const ShoppingListBody: React.FC<ShoppingListBodyProps> = ({
         <IonContent fullscreen className="shopping-list-content">
             <PullToRefresh />
             {activeItems.length === 0 && (
-                <div className="shopping-list-empty-state">
+                <div className="shopping-list-empty-state shopping-list-empty-state--with-fab-spacer">
                     <IonText color="medium">
                         <p>
                             {wasJustCleared ? (
@@ -291,7 +299,7 @@ const ShoppingListBody: React.FC<ShoppingListBodyProps> = ({
                         <div className="unsure-filter-banner">Showing unsure items only</div>
                     )}
                     {showUnsureOnly && displayedUncheckedItems.length === 0 ? (
-                        <div className="shopping-list-empty-state">
+                        <div className="shopping-list-empty-state shopping-list-empty-state--with-fab-spacer">
                             <IonText color="medium">
                                 <p>No unsure items left to reconcile.</p>
                             </IonText>
@@ -348,10 +356,13 @@ const ShoppingListShell: React.FC<ShoppingListShellProps> = ({ storeId }) => {
     const { showUnsureOnly, toggleShowUnsureOnly } = useShowUnsureItems();
     const [isStoreItemsModalOpen, setIsStoreItemsModalOpen] = useState(false);
     const [tripProgress, setTripProgress] = useState<number | null>(null);
+    const [extraActions, setExtraActions] = useState<GlobalActionConfig[]>([]);
 
-    // Avoid briefly showing the previous store's progress bar under the new store's header.
+    // Avoid briefly showing the previous store's progress bar / stale action buttons under
+    // the new store's header.
     useEffect(() => {
         setTripProgress(null);
+        setExtraActions([]);
         setIsStoreItemsModalOpen(false);
     }, [storeId]);
 
@@ -368,6 +379,13 @@ const ShoppingListShell: React.FC<ShoppingListShellProps> = ({ storeId }) => {
         []
     );
 
+    // Combined with the Suspense-gated extras below so the header only ever mounts a single
+    // GlobalActions (and therefore a single sync/failure icon) rather than one per source.
+    const headerActions = useMemo<GlobalActionConfig[]>(
+        () => [...staticActions, ...extraActions],
+        [staticActions, extraActions]
+    );
+
     return (
         <RefreshConfig queryKeys={[queryKeys.shoppingListItems.byStore(storeId)]}>
             <AppHeader
@@ -375,7 +393,7 @@ const ShoppingListShell: React.FC<ShoppingListShellProps> = ({ storeId }) => {
                 subToolbar={multipleStores ? <StoreSelector /> : undefined}
                 progress={tripProgress}
             >
-                <GlobalActions showKeepAwake={KEEP_AWAKE_BUTTON_ENABLED} actions={staticActions} />
+                <GlobalActions showKeepAwake={KEEP_AWAKE_BUTTON_ENABLED} actions={headerActions} />
                 <Suspense fallback={null}>
                     <ShoppingListHeaderExtras
                         storeId={storeId}
@@ -384,6 +402,7 @@ const ShoppingListShell: React.FC<ShoppingListShellProps> = ({ storeId }) => {
                         showUnsureOnly={showUnsureOnly}
                         toggleShowUnsureOnly={toggleShowUnsureOnly}
                         onProgressChange={setTripProgress}
+                        onActionsChange={setExtraActions}
                     />
                 </Suspense>
             </AppHeader>
@@ -423,7 +442,7 @@ const ShoppingListContent: React.FC = () => {
                     title="Shopping List"
                     subToolbar={multipleStores ? <StoreSelector /> : undefined}
                 />
-                <IonContent fullscreen>
+                <IonContent fullscreen className="shopping-list-content">
                     <div className="shopping-list-empty-state">
                         <IonText color="medium">
                             <p>Select a store, human. I cannot assist without data.</p>

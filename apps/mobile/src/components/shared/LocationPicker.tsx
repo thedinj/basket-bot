@@ -13,12 +13,15 @@ import {
     IonList,
     IonModal,
     IonSearchbar,
+    IonSegment,
+    IonSegmentButton,
     IonText,
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
 import { checkmarkOutline, chevronDownOutline, closeOutline } from "ionicons/icons";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AisleSortMode, useAisleSortMode } from "../../hooks/useAisleSortMode";
 import { naturalSort, normalizeItemName } from "../../utils/stringUtils";
 import "./LocationPicker.scss";
 
@@ -37,7 +40,11 @@ type SearchEntry =
     | { kind: "aisle"; id: string; label: string; aisle: StoreAisle }
     | { kind: "section"; id: string; label: string; subtitle: string; section: StoreSection };
 
-const rankSearchEntries = (entries: SearchEntry[], searchText: string): SearchEntry[] => {
+const rankSearchEntries = (
+    entries: SearchEntry[],
+    searchText: string,
+    compareWithinTier: (a: SearchEntry, b: SearchEntry) => number
+): SearchEntry[] => {
     const lowerSearch = normalizeItemName(searchText);
     const tiered: Array<{ entry: SearchEntry; tier: number }> = [];
 
@@ -51,9 +58,17 @@ const rankSearchEntries = (entries: SearchEntry[], searchText: string): SearchEn
     });
 
     return tiered
-        .sort((a, b) => (a.tier !== b.tier ? a.tier - b.tier : a.entry.label.localeCompare(b.entry.label)))
+        .sort((a, b) => (a.tier !== b.tier ? a.tier - b.tier : compareWithinTier(a.entry, b.entry)))
         .map((t) => t.entry);
 };
+
+// Large enough that no aisle has anywhere near this many sections, so an aisle's
+// position in the walk always outweighs its sections' own sortOrder within it.
+const STORE_ORDER_AISLE_SCALE = 100_000;
+
+// Same numeric-aware collator as naturalSort, so "Aisle 2" sorts before "Aisle 10"
+// in search results just like it does in the browse view.
+const compareLabelsNaturally = naturalSort((entry: SearchEntry) => entry.label);
 
 /**
  * Combined aisle + section picker. Aisles with sections expand accordion-style;
@@ -100,7 +115,13 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         }
     }, [isOpen, searchText, expandedAisleId]);
 
-    const sortedAisles = useMemo(() => aisles.slice().sort(naturalSort((a) => a.name)), [aisles]);
+    const { sortMode, setSortMode } = useAisleSortMode();
+
+    const sortedAisles = useMemo(
+        () =>
+            sortMode === "storeOrder" ? aisles : aisles.slice().sort(naturalSort((a) => a.name)),
+        [aisles, sortMode]
+    );
 
     const sectionsByAisle = useMemo(() => {
         const map = new Map<string, StoreSection[]>();
@@ -109,9 +130,15 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             list.push(section);
             map.set(section.aisleId, list);
         });
-        map.forEach((list) => list.sort(naturalSort((s) => s.name)));
+        map.forEach((list) =>
+            list.sort(
+                sortMode === "storeOrder"
+                    ? (a, b) => a.sortOrder - b.sortOrder
+                    : naturalSort((s) => s.name)
+            )
+        );
         return map;
-    }, [sections]);
+    }, [sections, sortMode]);
 
     const handleDismiss = useCallback(() => {
         setSearchText("");
@@ -153,6 +180,34 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         [sectionsByAisle, selectAisleOnly]
     );
 
+    // Position of each aisle in the store's actual walking order, used to rank
+    // search results in "Store Order" mode (independent of the aisle's own naturalSort
+    // position, which only applies in "A–Z" mode).
+    const aisleOrderIndex = useMemo(() => {
+        const map = new Map<string, number>();
+        aisles.forEach((aisle, index) => map.set(aisle.id, index));
+        return map;
+    }, [aisles]);
+
+    const compareSearchEntries = useCallback(
+        (a: SearchEntry, b: SearchEntry) => {
+            if (sortMode === "alphabetical") {
+                return compareLabelsNaturally(a, b);
+            }
+            const rankOf = (entry: SearchEntry) => {
+                if (entry.kind === "aisle") {
+                    return (aisleOrderIndex.get(entry.aisle.id) ?? 0) * STORE_ORDER_AISLE_SCALE - 1;
+                }
+                return (
+                    (aisleOrderIndex.get(entry.section.aisleId) ?? 0) * STORE_ORDER_AISLE_SCALE +
+                    entry.section.sortOrder
+                );
+            };
+            return rankOf(a) - rankOf(b);
+        },
+        [sortMode, aisleOrderIndex]
+    );
+
     const searchResults = useMemo(() => {
         if (!searchText.trim()) return [];
         const entries: SearchEntry[] = [
@@ -170,8 +225,8 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
                 };
             }),
         ];
-        return rankSearchEntries(entries, searchText);
-    }, [searchText, sortedAisles, sections, aisles]);
+        return rankSearchEntries(entries, searchText, compareSearchEntries);
+    }, [searchText, sortedAisles, sections, aisles, compareSearchEntries]);
 
     const handleAccordionChange = (e: CustomEvent<{ value: string | string[] | undefined }>) => {
         const value = e.detail.value;
@@ -200,6 +255,21 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
                             placeholder="Search aisles & sections"
                             debounce={300}
                         />
+                    </IonToolbar>
+                )}
+                {!noAisles && (
+                    <IonToolbar>
+                        <IonSegment
+                            value={sortMode}
+                            onIonChange={(e) => setSortMode(e.detail.value as AisleSortMode)}
+                        >
+                            <IonSegmentButton value="alphabetical">
+                                <IonLabel>A–Z</IonLabel>
+                            </IonSegmentButton>
+                            <IonSegmentButton value="storeOrder">
+                                <IonLabel>Store Order</IonLabel>
+                            </IonSegmentButton>
+                        </IonSegment>
                     </IonToolbar>
                 )}
             </IonHeader>
@@ -231,7 +301,11 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
                                             {entry.label}
                                         </IonLabel>
                                         {currentAisleId === entry.id && !currentSectionId && (
-                                            <IonIcon icon={checkmarkOutline} slot="end" color="primary" />
+                                            <IonIcon
+                                                icon={checkmarkOutline}
+                                                slot="end"
+                                                color="primary"
+                                            />
                                         )}
                                     </IonItem>
                                 ) : (
@@ -239,17 +313,22 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
                                         key={`section-${entry.id}`}
                                         button
                                         detail={false}
-                                        className="location-picker__section-item"
-                                        onClick={() => commit(entry.section.aisleId, entry.section.id)}
+                                        onClick={() =>
+                                            commit(entry.section.aisleId, entry.section.id)
+                                        }
                                     >
                                         <IonLabel className="location-picker__section-label">
                                             {entry.label}
                                             <p className="location-picker__search-subtitle">
-                                                {entry.subtitle}
+                                                In {entry.subtitle}
                                             </p>
                                         </IonLabel>
                                         {currentSectionId === entry.id && (
-                                            <IonIcon icon={checkmarkOutline} slot="end" color="primary" />
+                                            <IonIcon
+                                                icon={checkmarkOutline}
+                                                slot="end"
+                                                color="primary"
+                                            />
                                         )}
                                     </IonItem>
                                 )
@@ -277,7 +356,11 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
                                             {aisle.name}
                                         </IonLabel>
                                         {currentAisleId === aisle.id && (
-                                            <IonIcon icon={checkmarkOutline} slot="end" color="primary" />
+                                            <IonIcon
+                                                icon={checkmarkOutline}
+                                                slot="end"
+                                                color="primary"
+                                            />
                                         )}
                                     </IonItem>
                                 );
@@ -297,7 +380,11 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
                                             {aisle.name}
                                         </IonLabel>
                                         {currentAisleId === aisle.id && !currentSectionId && (
-                                            <IonIcon icon={checkmarkOutline} slot="end" color="primary" />
+                                            <IonIcon
+                                                icon={checkmarkOutline}
+                                                slot="end"
+                                                color="primary"
+                                            />
                                         )}
                                     </IonItem>
                                     <IonList slot="content">

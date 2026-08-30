@@ -23,6 +23,7 @@ import {
     useCreateSection,
     useDeleteAisle,
     useDeleteSection,
+    useStoreAisles,
     useUpdateAisle,
     useUpdateSection,
 } from "../../db/hooks";
@@ -54,13 +55,9 @@ const entityFormSchema = z
 
 type EntityFormData = z.infer<typeof entityFormSchema>;
 
-interface EntityFormModalProps {
-    storeId: string;
-    aisles: Array<{ id: string; name: string }> | undefined;
-}
-
-export const EntityFormModal = ({ storeId, aisles }: EntityFormModalProps) => {
-    const { isModalOpen, editingEntity, forcedType, closeModal } = useStoreManagement();
+export const EntityFormModal = () => {
+    const { storeId, isModalOpen, editingEntity, forcedType, closeModal } = useStoreManagement();
+    const { data: aisles } = useStoreAisles(storeId);
     const createAisle = useCreateAisle();
     const updateAisle = useUpdateAisle();
     const createSection = useCreateSection();

@@ -3,6 +3,10 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    /* 100% (not 100vh) so this centers within whatever definite-height ancestor it's
+       actually rendered into (ion-app, ion-page, ion-modal) — 100vh instead measures the
+       full device viewport, which is taller than those when a header/tab-bar/status-bar is
+       also on screen, and pushes the centered content below the true visual center. */
+    height: 100%;
     gap: 1.5rem;
 }

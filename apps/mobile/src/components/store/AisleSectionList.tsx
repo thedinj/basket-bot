@@ -17,12 +17,8 @@ import { EntityFormModal } from "./EntityFormModal";
 import { SectionItem } from "./SectionItem";
 import { ReorderMode, useStoreManagement } from "./StoreManagementContext";
 
-interface AisleSectionListProps {
-    storeId: string;
-}
-
-const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
-    const { mode, setMode } = useStoreManagement();
+const AisleSectionList: React.FC = () => {
+    const { storeId, mode, setMode } = useStoreManagement();
     const { data: aisles, isLoading: aislesLoading } = useStoreAisles(storeId);
     const { data: sections, isLoading: sectionsLoading } = useStoreSections(storeId);
     const reorderAisles = useReorderAisles();
@@ -156,8 +152,8 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
         return (
             <>
                 <AisleSectionListSkeleton />
-                <EntityFormModal storeId={storeId} aisles={aisles} />
-                <DeleteConfirmationAlert storeId={storeId} />
+                <EntityFormModal />
+                <DeleteConfirmationAlert />
             </>
         );
     }
@@ -166,8 +162,8 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
         return (
             <>
                 <EmptyState />
-                <EntityFormModal storeId={storeId} aisles={aisles} />
-                <DeleteConfirmationAlert storeId={storeId} />
+                <EntityFormModal />
+                <DeleteConfirmationAlert />
             </>
         );
     }
@@ -216,8 +212,8 @@ const AisleSectionList: React.FC<AisleSectionListProps> = ({ storeId }) => {
                 )}
             </IonList>
 
-            <EntityFormModal storeId={storeId} aisles={aisles} />
-            <DeleteConfirmationAlert storeId={storeId} />
+            <EntityFormModal />
+            <DeleteConfirmationAlert />
         </>
     );
 };

@@ -6,6 +6,14 @@
 
 .recipes-page {
     --background: var(--ion-background-color);
+
+    // LoadingFallback's default height: 100% would fill the whole scroll box, ignoring the
+    // trailing <FabSpacer /> after it — override to the same "subtract the spacer" min-height
+    // used by .meals-empty (see MealsEmptyState.scss) so it centers consistently.
+    .loading-fallback {
+        height: auto;
+        min-height: calc(100% - var(--fab-spacer-height));
+    }
 }
 
 // ── Filter bar ───────────────────────────────────────────────────────────────

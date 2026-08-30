@@ -18,6 +18,8 @@ export interface DeleteEntity {
 export type ReorderMode = "aisles" | "sections";
 
 export interface StoreManagementContextType {
+    storeId: string;
+
     // Modal state
     isModalOpen: boolean;
     editingEntity: EditingEntity | null;

@@ -67,3 +67,22 @@
     gap: 8px;
     margin: 8px 16px 16px;
 }
+
+/* A disabled tile is still tappable (it opens an explanation popover) but can't change its
+   value, so it's styled to read as informational/read-only rather than a normal control:
+   no pointer cursor, a dashed border, and a further-dimmed toggle. */
+.item-flag-tile--disabled {
+    cursor: default;
+    opacity: 0.6;
+    border-style: dashed;
+}
+
+.item-flag-tile--disabled .item-flag-tile__toggle {
+    opacity: 0.55;
+}
+
+.item-flag-tile__lock-icon {
+    flex-shrink: 0;
+    font-size: 0.85em;
+    color: var(--ion-color-step-400);
+}

@@ -7,6 +7,10 @@ http://ionicframework.com/docs/theming/ */
     /* Safe area for Android navigation buttons and iOS notches */
     --app-safe-bottom: max(env(safe-area-inset-bottom), 16px);
 
+    /* FabSpacer's reserved FAB clearance — shared so vertically-centered zero-states can
+       offset it out of their centering math (see FabSpacer.tsx) */
+    --fab-spacer-height: 132px;
+
     /* Recipe tag palette — light mode */
     --tag-rose-bg:     rgba(190,18,60,.12);
     --tag-rose-border: rgba(190,18,60,.30);
