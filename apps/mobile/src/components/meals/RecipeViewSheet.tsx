@@ -1,4 +1,4 @@
-import type { RecipeWithDetails } from "@basket-bot/core"
+import type { RecipeWithDetails } from "@basket-bot/core";
 import {
     IonButton,
     IonButtons,
@@ -7,36 +7,36 @@ import {
     IonIcon,
     IonModal,
     IonToolbar,
-} from "@ionic/react"
-import { closeOutline, copyOutline } from "ionicons/icons"
-import { useRef } from "react"
-import { useToast } from "../../hooks/useToast"
-import RecipeDetailContent from "./RecipeDetailContent"
+} from "@ionic/react";
+import { closeOutline, copyOutline } from "ionicons/icons";
+import { useRef } from "react";
+import { useToast } from "../../hooks/useToast";
+import RecipeDetailContent from "./RecipeDetailContent";
 
 interface RecipeViewSheetProps {
-    recipe: RecipeWithDetails | null
-    unitMap: Map<string, string>
-    onDismiss: () => void
+    recipe: RecipeWithDetails | null;
+    unitMap: Map<string, string>;
+    onDismiss: () => void;
 }
 
 const RecipeViewSheet: React.FC<RecipeViewSheetProps> = ({ recipe, unitMap, onDismiss }) => {
-    const { showSuccess, showError } = useToast()
-    const headerRef = useRef<HTMLDivElement>(null)
-    const bodyRef = useRef<HTMLDivElement>(null)
+    const { showSuccess, showError } = useToast();
+    const headerRef = useRef<HTMLDivElement>(null);
+    const bodyRef = useRef<HTMLDivElement>(null);
 
     const handleCopy = async () => {
-        if (!headerRef.current || !bodyRef.current) return
+        if (!headerRef.current || !bodyRef.current) return;
         try {
             const text = [headerRef.current.innerText, bodyRef.current.innerText]
                 .map((section) => section.trim().replace(/\n{3,}/g, "\n\n"))
                 .filter(Boolean)
-                .join("\n\n")
-            await navigator.clipboard.writeText(text)
-            showSuccess("Recipe copied")
+                .join("\n\n");
+            await navigator.clipboard.writeText(text);
+            showSuccess("Recipe copied");
         } catch {
-            showError("Couldn't copy recipe")
+            showError("Couldn't copy recipe");
         }
-    }
+    };
 
     return (
         <IonModal
@@ -72,7 +72,7 @@ const RecipeViewSheet: React.FC<RecipeViewSheetProps> = ({ recipe, unitMap, onDi
                 </>
             )}
         </IonModal>
-    )
-}
+    );
+};
 
-export default RecipeViewSheet
+export default RecipeViewSheet;

@@ -1,10 +1,10 @@
-import { IonContent, IonSkeletonText } from "@ionic/react"
-import { GroupedItemList } from "../shared/GroupedItemList"
-import type { ItemGroup } from "../shared/grouping.types"
-import { SkeletonListItem } from "../shared/skeleton/SkeletonListItem"
+import { IonContent, IonSkeletonText } from "@ionic/react";
+import { GroupedItemList } from "../shared/GroupedItemList";
+import type { ItemGroup } from "../shared/grouping.types";
+import { SkeletonListItem } from "../shared/skeleton/SkeletonListItem";
 
 interface SkeletonPlaceholder {
-    id: string
+    id: string;
 }
 
 const makeGroup = (
@@ -21,14 +21,14 @@ const makeGroup = (
     },
     sortOrder,
     indentLevel: 16,
-})
+});
 
 const SKELETON_GROUPS: ItemGroup<SkeletonPlaceholder>[] = [
     makeGroup("skeleton-group-1", 3, 0),
     makeGroup("skeleton-group-2", 2, 1),
-]
+];
 
-const getItemKey = (item: SkeletonPlaceholder) => item.id
+const getItemKey = (item: SkeletonPlaceholder) => item.id;
 
 const renderSkeletonRow = () => (
     <SkeletonListItem
@@ -40,7 +40,7 @@ const renderSkeletonRow = () => (
         }
         widths={["70%", "40%"]}
     />
-)
+);
 
 /**
  * Content-shaped fallback for the shopping list's Suspense boundary — reuses the same
@@ -59,6 +59,6 @@ const ShoppingListSkeleton: React.FC = () => (
             renderItem={renderSkeletonRow}
         />
     </IonContent>
-)
+);
 
-export default ShoppingListSkeleton
+export default ShoppingListSkeleton;

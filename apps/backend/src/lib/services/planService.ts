@@ -1,47 +1,47 @@
-import type { Plan, PlanWithDetails, RecipeIngredient } from "@basket-bot/core"
-import { AuthorizationError, ConflictError, NotFoundError } from "@basket-bot/core"
-import { db } from "../db/db"
-import * as householdRepo from "../repos/householdRepo"
-import * as itemRepo from "../repos/itemRepo"
-import * as planRepo from "../repos/planRepo"
-import * as recipeRepo from "../repos/recipeRepo"
-import * as shoppingListRepo from "../repos/shoppingListRepo"
-import { roundFactor } from "../utils/math"
+import type { Plan, PlanWithDetails, RecipeIngredient } from "@basket-bot/core";
+import { AuthorizationError, ConflictError, NotFoundError } from "@basket-bot/core";
+import { db } from "../db/db";
+import * as householdRepo from "../repos/householdRepo";
+import * as itemRepo from "../repos/itemRepo";
+import * as planRepo from "../repos/planRepo";
+import * as recipeRepo from "../repos/recipeRepo";
+import * as shoppingListRepo from "../repos/shoppingListRepo";
+import { roundFactor } from "../utils/math";
 
 /**
  * Verify user is a member of the household (throws "Access denied" if not).
  */
 function assertMember(householdId: string, userId: string): void {
     if (!householdRepo.userIsMember(householdId, userId)) {
-        throw new AuthorizationError("Access denied")
+        throw new AuthorizationError("Access denied");
     }
 }
 
 function assertPlanBelongs(plan: Plan | null, householdId: string): asserts plan is Plan {
-    if (!plan || plan.householdId !== householdId) throw new NotFoundError("Plan not found")
+    if (!plan || plan.householdId !== householdId) throw new NotFoundError("Plan not found");
 }
 
 // ========== Plan CRUD ==========
 
 export function createPlan(params: {
-    householdId: string
-    slotCount?: number
-    userId: string
+    householdId: string;
+    slotCount?: number;
+    userId: string;
 }): PlanWithDetails {
-    assertMember(params.householdId, params.userId)
+    assertMember(params.householdId, params.userId);
 
     const plan = planRepo.createPlan({
         householdId: params.householdId,
         slotCount: params.slotCount ?? 4,
         createdById: params.userId,
-    })
+    });
 
-    return planRepo.getPlanWithDetails(plan.id)!
+    return planRepo.getPlanWithDetails(plan.id)!;
 }
 
 export function getPlansByHousehold(householdId: string, userId: string): Plan[] {
-    assertMember(householdId, userId)
-    return planRepo.getPlansByHousehold(householdId)
+    assertMember(householdId, userId);
+    return planRepo.getPlansByHousehold(householdId);
 }
 
 export function getPlanWithDetails(
@@ -49,11 +49,11 @@ export function getPlanWithDetails(
     planId: string,
     userId: string
 ): PlanWithDetails | null {
-    assertMember(householdId, userId)
+    assertMember(householdId, userId);
 
-    const plan = planRepo.getPlanWithDetails(planId)
-    if (!plan || plan.householdId !== householdId) return null
-    return plan
+    const plan = planRepo.getPlanWithDetails(planId);
+    if (!plan || plan.householdId !== householdId) return null;
+    return plan;
 }
 
 export function updatePlan(
@@ -62,38 +62,38 @@ export function updatePlan(
     userId: string,
     updates: { slotCount?: number; defaultStoreId?: string | null }
 ): PlanWithDetails | null {
-    assertMember(householdId, userId)
+    assertMember(householdId, userId);
 
-    const existing = planRepo.getPlanById(planId)
-    assertPlanBelongs(existing, householdId)
-    if (existing.state !== "draft") throw new ConflictError("Only draft plans can be edited")
+    const existing = planRepo.getPlanById(planId);
+    assertPlanBelongs(existing, householdId);
+    if (existing.state !== "draft") throw new ConflictError("Only draft plans can be edited");
 
-    planRepo.updatePlan({ id: planId, ...updates, updatedById: userId })
+    planRepo.updatePlan({ id: planId, ...updates, updatedById: userId });
 
     // Sync slot rows when slotCount changes
     if (updates.slotCount !== undefined) {
         if (updates.slotCount < existing.slotCount) {
-            planRepo.deleteExtraSlots(planId, updates.slotCount)
+            planRepo.deleteExtraSlots(planId, updates.slotCount);
         } else if (updates.slotCount > existing.slotCount) {
-            const newSlots = []
+            const newSlots = [];
             for (let i = existing.slotCount + 1; i <= updates.slotCount; i++) {
-                newSlots.push({ slotNumber: i, tagIds: [] })
+                newSlots.push({ slotNumber: i, tagIds: [] });
             }
-            planRepo.upsertSlots(planId, newSlots)
+            planRepo.upsertSlots(planId, newSlots);
         }
     }
 
-    return planRepo.getPlanWithDetails(planId)!
+    return planRepo.getPlanWithDetails(planId)!;
 }
 
 export function deletePlan(householdId: string, planId: string, userId: string): boolean {
-    assertMember(householdId, userId)
+    assertMember(householdId, userId);
 
-    const existing = planRepo.getPlanById(planId)
-    if (!existing || existing.householdId !== householdId) return false
-    if (existing.state === "active") throw new ConflictError("Cannot delete an active plan")
+    const existing = planRepo.getPlanById(planId);
+    if (!existing || existing.householdId !== householdId) return false;
+    if (existing.state === "active") throw new ConflictError("Cannot delete an active plan");
 
-    return planRepo.deletePlan(planId)
+    return planRepo.deletePlan(planId);
 }
 
 // ========== Slot configuration ==========
@@ -103,23 +103,23 @@ export function updateSlots(
     planId: string,
     userId: string,
     slots: Array<{
-        slotNumber: number
-        tagIds: string[]
-        maxCookingTimeMinutes?: number | null
-        pickedRecipeId?: string | null
-        pinned?: boolean
+        slotNumber: number;
+        tagIds: string[];
+        maxCookingTimeMinutes?: number | null;
+        pickedRecipeId?: string | null;
+        pinned?: boolean;
     }>
 ): PlanWithDetails | null {
-    assertMember(householdId, userId)
+    assertMember(householdId, userId);
 
-    const plan = planRepo.getPlanById(planId)
-    assertPlanBelongs(plan, householdId)
-    if (plan.state !== "draft") throw new ConflictError("Only draft plans can be edited")
+    const plan = planRepo.getPlanById(planId);
+    assertPlanBelongs(plan, householdId);
+    if (plan.state !== "draft") throw new ConflictError("Only draft plans can be edited");
 
-    planRepo.upsertSlots(planId, slots)
-    planRepo.updatePlan({ id: planId, updatedById: userId })
+    planRepo.upsertSlots(planId, slots);
+    planRepo.updatePlan({ id: planId, updatedById: userId });
 
-    return planRepo.getPlanWithDetails(planId)!
+    return planRepo.getPlanWithDetails(planId)!;
 }
 
 // ========== Reroll ==========
@@ -136,17 +136,17 @@ export function rerollSlots(
     userId: string,
     slotNumbers: number[]
 ): PlanWithDetails | null {
-    assertMember(householdId, userId)
+    assertMember(householdId, userId);
 
-    const plan = planRepo.getPlanWithDetails(planId)
-    assertPlanBelongs(plan, householdId)
-    if (plan.state !== "draft") throw new ConflictError("Only draft plans can be rerolled")
+    const plan = planRepo.getPlanWithDetails(planId);
+    assertPlanBelongs(plan, householdId);
+    if (plan.state !== "draft") throw new ConflictError("Only draft plans can be rerolled");
 
     // Collect recipe IDs that are pinned in slots we're NOT rerolling, so we don't duplicate
-    const reservedIds = new Set<string>()
+    const reservedIds = new Set<string>();
     for (const slot of plan.slots) {
         if (slot.pinned && !slotNumbers.includes(slot.slotNumber) && slot.pickedRecipeId) {
-            reservedIds.add(slot.pickedRecipeId)
+            reservedIds.add(slot.pickedRecipeId);
         }
     }
 
@@ -154,33 +154,31 @@ export function rerollSlots(
     // most constrained slots pick before less-constrained ones shrink the pool.
     const slotsToFill = slotNumbers
         .map((n) => {
-            const slot = plan.slots.find((s) => s.slotNumber === n)
-            if (!slot || slot.pinned) return null
+            const slot = plan.slots.find((s) => s.slotNumber === n);
+            if (!slot || slot.pinned) return null;
             const pool = recipeRepo.searchRecipes(
                 householdId,
                 slot.tagIds,
-                slot.maxCookingTimeMinutes,
-            )
-            return { slot, pool }
+                slot.maxCookingTimeMinutes
+            );
+            return { slot, pool };
         })
         .filter((x): x is NonNullable<typeof x> => x !== null)
-        .sort((a, b) => a.pool.length - b.pool.length)
+        .sort((a, b) => a.pool.length - b.pool.length);
 
     for (const { slot, pool } of slotsToFill) {
-        const available = pool.filter((r) => !reservedIds.has(r.id))
+        const available = pool.filter((r) => !reservedIds.has(r.id));
 
         const pick =
-            available.length > 0
-                ? available[Math.floor(Math.random() * available.length)]
-                : null
+            available.length > 0 ? available[Math.floor(Math.random() * available.length)] : null;
 
-        planRepo.setSlotPick(planId, slot.slotNumber, pick?.id ?? null)
+        planRepo.setSlotPick(planId, slot.slotNumber, pick?.id ?? null);
 
-        if (pick) reservedIds.add(pick.id)
+        if (pick) reservedIds.add(pick.id);
     }
 
-    planRepo.updatePlan({ id: planId, updatedById: userId })
-    return planRepo.getPlanWithDetails(planId)!
+    planRepo.updatePlan({ id: planId, updatedById: userId });
+    return planRepo.getPlanWithDetails(planId)!;
 }
 
 // ========== Route assignment ==========
@@ -190,23 +188,23 @@ export function updateRoutes(
     planId: string,
     userId: string,
     routes: Array<{
-        ingredientId: string
-        storeId?: string | null
-        overridden?: boolean
-        checked?: boolean
-        isUnsure?: boolean | null
+        ingredientId: string;
+        storeId?: string | null;
+        overridden?: boolean;
+        checked?: boolean;
+        isUnsure?: boolean | null;
     }>
 ): PlanWithDetails | null {
-    assertMember(householdId, userId)
+    assertMember(householdId, userId);
 
-    const plan = planRepo.getPlanById(planId)
-    assertPlanBelongs(plan, householdId)
-    if (plan.state !== "draft") throw new ConflictError("Only draft plans can be edited")
+    const plan = planRepo.getPlanById(planId);
+    assertPlanBelongs(plan, householdId);
+    if (plan.state !== "draft") throw new ConflictError("Only draft plans can be edited");
 
-    planRepo.upsertRoutes(planId, routes)
-    planRepo.updatePlan({ id: planId, updatedById: userId })
+    planRepo.upsertRoutes(planId, routes);
+    planRepo.updatePlan({ id: planId, updatedById: userId });
 
-    return planRepo.getPlanWithDetails(planId)!
+    return planRepo.getPlanWithDetails(planId)!;
 }
 
 // ========== Dispatch ==========
@@ -221,21 +219,21 @@ export function dispatchPlan(
     userId: string,
     scaleFactors: Record<string, number> = {}
 ): { plan: Plan; itemsAdded: number; itemsSkipped: number } {
-    assertMember(householdId, userId)
+    assertMember(householdId, userId);
 
-    const plan = planRepo.getPlanWithDetails(planId)
-    assertPlanBelongs(plan, householdId)
-    if (plan.state !== "draft") throw new ConflictError("Only draft plans can be dispatched")
+    const plan = planRepo.getPlanWithDetails(planId);
+    assertPlanBelongs(plan, householdId);
+    if (plan.state !== "draft") throw new ConflictError("Only draft plans can be dispatched");
 
-    let itemsAdded = 0
-    let itemsSkipped = 0
-    const now = new Date().toISOString()
+    let itemsAdded = 0;
+    let itemsSkipped = 0;
+    const now = new Date().toISOString();
 
     const dispatchAll = db.transaction(() => {
         for (const route of plan.routes) {
             if (!route.storeId) {
-                itemsSkipped++
-                continue
+                itemsSkipped++;
+                continue;
             }
 
             const ingredient = db
@@ -256,25 +254,28 @@ export function dispatchPlan(
                       | "shoppingUnitId"
                       | "recipeId"
                   > & { recipeName: string; isUnsure: 1 | null })
-                | undefined
+                | undefined;
 
             if (!ingredient) {
-                itemsSkipped++
-                continue
+                itemsSkipped++;
+                continue;
             }
 
-            const factor = scaleFactors[ingredient.recipeId] ?? 1
-            const hasShoppingOverride = ingredient.shoppingQty !== null || ingredient.shoppingUnitId !== null
-            const effectiveQty = hasShoppingOverride ? ingredient.shoppingQty : ingredient.qty
-            const effectiveUnitId = hasShoppingOverride ? ingredient.shoppingUnitId : ingredient.unitId
-            const scaledQty = effectiveQty != null ? roundFactor(effectiveQty * factor) : null
+            const factor = scaleFactors[ingredient.recipeId] ?? 1;
+            const hasShoppingOverride =
+                ingredient.shoppingQty !== null || ingredient.shoppingUnitId !== null;
+            const effectiveQty = hasShoppingOverride ? ingredient.shoppingQty : ingredient.qty;
+            const effectiveUnitId = hasShoppingOverride
+                ? ingredient.shoppingUnitId
+                : ingredient.unitId;
+            const scaledQty = effectiveQty != null ? roundFactor(effectiveQty * factor) : null;
 
             // Find or create a StoreItem for this ingredient in the target store
             const storeItem = itemRepo.getOrCreateStoreItemByName({
                 storeId: route.storeId,
                 name: ingredient.shoppingName ?? ingredient.name,
                 createdById: userId,
-            })
+            });
 
             shoppingListRepo.upsertShoppingListItem({
                 storeId: route.storeId,
@@ -284,22 +285,22 @@ export function dispatchPlan(
                 notes: ingredient.recipeName,
                 isUnsure: route.isUnsure ?? (ingredient.isUnsure === 1 ? true : null),
                 userId,
-            })
+            });
 
-            itemsAdded++
+            itemsAdded++;
         }
-    })
+    });
 
-    dispatchAll()
+    dispatchAll();
 
     const updatedPlan = planRepo.updatePlan({
         id: planId,
         state: "active",
         dispatchedAt: now,
         updatedById: userId,
-    })!
+    })!;
 
-    return { plan: updatedPlan, itemsAdded, itemsSkipped }
+    return { plan: updatedPlan, itemsAdded, itemsSkipped };
 }
 
 // ========== Plan History ==========
@@ -310,8 +311,8 @@ export function getPlansHistory(
     limit: number,
     offset: number
 ) {
-    assertMember(householdId, userId)
-    return planRepo.getPlansHistory(householdId, limit, offset)
+    assertMember(householdId, userId);
+    return planRepo.getPlansHistory(householdId, limit, offset);
 }
 
 // ========== Pool count ==========
@@ -322,6 +323,6 @@ export function getPoolCount(
     tagIds: string[],
     maxCookingTimeMinutes?: number | null
 ): number {
-    assertMember(householdId, userId)
-    return recipeRepo.searchRecipes(householdId, tagIds, maxCookingTimeMinutes).length
+    assertMember(householdId, userId);
+    return recipeRepo.searchRecipes(householdId, tagIds, maxCookingTimeMinutes).length;
 }

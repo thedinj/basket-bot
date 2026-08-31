@@ -20,7 +20,7 @@ import type { Database } from "better-sqlite3";
  * - Boolean storage: NULL = false, 1 = true (following app convention)
  */
 export function up(db: Database): void {
-    console.log("Starting migration: Add plan tables + RecipeIngredient.excluded...")
+    console.log("Starting migration: Add plan tables + RecipeIngredient.excluded...");
 
     db.exec(`
         -- Plan table
@@ -82,18 +82,18 @@ export function up(db: Database): void {
             ON "PlanIngredientRoute"("planId");
 
         ALTER TABLE "RecipeIngredient" ADD COLUMN "excluded" INTEGER;
-    `)
+    `);
 
-    console.log("  ✓ Created Plan table")
-    console.log("  ✓ Created PlanSlot table")
-    console.log("  ✓ Created PlanIngredientRoute table")
-    console.log("  ✓ Created indexes")
-    console.log("  ✓ Added excluded column to RecipeIngredient")
-    console.log("Migration complete")
+    console.log("  ✓ Created Plan table");
+    console.log("  ✓ Created PlanSlot table");
+    console.log("  ✓ Created PlanIngredientRoute table");
+    console.log("  ✓ Created indexes");
+    console.log("  ✓ Added excluded column to RecipeIngredient");
+    console.log("Migration complete");
 }
 
 export function down(db: Database): void {
-    console.log("Rolling back migration: Remove plan tables + RecipeIngredient.excluded...")
+    console.log("Rolling back migration: Remove plan tables + RecipeIngredient.excluded...");
 
     // SQLite does not support DROP COLUMN in older versions, so recreate RecipeIngredient
     db.exec(`
@@ -109,11 +109,11 @@ export function down(db: Database): void {
         DROP TABLE "RecipeIngredient";
 
         ALTER TABLE "RecipeIngredient_backup" RENAME TO "RecipeIngredient";
-    `)
+    `);
 
-    console.log("  ✓ Removed PlanIngredientRoute table")
-    console.log("  ✓ Removed PlanSlot table")
-    console.log("  ✓ Removed Plan table")
-    console.log("  ✓ Removed excluded column from RecipeIngredient")
-    console.log("Rollback complete")
+    console.log("  ✓ Removed PlanIngredientRoute table");
+    console.log("  ✓ Removed PlanSlot table");
+    console.log("  ✓ Removed Plan table");
+    console.log("  ✓ Removed excluded column from RecipeIngredient");
+    console.log("Rollback complete");
 }

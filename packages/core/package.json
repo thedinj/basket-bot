@@ -16,7 +16,8 @@
         "dev": "tsc --watch",
         "lint": "eslint . --ext ts",
         "typecheck": "tsc --noEmit",
-        "test": "vitest"
+        "test": "vitest run",
+        "test:watch": "vitest"
     },
     "dependencies": {
         "pluralize": "^8.0.0",

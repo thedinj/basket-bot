@@ -1,3 +1,3 @@
 export function roundFactor(n: number): number {
-    return parseFloat(n.toPrecision(4))
+    return parseFloat(n.toPrecision(4));
 }

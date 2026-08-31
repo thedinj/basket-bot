@@ -1,16 +1,16 @@
-import type { RecipeTag } from "@basket-bot/core"
-import { IonChip, IonLabel } from "@ionic/react"
+import type { RecipeTag } from "@basket-bot/core";
+import { IonChip, IonLabel } from "@ionic/react";
 
 interface TagChipProps {
-    tag: RecipeTag
-    selected?: boolean
-    onClick?: () => void
-    size?: "sm" | "md"
+    tag: RecipeTag;
+    selected?: boolean;
+    onClick?: () => void;
+    size?: "sm" | "md";
 }
 
 const TagChip: React.FC<TagChipProps> = ({ tag, selected, onClick, size = "sm" }) => {
-    const key = tag.colorKey ?? "violet"
-    const large = size === "md"
+    const key = tag.colorKey ?? "violet";
+    const large = size === "md";
 
     return (
         <IonChip
@@ -32,7 +32,7 @@ const TagChip: React.FC<TagChipProps> = ({ tag, selected, onClick, size = "sm" }
         >
             <IonLabel style={{ color: `var(--tag-${key}-text)` }}>{tag.name}</IonLabel>
         </IonChip>
-    )
-}
+    );
+};
 
-export default TagChip
+export default TagChip;

@@ -1,7 +1,7 @@
 import { withAuth, type AuthenticatedRequest } from "@/lib/auth/withAuth";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeService from "@/lib/services/storeService";
-import { updateStoreVisibilityRequestSchema } from "@basket-bot/core";
+import { NotFoundError, updateStoreVisibilityRequestSchema } from "@basket-bot/core";
 import { NextResponse } from "next/server";
 
 /**
@@ -26,10 +26,7 @@ async function handlePatch(
         });
 
         if (!updatedStore) {
-            return NextResponse.json(
-                { code: "NOT_FOUND", message: "Store not found" },
-                { status: 404 }
-            );
+            throw new NotFoundError("Store not found");
         }
 
         return NextResponse.json(updatedStore, { status: 200 });

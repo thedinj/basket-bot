@@ -34,10 +34,12 @@ export function validateRecipeImportResult(data: unknown): data is RecipeImportR
     const recipe = root.recipe as Record<string, unknown>;
 
     if (typeof recipe.name !== "string" || recipe.name.trim() === "") return false;
-    if (recipe.source !== null && recipe.source !== undefined && typeof recipe.source !== "string") return false;
+    if (recipe.source !== null && recipe.source !== undefined && typeof recipe.source !== "string")
+        return false;
     if (recipe.description !== null && typeof recipe.description !== "string") return false;
     if (recipe.steps !== null && typeof recipe.steps !== "string") return false;
-    if (recipe.cookingTimeMinutes !== null && typeof recipe.cookingTimeMinutes !== "number") return false;
+    if (recipe.cookingTimeMinutes !== null && typeof recipe.cookingTimeMinutes !== "number")
+        return false;
     if (!Array.isArray(recipe.ingredients)) return false;
 
     return recipe.ingredients.every((ing: unknown) => {
@@ -47,9 +49,24 @@ export function validateRecipeImportResult(data: unknown): data is RecipeImportR
         if (i.qty !== null && typeof i.qty !== "number") return false;
         if (i.unit !== null && typeof i.unit !== "string") return false;
         // isPantryItem is optional; if present must be boolean
-        if (i.shoppingName !== undefined && i.shoppingName !== null && typeof i.shoppingName !== "string") return false;
-        if (i.shoppingQty !== undefined && i.shoppingQty !== null && typeof i.shoppingQty !== "number") return false;
-        if (i.shoppingUnit !== undefined && i.shoppingUnit !== null && typeof i.shoppingUnit !== "string") return false;
+        if (
+            i.shoppingName !== undefined &&
+            i.shoppingName !== null &&
+            typeof i.shoppingName !== "string"
+        )
+            return false;
+        if (
+            i.shoppingQty !== undefined &&
+            i.shoppingQty !== null &&
+            typeof i.shoppingQty !== "number"
+        )
+            return false;
+        if (
+            i.shoppingUnit !== undefined &&
+            i.shoppingUnit !== null &&
+            typeof i.shoppingUnit !== "string"
+        )
+            return false;
         if (i.isPantryItem !== undefined && typeof i.isPantryItem !== "boolean") return false;
         return true;
     });

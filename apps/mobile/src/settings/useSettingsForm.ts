@@ -94,7 +94,15 @@ export function useSettingsForm() {
                 return false;
             }
         },
-        [saveApiKey, saveRemoteApiUrl, saveThemeMode, saveDefaultMealPlanSlots, saveDefaultMealPlanStore, showError, showSuccess]
+        [
+            saveApiKey,
+            saveRemoteApiUrl,
+            saveThemeMode,
+            saveDefaultMealPlanSlots,
+            saveDefaultMealPlanStore,
+            showError,
+            showSuccess,
+        ]
     );
 
     return {

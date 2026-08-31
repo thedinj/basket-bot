@@ -1,6 +1,7 @@
 import type { StoreSection } from "@basket-bot/core";
 import { db } from "../db/db";
 import { normalizeItemName } from "../utils/stringUtils";
+import { applySortOrders, readMaxSortOrder } from "./sortOrderQueries";
 
 /**
  * Repository for StoreSection entity operations.
@@ -138,13 +139,7 @@ export function updateSectionLocation(params: {
 }
 
 export function reorderSections(updates: Array<{ id: string; sortOrder: number }>): void {
-    const stmt = db.prepare(`UPDATE StoreSection SET sortOrder = ? WHERE id = ?`);
-
-    db.transaction(() => {
-        for (const update of updates) {
-            stmt.run(update.sortOrder, update.id);
-        }
-    })();
+    applySortOrders(db.prepare(`UPDATE StoreSection SET sortOrder = ? WHERE id = ?`), updates);
 }
 
 export function deleteSection(id: string): boolean {
@@ -153,9 +148,8 @@ export function deleteSection(id: string): boolean {
 }
 
 export function getMaxSortOrder(aisleId: string): number {
-    const row = db
-        .prepare(`SELECT MAX(sortOrder) as maxOrder FROM StoreSection WHERE aisleId = ?`)
-        .get(aisleId) as { maxOrder: number | null };
-
-    return row.maxOrder ?? -1;
+    return readMaxSortOrder(
+        db.prepare(`SELECT MAX(sortOrder) as maxOrder FROM StoreSection WHERE aisleId = ?`),
+        aisleId
+    );
 }

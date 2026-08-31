@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useStores } from "../../db/hooks";
+import { useVisibleStores } from "../../db/hooks";
 import { ClickableSelectionField } from "./ClickableSelectionField";
 import type { SelectableItem } from "./ClickableSelectionModal";
 
@@ -34,19 +34,10 @@ export const GenericStoreSelector: React.FC<GenericStoreSelectorProps> = ({
     startIcon,
     lines,
 }) => {
-    const { data: stores } = useStores();
-
-    const filteredStores = useMemo(() => {
-        if (!stores) return [];
-        return stores.filter((store) => {
-            // Exclude explicitly excluded stores
-            if (excludeStoreIds?.includes(store.id)) return false;
-            // Include if this is the currently selected store (keep hidden stores visible when selected)
-            if (selectedStoreId && store.id === selectedStoreId) return true;
-            // Otherwise exclude hidden stores
-            return !store.isHidden;
-        });
-    }, [stores, excludeStoreIds, selectedStoreId]);
+    const filteredStores = useVisibleStores({
+        keepStoreId: selectedStoreId,
+        excludeStoreIds,
+    });
 
     const storeItems: SelectableItem[] = useMemo(() => {
         return filteredStores.map((store) => ({
@@ -55,13 +46,15 @@ export const GenericStoreSelector: React.FC<GenericStoreSelectorProps> = ({
         }));
     }, [filteredStores]);
 
-    const selectedStore = stores?.find((s) => s.id === selectedStoreId);
+    // `filteredStores` keeps the selected store even when hidden, so it's the right list to
+    // resolve the current selection against — no need to consult the unfiltered set.
+    const selectedStore = filteredStores.find((s) => s.id === selectedStoreId);
 
     const displayText = triggerText
         ? triggerText
         : selectedStore
           ? selectedStore?.name
-          : !stores?.length
+          : !filteredStores.length
             ? "No stores available"
             : placeholderText;
 

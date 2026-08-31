@@ -242,11 +242,7 @@ export function mergeItemInto(loserId: string, winnerId: string): StoreItem | nu
         // Winner's own location wins if it has one; otherwise adopt the loser's, keeping
         // aisle/section mutually exclusive (section implies null aisle) like createItem/updateItem.
         const winnerHasLocation = winner.aisleId !== null || winner.sectionId !== null;
-        const aisleId = winnerHasLocation
-            ? winner.aisleId
-            : loser.sectionId
-              ? null
-              : loser.aisleId;
+        const aisleId = winnerHasLocation ? winner.aisleId : loser.sectionId ? null : loser.aisleId;
         const sectionId = winnerHasLocation ? winner.sectionId : loser.sectionId;
 
         db.prepare(

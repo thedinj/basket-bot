@@ -1,12 +1,12 @@
-import { IonItem, IonLabel, IonSkeletonText } from "@ionic/react"
-import type { ReactNode } from "react"
+import { IonItem, IonLabel, IonSkeletonText } from "@ionic/react";
+import type { ReactNode } from "react";
 
 interface SkeletonListItemProps {
-    lines?: "none" | "full" | "inset"
-    indent?: number
-    startSlot?: ReactNode
-    widths?: string[]
-    endSlot?: ReactNode
+    lines?: "none" | "full" | "inset";
+    indent?: number;
+    startSlot?: ReactNode;
+    widths?: string[];
+    endSlot?: ReactNode;
 }
 
 /**
@@ -29,4 +29,4 @@ export const SkeletonListItem: React.FC<SkeletonListItemProps> = ({
         </IonLabel>
         {endSlot && <div slot="end">{endSlot}</div>}
     </IonItem>
-)
+);

@@ -1,7 +1,7 @@
 import { withAuth, type AuthenticatedRequest } from "@/lib/auth/withAuth";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as notificationService from "@/lib/services/notificationService";
-import { notificationCountsSchema } from "@basket-bot/core";
+import { ValidationError, notificationCountsSchema } from "@basket-bot/core";
 import { NextResponse } from "next/server";
 
 /**
@@ -12,14 +12,11 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
     try {
         const userEmail = req.auth.email;
         if (!userEmail) {
-            return NextResponse.json(
-                { code: "BAD_REQUEST", message: "User email not found in token" },
-                { status: 400 }
-            );
+            throw new ValidationError("User email not found in token");
         }
 
         const counts = notificationService.getNotificationCounts(userEmail);
-        
+
         // Validate response
         const validated = notificationCountsSchema.parse(counts);
 

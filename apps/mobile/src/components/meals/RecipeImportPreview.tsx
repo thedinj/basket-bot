@@ -1,6 +1,7 @@
-import { IonCheckbox, IonItem, IonLabel, IonList, IonText } from "@ionic/react";
+import { IonCheckbox, IonItem, IonLabel, IonList } from "@ionic/react";
 import type { ParsedRecipe, ParsedRecipeIngredient } from "../../llm/features/recipeImport";
 import PantryBadge from "../shared/PantryBadge";
+import TabEmptyState from "../shared/TabEmptyState";
 import "./RecipeImportPreview.scss";
 
 interface RecipeImportPreviewProps {
@@ -57,7 +58,9 @@ const RecipeImportPreview: React.FC<RecipeImportPreviewProps> = ({
                             />
                             <IonLabel className="recipe-import-preview__row">
                                 <span className="recipe-import-preview__qty">
-                                    {qty || <span className="recipe-import-preview__qty-empty">—</span>}
+                                    {qty || (
+                                        <span className="recipe-import-preview__qty-empty">—</span>
+                                    )}
                                 </span>
                                 <span className="recipe-import-preview__ing-name">
                                     {ing.name}
@@ -70,9 +73,10 @@ const RecipeImportPreview: React.FC<RecipeImportPreviewProps> = ({
             </IonList>
 
             {recipe.ingredients.length === 0 && (
-                <IonText color="medium">
-                    <p className="recipe-import-preview__empty">No ingredients found.</p>
-                </IonText>
+                <TabEmptyState
+                    variant="inline"
+                    body="No ingredients found. Either the source hid them well, or this recipe is aspirational."
+                />
             )}
         </div>
     );

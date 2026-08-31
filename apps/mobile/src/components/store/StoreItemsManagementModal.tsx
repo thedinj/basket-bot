@@ -18,7 +18,7 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { add, closeOutline } from "ionicons/icons";
+import { add, closeOutline, pricetagsOutline, searchOutline } from "ionicons/icons";
 import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { useStore, useStoreItemsWithDetails } from "../../db/hooks";
@@ -32,6 +32,7 @@ import { GroupedItemList } from "../shared/GroupedItemList";
 import { ItemGroup } from "../shared/grouping.types";
 import { createAisleSectionGroups } from "../shared/grouping.utils";
 import PullToRefresh from "../shared/PullToRefresh";
+import TabEmptyState from "../shared/TabEmptyState";
 import { StoreItemEditorModal } from "../storeitem/StoreItemEditorModal";
 import StoreItemRow from "../storeitem/StoreItemRow";
 import { useShoppingListItemMap } from "../storeitem/useShoppingListItemMap";
@@ -230,18 +231,19 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                             <IonText color="medium">Loading items...</IonText>
                         </div>
                     ) : favoriteGroups.length === 0 && allGroups.length === 0 ? (
-                        <div style={{ padding: "20px", textAlign: "center" }}>
-                            <IonText color="medium">
-                                {items?.length === 0 ? (
-                                    <>
-                                        No items yet. Add items to track products and their
-                                        locations in this store.
-                                    </>
-                                ) : (
-                                    <>No items match your search.</>
-                                )}
-                            </IonText>
-                        </div>
+                        items?.length === 0 ? (
+                            <TabEmptyState
+                                icon={pricetagsOutline}
+                                title="No items yet"
+                                body="Add items to track products and their locations in this store."
+                            />
+                        ) : (
+                            <TabEmptyState
+                                icon={searchOutline}
+                                title="No matches"
+                                body="No items match your search. Try fewer letters."
+                            />
+                        )
                     ) : (
                         <>
                             {favoriteGroups.length > 0 && (

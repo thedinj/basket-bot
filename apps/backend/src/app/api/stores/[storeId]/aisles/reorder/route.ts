@@ -1,3 +1,4 @@
+import { ValidationError } from "@basket-bot/core";
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeEntityService from "@/lib/services/storeEntityService";
@@ -13,10 +14,7 @@ async function handlePost(
         const { updates } = body;
 
         if (!Array.isArray(updates)) {
-            return NextResponse.json(
-                { code: "INVALID_INPUT", message: "Updates must be an array" },
-                { status: 400 }
-            );
+            throw new ValidationError("Updates must be an array");
         }
 
         storeEntityService.reorderAisles({ storeId, updates, userId: req.auth.sub });

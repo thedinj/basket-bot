@@ -31,9 +31,7 @@ export class OpenAIClient implements LLMApiClient {
         if (params.userText || params.attachments) {
             const userContent = params.attachments
                 ? [
-                      ...(params.userText
-                          ? [{ type: "text", text: params.userText }]
-                          : []),
+                      ...(params.userText ? [{ type: "text", text: params.userText }] : []),
                       ...params.attachments.map((att) => ({
                           type: "image_url",
                           image_url: {
@@ -51,27 +49,22 @@ export class OpenAIClient implements LLMApiClient {
             });
         }
 
-        const response = await fetch(
-            "https://api.openai.com/v1/chat/completions",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${this.apiKey}`,
-                },
-                body: JSON.stringify({
-                    model: params.model,
-                    messages,
-                    response_format: { type: "json_object" },
-                }),
-            }
-        );
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${this.apiKey}`,
+            },
+            body: JSON.stringify({
+                model: params.model,
+                messages,
+                response_format: { type: "json_object" },
+            }),
+        });
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(
-                `OpenAI API error (${response.status}): ${errorText}`
-            );
+            throw new Error(`OpenAI API error (${response.status}): ${errorText}`);
         }
 
         const data = await response.json();

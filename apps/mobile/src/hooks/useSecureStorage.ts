@@ -1,8 +1,4 @@
-import {
-    useMutation,
-    useQueryClient,
-    useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/db/queryKeys";
 import { secureStorage } from "../utils/secureStorage";
 
@@ -13,10 +9,7 @@ import { secureStorage } from "../utils/secureStorage";
  * @param setFn Async function that writes the value to secure storage
  * @returns TanStack Query mutation result
  */
-export const useSaveSecureValue = <T>(
-    key: string,
-    setFn: (value: T) => Promise<void>
-) => {
+export const useSaveSecureValue = <T>(key: string, setFn: (value: T) => Promise<void>) => {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -65,7 +58,5 @@ export const useSecureApiKey = (): string | null =>
  * @returns TanStack Query mutation for saving the API key
  */
 export const useSaveSecureApiKey = () => {
-    return useSaveSecureValue("openai_api_key", (value: string) =>
-        secureStorage.setApiKey(value)
-    );
+    return useSaveSecureValue("openai_api_key", (value: string) => secureStorage.setApiKey(value));
 };

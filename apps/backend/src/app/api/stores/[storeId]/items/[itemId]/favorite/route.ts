@@ -1,3 +1,4 @@
+import { NotFoundError } from "@basket-bot/core";
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeEntityService from "@/lib/services/storeEntityService";
@@ -12,10 +13,7 @@ async function handlePost(
         const item = storeEntityService.toggleItemFavorite(itemId, storeId, req.auth.sub);
 
         if (!item) {
-            return NextResponse.json(
-                { code: "NOT_FOUND", message: "Item not found" },
-                { status: 404 }
-            );
+            throw new NotFoundError("Item not found");
         }
 
         return NextResponse.json({ item });

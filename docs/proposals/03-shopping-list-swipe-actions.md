@@ -7,8 +7,8 @@
 
 Every per-item action on the shopping list costs a full modal round trip. Marking an item
 unsure is: tap row → modal opens → scroll to the flags row → toggle → Save → modal closes.
-Snoozing is the same plus a date picker. Both are things you do *while walking through a
-store*, one-handed, and both should be a single gesture.
+Snoozing is the same plus a date picker. Both are things you do _while walking through a
+store_, one-handed, and both should be a single gesture.
 
 There is no `IonItemSliding` anywhere in `components/shoppinglist/`. The pattern already
 exists in the codebase — see `apps/mobile/src/components/store/SectionList.tsx:213` — so

@@ -15,10 +15,10 @@ import { useHistory } from "react-router-dom";
 import { AppHeader } from "../components/layout/AppHeader";
 import { HouseholdSelect } from "../components/households/HouseholdSelect";
 import LoadingFallback from "../components/LoadingFallback";
-import MealsEmptyState from "../components/meals/MealsEmptyState";
 import { FabSpacer } from "../components/shared/FabSpacer";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import RobotLoadingContent from "../components/shared/RobotLoadingContent";
+import TabEmptyState from "../components/shared/TabEmptyState";
 import { usePlansHistory, useRecipes } from "../db/mealsHooks";
 import { queryKeys } from "../db/queryKeys";
 import RefreshConfig from "../hooks/refresh/RefreshConfig";
@@ -37,7 +37,7 @@ const PlansEmptyState: React.FC<{ householdId: string | null }> = ({ householdId
 
     if (recipes.length === 0) {
         return (
-            <MealsEmptyState
+            <TabEmptyState
                 icon={restaurantOutline}
                 title="No recipes to plan with"
                 body="The meal plan wizard picks from your recipes. Add a few, then come back to build a plan."
@@ -49,7 +49,7 @@ const PlansEmptyState: React.FC<{ householdId: string | null }> = ({ householdId
     }
 
     return (
-        <MealsEmptyState
+        <TabEmptyState
             icon={calendarOutline}
             title="No plans yet"
             body="No dispatch history. Run the wizard when you're ready to commit."

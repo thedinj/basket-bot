@@ -53,7 +53,12 @@ export function getRecipeById(id: string): Recipe | null {
              FROM Recipe
              WHERE id = ?`
         )
-        .get(id) as (Omit<Recipe, "isHidden" | "isPoolExcluded"> & { isHidden: number | null; isPoolExcluded: number | null }) | undefined;
+        .get(id) as
+        | (Omit<Recipe, "isHidden" | "isPoolExcluded"> & {
+              isHidden: number | null;
+              isPoolExcluded: number | null;
+          })
+        | undefined;
 
     if (!row) return null;
 
@@ -79,7 +84,10 @@ export function getRecipesByHousehold(
     query += ` ORDER BY name ASC`;
 
     const rows = db.prepare(query).all(householdId) as Array<
-        Omit<Recipe, "isHidden" | "isPoolExcluded"> & { isHidden: number | null; isPoolExcluded: number | null }
+        Omit<Recipe, "isHidden" | "isPoolExcluded"> & {
+            isHidden: number | null;
+            isPoolExcluded: number | null;
+        }
     >;
 
     return rows.map((row) => ({
@@ -106,7 +114,13 @@ export function updateRecipe(params: {
     const now = new Date().toISOString();
 
     const newIsPoolExcluded =
-        params.isPoolExcluded !== undefined ? (params.isPoolExcluded ? 1 : null) : (existing.isPoolExcluded ? 1 : null);
+        params.isPoolExcluded !== undefined
+            ? params.isPoolExcluded
+                ? 1
+                : null
+            : existing.isPoolExcluded
+              ? 1
+              : null;
 
     db.prepare(
         `UPDATE Recipe
@@ -119,7 +133,9 @@ export function updateRecipe(params: {
         params.steps !== undefined ? params.steps : existing.steps,
         params.sourceUrl !== undefined ? params.sourceUrl : existing.sourceUrl,
         newIsPoolExcluded,
-        params.cookingTimeMinutes !== undefined ? params.cookingTimeMinutes : existing.cookingTimeMinutes,
+        params.cookingTimeMinutes !== undefined
+            ? params.cookingTimeMinutes
+            : existing.cookingTimeMinutes,
         params.updatedById,
         now,
         params.id
@@ -288,9 +304,16 @@ export function searchRecipes(
                  ORDER BY name ASC`
             )
             .all(householdId) as Array<
-            Omit<Recipe, "isHidden" | "isPoolExcluded"> & { isHidden: number | null; isPoolExcluded: number | null }
+            Omit<Recipe, "isHidden" | "isPoolExcluded"> & {
+                isHidden: number | null;
+                isPoolExcluded: number | null;
+            }
         >;
-        return rows.map((row) => ({ ...row, isHidden: intToBool(row.isHidden), isPoolExcluded: intToBool(row.isPoolExcluded) }));
+        return rows.map((row) => ({
+            ...row,
+            isHidden: intToBool(row.isHidden),
+            isPoolExcluded: intToBool(row.isPoolExcluded),
+        }));
     }
 
     const binds: unknown[] = [householdId];
@@ -330,7 +353,10 @@ export function searchRecipes(
     query += ` ORDER BY ${hasTagFilter ? "r." : ""}name ASC`;
 
     const rows = db.prepare(query).all(...binds) as Array<
-        Omit<Recipe, "isHidden" | "isPoolExcluded"> & { isHidden: number | null; isPoolExcluded: number | null }
+        Omit<Recipe, "isHidden" | "isPoolExcluded"> & {
+            isHidden: number | null;
+            isPoolExcluded: number | null;
+        }
     >;
 
     return rows.map((row) => ({

@@ -1,5 +1,5 @@
-import type { TagPaletteKey } from "@basket-bot/core"
-import { TAG_PALETTE_KEYS } from "@basket-bot/core"
+import type { TagPaletteKey } from "@basket-bot/core";
+import { TAG_PALETTE_KEYS } from "@basket-bot/core";
 import {
     IonAlert,
     IonButton,
@@ -15,70 +15,70 @@ import {
     IonSpinner,
     IonTitle,
     IonToolbar,
-} from "@ionic/react"
-import { checkmarkOutline, closeOutline, createOutline, trashOutline } from "ionicons/icons"
-import { useRef, useState } from "react"
-import { useCreateTag, useDeleteTag, useTags, useUpdateTag } from "../../db/mealsHooks"
-import TagChip from "./TagChip"
+} from "@ionic/react";
+import { checkmarkOutline, closeOutline, createOutline, trashOutline } from "ionicons/icons";
+import { useRef, useState } from "react";
+import { useCreateTag, useDeleteTag, useTags, useUpdateTag } from "../../db/mealsHooks";
+import TagChip from "./TagChip";
 
-import "./TagManagerModal.scss"
+import "./TagManagerModal.scss";
 
 interface TagManagerModalProps {
-    isOpen: boolean
-    onDismiss: () => void
-    householdId: string | null
+    isOpen: boolean;
+    onDismiss: () => void;
+    householdId: string | null;
 }
 
 const TagManagerModal: React.FC<TagManagerModalProps> = ({ isOpen, onDismiss, householdId }) => {
-    const { data: tags = [] } = useTags(householdId)
-    const createTag = useCreateTag(householdId)
-    const updateTag = useUpdateTag(householdId)
-    const deleteTag = useDeleteTag(householdId)
+    const { data: tags = [] } = useTags(householdId);
+    const createTag = useCreateTag(householdId);
+    const updateTag = useUpdateTag(householdId);
+    const deleteTag = useDeleteTag(householdId);
 
-    const [newName, setNewName] = useState("")
-    const [creating, setCreating] = useState(false)
+    const [newName, setNewName] = useState("");
+    const [creating, setCreating] = useState(false);
 
     const [editingTag, setEditingTag] = useState<{
-        id: string
-        name: string
-        colorKey: TagPaletteKey | null
-    } | null>(null)
-    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+        id: string;
+        name: string;
+        colorKey: TagPaletteKey | null;
+    } | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
-    const newInputRef = useRef<HTMLIonInputElement>(null)
+    const newInputRef = useRef<HTMLIonInputElement>(null);
 
     const handleCreate = async () => {
-        const name = newName.trim()
-        if (!name || !householdId) return
-        setCreating(true)
+        const name = newName.trim();
+        if (!name || !householdId) return;
+        setCreating(true);
         try {
-            await createTag.mutateAsync({ name })
-            setNewName("")
+            await createTag.mutateAsync({ name });
+            setNewName("");
         } finally {
-            setCreating(false)
+            setCreating(false);
         }
-    }
+    };
 
     const handleDelete = async () => {
-        if (!deleteTarget) return
-        await deleteTag.mutateAsync(deleteTarget.id)
-        setDeleteTarget(null)
-    }
+        if (!deleteTarget) return;
+        await deleteTag.mutateAsync(deleteTarget.id);
+        setDeleteTarget(null);
+    };
 
     const handleSaveEdit = async () => {
-        if (!editingTag) return
-        const name = editingTag.name.trim()
-        if (!name) return
+        if (!editingTag) return;
+        const name = editingTag.name.trim();
+        if (!name) return;
         await updateTag.mutateAsync({
             tagId: editingTag.id,
             data: { name, colorKey: editingTag.colorKey },
-        })
-        setEditingTag(null)
-    }
+        });
+        setEditingTag(null);
+    };
 
     const openEdit = (id: string, name: string, colorKey: TagPaletteKey | null) => {
-        setEditingTag({ id, name, colorKey })
-    }
+        setEditingTag({ id, name, colorKey });
+    };
 
     return (
         <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
@@ -142,7 +142,7 @@ const TagManagerModal: React.FC<TagManagerModalProps> = ({ isOpen, onDismiss, ho
                                     )
                                 }
                                 onKeyUp={(e) => {
-                                    if (e.key === "Enter") handleSaveEdit()
+                                    if (e.key === "Enter") handleSaveEdit();
                                 }}
                                 autoFocus
                             />
@@ -190,7 +190,7 @@ const TagManagerModal: React.FC<TagManagerModalProps> = ({ isOpen, onDismiss, ho
                                 onIonInput={(e) => setNewName(e.detail.value ?? "")}
                                 placeholder="Enter tag name"
                                 onKeyUp={(e) => {
-                                    if (e.key === "Enter") handleCreate()
+                                    if (e.key === "Enter") handleCreate();
                                 }}
                             />
                         </IonItem>
@@ -218,7 +218,7 @@ const TagManagerModal: React.FC<TagManagerModalProps> = ({ isOpen, onDismiss, ho
                 ]}
             />
         </IonModal>
-    )
-}
+    );
+};
 
-export default TagManagerModal
+export default TagManagerModal;

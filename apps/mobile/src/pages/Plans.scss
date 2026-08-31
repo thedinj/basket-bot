@@ -93,7 +93,7 @@
     justify-content: center;
     gap: 1rem;
     // ion-content's scroll box has a definite height, so a plain percentage min-height
-    // resolves against it directly (see MealsEmptyState.scss for why this avoids turning
+    // resolves against it directly (see TabEmptyState.scss for why this avoids turning
     // ion-content into a flex container). Subtract the trailing <FabSpacer />'s fixed,
     // known height so this centers against the actually-visible area.
     min-height: calc(100% - var(--fab-spacer-height));

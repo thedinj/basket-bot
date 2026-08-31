@@ -35,7 +35,8 @@ export function addIngredient(params: {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
     const shoppingName =
-        params.shoppingName && normalizeItemName(params.shoppingName) !== normalizeItemName(params.name)
+        params.shoppingName &&
+        normalizeItemName(params.shoppingName) !== normalizeItemName(params.name)
             ? params.shoppingName.trim()
             : null;
 
@@ -117,7 +118,8 @@ export function updateIngredient(params: {
     const now = new Date().toISOString();
     const resolvedName = params.name ?? existing.name;
     const resolvedQty = params.qty !== undefined ? (params.qty ?? null) : (existing.qty ?? null);
-    const resolvedUnitId = params.unitId !== undefined ? (params.unitId ?? null) : (existing.unitId ?? null);
+    const resolvedUnitId =
+        params.unitId !== undefined ? (params.unitId ?? null) : (existing.unitId ?? null);
 
     const excluded =
         params.excluded !== undefined ? (params.excluded ? 1 : null) : existing.excluded ? 1 : null;
@@ -127,7 +129,8 @@ export function updateIngredient(params: {
     let shoppingName: string | null;
     if (params.shoppingName !== undefined) {
         shoppingName =
-            params.shoppingName && normalizeItemName(params.shoppingName) !== normalizeItemName(resolvedName)
+            params.shoppingName &&
+            normalizeItemName(params.shoppingName) !== normalizeItemName(resolvedName)
                 ? params.shoppingName.trim()
                 : null;
     } else {
@@ -137,8 +140,12 @@ export function updateIngredient(params: {
     let shoppingQty: number | null;
     let shoppingUnitId: string | null;
     if (params.shoppingQty !== undefined || params.shoppingUnitId !== undefined) {
-        const rawShoppingQty = params.shoppingQty !== undefined ? (params.shoppingQty ?? null) : existing.shoppingQty;
-        const rawShoppingUnitId = params.shoppingUnitId !== undefined ? (params.shoppingUnitId ?? null) : existing.shoppingUnitId;
+        const rawShoppingQty =
+            params.shoppingQty !== undefined ? (params.shoppingQty ?? null) : existing.shoppingQty;
+        const rawShoppingUnitId =
+            params.shoppingUnitId !== undefined
+                ? (params.shoppingUnitId ?? null)
+                : existing.shoppingUnitId;
         const sameAsRecipe = rawShoppingQty === resolvedQty && rawShoppingUnitId === resolvedUnitId;
         shoppingQty = sameAsRecipe ? null : rawShoppingQty;
         shoppingUnitId = sameAsRecipe ? null : rawShoppingUnitId;

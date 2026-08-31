@@ -5,7 +5,7 @@ import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as referenceRepo from "@/lib/repos/referenceRepo";
 import * as userRepo from "@/lib/repos/userRepo";
 import * as storeService from "@/lib/services/storeService";
-import { createUserRequestSchema } from "@basket-bot/core";
+import { ConflictError, createUserRequestSchema } from "@basket-bot/core";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -20,7 +20,10 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { email, name, password, invitationCode } = createUserRequestSchema.parse(body);
 
-        // Check invitation code if required
+        // Check invitation code if required.
+        // These two responses stay hand-rolled deliberately: Register.tsx keys off the exact
+        // `INVITATION_CODE_REQUIRED` / `INVALID_INVITATION_CODE` codes to show inline field
+        // errors, and ValidationError would rewrite both to VALIDATION_FAILED (and 400 -> 422).
         const setting = referenceRepo.getAppSetting("REGISTRATION_INVITATION_CODE");
         const requiredInvitationCode = setting?.value || "";
         if (requiredInvitationCode && requiredInvitationCode.trim().length > 0) {
@@ -48,14 +51,16 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        // Store the address lowercased. The duplicate check below and the sign-in lookup are both
+        // case-insensitive, so persisting the raw casing bought nothing and left rows that only
+        // a case-insensitive query could find.
+        const normalizedEmail = email.toLowerCase();
+
         // Check if user exists (case-insensitive, matching the login lookup so
         // "Alice@x.com" and "alice@x.com" cannot both register)
-        const existingUser = userRepo.getUserByEmail(email);
+        const existingUser = userRepo.getUserByEmail(normalizedEmail);
         if (existingUser) {
-            return NextResponse.json(
-                { code: "CONFLICT", message: "User with this email already exists" },
-                { status: 409 }
-            );
+            throw new ConflictError("User with this email already exists");
         }
 
         // Hash password
@@ -69,7 +74,7 @@ export async function POST(req: NextRequest) {
             INSERT INTO User (id, email, name, password, scopes, createdAt, updatedAt)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `
-        ).run(userId, email, name, hashedPassword, "", now, now);
+        ).run(userId, normalizedEmail, name, hashedPassword, "", now, now);
 
         // Create default example store for new user
         storeService.createDefaultStoreForNewUser(userId, name);
@@ -77,7 +82,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
             {
                 id: userId,
-                email,
+                email: normalizedEmail,
                 name,
                 scopes: [],
             },

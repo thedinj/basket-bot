@@ -1,3 +1,4 @@
+import { ValidationError } from "@basket-bot/core";
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeEntityService from "@/lib/services/storeEntityService";
@@ -13,10 +14,7 @@ async function handlePost(
         const { isChecked } = body;
 
         if (typeof isChecked !== "boolean") {
-            return NextResponse.json(
-                { code: "INVALID_INPUT", message: "isChecked (boolean) is required" },
-                { status: 400 }
-            );
+            throw new ValidationError("isChecked (boolean) is required");
         }
 
         const result = storeEntityService.toggleShoppingListItemChecked(

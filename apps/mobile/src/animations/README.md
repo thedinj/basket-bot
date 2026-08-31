@@ -9,18 +9,15 @@ A reusable, CSS-first overlay animation system for full-screen effects in Basket
 ### Components
 
 1. **Effects Library** (`src/animations/effects.ts`)
-
     - Central registry of all available animations
     - Each effect defines: CSS class, duration, sound path, haptic settings
 
 2. **Hook** (`src/hooks/useOverlayAnimation.ts`)
-
     - Triggers animation, plays sound, provides haptic feedback
     - Returns `{ trigger, isActive, cssClass }` for component integration
     - Prevents simultaneous animations module-wide
 
 3. **Component** (`src/components/shared/OverlayAnimation.tsx`)
-
     - Generic fixed-position overlay that covers viewport
     - Applies CSS class from hook
     - Removes itself when no class is active
@@ -115,11 +112,11 @@ Reference them in the effects library with `/sounds/filename.mp3` paths.
 
 ### LASER_OBLITERATION
 
--   **Purpose**: Visual "deletion" effect for clearing shopping list items
--   **Duration**: 1000ms (1 second)
--   **Sound**: `/sounds/laser-zap.mp3` (user-provided)
--   **Visual**: Purple laser beam with white core sweeps from top to bottom
--   **Colors**: Uses `--ion-color-primary` CSS variable for purple
+- **Purpose**: Visual "deletion" effect for clearing shopping list items
+- **Duration**: 1000ms (1 second)
+- **Sound**: `/sounds/laser-zap.mp3` (user-provided)
+- **Visual**: Purple laser beam with white core sweeps from top to bottom
+- **Colors**: Uses `--ion-color-primary` CSS variable for purple
 
 ## Technical Details
 
@@ -139,26 +136,26 @@ If sound playback fails (e.g., autoplay policies, missing file), the system:
 
 The hook automatically:
 
--   Clears timeouts on unmount
--   Stops audio playback on unmount
--   Resets global animation flag when component unmounts mid-animation
+- Clears timeouts on unmount
+- Stops audio playback on unmount
+- Resets global animation flag when component unmounts mid-animation
 
 ## Styling Guidelines
 
 ### CSS Best Practices
 
--   Use `::before` or `::after` pseudo-elements for animation content
--   Always set `pointer-events: none` on overlay elements
--   Use `position: fixed` for full-viewport coverage
--   Keep z-index at 10000 or higher to overlay all content
--   Use CSS variables for colors (e.g., `--ion-color-primary`)
+- Use `::before` or `::after` pseudo-elements for animation content
+- Always set `pointer-events: none` on overlay elements
+- Use `position: fixed` for full-viewport coverage
+- Keep z-index at 10000 or higher to overlay all content
+- Use CSS variables for colors (e.g., `--ion-color-primary`)
 
 ### Animation Performance
 
--   Use `transform` and `opacity` for smooth 60fps animations
--   Avoid animating `width`, `height`, `top`, `left` directly
--   Use `will-change` sparingly (only if needed for performance)
--   Keep duration under 2 seconds for good UX
+- Use `transform` and `opacity` for smooth 60fps animations
+- Avoid animating `width`, `height`, `top`, `left` directly
+- Use `will-change` sparingly (only if needed for performance)
+- Keep duration under 2 seconds for good UX
 
 ## Example: Laser Obliteration in ShoppingList
 
@@ -189,7 +186,7 @@ const confirmClearChecked = useCallback(async () => {
 
 ## Future Enhancements
 
--   Add custom duration parameter to `useOverlayAnimation` hook
--   Support multiple simultaneous animations (with priority system)
--   Add animation completion callbacks
--   Create more preset animations (explosion, swipe, fade, etc.)
+- Add custom duration parameter to `useOverlayAnimation` hook
+- Support multiple simultaneous animations (with priority system)
+- Add animation completion callbacks
+- Create more preset animations (explosion, swipe, fade, etc.)

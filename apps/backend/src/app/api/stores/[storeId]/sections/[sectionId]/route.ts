@@ -1,3 +1,4 @@
+import { NotFoundError, ValidationError } from "@basket-bot/core";
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeEntityService from "@/lib/services/storeEntityService";
@@ -13,10 +14,7 @@ async function handleGet(
         const section = sections.find((s) => s.id === sectionId) ?? null;
 
         if (!section) {
-            return NextResponse.json(
-                { code: "NOT_FOUND", message: "Section not found" },
-                { status: 404 }
-            );
+            throw new NotFoundError("Section not found");
         }
 
         return NextResponse.json({ section });
@@ -37,24 +35,15 @@ async function handlePut(
 
         // At least one field must be provided
         if (!name && !aisleId) {
-            return NextResponse.json(
-                { code: "INVALID_INPUT", message: "Name or aisleId is required" },
-                { status: 400 }
-            );
+            throw new ValidationError("Name or aisleId is required");
         }
 
         if (name !== undefined && typeof name !== "string") {
-            return NextResponse.json(
-                { code: "INVALID_INPUT", message: "Name must be a string" },
-                { status: 400 }
-            );
+            throw new ValidationError("Name must be a string");
         }
 
         if (aisleId !== undefined && typeof aisleId !== "string") {
-            return NextResponse.json(
-                { code: "INVALID_INPUT", message: "Aisle ID must be a string" },
-                { status: 400 }
-            );
+            throw new ValidationError("Aisle ID must be a string");
         }
 
         const section = storeEntityService.updateSection({
@@ -66,10 +55,7 @@ async function handlePut(
         });
 
         if (!section) {
-            return NextResponse.json(
-                { code: "NOT_FOUND", message: "Section not found" },
-                { status: 404 }
-            );
+            throw new NotFoundError("Section not found");
         }
 
         return NextResponse.json({ section });
@@ -88,17 +74,11 @@ async function handlePatch(
         const { aisleId, sortOrder } = body;
 
         if (typeof aisleId !== "string") {
-            return NextResponse.json(
-                { code: "INVALID_INPUT", message: "aisleId is required and must be a string" },
-                { status: 400 }
-            );
+            throw new ValidationError("aisleId is required and must be a string");
         }
 
         if (typeof sortOrder !== "number") {
-            return NextResponse.json(
-                { code: "INVALID_INPUT", message: "sortOrder is required and must be a number" },
-                { status: 400 }
-            );
+            throw new ValidationError("sortOrder is required and must be a number");
         }
 
         const section = storeEntityService.updateSectionLocation({
@@ -110,10 +90,7 @@ async function handlePatch(
         });
 
         if (!section) {
-            return NextResponse.json(
-                { code: "NOT_FOUND", message: "Section not found" },
-                { status: 404 }
-            );
+            throw new NotFoundError("Section not found");
         }
 
         return NextResponse.json({ section });

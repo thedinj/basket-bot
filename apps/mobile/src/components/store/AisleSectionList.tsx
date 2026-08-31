@@ -1,5 +1,6 @@
 import { ItemReorderEventDetail } from "@ionic/core";
 import { IonLabel, IonList, IonReorderGroup, IonSegment, IonSegmentButton } from "@ionic/react";
+import { fileTrayStackedOutline } from "ionicons/icons";
 import React from "react";
 import {
     useMoveSection,
@@ -9,10 +10,10 @@ import {
     useStoreSections,
 } from "../../db/hooks";
 import type { StoreSection } from "../../db/types";
+import TabEmptyState from "../shared/TabEmptyState";
 import { AisleItem } from "./AisleItem";
 import { AisleSectionListSkeleton } from "./AisleSectionListSkeleton";
 import { DeleteConfirmationAlert } from "./DeleteConfirmationAlert";
-import { EmptyState } from "./EmptyState";
 import { EntityFormModal } from "./EntityFormModal";
 import { SectionItem } from "./SectionItem";
 import { ReorderMode, useStoreManagement } from "./StoreManagementContext";
@@ -161,7 +162,11 @@ const AisleSectionList: React.FC = () => {
     if (!aisles || !sections || (aisles.length === 0 && sections.length === 0)) {
         return (
             <>
-                <EmptyState />
+                <TabEmptyState
+                    icon={fileTrayStackedOutline}
+                    title="No layout yet"
+                    body="This store has no aisles. Tap + to organize it properly."
+                />
                 <EntityFormModal />
                 <DeleteConfirmationAlert />
             </>

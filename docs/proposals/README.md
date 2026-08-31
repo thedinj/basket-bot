@@ -9,12 +9,12 @@ These came out of a review of the shopping list feature (Aug 2026) plus analysis
 
 ## Tasks
 
-| # | Task | Status | Depends on |
-| - | ---- | ------ | ---------- |
-| 1 | [Location picker rewrite](./01-location-picker-rewrite.md) | Not started | — |
-| 2 | [Item editor modal rearrangement](./02-item-editor-modal-rearrangement.md) | Not started | #1 |
-| 3 | [Shopping list swipe actions](./03-shopping-list-swipe-actions.md) | Not started | #2 (shares `SnoozeChips`) |
-| 4 | [Trip progress indicator](./04-trip-progress-indicator.md) | Not started | — |
+| #   | Task                                                                       | Status      | Depends on                |
+| --- | -------------------------------------------------------------------------- | ----------- | ------------------------- |
+| 1   | [Location picker rewrite](./01-location-picker-rewrite.md)                 | Not started | —                         |
+| 2   | [Item editor modal rearrangement](./02-item-editor-modal-rearrangement.md) | Not started | #1                        |
+| 3   | [Shopping list swipe actions](./03-shopping-list-swipe-actions.md)         | Not started | #2 (shares `SnoozeChips`) |
+| 4   | [Trip progress indicator](./04-trip-progress-indicator.md)                 | Not started | —                         |
 
 ## Shared work between tasks
 
@@ -41,7 +41,7 @@ From [`CLAUDE.md`](../../CLAUDE.md) and `.github/copilot-instructions.md`:
 - **Query keys**: always build via the `queryKeys` factory in
   [`apps/mobile/src/db/queryKeys.ts`](../../apps/mobile/src/db/queryKeys.ts). Never
   hand-write a raw key array.
-- **Cache invalidation**: every mutation must invalidate the exact key of *every* query
+- **Cache invalidation**: every mutation must invalidate the exact key of _every_ query
   surfacing the changed data. See
   [`apps/mobile/docs/CACHE_KEYS.md`](../../apps/mobile/docs/CACHE_KEYS.md) and keep it
   updated in the same change.

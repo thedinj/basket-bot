@@ -26,7 +26,7 @@ off — use `activeItems`, so the denominator matches what the user can actually
 **Make it attractive.** This is the one place in this batch where flourish is wanted:
 
 - **Fill transition** — animate `width` (or better, `transform: scaleX()` for compositing)
-  with a soft ease-out, ~400ms. Every check-off should visibly *advance* the bar, not
+  with a soft ease-out, ~400ms. Every check-off should visibly _advance_ the bar, not
   teleport it.
 - **Glow** — a `box-shadow` bloom in the fill color, intensity scaling with progress, so
   the bar gets subtly brighter as the trip nears completion.
@@ -78,7 +78,7 @@ scroll for free. `ShoppingList.tsx` passes the computed value.
 
 - [ ] The bar adds no more than ~2px of vertical height and never pushes list content down
       noticeably.
-- [ ] Progress reflects checked / total among *visible* (non-snoozed, unless shown) items.
+- [ ] Progress reflects checked / total among _visible_ (non-snoozed, unless shown) items.
 - [ ] The fill animates smoothly on each check-off rather than jumping.
 - [ ] Glow, gradient travel, and shimmer are present and look deliberate — not a plain
       flat bar.

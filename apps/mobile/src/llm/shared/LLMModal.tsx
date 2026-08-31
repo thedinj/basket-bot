@@ -321,7 +321,9 @@ export const LLMModal: React.FC = () => {
                                                 slot="end"
                                                 fill="outline"
                                                 size="small"
-                                                onClick={() => handleCameraPhoto(CameraSource.Camera)}
+                                                onClick={() =>
+                                                    handleCameraPhoto(CameraSource.Camera)
+                                                }
                                             >
                                                 <IonIcon icon={camera} slot="start" />
                                                 Camera
@@ -330,7 +332,9 @@ export const LLMModal: React.FC = () => {
                                                 slot="end"
                                                 fill="outline"
                                                 size="small"
-                                                onClick={() => handleCameraPhoto(CameraSource.Photos)}
+                                                onClick={() =>
+                                                    handleCameraPhoto(CameraSource.Photos)
+                                                }
                                             >
                                                 <IonIcon icon={attach} slot="start" />
                                                 Gallery

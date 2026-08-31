@@ -1,3 +1,4 @@
+import { NotFoundError } from "@basket-bot/core";
 import { withAuth } from "@/lib/auth/withAuth";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import { getUserById } from "@/lib/repos/userRepo";
@@ -9,10 +10,7 @@ export const GET = withAuth(async (req) => {
         const user = getUserById(req.auth.sub);
 
         if (!user) {
-            return NextResponse.json(
-                { code: "USER_NOT_FOUND", message: "User not found" },
-                { status: 404 }
-            );
+            throw new NotFoundError("User not found");
         }
 
         return NextResponse.json({

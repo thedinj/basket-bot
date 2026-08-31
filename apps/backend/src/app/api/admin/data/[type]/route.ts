@@ -1,3 +1,4 @@
+import { ValidationError } from "@basket-bot/core";
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
 import { db } from "@/lib/db/db";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
@@ -68,10 +69,7 @@ export const GET = withAuth(
                     break;
 
                 default:
-                    return NextResponse.json(
-                        { code: "INVALID_TYPE", message: "Invalid data type" },
-                        { status: 400 }
-                    );
+                    throw new ValidationError("Invalid data type");
             }
 
             return NextResponse.json({ data, columns, type });

@@ -59,7 +59,8 @@ export function transformAutoCategorizeResult(
     let sectionId: string | null = null;
     if (result.sectionName) {
         const section = sections.find(
-            (s) => s.aisleId === aisle.id && s.name.toLowerCase() === result.sectionName!.toLowerCase()
+            (s) =>
+                s.aisleId === aisle.id && s.name.toLowerCase() === result.sectionName!.toLowerCase()
         );
         sectionId = section?.id || null;
     }

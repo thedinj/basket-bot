@@ -1,7 +1,7 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeService from "@/lib/services/storeService";
-import { updateStoreRequestSchema } from "@basket-bot/core";
+import { NotFoundError, updateStoreRequestSchema } from "@basket-bot/core";
 import { NextResponse } from "next/server";
 
 /**
@@ -17,10 +17,7 @@ async function handleGet(
         const store = storeService.getStoreById(storeId, req.auth.sub);
 
         if (!store) {
-            return NextResponse.json(
-                { code: "STORE_NOT_FOUND", message: "Store not found" },
-                { status: 404 }
-            );
+            throw new NotFoundError("Store not found");
         }
 
         return NextResponse.json({ store });
@@ -49,10 +46,7 @@ async function handlePut(
         });
 
         if (!store) {
-            return NextResponse.json(
-                { code: "STORE_NOT_FOUND", message: "Store not found" },
-                { status: 404 }
-            );
+            throw new NotFoundError("Store not found");
         }
 
         return NextResponse.json({ store });
@@ -74,10 +68,7 @@ async function handleDelete(
         const success = storeService.deleteStore(storeId, req.auth.sub);
 
         if (!success) {
-            return NextResponse.json(
-                { code: "STORE_NOT_FOUND", message: "Store not found" },
-                { status: 404 }
-            );
+            throw new NotFoundError("Store not found");
         }
 
         return NextResponse.json({ success: true });

@@ -13,7 +13,7 @@ Name → Quantity → Unit → Aisle → Section → [Unsure][Incognito] → Sno
 ```
 
 The ordering does not match how the fields are actually used. Notes — the only field that
-requires the user to *think*, and the one most often filled on manual entry — is dead last
+requires the user to _think_, and the one most often filled on manual entry — is dead last
 and is a single-line `IonInput` that visibly truncates real content. Quantity and Unit each
 occupy a full row despite being used on 2 of 13 manual items, and Unit additionally costs a
 searchable sub-modal. Snooze occupies a premium row above Notes and is used on nothing.
@@ -38,16 +38,16 @@ SELECT CASE WHEN fromRecipe = 1 THEN 'recipe-added' ELSE 'manual' END AS source,
 FROM tagged GROUP BY 1;
 ```
 
-| Source | n | qty | unit | notes | unsure | private |
-| ------ | -: | --: | ---: | ----: | -----: | ------: |
-| Recipe-added | 22 | 100% | 82% | 100% (machine-written) | 23% | 5% |
-| **Manual** | 13 | **15%** | **15%** | **23%** | 8% | 8% |
+| Source       |   n |     qty |    unit |                  notes | unsure | private |
+| ------------ | --: | ------: | ------: | ---------------------: | -----: | ------: |
+| Recipe-added |  22 |    100% |     82% | 100% (machine-written) |    23% |      5% |
+| **Manual**   |  13 | **15%** | **15%** |                **23%** |     8% |      8% |
 
 Key points:
 
 - **Raw notes fill rate is 71%, but that collapses to 23% once machine-written recipe
   names are excluded.** Only three notes in the whole database were written by a human:
-  *"For Clara/kiddie cocktails"*, *"Ripe, not green"*, *"Cookout foods"*. Notes is still
+  _"For Clara/kiddie cocktails"_, _"Ripe, not green"_, _"Cookout foods"_. Notes is still
   used more than qty or unit on manual entry, and it is the only field requiring thought —
   so it earns promotion, just not as dramatically as the raw number suggests.
 - **The longest note is 45 characters** ("Baked stuffed brie with cranberries & walnuts").

@@ -72,27 +72,9 @@ export function getHouseholdWithMembers(householdId: string): HouseholdWithMembe
     const household = getHouseholdById(householdId);
     if (!household) return null;
 
-    const memberRows = db
-        .prepare(
-            `SELECT hm.id, hm.userId, hm.createdAt, u.name as userName, u.email as userEmail
-             FROM HouseholdMember hm
-             JOIN User u ON hm.userId = u.id
-             WHERE hm.householdId = ?
-             ORDER BY hm.createdAt ASC`
-        )
-        .all(householdId) as Array<Omit<HouseholdMemberDetail, "createdAt"> & { createdAt: string }>;
-
-    const members: HouseholdMemberDetail[] = memberRows.map((row) => ({
-        id: row.id,
-        userId: row.userId,
-        userName: row.userName,
-        userEmail: row.userEmail,
-        createdAt: new Date(row.createdAt),
-    }));
-
     return {
         ...household,
-        members,
+        members: getHouseholdMembers(householdId),
     };
 }
 
@@ -201,7 +183,9 @@ export function getHouseholdMembers(householdId: string): HouseholdMemberDetail[
              WHERE hm.householdId = ?
              ORDER BY hm.createdAt ASC`
         )
-        .all(householdId) as Array<Omit<HouseholdMemberDetail, "createdAt"> & { createdAt: string }>;
+        .all(householdId) as Array<
+        Omit<HouseholdMemberDetail, "createdAt"> & { createdAt: string }
+    >;
 
     return rows.map((row) => ({
         id: row.id,

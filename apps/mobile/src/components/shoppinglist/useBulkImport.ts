@@ -124,9 +124,7 @@ export function useBulkImport(storeId: string) {
                 });
 
                 if (successCount > 0) {
-                    showSuccess(
-                        `Added ${pluralize("item", successCount, true)} to your cart`
-                    );
+                    showSuccess(`Added ${pluralize("item", successCount, true)} to your cart`);
                 }
 
                 if (errorCount > 0) {

@@ -16,9 +16,7 @@ export interface BulkImportResponse {
 /**
  * Validates the LLM response for bulk import
  */
-export function validateBulkImportResult(
-    data: unknown
-): data is BulkImportResponse {
+export function validateBulkImportResult(data: unknown): data is BulkImportResponse {
     if (typeof data !== "object" || data === null) {
         return false;
     }

@@ -25,13 +25,16 @@ import {
     closeOutline,
     eyeOffOutline,
     reorderThreeOutline,
+    storefrontOutline,
     swapVerticalOutline,
 } from "ionicons/icons";
 import { useCallback, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useCreateStore, useReorderStores, useStores } from "../../db/hooks";
+import { sortStoresByPreference } from "../../utils/storeSort";
 import { useAppHeader } from "../layout/useAppHeader";
+import TabEmptyState from "../shared/TabEmptyState";
 import StoreManagementModal from "./StoreManagementModal";
 
 import "./StoreListModal.scss";
@@ -107,17 +110,7 @@ const StoreListModal: React.FC = () => {
 
     // Sort stores by the user's custom order (unordered stores fall back to alphabetical).
     // This mirrors the shopping-list tab bar so dragging here is WYSIWYG.
-    const sortedStores = useMemo(() => {
-        if (!stores) return [];
-        return [...stores].sort((a, b) => {
-            const aOrder = a.sortOrder ?? null;
-            const bOrder = b.sortOrder ?? null;
-            if (aOrder !== null && bOrder !== null) return aOrder - bOrder;
-            if (aOrder !== null) return -1;
-            if (bOrder !== null) return 1;
-            return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
-        });
-    }, [stores]);
+    const sortedStores = useMemo(() => sortStoresByPreference(stores ?? []), [stores]);
 
     const handleReorder = useCallback(
         (event: ItemReorderCustomEvent) => {
@@ -146,9 +139,7 @@ const StoreListModal: React.FC = () => {
                                 <IonButton
                                     onClick={() => setReorderMode((prev) => !prev)}
                                     color={reorderMode ? "primary" : undefined}
-                                    aria-label={
-                                        reorderMode ? "Done reordering" : "Reorder stores"
-                                    }
+                                    aria-label={reorderMode ? "Done reordering" : "Reorder stores"}
                                     aria-pressed={reorderMode}
                                 >
                                     <IonIcon
@@ -179,23 +170,18 @@ const StoreListModal: React.FC = () => {
                             ))}
                         </IonList>
                     ) : !stores?.length ? (
-                        <div
-                            style={{
-                                textAlign: "center",
-                                marginTop: "40px",
-                                padding: "20px",
-                            }}
-                        >
-                            <IonText color="medium">
-                                <p>
-                                    No stores configured. Add one to begin optimizing your shopping.
-                                </p>
-                            </IonText>
-                            <IonButton onClick={openCreateModal} style={{ marginTop: "16px" }}>
-                                <IonIcon icon={add} slot="start" />
-                                Create Your First Store
-                            </IonButton>
-                        </div>
+                        <TabEmptyState
+                            variant="full"
+                            icon={storefrontOutline}
+                            title="No stores configured"
+                            body="Add one to begin optimizing your shopping."
+                            action={
+                                <IonButton onClick={openCreateModal}>
+                                    <IonIcon icon={add} slot="start" />
+                                    Create Your First Store
+                                </IonButton>
+                            }
+                        />
                     ) : (
                         <>
                             {reorderMode && (

@@ -35,7 +35,10 @@ export const normalizeItemName = (name: string): string => {
  * Removes punctuation, singularizes, and lowercases.
  */
 const normalizeUnit = (unit: string): string =>
-    pluralize.singular(unit.replace(/[^\w\s]/g, "")).toLowerCase().trim();
+    pluralize
+        .singular(unit.replace(/[^\w\s]/g, ""))
+        .toLowerCase()
+        .trim();
 
 /**
  * Matches a raw unit string against known units and returns the matching unit ID,

@@ -1,6 +1,7 @@
 import type { StoreAisle } from "@basket-bot/core";
 import { db } from "../db/db";
 import { normalizeItemName } from "../utils/stringUtils";
+import { applySortOrders, readMaxSortOrder } from "./sortOrderQueries";
 
 /**
  * Repository for StoreAisle entity operations.
@@ -117,13 +118,7 @@ export function updateAisleSortOrder(params: {
 }
 
 export function reorderAisles(updates: Array<{ id: string; sortOrder: number }>): void {
-    const stmt = db.prepare(`UPDATE StoreAisle SET sortOrder = ? WHERE id = ?`);
-
-    db.transaction(() => {
-        for (const update of updates) {
-            stmt.run(update.sortOrder, update.id);
-        }
-    })();
+    applySortOrders(db.prepare(`UPDATE StoreAisle SET sortOrder = ? WHERE id = ?`), updates);
 }
 
 export function deleteAisle(id: string): boolean {
@@ -132,9 +127,8 @@ export function deleteAisle(id: string): boolean {
 }
 
 export function getMaxSortOrder(storeId: string): number {
-    const row = db
-        .prepare(`SELECT MAX(sortOrder) as maxOrder FROM StoreAisle WHERE storeId = ?`)
-        .get(storeId) as { maxOrder: number | null };
-
-    return row.maxOrder ?? -1;
+    return readMaxSortOrder(
+        db.prepare(`SELECT MAX(sortOrder) as maxOrder FROM StoreAisle WHERE storeId = ?`),
+        storeId
+    );
 }

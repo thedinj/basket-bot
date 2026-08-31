@@ -11,6 +11,7 @@ See `.github/copilot-instructions.md` for comprehensive coding conventions.
 ## Common Commands
 
 **Root-level (run from repo root via Turbo):**
+
 ```bash
 pnpm dev          # Start all apps in dev mode
 pnpm build        # Build all apps
@@ -22,6 +23,7 @@ pnpm clean        # Clean all builds and node_modules
 ```
 
 **Backend only (`apps/backend/`):**
+
 ```bash
 pnpm dev              # Next.js dev server (port 3000)
 pnpm build && pnpm start  # Production
@@ -32,6 +34,7 @@ pnpm db:seed          # Seed database
 ```
 
 **Mobile only (`apps/mobile/`):**
+
 ```bash
 pnpm dev              # Vite dev server (port 8100)
 pnpm build:prod       # Production build (CAP_DEV_SERVER=false)
@@ -41,6 +44,7 @@ pnpm cap:sync:prod    # Sync Capacitor for production
 ```
 
 **Core package (`packages/core/`):**
+
 ```bash
 pnpm test             # Vitest unit tests
 pnpm build            # Compile TypeScript to dist/
@@ -48,6 +52,7 @@ pnpm dev              # Watch mode
 ```
 
 **Run a single test file:**
+
 ```bash
 cd packages/core && pnpm vitest run src/schemas/mySchema.test.ts
 ```
@@ -102,7 +107,7 @@ This applies to `useQuery`/`useSuspenseQuery`/`useInfiniteQuery` and every
 well as `RefreshConfig queryKeys` / `refresh([...])`.
 
 **Cache invalidation contract (avoids stale-data bugs):** every mutation must
-`invalidateQueries` the exact key of *every* query that surfaces the changed data, not
+`invalidateQueries` the exact key of _every_ query that surfaces the changed data, not
 just the obvious one. Query keys are an exact kebab-case vocabulary (e.g.
 `queryKeys.shoppingListItems.byStore(storeId)` → `["shopping-list-items", storeId]`) — a
 typo silently no-ops. Gotchas: store-item edits must also invalidate the shopping list
@@ -122,9 +127,8 @@ adding a new `useMutation`/`useTanstackMutation`/`useOptimisticMutation`, just p
 `meta: { operation: "short description" }` so the global handler can build a specific
 message — do not write your own `onError: (error) => showError(...)`, that produces a
 double toast (the global handler still fires) or, if the mutation has no `onError` at
-all, historically caused *silent* failures instead. If a mutation needs to react to a
-specific error itself (e.g. an inline form field error, or a silent cache refresh on a
-404) instead of the generic toast, call `markErrorHandled(error)` from
+all, historically caused _silent_ failures instead. If a mutation needs to react to a
+specific error itself (e.g. an inline form field error, or a silent cache refresh on a 404) instead of the generic toast, call `markErrorHandled(error)` from
 `apps/mobile/src/utils/errorUtils.ts` inside its `onError` to suppress the global toast
 for that error — see `useUpdateItem` (ITEM_NAME_CONFLICT → inline field error) or
 `useToggleItemChecked` (404 → silent refresh) in
@@ -156,6 +160,7 @@ Stores have owners and collaborators. Households exist but are reserved for futu
 - Hard-deletes only; no soft-delete pattern
 
 **Schema change checklist — all three must be done together:**
+
 1. Create a new migration file in `apps/backend/src/db/migrations/`
 2. Update `apps/backend/src/db/init.ts` to reflect the new schema
 3. Update Zod schemas in `packages/core/src/schemas/` and rebuild core (`pnpm build`)
@@ -178,10 +183,15 @@ Stores have owners and collaborators. Households exist but are reserved for futu
 
 ### Formatting (`.prettierrc`)
 
-- 4-space indentation
+- 4-space indentation, no tabs
 - 100-character line width
-- No semicolons
-- Trailing commas
+- Semicolons required
+- Double quotes
+- Trailing commas where ES5 allows them (arrays, objects — not function arguments)
+- Always parenthesize arrow-function parameters
+
+Don't hand-maintain any of this — run `pnpm format`. `.prettierrc` is the source of truth;
+this list is a summary of it.
 
 ### UI
 

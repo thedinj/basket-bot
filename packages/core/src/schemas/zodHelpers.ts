@@ -2,6 +2,20 @@ import pluralize from "pluralize";
 import { z } from "zod";
 
 /**
+ * Server-controlled provenance columns carried by every auditable entity.
+ *
+ * Spread into a schema's shape (`...auditFields`). Defined once here because these four fields
+ * must stay identical across every entity — they were previously declared separately in each
+ * schema module, which is exactly the kind of drift this package exists to prevent.
+ */
+export const auditFields = {
+    createdById: z.string().uuid(),
+    updatedById: z.string().uuid(),
+    createdAt: z.string().datetime(),
+    updatedAt: z.string().datetime(),
+};
+
+/**
  * Create a Zod string schema with max length validation and custom error message
  *
  * @param maxLength - Maximum number of characters allowed

@@ -29,7 +29,7 @@ import RecipeViewSheet from "../components/meals/RecipeViewSheet";
 import RouteIngredientsContent from "../components/meals/RouteIngredientsContent";
 import ScaleFactorControl from "../components/meals/ScaleFactorControl";
 import TagChip from "../components/meals/TagChip";
-import { useQuantityUnits, useStores } from "../db/hooks";
+import { useQuantityUnits, useVisibleStores } from "../db/hooks";
 import {
     useCreatePlan,
     useDeletePlan,
@@ -223,11 +223,10 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
     const { value: defaultMealPlanStoreValue } = usePreference("default_meal_plan_store");
     const { data: recipes } = useRecipes(activeHouseholdId);
     const { data: allTags = [] } = useTags(activeHouseholdId);
-    const { data: stores } = useStores();
     const { data: units } = useQuantityUnits();
     const { showError } = useToast();
 
-    const visibleStores = useMemo(() => stores.filter((s) => !s.isHidden), [stores]);
+    const visibleStores = useVisibleStores();
     const unitMap = useMemo(
         () => new Map(units?.map((u) => [u.id, u.abbreviation]) ?? []),
         [units]

@@ -7,6 +7,4 @@ export interface ShieldContextValue {
     currentMessage: string | undefined;
 }
 
-export const ShieldContext = createContext<ShieldContextValue | undefined>(
-    undefined
-);
+export const ShieldContext = createContext<ShieldContextValue | undefined>(undefined);

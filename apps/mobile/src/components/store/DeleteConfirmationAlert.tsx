@@ -31,9 +31,7 @@ export const DeleteConfirmationAlert = () => {
         <IonAlert
             isOpen={!!deleteAlert}
             onDidDismiss={closeDeleteAlert}
-            header={`Delete ${
-                deleteAlert?.type === "aisle" ? "Aisle" : "Section"
-            }`}
+            header={`Delete ${deleteAlert?.type === "aisle" ? "Aisle" : "Section"}`}
             message={getDeleteMessage()}
             buttons={[
                 {

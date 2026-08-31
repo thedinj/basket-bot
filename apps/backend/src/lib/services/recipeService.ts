@@ -52,7 +52,11 @@ export function listRecipes(householdId: string, userId: string): RecipeWithDeta
     return recipeRepo.getRecipesWithDetailsByHousehold(householdId);
 }
 
-export function getRecipe(householdId: string, recipeId: string, userId: string): RecipeWithDetails {
+export function getRecipe(
+    householdId: string,
+    recipeId: string,
+    userId: string
+): RecipeWithDetails {
     verifyHouseholdAccess(householdId, userId);
     return getOwnedRecipeWithDetails(householdId, recipeId);
 }
@@ -177,7 +181,8 @@ export function addRecipeToShoppingList(
         }
 
         const ingredient = recipe.ingredients.find((i) => i.id === route.ingredientId)!;
-        const hasShoppingOverride = ingredient.shoppingQty !== null || ingredient.shoppingUnitId !== null;
+        const hasShoppingOverride =
+            ingredient.shoppingQty !== null || ingredient.shoppingUnitId !== null;
         const effectiveQty = hasShoppingOverride ? ingredient.shoppingQty : ingredient.qty;
         const effectiveUnitId = hasShoppingOverride ? ingredient.shoppingUnitId : ingredient.unitId;
         const scaledQty = effectiveQty != null ? roundFactor(effectiveQty * data.factor) : null;

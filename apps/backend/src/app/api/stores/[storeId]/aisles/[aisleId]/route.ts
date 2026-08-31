@@ -1,3 +1,4 @@
+import { NotFoundError, ValidationError } from "@basket-bot/core";
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeEntityService from "@/lib/services/storeEntityService";
@@ -13,10 +14,7 @@ async function handleGet(
         const aisle = aisles.find((a) => a.id === aisleId) ?? null;
 
         if (!aisle) {
-            return NextResponse.json(
-                { code: "NOT_FOUND", message: "Aisle not found" },
-                { status: 404 }
-            );
+            throw new NotFoundError("Aisle not found");
         }
 
         return NextResponse.json({ aisle });
@@ -35,10 +33,7 @@ async function handlePut(
         const name = typeof body.name === "string" ? body.name.trim() : body.name;
 
         if (!name || typeof name !== "string") {
-            return NextResponse.json(
-                { code: "INVALID_INPUT", message: "Name is required" },
-                { status: 400 }
-            );
+            throw new ValidationError("Name is required");
         }
 
         const aisle = storeEntityService.updateAisle({
@@ -49,10 +44,7 @@ async function handlePut(
         });
 
         if (!aisle) {
-            return NextResponse.json(
-                { code: "NOT_FOUND", message: "Aisle not found" },
-                { status: 404 }
-            );
+            throw new NotFoundError("Aisle not found");
         }
 
         return NextResponse.json({ aisle });
@@ -71,10 +63,7 @@ async function handlePatch(
         const { sortOrder } = body;
 
         if (typeof sortOrder !== "number") {
-            return NextResponse.json(
-                { code: "INVALID_INPUT", message: "sortOrder is required and must be a number" },
-                { status: 400 }
-            );
+            throw new ValidationError("sortOrder is required and must be a number");
         }
 
         const aisle = storeEntityService.updateAisleSortOrder({
@@ -85,10 +74,7 @@ async function handlePatch(
         });
 
         if (!aisle) {
-            return NextResponse.json(
-                { code: "NOT_FOUND", message: "Aisle not found" },
-                { status: 404 }
-            );
+            throw new NotFoundError("Aisle not found");
         }
 
         return NextResponse.json({ aisle });

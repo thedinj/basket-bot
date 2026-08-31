@@ -1,16 +1,16 @@
-import type { RecipeWithDetails } from "@basket-bot/core"
-import type { RefObject } from "react"
-import TagChip from "./TagChip"
-import "./RecipeDetailContent.scss"
+import type { RecipeWithDetails } from "@basket-bot/core";
+import type { RefObject } from "react";
+import TagChip from "./TagChip";
+import "./RecipeDetailContent.scss";
 
 interface RecipeDetailContentProps {
-    recipe: RecipeWithDetails
-    unitMap: Map<string, string>
+    recipe: RecipeWithDetails;
+    unitMap: Map<string, string>;
     // Split in two so tags (a UI-only affordance, not part of the recipe's
     // written content) can sit between them without being picked up when
     // copying the recipe as text.
-    headerRef?: RefObject<HTMLDivElement | null>
-    bodyRef?: RefObject<HTMLDivElement | null>
+    headerRef?: RefObject<HTMLDivElement | null>;
+    bodyRef?: RefObject<HTMLDivElement | null>;
 }
 
 const RecipeDetailContent: React.FC<RecipeDetailContentProps> = ({
@@ -64,6 +64,6 @@ const RecipeDetailContent: React.FC<RecipeDetailContentProps> = ({
             )}
         </div>
     </div>
-)
+);
 
-export default RecipeDetailContent
+export default RecipeDetailContent;

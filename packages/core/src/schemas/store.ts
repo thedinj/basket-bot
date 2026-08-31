@@ -8,17 +8,10 @@ import {
     MAX_UNIT_CATEGORY_LENGTH,
     MAX_UNIT_NAME_LENGTH,
 } from "../constants/index.js";
-import { maxLengthString, minMaxLengthString } from "./zodHelpers.js";
+import { auditFields, maxLengthString, minMaxLengthString } from "./zodHelpers.js";
 
 // ========== Shared Fields ==========
 // Audit fields used across multiple schemas
-const auditFields = {
-    createdById: z.string().uuid(),
-    updatedById: z.string().uuid(),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime(),
-};
-
 // ========== AppSetting ==========
 export const appSettingSchema = z.object({
     key: maxLengthString(MAX_SETTING_KEY_LENGTH, "Setting key"),

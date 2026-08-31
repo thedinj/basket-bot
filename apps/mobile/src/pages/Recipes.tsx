@@ -14,7 +14,6 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { AppHeader } from "../components/layout/AppHeader";
 import LoadingFallback from "../components/LoadingFallback";
 import { HouseholdSelect } from "../components/households/HouseholdSelect";
-import MealsEmptyState from "../components/meals/MealsEmptyState";
 import RecipeCard from "../components/meals/RecipeCard";
 import RecipeEditorModal, { type RecipeInitialData } from "../components/meals/RecipeEditorModal";
 import RecipeFilterSheet, {
@@ -28,6 +27,7 @@ import RouteIngredientsModal from "../components/meals/RouteIngredientsModal";
 import { useRecipeImportModal } from "../components/meals/useRecipeImportModal";
 import { FabSpacer } from "../components/shared/FabSpacer";
 import PullToRefresh from "../components/shared/PullToRefresh";
+import TabEmptyState from "../components/shared/TabEmptyState";
 import { useShield } from "../components/shield/useShield";
 import { useStores } from "../db/hooks";
 import {
@@ -156,7 +156,7 @@ const RecipesList: React.FC<{
 
     if (recipes?.length === 0) {
         return (
-            <MealsEmptyState
+            <TabEmptyState
                 icon={restaurantOutline}
                 title="No recipes yet"
                 body="Add a recipe. The planner needs something to work with."
@@ -263,7 +263,7 @@ const RecipesList: React.FC<{
             )}
 
             {filtered.length === 0 ? (
-                <MealsEmptyState
+                <TabEmptyState
                     body={`No recipes match${search.trim() ? ` "${search.trim()}"` : ""}${activeFilterCount > 0 ? " with the active filters." : "."}`}
                 />
             ) : (

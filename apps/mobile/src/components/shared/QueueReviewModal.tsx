@@ -12,11 +12,12 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { closeOutline, trashOutline } from "ionicons/icons";
+import { closeOutline, cloudDoneOutline, trashOutline } from "ionicons/icons";
 import { useState } from "react";
 import { useToast } from "../../hooks/useToast";
 import type { QueuedMutation } from "../../lib/mutationQueue";
 import { mutationQueue } from "../../lib/mutationQueue";
+import TabEmptyState from "./TabEmptyState";
 import "./QueueReviewModal.scss";
 
 interface QueueReviewModalProps {
@@ -89,11 +90,12 @@ const QueueReviewModal: React.FC<QueueReviewModalProps> = ({ isOpen, onClose }) 
             </IonHeader>
             <IonContent>
                 {queue.length === 0 ? (
-                    <div className="queue-empty">
-                        <IonText color="medium">
-                            <p>No pending changes</p>
-                        </IonText>
-                    </div>
+                    <TabEmptyState
+                        variant="full"
+                        icon={cloudDoneOutline}
+                        title="Nothing pending"
+                        body="Every change made it through. Nothing is waiting on the network."
+                    />
                 ) : (
                     <>
                         <div className="queue-header">

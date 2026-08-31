@@ -1,5 +1,5 @@
-import "./PantryBadge.scss"
+import "./PantryBadge.scss";
 
-const PantryBadge: React.FC = () => <span className="pantry-badge">pantry</span>
+const PantryBadge: React.FC = () => <span className="pantry-badge">pantry</span>;
 
-export default PantryBadge
+export default PantryBadge;

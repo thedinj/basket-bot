@@ -1,16 +1,14 @@
 import StoreItemsManagementModal from "@/components/store/StoreItemsManagementModal";
 import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
+import { IonContent, IonFab, IonFabButton, IonIcon, IonPage, useIonAlert } from "@ionic/react";
 import {
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonIcon,
-    IonPage,
-    IonText,
-    useIonAlert,
-} from "@ionic/react";
-import { add, helpCircle, helpCircleOutline, listOutline } from "ionicons/icons";
-import pluralize from "pluralize";
+    add,
+    checkmarkDoneOutline,
+    helpCircle,
+    helpCircleOutline,
+    listOutline,
+    storefrontOutline,
+} from "ionicons/icons";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ANIMATION_EFFECTS } from "../animations/effects";
 import { AppHeader } from "../components/layout/AppHeader";
@@ -20,6 +18,7 @@ import LoadingFallback from "../components/LoadingFallback";
 import { FabSpacer } from "../components/shared/FabSpacer";
 import { OverlayAnimation } from "../components/shared/OverlayAnimation";
 import PullToRefresh from "../components/shared/PullToRefresh";
+import TabEmptyState from "../components/shared/TabEmptyState";
 import { useBulkImportModal } from "../components/shoppinglist/BulkImportModal";
 import { CheckedItems } from "../components/shoppinglist/CheckedItems";
 import { ItemEditorModal } from "../components/shoppinglist/ItemEditorModal";
@@ -28,15 +27,20 @@ import ShoppingListSkeleton from "../components/shoppinglist/ShoppingListSkeleto
 import { StoreSelector } from "../components/shoppinglist/StoreSelector";
 import { UncheckedItems } from "../components/shoppinglist/UncheckedItems";
 import { useShoppingListContext } from "../components/shoppinglist/useShoppingListContext";
-import { useClearCheckedItems, useShoppingListItems, useStores } from "../db/hooks";
+import {
+    useClearCheckedItems,
+    useShoppingListItems,
+    useShoppingListItemsIfLoaded,
+    useStores,
+} from "../db/hooks";
 import { queryKeys } from "../db/queryKeys";
 import RefreshConfig from "../hooks/refresh/RefreshConfig";
-import { useMidnightUpdate } from "../hooks/useMidnightUpdate";
 import { useOverlayAnimation } from "../hooks/useOverlayAnimation";
 import { useShowSnoozedItems } from "../hooks/useShowSnoozedItems";
 import { useShowUnsureItems } from "../hooks/useShowUnsureItems";
+import { useSnoozePartition } from "../hooks/useSnoozePartition";
 import { LLMFabButton } from "../llm/shared";
-import { isCurrentlySnoozed } from "../utils/dateUtils";
+import { computeTripProgress, isPendingUnsure } from "../utils/shoppingListDerivations";
 
 import "./ShoppingList.scss";
 
@@ -46,69 +50,205 @@ const KEEP_AWAKE_BUTTON_ENABLED = false;
 
 const SHOW_UNSURE_ONLY_FILTER: boolean = false;
 
-interface ShoppingListHeaderExtrasProps {
+interface ShoppingListBodyProps {
     storeId: string;
     showSnoozed: boolean;
-    toggleShowSnoozed: () => void;
     showUnsureOnly: boolean;
-    toggleShowUnsureOnly: () => void;
-    onProgressChange: (progress: number | null) => void;
-    onActionsChange: (actions: GlobalActionConfig[]) => void;
 }
 
-/**
- * The header pieces that need item data (trip progress, the snoozed-items toggle). Rendered
- * inside its own Suspense boundary with a `null` fallback so the rest of AppHeader (title,
- * StoreSelector, the always-available quick-add button) never has to wait on it — this is
- * exactly what let the header disappear entirely behind the list skeleton before. Reports its
- * computed actions up via `onActionsChange` rather than rendering its own `GlobalActions`, so
- * the header only ever mounts one `GlobalActions` (and therefore one sync/failure icon).
- */
-const ShoppingListHeaderExtras: React.FC<ShoppingListHeaderExtrasProps> = ({
+const ShoppingListBody: React.FC<ShoppingListBodyProps> = ({
     storeId,
     showSnoozed,
-    toggleShowSnoozed,
     showUnsureOnly,
-    toggleShowUnsureOnly,
-    onProgressChange,
-    onActionsChange,
 }) => {
+    const { openCreateModal } = useShoppingListContext();
     const { data: items } = useShoppingListItems(storeId);
+    const clearChecked = useClearCheckedItems();
+    const [presentAlert] = useIonAlert();
+    const [wasJustCleared, setWasJustCleared] = useState(false);
 
-    const hasItemsWithSnoozeUntil = useMemo(
-        () => items.some((item) => item.snoozedUntil !== null),
-        [items]
-    );
-    const currentDate = useMidnightUpdate(hasItemsWithSnoozeUntil);
+    // Laser obliteration animation
+    const {
+        trigger: triggerLaser,
+        isActive: isObliterating,
+        cssClass,
+    } = useOverlayAnimation(ANIMATION_EFFECTS.LASER_OBLITERATION);
 
-    const currentlySnoozedItemCount = useMemo(() => {
-        return items.filter((item) => isCurrentlySnoozed(item.snoozedUntil)).length;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [items, currentDate]);
+    const { openBulkImport } = useBulkImportModal(storeId);
 
-    const activeItems = useMemo(() => {
-        if (showSnoozed) return items;
-        return items.filter((item) => !isCurrentlySnoozed(item.snoozedUntil));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [items, showSnoozed, currentDate]);
+    const { activeItems } = useSnoozePartition(items, showSnoozed);
+
+    const [hasTriggeredClear, setHasTriggeredClear] = useState(false);
+    const obliterationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // This component is keyed by storeId (see ShoppingListShell), so a store switch remounts it
+    // and resets the clear/obliteration state for free — no explicit per-storeId reset needed.
+    // What a remount does *not* do is cancel the outgoing instance's pending obliteration, whose
+    // callback still holds the old storeId and would clear that store's checked items ~1s later.
+    useEffect(() => {
+        return () => {
+            if (obliterationTimeoutRef.current) {
+                clearTimeout(obliterationTimeoutRef.current);
+                obliterationTimeoutRef.current = null;
+            }
+        };
+    }, []);
 
     const uncheckedItems = useMemo(
         () => activeItems.filter((item) => !item.isChecked),
         [activeItems]
     );
     const checkedItems = activeItems.filter((item) => item.isChecked);
-    const unsureCount = useMemo(
-        () => uncheckedItems.filter((item) => item.isUnsure).length,
-        [uncheckedItems]
+
+    const displayedUncheckedItems = showUnsureOnly
+        ? uncheckedItems.filter(isPendingUnsure)
+        : uncheckedItems;
+
+    // Reset clear flag when checked items are actually gone
+    if (hasTriggeredClear && checkedItems.length === 0) {
+        setHasTriggeredClear(false);
+    }
+
+    const confirmClearChecked = useCallback(async () => {
+        // Trigger laser animation
+        await triggerLaser();
+
+        // Clear items when forward beam finishes (~1s), independent of full animation duration
+        obliterationTimeoutRef.current = setTimeout(() => {
+            setHasTriggeredClear(true);
+            setWasJustCleared(true);
+            clearChecked.mutate({ storeId });
+            obliterationTimeoutRef.current = null;
+        }, 1000);
+    }, [clearChecked, storeId, triggerLaser]);
+
+    const handleClearChecked = useCallback(() => {
+        presentAlert({
+            header: "Obliterate Checked Items?",
+            message: "Clear all checked items? If you're certain you're done with them.",
+            buttons: [
+                {
+                    text: "Cancel",
+                    role: "cancel",
+                },
+                {
+                    text: "Obliterate",
+                    role: "destructive",
+                    handler: confirmClearChecked,
+                },
+            ],
+        });
+    }, [presentAlert, confirmClearChecked]);
+
+    return (
+        <IonContent fullscreen className="shopping-list-content">
+            <PullToRefresh />
+            {activeItems.length === 0 &&
+                (wasJustCleared ? (
+                    <TabEmptyState
+                        icon={checkmarkDoneOutline}
+                        title="Acquisition complete"
+                        body="No remaining targets detected. Go enjoy the illusion of control."
+                    />
+                ) : (
+                    <TabEmptyState
+                        icon={listOutline}
+                        title="Nothing to acquire"
+                        body="Your list is empty. Tap + to add items, if your memory permits."
+                    />
+                ))}
+
+            {activeItems.length > 0 && (
+                <>
+                    {showUnsureOnly && (
+                        <div className="unsure-filter-banner">Showing unsure items only</div>
+                    )}
+                    {showUnsureOnly && displayedUncheckedItems.length === 0 ? (
+                        <TabEmptyState
+                            icon={helpCircleOutline}
+                            title="Nothing unsure"
+                            body="No unsure items left to reconcile. Suspiciously tidy."
+                        />
+                    ) : (
+                        <UncheckedItems items={displayedUncheckedItems} />
+                    )}
+                    {!hasTriggeredClear && (
+                        <CheckedItems
+                            items={checkedItems}
+                            onClearChecked={handleClearChecked}
+                            isClearing={clearChecked.isPending}
+                            isFadingOut={isObliterating}
+                        />
+                    )}
+                </>
+            )}
+
+            {/* Overlay animation */}
+            <OverlayAnimation cssClass={cssClass} />
+
+            <FabSpacer />
+
+            {/* Add Item FAB */}
+            <IonFab vertical="bottom" horizontal="end" slot="fixed">
+                <IonFabButton color="primary" onClick={openCreateModal}>
+                    <IonIcon icon={add} />
+                </IonFabButton>
+            </IonFab>
+
+            {/* Bulk Import FAB */}
+            <IonFab vertical="bottom" horizontal="end" slot="fixed" className="bulk-import-fab">
+                <LLMFabButton onClick={openBulkImport} />
+            </IonFab>
+
+            <ItemEditorModal storeId={storeId} />
+        </IonContent>
     );
-    const tripProgress = activeItems.length > 0 ? checkedItems.length / activeItems.length : null;
+};
 
-    useEffect(() => {
-        onProgressChange(tripProgress);
-    }, [tripProgress, onProgressChange]);
+interface ShoppingListShellProps {
+    storeId: string;
+}
 
-    const actions = useMemo<GlobalActionConfig[]>(() => {
-        const result: GlobalActionConfig[] = [];
+/**
+ * Header/toolbar/FAB shell for a selected store — never itself suspends, so it (and the store
+ * selector) stay visible while ShoppingListBody's own Suspense boundary shows the list skeleton
+ * for a not-yet-loaded store.
+ *
+ * The header's snoozed-items toggle and progress line derive from the list data *here*, during
+ * this component's own render, via a non-suspending read of the same query cache the body uses
+ * (`useShoppingListItemsIfLoaded`). Earlier versions instead had a child inside the boundary
+ * compute these and report them upward through callbacks; that repeatedly produced a missing
+ * snoozed toggle, because a child's write and this component's reset could land in either order
+ * depending on whether the store's items happened to be cached. Deriving during render removes
+ * the ordering question entirely — there is no cross-component state transfer left to race.
+ * Keep it that way: don't reintroduce an onActionsChange-style callback from the body.
+ */
+const ShoppingListShell: React.FC<ShoppingListShellProps> = ({ storeId }) => {
+    const { data: stores } = useStores();
+    const multipleStores = stores && stores.length > 1;
+    const { showSnoozed, toggleShowSnoozed } = useShowSnoozedItems();
+    const { showUnsureOnly, toggleShowUnsureOnly } = useShowUnsureItems();
+    const [isStoreItemsModalOpen, setIsStoreItemsModalOpen] = useState(false);
+
+    // Same cache entry the body reads, minus the suspending — `[]` until it lands.
+    const items = useShoppingListItemsIfLoaded(storeId);
+
+    const { currentlySnoozedItemCount, activeItems } = useSnoozePartition(items, showSnoozed);
+
+    const tripProgress = useMemo(() => computeTripProgress(activeItems), [activeItems]);
+
+    const unsureCount = useMemo(() => activeItems.filter(isPendingUnsure).length, [activeItems]);
+
+    const headerActions = useMemo<GlobalActionConfig[]>(() => {
+        const result: GlobalActionConfig[] = [
+            {
+                id: "quick-add-store-items",
+                icon: listOutline,
+                title: "Quick add store items",
+                ariaLabel: "Open store items quick-add modal",
+                onClick: () => setIsStoreItemsModalOpen(true),
+            },
+        ];
 
         // Snoozed items toggle (conditional)
         if (currentlySnoozedItemCount > 0) {
@@ -156,236 +296,6 @@ const ShoppingListHeaderExtras: React.FC<ShoppingListHeaderExtrasProps> = ({
         toggleShowUnsureOnly,
     ]);
 
-    useEffect(() => {
-        onActionsChange(actions);
-    }, [actions, onActionsChange]);
-
-    return null;
-};
-
-interface ShoppingListBodyProps {
-    storeId: string;
-    showSnoozed: boolean;
-    showUnsureOnly: boolean;
-}
-
-const ShoppingListBody: React.FC<ShoppingListBodyProps> = ({
-    storeId,
-    showSnoozed,
-    showUnsureOnly,
-}) => {
-    const { openCreateModal } = useShoppingListContext();
-    const { data: items } = useShoppingListItems(storeId);
-    const clearChecked = useClearCheckedItems();
-    const [presentAlert] = useIonAlert();
-    const [wasJustCleared, setWasJustCleared] = useState(false);
-
-    // Laser obliteration animation
-    const {
-        trigger: triggerLaser,
-        isActive: isObliterating,
-        cssClass,
-    } = useOverlayAnimation(ANIMATION_EFFECTS.LASER_OBLITERATION);
-
-    const { openBulkImport } = useBulkImportModal(storeId);
-
-    // Check if there are any snoozed items (enable midnight updates only if needed)
-    const hasItemsWithSnoozeUntil = useMemo(
-        () => items.some((item) => item.snoozedUntil !== null),
-        [items]
-    );
-    const currentDate = useMidnightUpdate(hasItemsWithSnoozeUntil);
-
-    const currentlySnoozedItemCount = useMemo(() => {
-        return items.filter((item) => isCurrentlySnoozed(item.snoozedUntil)).length;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [items, currentDate]);
-
-    const activeItems = useMemo(() => {
-        if (showSnoozed) return items;
-        return items.filter((item) => !isCurrentlySnoozed(item.snoozedUntil));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [items, showSnoozed, currentDate]);
-
-    const [hasTriggeredClear, setHasTriggeredClear] = useState(false);
-    const obliterationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    // The component now stays mounted across store switches (see ShoppingListContent), so
-    // any transient per-store UI state — and a still-pending obliteration timeout captured
-    // for the previous store — must be reset explicitly rather than relying on a remount.
-    useEffect(() => {
-        setHasTriggeredClear(false);
-        setWasJustCleared(false);
-        if (obliterationTimeoutRef.current) {
-            clearTimeout(obliterationTimeoutRef.current);
-            obliterationTimeoutRef.current = null;
-        }
-    }, [storeId]);
-
-    const uncheckedItems = useMemo(
-        () => activeItems.filter((item) => !item.isChecked),
-        [activeItems]
-    );
-    const checkedItems = activeItems.filter((item) => item.isChecked);
-
-    const displayedUncheckedItems = showUnsureOnly
-        ? uncheckedItems.filter((item) => item.isUnsure)
-        : uncheckedItems;
-
-    // Reset clear flag when checked items are actually gone
-    if (hasTriggeredClear && checkedItems.length === 0) {
-        setHasTriggeredClear(false);
-    }
-
-    const confirmClearChecked = useCallback(async () => {
-        // Trigger laser animation
-        await triggerLaser();
-
-        // Clear items when forward beam finishes (~1s), independent of full animation duration
-        obliterationTimeoutRef.current = setTimeout(() => {
-            setHasTriggeredClear(true);
-            setWasJustCleared(true);
-            clearChecked.mutate({ storeId });
-            obliterationTimeoutRef.current = null;
-        }, 1000);
-    }, [clearChecked, storeId, triggerLaser]);
-
-    const handleClearChecked = useCallback(() => {
-        presentAlert({
-            header: "Obliterate Checked Items?",
-            message: "Clear all checked items? If you're certain you're done with them.",
-            buttons: [
-                {
-                    text: "Cancel",
-                    role: "cancel",
-                },
-                {
-                    text: "Obliterate",
-                    role: "destructive",
-                    handler: confirmClearChecked,
-                },
-            ],
-        });
-    }, [presentAlert, confirmClearChecked]);
-
-    return (
-        <IonContent fullscreen className="shopping-list-content">
-            <PullToRefresh />
-            {activeItems.length === 0 && (
-                <div className="shopping-list-empty-state shopping-list-empty-state--with-fab-spacer">
-                    <IonText color="medium">
-                        <p>
-                            {wasJustCleared ? (
-                                "Acquisition complete. No remaining targets detected."
-                            ) : (
-                                <>
-                                    Your list is empty. Tap + to add items, if your memory
-                                    permits.
-                                    <br />
-                                    <br />
-                                    {currentlySnoozedItemCount > 0
-                                        ? `(${currentlySnoozedItemCount} ${pluralize("item", currentlySnoozedItemCount)} snoozed.)`
-                                        : ""}
-                                </>
-                            )}
-                        </p>
-                    </IonText>
-                </div>
-            )}
-
-            {activeItems.length > 0 && (
-                <>
-                    {showUnsureOnly && (
-                        <div className="unsure-filter-banner">Showing unsure items only</div>
-                    )}
-                    {showUnsureOnly && displayedUncheckedItems.length === 0 ? (
-                        <div className="shopping-list-empty-state shopping-list-empty-state--with-fab-spacer">
-                            <IonText color="medium">
-                                <p>No unsure items left to reconcile.</p>
-                            </IonText>
-                        </div>
-                    ) : (
-                        <UncheckedItems items={displayedUncheckedItems} />
-                    )}
-                    {!hasTriggeredClear && (
-                        <CheckedItems
-                            items={checkedItems}
-                            onClearChecked={handleClearChecked}
-                            isClearing={clearChecked.isPending}
-                            isFadingOut={isObliterating}
-                        />
-                    )}
-                </>
-            )}
-
-            {/* Overlay animation */}
-            <OverlayAnimation cssClass={cssClass} />
-
-            <FabSpacer />
-
-            {/* Add Item FAB */}
-            <IonFab vertical="bottom" horizontal="end" slot="fixed">
-                <IonFabButton color="primary" onClick={openCreateModal}>
-                    <IonIcon icon={add} />
-                </IonFabButton>
-            </IonFab>
-
-            {/* Bulk Import FAB */}
-            <IonFab vertical="bottom" horizontal="end" slot="fixed" className="bulk-import-fab">
-                <LLMFabButton onClick={openBulkImport} />
-            </IonFab>
-
-            <ItemEditorModal storeId={storeId} />
-        </IonContent>
-    );
-};
-
-interface ShoppingListShellProps {
-    storeId: string;
-}
-
-/**
- * Header/toolbar/FAB shell for a selected store — never itself suspends, so it (and the
- * store selector) stay visible while ShoppingListBody's own Suspense boundary shows the list
- * skeleton for a not-yet-loaded store.
- */
-const ShoppingListShell: React.FC<ShoppingListShellProps> = ({ storeId }) => {
-    const { data: stores } = useStores();
-    const multipleStores = stores && stores.length > 1;
-    const { showSnoozed, toggleShowSnoozed } = useShowSnoozedItems();
-    const { showUnsureOnly, toggleShowUnsureOnly } = useShowUnsureItems();
-    const [isStoreItemsModalOpen, setIsStoreItemsModalOpen] = useState(false);
-    const [tripProgress, setTripProgress] = useState<number | null>(null);
-    const [extraActions, setExtraActions] = useState<GlobalActionConfig[]>([]);
-
-    // Avoid briefly showing the previous store's progress bar / stale action buttons under
-    // the new store's header.
-    useEffect(() => {
-        setTripProgress(null);
-        setExtraActions([]);
-        setIsStoreItemsModalOpen(false);
-    }, [storeId]);
-
-    const staticActions = useMemo<GlobalActionConfig[]>(
-        () => [
-            {
-                id: "quick-add-store-items",
-                icon: listOutline,
-                title: "Quick add store items",
-                ariaLabel: "Open store items quick-add modal",
-                onClick: () => setIsStoreItemsModalOpen(true),
-            },
-        ],
-        []
-    );
-
-    // Combined with the Suspense-gated extras below so the header only ever mounts a single
-    // GlobalActions (and therefore a single sync/failure icon) rather than one per source.
-    const headerActions = useMemo<GlobalActionConfig[]>(
-        () => [...staticActions, ...extraActions],
-        [staticActions, extraActions]
-    );
-
     return (
         <RefreshConfig queryKeys={[queryKeys.shoppingListItems.byStore(storeId)]}>
             <AppHeader
@@ -394,17 +304,6 @@ const ShoppingListShell: React.FC<ShoppingListShellProps> = ({ storeId }) => {
                 progress={tripProgress}
             >
                 <GlobalActions showKeepAwake={KEEP_AWAKE_BUTTON_ENABLED} actions={headerActions} />
-                <Suspense fallback={null}>
-                    <ShoppingListHeaderExtras
-                        storeId={storeId}
-                        showSnoozed={showSnoozed}
-                        toggleShowSnoozed={toggleShowSnoozed}
-                        showUnsureOnly={showUnsureOnly}
-                        toggleShowUnsureOnly={toggleShowUnsureOnly}
-                        onProgressChange={setTripProgress}
-                        onActionsChange={setExtraActions}
-                    />
-                </Suspense>
             </AppHeader>
 
             <Suspense fallback={<ShoppingListSkeleton />}>
@@ -443,11 +342,12 @@ const ShoppingListContent: React.FC = () => {
                     subToolbar={multipleStores ? <StoreSelector /> : undefined}
                 />
                 <IonContent fullscreen className="shopping-list-content">
-                    <div className="shopping-list-empty-state">
-                        <IonText color="medium">
-                            <p>Select a store, human. I cannot assist without data.</p>
-                        </IonText>
-                    </div>
+                    <TabEmptyState
+                        variant="full"
+                        icon={storefrontOutline}
+                        title="No store selected"
+                        body="Pick a store, human. I cannot assist without data."
+                    />
                 </IonContent>
             </>
         );

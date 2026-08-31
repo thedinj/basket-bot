@@ -75,7 +75,13 @@ function disambiguateDuplicates<T extends { id: string; name: string; createdAt:
             continue;
         }
 
-        group.sort((a, b) => (a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : a.id.localeCompare(b.id)));
+        group.sort((a, b) =>
+            a.createdAt < b.createdAt
+                ? -1
+                : a.createdAt > b.createdAt
+                  ? 1
+                  : a.id.localeCompare(b.id)
+        );
 
         for (let i = 1; i < group.length; i++) {
             const row = group[i];

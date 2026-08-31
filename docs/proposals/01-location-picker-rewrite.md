@@ -10,15 +10,15 @@ Aisle and section are currently two stacked `ClickableSelectionField` rows. Thre
 are wrong with it:
 
 **Clearing a value is disproportionately painful.** To clear an aisle: tap the field →
-the modal opens and *autofocuses its searchbar, so the keyboard immediately covers half
-the list* → scroll past every option to the footer → tap "Clear Selection". Two taps plus
+the modal opens and _autofocuses its searchbar, so the keyboard immediately covers half
+the list_ → scroll past every option to the footer → tap "Clear Selection". Two taps plus
 an unwanted keyboard plus a hunt for a footer button, to erase one value.
 
 **The aisle/section coupling is a trap.** `LocationSelectors.tsx` filters the section list
 to the currently-selected aisle:
 
 ```ts
-sections?.filter((section) => !currentAisleId || section.aisleId === currentAisleId)
+sections?.filter((section) => !currentAisleId || section.aisleId === currentAisleId);
 ```
 
 So when the aisle is wrong, the section you want is **invisible**. You must clear the
@@ -48,16 +48,16 @@ SELECT s.name AS store,
 FROM Store s ORDER BY items DESC;
 ```
 
-| Store | Aisles | Sections | Orphan sections | Items |
-| ----- | -----: | -------: | --------------: | ----: |
-| Festival (Verona) | 22 | **229** | 0 | 306 |
-| Costco (Verona) | 17 | 4 | 0 | 80 |
-| HyVee (Fitchburg) | **0** | **0** | 0 | 76 |
-| Walmart (Naples) | 16 | 11 | 0 | 50 |
-| Rondeaus | 0 | 0 | 0 | 14 |
-| Home Depot | 0 | 0 | 0 | 8 |
-| Trader Joes (Naples) | 0 | 0 | 0 | 7 |
-| Admin Example Store | 8 | 2 | 0 | 4 |
+| Store                | Aisles | Sections | Orphan sections | Items |
+| -------------------- | -----: | -------: | --------------: | ----: |
+| Festival (Verona)    |     22 |  **229** |               0 |   306 |
+| Costco (Verona)      |     17 |        4 |               0 |    80 |
+| HyVee (Fitchburg)    |  **0** |    **0** |               0 |    76 |
+| Walmart (Naples)     |     16 |       11 |               0 |    50 |
+| Rondeaus             |      0 |        0 |               0 |    14 |
+| Home Depot           |      0 |        0 |               0 |     8 |
+| Trader Joes (Naples) |      0 |        0 |               0 |     7 |
+| Admin Example Store  |      8 |        2 |               0 |     4 |
 
 Design consequences, each of which the spec below depends on:
 
@@ -75,7 +75,7 @@ Design consequences, each of which the spec below depends on:
    by bare number must work.
 5. **Location coverage is poor and matters.** Only 8 of 34 active list items have an
    aisle, 3 have a section, and 131 of 545 catalog items (24%) are uncategorized — while
-   aisle grouping is the core in-store value of the app. This field needs to get *easier*,
+   aisle grouping is the core in-store value of the app. This field needs to get _easier_,
    not quieter.
 
 ## Design
@@ -128,13 +128,14 @@ Clearing rules, unchanged from current semantics:
   aisles), Walmart (11 across 16), and the example store become plain 2-tap aisle
   pickers. This is the majority of stores.
 - **Aisle with sections → tap stages that aisle (row highlights) and expands it.** Then:
-  - tapping a section commits aisle + section and closes; or
-  - tapping the pinned first child `- no section -` commits aisle-only and closes.
+    - tapping a section commits aisle + section and closes; or
+    - tapping the pinned first child `- no section -` commits aisle-only and closes.
 
-  Both paths are two taps.
+    Both paths are two taps.
+
 - **Search flattens across both levels at once.** Results list aisles and sections
   together, each section showing its aisle as a subtitle. This is what removes the
-  coupling trap: you can jump directly to a section in a *different* aisle without
+  coupling trap: you can jump directly to a section in a _different_ aisle without
   clearing anything first. Reuse the existing 4-tier match ranking in
   `ClickableSelectionModal` (starts-with label → starts-with search term → contains label
   → contains search term).
@@ -157,41 +158,45 @@ These are already correct in `LocationSelectors.tsx` — carry them over verbati
   aisle.
 - Clearing the aisle clears the section.
 
-**Normalization rule — call this out in review.** Per `CLAUDE.md`: *if an item has a
-section, the section aisle is authoritative and the item `aisle_id` is NULL.* The form
+**Normalization rule — call this out in review.** Per `CLAUDE.md`: _if an item has a
+section, the section aisle is authoritative and the item `aisle_id` is NULL._ The form
 holds both `aisleId` and `sectionId` in local state, so whatever the picker produces must
 still satisfy that rule by the time it reaches the API. Do not change the persistence
 contract in this task; just make sure the picker output does not violate it.
 
 ## Tap count acceptance targets
 
-| Action | Today | Required after |
-| ------ | ----: | -------------: |
-| Clear aisle or section | 2 + keyboard + footer hunt | **1** |
-| Pick a section in the currently-selected aisle | 2 | 2 |
-| Pick a section in a **different** aisle | 4–5 | **2** |
-| Pick an aisle that has no sections | 2 | 2 |
-| Pick an aisle that has sections, no section wanted | 2 | 2 |
+| Action                                             |                      Today | Required after |
+| -------------------------------------------------- | -------------------------: | -------------: |
+| Clear aisle or section                             | 2 + keyboard + footer hunt |          **1** |
+| Pick a section in the currently-selected aisle     |                          2 |              2 |
+| Pick a section in a **different** aisle            |                        4–5 |          **2** |
+| Pick an aisle that has no sections                 |                          2 |              2 |
+| Pick an aisle that has sections, no section wanted |                          2 |              2 |
 
 No path may get longer.
 
 ## Files
 
 **Rewrite:**
+
 - `apps/mobile/src/components/shared/LocationSelectors.tsx` — the two-field layout becomes
   the chip row; owns the aisle/section coupling rules and the `Auto-Locate` button.
 
 **New:**
+
 - `apps/mobile/src/components/shared/LocationPicker.tsx` — the combined accordion modal.
 - `apps/mobile/src/components/shared/LocationPicker.scss` — chip and accordion styling.
 
 **Consumers (should need no changes if the props stay stable — verify both):**
+
 - `apps/mobile/src/components/shoppinglist/LocationSelectors.tsx` (thin wrapper) →
   `ItemEditorModal.tsx`
 - `apps/mobile/src/components/shared/ItemNameAndLocationFields.tsx` →
   `apps/mobile/src/components/storeitem/StoreItemEditorModal.tsx`
 
 **Read for context, do not change:**
+
 - `apps/mobile/src/components/shared/ClickableSelectionModal.tsx` — source of the search
   ranking logic to reuse.
 - `apps/mobile/src/components/shared/ClickableSelectionField.tsx` — still used by

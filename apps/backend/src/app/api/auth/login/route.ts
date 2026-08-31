@@ -3,16 +3,10 @@ import { verifyPassword } from "@/lib/auth/password";
 import { checkRateLimit } from "@/lib/auth/rateLimiter";
 import { db } from "@/lib/db/db";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
-import { loginRequestSchema, LoginResponse, User } from "@basket-bot/core";
+import * as userRepo from "@/lib/repos/userRepo";
+import { AuthenticationError, loginRequestSchema, LoginResponse } from "@basket-bot/core";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-
-type UserRow = Omit<User, "scopes" | "createdAt" | "updatedAt"> & {
-    password: string;
-    scopes: string | null;
-    createdAt: string;
-    updatedAt: string;
-};
 
 export async function POST(req: NextRequest) {
     // Rate limit: 5 attempts per 15 minutes
@@ -25,34 +19,24 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { email, password } = loginRequestSchema.parse(body);
 
-        // Find user
-        const user = db.prepare("SELECT * FROM User WHERE email = ?").get(email) as
-            | UserRow
-            | undefined;
-        if (!user) {
-            return NextResponse.json(
-                { code: "AUTHENTICATION_FAILED", message: "Invalid credentials" },
-                { status: 401 }
-            );
+        // Case-insensitive by way of the repo, matching how registration checks for duplicates.
+        // A raw case-sensitive lookup here used to lock people out of accounts registered with
+        // any capitalization.
+        const credentials = userRepo.getUserWithPasswordByEmail(email);
+
+        // Same message whether the address is unknown or the password is wrong, so the response
+        // can't be used to enumerate registered addresses.
+        if (!credentials || !(await verifyPassword(password, credentials.passwordHash))) {
+            throw new AuthenticationError("Invalid credentials");
         }
 
-        // Verify password
-        const isValid = await verifyPassword(password, user.password);
-        if (!isValid) {
-            return NextResponse.json(
-                { code: "AUTHENTICATION_FAILED", message: "Invalid credentials" },
-                { status: 401 }
-            );
-        }
-
-        // Parse scopes
-        const scopes = user.scopes ? user.scopes.split(",").filter(Boolean) : [];
+        const { user } = credentials;
 
         // Generate tokens
         const accessToken = generateAccessToken({
             userId: user.id,
             email: user.email,
-            scopes,
+            scopes: user.scopes,
         });
         const refreshToken = generateRefreshToken();
 
@@ -73,7 +57,7 @@ export async function POST(req: NextRequest) {
                 id: user.id,
                 email: user.email,
                 name: user.name,
-                scopes,
+                scopes: user.scopes,
             },
         };
 

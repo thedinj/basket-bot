@@ -2,201 +2,150 @@ import { randomUUID } from "crypto";
 import { normalizeItemName } from "../utils/stringUtils";
 import { db } from "./db";
 
+// Aisles seeded for a new user's example store, in display order.
+const DEFAULT_AISLES = [
+    "Deli",
+    "Bakery",
+    "Produce",
+    "Aisle 1",
+    "Aisle 2",
+    "Dairy & Eggs",
+    "Frozen Foods",
+    "Wine, Beer, and Liquor",
+] as const;
+
+// Sections seeded under a given aisle, in display order.
+const DEFAULT_SECTIONS: ReadonlyArray<{ aisle: string; name: string }> = [
+    { aisle: "Aisle 1", name: "Canned Goods" },
+    { aisle: "Aisle 1", name: "Pasta & Grains" },
+];
+
+/**
+ * Sample items, each also placed on the shopping list. `location` puts the item under either an
+ * aisle or a section — matching the app's rule that an item has one or the other, never both.
+ */
+const DEFAULT_ITEMS: ReadonlyArray<{
+    name: string;
+    location: { aisle: string } | { section: string };
+    qty: number | null;
+    unit: string | null;
+    notes: string | null;
+}> = [
+    {
+        name: "Bananas",
+        location: { aisle: "Produce" },
+        qty: 1,
+        unit: "bunch",
+        notes: "Ripe, not green",
+    },
+    { name: "French Bread", location: { aisle: "Bakery" }, qty: null, unit: null, notes: null },
+    {
+        name: "Penne Pasta",
+        location: { section: "Pasta & Grains" },
+        qty: null,
+        unit: null,
+        notes: null,
+    },
+    { name: "Milk", location: { aisle: "Dairy & Eggs" }, qty: 1, unit: "gallon", notes: null },
+];
+
 /**
  * Creates a default store with sample data for a user.
  * Used during user registration to provide an example store with realistic data.
+ *
+ * Runs in a single transaction: a partial failure here previously left the caller with a
+ * committed User row, an empty Store, and a registration that reported failure to the client.
  *
  * @param userId - The ID of the user who will own the store
  * @param userName - The name of the user (used to generate store name)
  * @returns The ID of the created store
  */
-export function createDefaultStoreForUser(userId: string, userName: string): string {
-    const storeId = randomUUID();
+export const createDefaultStoreForUser = (userId: string, userName: string): string =>
+    db.transaction(() => {
+        const storeId = randomUUID();
 
-    // Determine the new store's name
-    const storeName = `${userName}'s Example Store`;
-
-    // Create the store (private by default, householdId = NULL)
-    db.prepare(
-        `
+        // Create the store (private by default, householdId = NULL)
+        db.prepare(
+            `
         INSERT INTO Store (id, name, householdId, createdById, updatedById, createdAt, updatedAt)
         VALUES (?, ?, NULL, ?, ?, datetime('now'), datetime('now'))
     `
-    ).run(storeId, storeName, userId, userId);
+        ).run(storeId, `${userName}'s Example Store`, userId, userId);
 
-    // Create sample aisles
-    const deliAisleId = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO StoreAisle (id, storeId, name, sortOrder, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(deliAisleId, storeId, "Deli", 0, userId, userId);
-
-    const bakeryAisleId = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO StoreAisle (id, storeId, name, sortOrder, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(bakeryAisleId, storeId, "Bakery", 1, userId, userId);
-
-    const produceAisleId = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO StoreAisle (id, storeId, name, sortOrder, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(produceAisleId, storeId, "Produce", 2, userId, userId);
-
-    const aisle1Id = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO StoreAisle (id, storeId, name, sortOrder, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(aisle1Id, storeId, "Aisle 1", 3, userId, userId);
-
-    const aisle2Id = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO StoreAisle (id, storeId, name, sortOrder, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(aisle2Id, storeId, "Aisle 2", 4, userId, userId);
-
-    const dairyAisleId = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO StoreAisle (id, storeId, name, sortOrder, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(dairyAisleId, storeId, "Dairy & Eggs", 5, userId, userId);
-
-    const frozenAisleId = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO StoreAisle (id, storeId, name, sortOrder, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(frozenAisleId, storeId, "Frozen Foods", 6, userId, userId);
-
-    const liquorAisleId = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO StoreAisle (id, storeId, name, sortOrder, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(liquorAisleId, storeId, "Wine, Beer, and Liquor", 7, userId, userId);
-
-    // Create sample sections
-    const cannedGoodsSectionId = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO StoreSection (id, storeId, aisleId, name, sortOrder, createdById, updatedById, createdAt, updatedAt)
+        // nameNorm is NOT NULL and carries the UNIQUE(storeId, ...) constraint. It must be
+        // derived with the same normalizeItemName() the aisle/section repos use, or seeded rows
+        // won't collide-check consistently with ones created through the app.
+        const insertAisle = db.prepare(
+            `
+        INSERT INTO StoreAisle (id, storeId, name, nameNorm, sortOrder, createdById, updatedById, createdAt, updatedAt)
         VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
-    ).run(cannedGoodsSectionId, storeId, aisle1Id, "Canned Goods", 0, userId, userId);
+        );
 
-    const pastaSectionId = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO StoreSection (id, storeId, aisleId, name, sortOrder, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        const aisleIdsByName = new Map<string, string>();
+        DEFAULT_AISLES.forEach((name, sortOrder) => {
+            const id = randomUUID();
+            insertAisle.run(id, storeId, name, normalizeItemName(name), sortOrder, userId, userId);
+            aisleIdsByName.set(name, id);
+        });
+
+        const insertSection = db.prepare(
+            `
+        INSERT INTO StoreSection (id, storeId, aisleId, name, nameNorm, sortOrder, createdById, updatedById, createdAt, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
-    ).run(pastaSectionId, storeId, aisle1Id, "Pasta & Grains", 1, userId, userId);
+        );
 
-    // Create sample store items and shopping list entries
-    const bananasId = randomUUID();
-    db.prepare(
-        `
+        const sectionIdsByName = new Map<string, string>();
+        DEFAULT_SECTIONS.forEach(({ aisle, name }, sortOrder) => {
+            const id = randomUUID();
+            insertSection.run(
+                id,
+                storeId,
+                aisleIdsByName.get(aisle),
+                name,
+                normalizeItemName(name),
+                sortOrder,
+                userId,
+                userId
+            );
+            sectionIdsByName.set(name, id);
+        });
+
+        const insertItem = db.prepare(
+            `
         INSERT INTO StoreItem (id, storeId, name, nameNorm, aisleId, sectionId, usageCount, lastUsedAt, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, NULL, ?, datetime('now'), ?, ?, datetime('now'), datetime('now'))
+        VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'), ?, ?, datetime('now'), datetime('now'))
     `
-    ).run(
-        bananasId,
-        storeId,
-        "Bananas",
-        normalizeItemName("Bananas"),
-        produceAisleId,
-        1,
-        userId,
-        userId
-    );
+        );
 
-    const bananasListItemId = randomUUID();
-    db.prepare(
-        `
+        const insertListItem = db.prepare(
+            `
         INSERT INTO ShoppingListItem (id, storeId, storeItemId, qty, unitId, notes, isSample, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, datetime('now'), datetime('now'))
     `
-    ).run(bananasListItemId, storeId, bananasId, 1, "bunch", "Ripe, not green", 1, userId, userId);
+        );
 
-    const frenchBreadId = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO StoreItem (id, storeId, name, nameNorm, aisleId, sectionId, usageCount, lastUsedAt, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, NULL, ?, datetime('now'), ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(
-        frenchBreadId,
-        storeId,
-        "French Bread",
-        normalizeItemName("French Bread"),
-        bakeryAisleId,
-        1,
-        userId,
-        userId
-    );
+        for (const { name, location, qty, unit, notes } of DEFAULT_ITEMS) {
+            const itemId = randomUUID();
+            const aisleId =
+                "aisle" in location ? (aisleIdsByName.get(location.aisle) ?? null) : null;
+            const sectionId =
+                "section" in location ? (sectionIdsByName.get(location.section) ?? null) : null;
 
-    const frenchBreadListItemId = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO ShoppingListItem (id, storeId, storeItemId, qty, unitId, notes, isSample, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, NULL, NULL, NULL, ?, ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(frenchBreadListItemId, storeId, frenchBreadId, 1, userId, userId);
+            insertItem.run(
+                itemId,
+                storeId,
+                name,
+                normalizeItemName(name),
+                aisleId,
+                sectionId,
+                userId,
+                userId
+            );
 
-    const pennePastaId = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO StoreItem (id, storeId, name, nameNorm, aisleId, sectionId, usageCount, lastUsedAt, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, NULL, ?, ?, datetime('now'), ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(
-        pennePastaId,
-        storeId,
-        "Penne Pasta",
-        normalizeItemName("Penne Pasta"),
-        pastaSectionId,
-        1,
-        userId,
-        userId
-    );
+            insertListItem.run(randomUUID(), storeId, itemId, qty, unit, notes, userId, userId);
+        }
 
-    const pennePastaListItemId = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO ShoppingListItem (id, storeId, storeItemId, qty, unitId, notes, isSample, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, NULL, NULL, NULL, ?, ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(pennePastaListItemId, storeId, pennePastaId, 1, userId, userId);
-
-    const milkId = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO StoreItem (id, storeId, name, nameNorm, aisleId, sectionId, usageCount, lastUsedAt, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, NULL, ?, datetime('now'), ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(milkId, storeId, "Milk", normalizeItemName("Milk"), dairyAisleId, 1, userId, userId);
-
-    const milkListItemId = randomUUID();
-    db.prepare(
-        `
-        INSERT INTO ShoppingListItem (id, storeId, storeItemId, qty, unitId, notes, isSample, createdById, updatedById, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, datetime('now'), datetime('now'))
-    `
-    ).run(milkListItemId, storeId, milkId, 1, "gallon", 1, userId, userId);
-
-    return storeId;
-}
+        return storeId;
+    })();

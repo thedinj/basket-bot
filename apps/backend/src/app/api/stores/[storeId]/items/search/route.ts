@@ -1,3 +1,4 @@
+import { ValidationError } from "@basket-bot/core";
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeEntityService from "@/lib/services/storeEntityService";
@@ -13,10 +14,7 @@ async function handleGet(
         const q = url.searchParams.get("q");
 
         if (!q) {
-            return NextResponse.json(
-                { code: "INVALID_INPUT", message: "Search query 'q' is required" },
-                { status: 400 }
-            );
+            throw new ValidationError("Search query 'q' is required");
         }
 
         const limit = parseInt(url.searchParams.get("limit") || "20", 10);

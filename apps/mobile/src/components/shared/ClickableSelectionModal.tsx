@@ -59,9 +59,7 @@ interface ClickableSelectionModalProps {
  * - Optional clear button to set value back to null
  * - Clean, simple UX replacing IonSelect + OK/Cancel patterns
  */
-export const ClickableSelectionModal: React.FC<
-    ClickableSelectionModalProps
-> = ({
+export const ClickableSelectionModal: React.FC<ClickableSelectionModalProps> = ({
     items,
     value,
     onSelect,
@@ -96,11 +94,7 @@ export const ClickableSelectionModal: React.FC<
             }
 
             // Tier 2: Search terms start with search string
-            if (
-                item.searchTerms?.some((term) =>
-                    term.toLowerCase().startsWith(lowerSearch)
-                )
-            ) {
+            if (item.searchTerms?.some((term) => term.toLowerCase().startsWith(lowerSearch))) {
                 tieredItems.push({ item, tier: 2 });
                 return;
             }
@@ -112,11 +106,7 @@ export const ClickableSelectionModal: React.FC<
             }
 
             // Tier 4: Search terms contain search string
-            if (
-                item.searchTerms?.some((term) =>
-                    term.toLowerCase().includes(lowerSearch)
-                )
-            ) {
+            if (item.searchTerms?.some((term) => term.toLowerCase().includes(lowerSearch))) {
                 tieredItems.push({ item, tier: 4 });
             }
         });
@@ -144,8 +134,7 @@ export const ClickableSelectionModal: React.FC<
     };
 
     const handleSearchInput = useCallback(
-        (e: CustomEvent<{ value?: string | null }>) =>
-            setSearchText(e.detail.value || ""),
+        (e: CustomEvent<{ value?: string | null }>) => setSearchText(e.detail.value || ""),
         []
     );
 
@@ -190,9 +179,7 @@ export const ClickableSelectionModal: React.FC<
                     {filteredItems.length === 0 ? (
                         <IonItem>
                             <IonLabel color="medium">
-                                {searchText
-                                    ? "No matching items found"
-                                    : "No items available"}
+                                {searchText ? "No matching items found" : "No items available"}
                             </IonLabel>
                         </IonItem>
                     ) : (
@@ -207,9 +194,7 @@ export const ClickableSelectionModal: React.FC<
                                     {item.label}
                                     {item.subtitle && <p>{item.subtitle}</p>}
                                 </IonLabel>
-                                {value === item.id && (
-                                    <IonCheckbox slot="end" checked disabled />
-                                )}
+                                {value === item.id && <IonCheckbox slot="end" checked disabled />}
                             </IonItem>
                         ))
                     )}
@@ -218,12 +203,7 @@ export const ClickableSelectionModal: React.FC<
             {allowClear && value && (
                 <IonFooter>
                     <IonToolbar>
-                        <IonButton
-                            expand="block"
-                            fill="clear"
-                            color="medium"
-                            onClick={handleClear}
-                        >
+                        <IonButton expand="block" fill="clear" color="medium" onClick={handleClear}>
                             Clear Selection
                         </IonButton>
                     </IonToolbar>

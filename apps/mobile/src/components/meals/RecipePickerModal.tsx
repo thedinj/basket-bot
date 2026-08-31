@@ -1,4 +1,4 @@
-import type { RecipeTag, RecipeWithDetails } from "@basket-bot/core"
+import type { RecipeTag, RecipeWithDetails } from "@basket-bot/core";
 import {
     IonButton,
     IonButtons,
@@ -13,20 +13,20 @@ import {
     IonSearchbar,
     IonTitle,
     IonToolbar,
-} from "@ionic/react"
-import { closeOutline } from "ionicons/icons"
-import { useState } from "react"
-import TagChip from "./TagChip"
-import TagChipList from "./TagChipList"
+} from "@ionic/react";
+import { closeOutline } from "ionicons/icons";
+import { useState } from "react";
+import TagChip from "./TagChip";
+import TagChipList from "./TagChipList";
 
 interface RecipePickerModalProps {
-    isOpen: boolean
-    onDismiss: () => void
-    recipes: RecipeWithDetails[]
-    onPick: (recipe: RecipeWithDetails) => void
-    filterTags?: RecipeTag[]
-    maxCookingTimeMinutes?: number | null
-    title?: string
+    isOpen: boolean;
+    onDismiss: () => void;
+    recipes: RecipeWithDetails[];
+    onPick: (recipe: RecipeWithDetails) => void;
+    filterTags?: RecipeTag[];
+    maxCookingTimeMinutes?: number | null;
+    title?: string;
 }
 
 const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
@@ -38,23 +38,23 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
     maxCookingTimeMinutes,
     title = "Pick a recipe",
 }) => {
-    const [query, setQuery] = useState("")
+    const [query, setQuery] = useState("");
 
     const filtered = query.trim()
         ? recipes.filter((r) => r.name.toLowerCase().includes(query.trim().toLowerCase()))
-        : recipes
+        : recipes;
 
-    const hasFilters = filterTags.length > 0 || maxCookingTimeMinutes != null
+    const hasFilters = filterTags.length > 0 || maxCookingTimeMinutes != null;
 
     const handleDismiss = () => {
-        setQuery("")
-        onDismiss()
-    }
+        setQuery("");
+        onDismiss();
+    };
 
     const handlePick = (recipe: RecipeWithDetails) => {
-        setQuery("")
-        onPick(recipe)
-    }
+        setQuery("");
+        onPick(recipe);
+    };
 
     return (
         <IonModal isOpen={isOpen} onDidDismiss={handleDismiss}>
@@ -77,15 +77,34 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                 </IonToolbar>
                 {hasFilters && (
                     <IonToolbar>
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 12px 8px", flexWrap: "wrap" }}>
-                            <IonNote style={{ fontSize: "11px", fontFamily: "'JetBrains Mono', monospace", flexShrink: 0 }}>
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                padding: "4px 12px 8px",
+                                flexWrap: "wrap",
+                            }}
+                        >
+                            <IonNote
+                                style={{
+                                    fontSize: "11px",
+                                    fontFamily: "'JetBrains Mono', monospace",
+                                    flexShrink: 0,
+                                }}
+                            >
                                 filtered:
                             </IonNote>
                             {filterTags.map((t) => (
                                 <TagChip key={t.id} tag={t} />
                             ))}
                             {maxCookingTimeMinutes != null && (
-                                <IonNote style={{ fontSize: "11px", fontFamily: "'JetBrains Mono', monospace" }}>
+                                <IonNote
+                                    style={{
+                                        fontSize: "11px",
+                                        fontFamily: "'JetBrains Mono', monospace",
+                                    }}
+                                >
                                     ≤{maxCookingTimeMinutes}min
                                 </IonNote>
                             )}
@@ -98,7 +117,9 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                 {filtered.length === 0 ? (
                     <div className="ion-padding ion-text-center">
                         <IonNote>
-                            {query.trim() ? `No recipes match "${query}"` : "No recipes match these filters"}
+                            {query.trim()
+                                ? `No recipes match "${query}"`
+                                : "No recipes match these filters"}
                         </IonNote>
                     </div>
                 ) : (
@@ -113,7 +134,13 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                                 <IonLabel>
                                     <h3>{recipe.name}</h3>
                                     {recipe.source && (
-                                        <p style={{ fontSize: "12px", color: "var(--ion-color-step-400, #718096)", margin: "2px 0 0" }}>
+                                        <p
+                                            style={{
+                                                fontSize: "12px",
+                                                color: "var(--ion-color-step-400, #718096)",
+                                                margin: "2px 0 0",
+                                            }}
+                                        >
                                             {recipe.source}
                                         </p>
                                     )}
@@ -131,7 +158,7 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                 )}
             </IonContent>
         </IonModal>
-    )
-}
+    );
+};
 
-export default RecipePickerModal
+export default RecipePickerModal;

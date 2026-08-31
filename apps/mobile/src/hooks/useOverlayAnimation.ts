@@ -19,9 +19,7 @@ interface UseOverlayAnimationResult {
     cssClass: string;
 }
 
-export const useOverlayAnimation = (
-    effect: AnimationEffect
-): UseOverlayAnimationResult => {
+export const useOverlayAnimation = (effect: AnimationEffect): UseOverlayAnimationResult => {
     const [isActive, setIsActive] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);

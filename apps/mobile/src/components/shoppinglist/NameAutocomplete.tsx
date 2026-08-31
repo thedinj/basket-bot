@@ -160,10 +160,7 @@ export const NameAutocomplete: React.FC = () => {
                                         cursor: "pointer",
                                     }}
                                 >
-                                    <IonIcon
-                                        icon={closeOutline}
-                                        style={{ fontSize: "16px" }}
-                                    />
+                                    <IonIcon icon={closeOutline} style={{ fontSize: "16px" }} />
                                 </span>
                             </div>
                             {autocompleteResults.map((item) => {

@@ -1,3 +1,4 @@
+import { NotFoundError, ValidationError } from "@basket-bot/core";
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeEntityService from "@/lib/services/storeEntityService";
@@ -13,10 +14,7 @@ async function handleGet(
         const item = items.find((i) => i.id === itemId) ?? null;
 
         if (!item) {
-            return NextResponse.json(
-                { code: "NOT_FOUND", message: "Item not found" },
-                { status: 404 }
-            );
+            throw new NotFoundError("Item not found");
         }
 
         return NextResponse.json({ item });
@@ -35,10 +33,7 @@ async function handlePut(
         const { name, aisleId, sectionId } = body;
 
         if (!name || typeof name !== "string") {
-            return NextResponse.json(
-                { code: "INVALID_INPUT", message: "Name is required" },
-                { status: 400 }
-            );
+            throw new ValidationError("Name is required");
         }
 
         const item = storeEntityService.updateItem({
@@ -51,10 +46,7 @@ async function handlePut(
         });
 
         if (!item) {
-            return NextResponse.json(
-                { code: "NOT_FOUND", message: "Item not found" },
-                { status: 404 }
-            );
+            throw new NotFoundError("Item not found");
         }
 
         return NextResponse.json({ item });

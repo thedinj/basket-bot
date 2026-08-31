@@ -31,7 +31,9 @@ export function up(db: Database): void {
         ALTER TABLE "PlanSlot" ADD COLUMN "maxCookingTimeMinutes" INTEGER;
     `);
 
-    console.log("Migration complete: RecipeTag.color renamed to colorKey, cookingTimeMinutes, isPoolExcluded, and maxCookingTimeMinutes added.");
+    console.log(
+        "Migration complete: RecipeTag.color renamed to colorKey, cookingTimeMinutes, isPoolExcluded, and maxCookingTimeMinutes added."
+    );
 }
 
 export function down(db: Database): void {
@@ -58,8 +60,9 @@ export function down(db: Database): void {
     `);
 
     db.prepare(`ALTER TABLE "Recipe" DROP COLUMN "cookingTimeMinutes"`).run();
-    const hasPoolExcluded = (db.prepare(`PRAGMA table_info(Recipe)`).all() as Array<{ name: string }>)
-        .some((col) => col.name === "isPoolExcluded");
+    const hasPoolExcluded = (
+        db.prepare(`PRAGMA table_info(Recipe)`).all() as Array<{ name: string }>
+    ).some((col) => col.name === "isPoolExcluded");
     if (hasPoolExcluded) {
         db.prepare(`ALTER TABLE "Recipe" DROP COLUMN "isPoolExcluded"`).run();
     }

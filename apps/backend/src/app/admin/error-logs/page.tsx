@@ -127,7 +127,11 @@ const ErrorLogsPage: React.FC = () => {
                                     <Text size="sm">{log.code}</Text>
                                 </Table.Td>
                                 <Table.Td>
-                                    <Tooltip label={log.stack ?? "No stack trace"} multiline w={400}>
+                                    <Tooltip
+                                        label={log.stack ?? "No stack trace"}
+                                        multiline
+                                        w={400}
+                                    >
                                         <Text size="sm" lineClamp={1}>
                                             {log.message}
                                         </Text>

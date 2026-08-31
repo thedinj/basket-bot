@@ -1,7 +1,11 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import { updateUserProfile } from "@/lib/repos/userRepo";
-import { updateProfileRequestSchema, updateProfileResponseSchema } from "@basket-bot/core";
+import {
+    NotFoundError,
+    updateProfileRequestSchema,
+    updateProfileResponseSchema,
+} from "@basket-bot/core";
 import { NextResponse } from "next/server";
 
 /**
@@ -16,10 +20,7 @@ async function handlePatch(req: AuthenticatedRequest) {
         const updatedUser = updateUserProfile(req.auth.sub, data.name);
 
         if (!updatedUser) {
-            return NextResponse.json(
-                { code: "USER_NOT_FOUND", message: "User not found" },
-                { status: 404 }
-            );
+            throw new NotFoundError("User not found");
         }
 
         // Validate response matches schema

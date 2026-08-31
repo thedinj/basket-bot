@@ -15,8 +15,6 @@ import type {
 // Re-export types for convenience
 export type { ShoppingListItem, StoreAisle, StoreItem, StoreItemWithDetails, StoreSection };
 
-export type DatabaseChangeListener = () => void;
-
 /**
  * Core database operations for lifecycle management
  */
@@ -30,13 +28,6 @@ export interface CoreDatabase {
      * Close the database connection
      */
     close(): Promise<void>;
-}
-
-export interface DatabaseEvents {
-    /**
-     * Subscribe to database change events. Returns an unsubscribe function.
-     */
-    onChange(listener: DatabaseChangeListener): () => void;
 }
 
 /**
@@ -294,6 +285,11 @@ export interface EntityDatabase {
 }
 
 /**
- * Combined database interface with both core and entity operations
+ * Combined database interface with both core and entity operations.
+ *
+ * `RemoteDatabase` is the sole implementation and implements this directly. There used to be an
+ * abstract `BaseDatabase` in between, from when an on-device SQLite implementation was also
+ * planned; it restated every signature here a second time as `abstract`, so each new method had
+ * to be declared twice.
  */
-export interface Database extends CoreDatabase, EntityDatabase, DatabaseEvents {}
+export interface Database extends CoreDatabase, EntityDatabase {}

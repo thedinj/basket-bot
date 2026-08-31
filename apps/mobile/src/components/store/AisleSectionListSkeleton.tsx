@@ -1,13 +1,13 @@
-import { IonLabel, IonList, IonSegment, IonSegmentButton } from "@ionic/react"
-import { Fragment } from "react"
-import { SkeletonListItem } from "../shared/skeleton/SkeletonListItem"
+import { IonLabel, IonList, IonSegment, IonSegmentButton } from "@ionic/react";
+import { Fragment } from "react";
+import { SkeletonListItem } from "../shared/skeleton/SkeletonListItem";
 
 // Matches the 32x24 reorder-handle/edit-button spacer in AisleItem.tsx / SectionItem.tsx.
 const END_SLOT_SPACER = (
     <div style={{ width: 32, minWidth: 32, height: 24, display: "inline-block" }} />
-)
+);
 
-const SKELETON_AISLES = [{ sectionCount: 2 }, { sectionCount: 1 }, { sectionCount: 3 }]
+const SKELETON_AISLES = [{ sectionCount: 2 }, { sectionCount: 1 }, { sectionCount: 3 }];
 
 /**
  * Content-shaped fallback for AisleSectionList — mirrors AisleItem/SectionItem's exact row
@@ -44,6 +44,6 @@ export const AisleSectionListSkeleton: React.FC = () => (
             ))}
         </IonList>
     </>
-)
+);
 
-export default AisleSectionListSkeleton
+export default AisleSectionListSkeleton;

@@ -71,8 +71,7 @@ export function useBatchAutoCategorize() {
                     } catch (error) {
                         // Log error and continue with remaining items
                         failureCount++;
-                        const errorObj =
-                            error instanceof Error ? error : new Error(String(error));
+                        const errorObj = error instanceof Error ? error : new Error(String(error));
                         errors.push(errorObj);
                         console.error(
                             `[useBatchAutoCategorize] Failed to categorize item "${item.name}":`,

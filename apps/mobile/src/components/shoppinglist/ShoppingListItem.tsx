@@ -23,6 +23,7 @@ import { useAuth } from "../../auth/useAuth";
 import {
     useMoveItemToStore,
     useStores,
+    useVisibleStores,
     useSwipeUpdateShoppingListItem,
     useToggleItemChecked,
 } from "../../db/hooks";
@@ -87,6 +88,9 @@ export const ShoppingListItem = ({
     const toggleChecked = useToggleItemChecked();
     const moveItemToStore = useMoveItemToStore();
     const { data: stores } = useStores();
+    // Destinations for "move this item": everything visible except the store it's already in.
+    const excludeCurrentStore = useMemo(() => [item.storeId], [item.storeId]);
+    const otherStores = useVisibleStores({ excludeStoreIds: excludeCurrentStore });
     const [isMoveToStoreModalOpen, setIsMoveToStoreModalOpen] = useState(false);
     const [isRejectConfirmOpen, setIsRejectConfirmOpen] = useState(false);
     const [justChecked, setJustChecked] = useState(false);
@@ -123,15 +127,14 @@ export const ShoppingListItem = ({
         [item, snoozeItem]
     );
 
-    const storeItems: SelectableItem[] = useMemo(() => {
-        if (!stores) return [];
-        return stores
-            .filter((s) => s.id !== item.storeId && !s.isHidden)
-            .map((store) => ({
+    const storeItems: SelectableItem[] = useMemo(
+        () =>
+            otherStores.map((store) => ({
                 id: store.id,
                 label: store.name,
-            }));
-    }, [stores, item.storeId]);
+            })),
+        [otherStores]
+    );
 
     const handleStoreSelectedForMove = useCallback(
         (storeId: string | null) => {
@@ -189,9 +192,8 @@ export const ShoppingListItem = ({
     ]);
 
     const handleMoveIconClick = useCallback(() => {
-        if (!stores || stores.length <= 1) return;
-
-        const otherStores = stores.filter((s) => s.id !== item.storeId && !s.isHidden);
+        // Nowhere to move it to.
+        if (otherStores.length === 0) return;
 
         // Special case: if exactly one other store, skip modal and go straight to confirmation
         if (otherStores.length === 1) {
@@ -199,7 +201,7 @@ export const ShoppingListItem = ({
         } else {
             setIsMoveToStoreModalOpen(true);
         }
-    }, [handleStoreSelectedForMove, item.storeId, stores]);
+    }, [handleStoreSelectedForMove, otherStores]);
 
     const handleDismissMoveModal = useCallback(() => {
         setIsMoveToStoreModalOpen(false);

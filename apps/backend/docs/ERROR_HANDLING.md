@@ -49,19 +49,19 @@ Services and repos must throw one of the typed classes from `@basket-bot/core`
 string-prefixed message like `"CONFLICT: ..."`. `toErrorResponse` maps each type to
 the correct HTTP status and error `code`:
 
-| Throw | Status | Default `code` |
-|---|---|---|
-| `new AuthenticationError(message?)` | 401 | `AUTHENTICATION_FAILED` |
-| `new AuthorizationError(message?)` | 403 | `AUTHORIZATION_FAILED` |
-| `new NotFoundError(message?)` | 404 | `NOT_FOUND` |
-| `new ConflictError(message?, code?)` | 409 | `CONFLICT` |
-| `new ValidationError(message?, details?)` | 400 | `VALIDATION_FAILED` |
-| `ZodError` (thrown by `schema.parse(...)`) | 400 | `VALIDATION_FAILED` |
-| better-sqlite3 constraint violation (`SQLITE_CONSTRAINT*`) | 409 | `CONFLICT` (message sanitized — the raw SQL error is only logged, never returned to the client) |
-| anything else | 500 | `INTERNAL_ERROR` |
+| Throw                                                      | Status | Default `code`                                                                                  |
+| ---------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------- |
+| `new AuthenticationError(message?)`                        | 401    | `AUTHENTICATION_FAILED`                                                                         |
+| `new AuthorizationError(message?)`                         | 403    | `AUTHORIZATION_FAILED`                                                                          |
+| `new NotFoundError(message?)`                              | 404    | `NOT_FOUND`                                                                                     |
+| `new ConflictError(message?, code?)`                       | 409    | `CONFLICT`                                                                                      |
+| `new ValidationError(message?, details?)`                  | 400    | `VALIDATION_FAILED`                                                                             |
+| `ZodError` (thrown by `schema.parse(...)`)                 | 400    | `VALIDATION_FAILED`                                                                             |
+| better-sqlite3 constraint violation (`SQLITE_CONSTRAINT*`) | 409    | `CONFLICT` (message sanitized — the raw SQL error is only logged, never returned to the client) |
+| anything else                                              | 500    | `INTERNAL_ERROR`                                                                                |
 
 `ConflictError`'s second argument lets you override the `code` when the client needs
-to distinguish *which* conflict happened — e.g. `storeEntityService.ts` throws
+to distinguish _which_ conflict happened — e.g. `storeEntityService.ts` throws
 `new ConflictError('An item named "X" already exists...', "ITEM_NAME_CONFLICT")`
 because the mobile app's `ItemEditorModal` checks that exact code to show an inline
 field error instead of a toast. Only add a custom code when a caller actually needs

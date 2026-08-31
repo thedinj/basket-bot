@@ -1,7 +1,11 @@
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import { changeUserPassword } from "@/lib/repos/userRepo";
-import { changePasswordRequestSchema, changePasswordResponseSchema } from "@basket-bot/core";
+import {
+    ValidationError,
+    changePasswordRequestSchema,
+    changePasswordResponseSchema,
+} from "@basket-bot/core";
 import { NextResponse } from "next/server";
 
 /**
@@ -20,13 +24,7 @@ async function handlePatch(req: AuthenticatedRequest) {
         );
 
         if (!success) {
-            return NextResponse.json(
-                {
-                    code: "INVALID_PASSWORD",
-                    message: "Current password is incorrect",
-                },
-                { status: 400 }
-            );
+            throw new ValidationError("Current password is incorrect");
         }
 
         const response = changePasswordResponseSchema.parse({ success: true });

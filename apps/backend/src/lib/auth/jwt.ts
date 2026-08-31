@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import jwt from "jsonwebtoken";
 import { AuthenticationError, JwtPayload } from "@basket-bot/core";
 import {
@@ -34,10 +35,18 @@ export function generateAccessToken(payload: {
     });
 }
 
+/**
+ * Mint an opaque refresh token: 256 bits from the CSPRNG, base64url-encoded (43 chars).
+ *
+ * Deliberately not a JWT. Refresh tokens are only ever validated by looking the row up in the
+ * RefreshToken table — which carries its own `expiresAt` — so nothing ever verified the
+ * signature or read the payload. Worse, the JWT this replaced was signed over an *empty* object,
+ * leaving `{iat, exp}` at one-second resolution as the entire payload: any two tokens minted in
+ * the same second were byte-identical, so concurrent sign-ins collided on the UNIQUE(token)
+ * constraint and the second one failed outright.
+ */
 export function generateRefreshToken(): string {
-    return jwt.sign({}, JWT_SECRET, {
-        expiresIn: REFRESH_TOKEN_TTL,
-    });
+    return randomBytes(32).toString("base64url");
 }
 
 export function verifyAccessToken(token: string): JwtPayload {

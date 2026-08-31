@@ -7,9 +7,7 @@ import { LLMModalContext } from "./LLMModalContextDef";
 export const useLLMModalContext = () => {
     const context = useContext(LLMModalContext);
     if (!context) {
-        throw new Error(
-            "useLLMModalContext must be used within LLMModalProvider"
-        );
+        throw new Error("useLLMModalContext must be used within LLMModalProvider");
     }
     return context;
 };

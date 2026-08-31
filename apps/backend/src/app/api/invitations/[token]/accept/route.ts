@@ -1,3 +1,4 @@
+import { ValidationError } from "@basket-bot/core";
 import { withAuth, type AuthenticatedRequest } from "@/lib/auth/withAuth";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as invitationService from "@/lib/services/invitationService";
@@ -13,10 +14,7 @@ export const POST = withAuth(async (req: AuthenticatedRequest, context) => {
         const userEmail = req.auth.email;
 
         if (!userEmail) {
-            return NextResponse.json(
-                { code: "BAD_REQUEST", message: "User email not found in token" },
-                { status: 400 }
-            );
+            throw new ValidationError("User email not found in token");
         }
 
         invitationService.acceptInvitation(token, req.auth.sub, userEmail);

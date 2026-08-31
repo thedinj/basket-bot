@@ -13,14 +13,14 @@ import type {
 } from "@basket-bot/core";
 import { apiClient, ApiError } from "../lib/api/client";
 import { mutationQueue } from "../lib/mutationQueue";
-import { BaseDatabase } from "./base";
+import { Database } from "./types";
 
 /**
  * Remote database implementation that connects to backend API.
  * Maps all Database interface methods to API calls.
  * Automatically queues failed mutations for retry on network errors.
  */
-export class RemoteDatabase extends BaseDatabase {
+export class RemoteDatabase implements Database {
     /**
      * Helper to execute a mutation with automatic queueing on network failure
      */
@@ -32,9 +32,7 @@ export class RemoteDatabase extends BaseDatabase {
         data?: unknown
     ): Promise<T> {
         try {
-            const result = await apiCall();
-            this.notifyChange();
-            return result;
+            return await apiCall();
         } catch (error) {
             // Queue the mutation if it's a network error
             if (error instanceof ApiError && error.isNetworkError) {
@@ -60,19 +58,15 @@ export class RemoteDatabase extends BaseDatabase {
             throw error;
         }
     }
-    protected async initializeStorage(): Promise<void> {
-        // No local storage initialization needed - API is always ready
-        // Just notify that we're ready
-        this.notifyChange();
+    async initialize(): Promise<void> {
+        // Nothing to set up: the API is always ready, and there is no local store to open.
+        // A brand-new user's starter store is seeded server-side during registration
+        // (backend: lib/db/seedDefaults.ts), so the client never creates stores on launch —
+        // deleting every store correctly leaves you with none.
     }
 
     async close(): Promise<void> {
         // Nothing to close for remote database
-    }
-
-    protected async hasStores(): Promise<boolean> {
-        // Not used for remote - backend manages seed data
-        return true;
     }
 
     // ========== Store Operations ==========
@@ -152,9 +146,7 @@ export class RemoteDatabase extends BaseDatabase {
         );
     }
 
-    async reorderStores(
-        updates: Array<{ storeId: string; sortOrder: number }>
-    ): Promise<void> {
+    async reorderStores(updates: Array<{ storeId: string; sortOrder: number }>): Promise<void> {
         return this.executeMutation(
             "reorderStores",
             "/api/stores/reorder",
@@ -224,7 +216,11 @@ export class RemoteDatabase extends BaseDatabase {
         );
     }
 
-    async updateAisleSortOrder(storeId: string, id: string, sortOrder: number): Promise<StoreAisle> {
+    async updateAisleSortOrder(
+        storeId: string,
+        id: string,
+        sortOrder: number
+    ): Promise<StoreAisle> {
         return this.executeMutation(
             "updateAisleSortOrder",
             `/api/stores/${storeId}/aisles/${id}`,

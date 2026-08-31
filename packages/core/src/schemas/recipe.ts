@@ -10,17 +10,9 @@ import {
     MAX_RECIPE_TAG_NAME_LENGTH,
     TAG_PALETTE_KEYS,
 } from "../constants/index.js";
-import { maxLengthString, minMaxLengthString } from "./zodHelpers.js";
+import { auditFields, maxLengthString, minMaxLengthString } from "./zodHelpers.js";
 
 // ========== Shared Fields ==========
-// Audit fields used across recipe schemas
-const auditFields = {
-    createdById: z.string().uuid(),
-    updatedById: z.string().uuid(),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime(),
-};
-
 // Audit fields for tag (no updatedById/updatedAt - tags are simple, create-only)
 const tagAuditFields = {
     createdById: z.string().uuid(),
@@ -121,7 +113,9 @@ export type RecipeIngredient = z.infer<typeof recipeIngredientSchema>;
 
 export const addRecipeIngredientRequestSchema = z.object({
     name: minMaxLengthString(1, MAX_RECIPE_INGREDIENT_NAME_LENGTH, "Ingredient name"),
-    shoppingName: maxLengthString(MAX_RECIPE_INGREDIENT_NAME_LENGTH, "Shopping name").nullable().optional(),
+    shoppingName: maxLengthString(MAX_RECIPE_INGREDIENT_NAME_LENGTH, "Shopping name")
+        .nullable()
+        .optional(),
     qty: z.number().nullable().optional(),
     shoppingQty: z.number().nullable().optional(),
     unitId: z.string().nullable().optional(),

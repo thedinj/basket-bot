@@ -15,14 +15,14 @@ import {
     IonSearchbar,
     IonSegment,
     IonSegmentButton,
-    IonText,
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { checkmarkOutline, chevronDownOutline, closeOutline } from "ionicons/icons";
+import { checkmarkOutline, chevronDownOutline, closeOutline, mapOutline } from "ionicons/icons";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AisleSortMode, useAisleSortMode } from "../../hooks/useAisleSortMode";
 import { naturalSort, normalizeItemName } from "../../utils/stringUtils";
+import TabEmptyState from "./TabEmptyState";
 import "./LocationPicker.scss";
 
 interface LocationPickerProps {
@@ -275,12 +275,15 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
             </IonHeader>
             <IonContent>
                 {noAisles ? (
-                    <div style={{ padding: "32px 24px", textAlign: "center" }}>
-                        <IonText color="medium">
-                            <p>No aisles set up for this store</p>
-                        </IonText>
-                        <IonButton onClick={onManageAisles}>Manage Aisles & Sections</IonButton>
-                    </div>
+                    <TabEmptyState
+                        variant="full"
+                        icon={mapOutline}
+                        title="No layout to pick from"
+                        body="This store has no aisles yet, so there is nowhere to file this."
+                        action={
+                            <IonButton onClick={onManageAisles}>Manage Aisles & Sections</IonButton>
+                        }
+                    />
                 ) : searchText.trim() ? (
                     <IonList>
                         {searchResults.length === 0 ? (

@@ -77,8 +77,8 @@ export const queryClient = new QueryClient({
 
 /**
  * Database provider component
- * Initializes database singleton, subscribes to onChange events,
- * and provides TanStack Query client for data fetching/caching
+ * Initializes the database singleton and provides the TanStack Query client for
+ * data fetching/caching.
  */
 export const DatabaseProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const [database, setDatabase] = useState<Database | null>(null);

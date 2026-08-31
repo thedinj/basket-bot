@@ -1,3 +1,4 @@
+import { ValidationError } from "@basket-bot/core";
 import { AuthenticatedRequest, withAuth } from "@/lib/auth/withAuth";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as storeEntityService from "@/lib/services/storeEntityService";
@@ -35,10 +36,7 @@ async function handlePost(
         const { name, aisleId, sectionId } = body;
 
         if (!name || typeof name !== "string") {
-            return NextResponse.json(
-                { code: "INVALID_INPUT", message: "Name is required" },
-                { status: 400 }
-            );
+            throw new ValidationError("Name is required");
         }
 
         const item = storeEntityService.createItem({

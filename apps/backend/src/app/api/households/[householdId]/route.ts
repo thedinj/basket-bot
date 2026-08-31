@@ -1,7 +1,7 @@
 import { withAuth, type AuthenticatedRequest } from "@/lib/auth/withAuth";
 import { toErrorResponse } from "@/lib/errors/handleRouteError";
 import * as householdService from "@/lib/services/householdService";
-import { updateHouseholdRequestSchema } from "@basket-bot/core";
+import { ValidationError, updateHouseholdRequestSchema } from "@basket-bot/core";
 import { NextResponse } from "next/server";
 
 /**
@@ -30,10 +30,7 @@ export const PUT = withAuth(async (req: AuthenticatedRequest, context) => {
         const { name } = updateHouseholdRequestSchema.parse(body);
 
         if (!name) {
-            return NextResponse.json(
-                { code: "VALIDATION_ERROR", message: "Name is required" },
-                { status: 400 }
-            );
+            throw new ValidationError("Name is required");
         }
 
         const household = householdService.updateHousehold(householdId, name, req.auth.sub);

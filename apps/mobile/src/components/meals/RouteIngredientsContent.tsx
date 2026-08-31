@@ -1,5 +1,5 @@
-import type { Store } from "@basket-bot/core"
-import pluralize from "pluralize"
+import type { Store } from "@basket-bot/core";
+import pluralize from "pluralize";
 import {
     IonCheckbox,
     IonIcon,
@@ -10,27 +10,29 @@ import {
     IonSelect,
     IonSelectOption,
     IonToggle,
-} from "@ionic/react"
-import { helpCircle, helpCircleOutline } from "ionicons/icons"
-import clsx from "clsx"
-import { DEFAULT_STORE, type ResolvedIngredient } from "../../hooks/useRouteIngredients"
-import PantryBadge from "../shared/PantryBadge"
+} from "@ionic/react";
+import { helpCircle, helpCircleOutline } from "ionicons/icons";
+import clsx from "clsx";
+import { DEFAULT_STORE, type ResolvedIngredient } from "../../hooks/useRouteIngredients";
+import PantryBadge from "../shared/PantryBadge";
 
-import "./RouteIngredientsContent.scss"
+import "./RouteIngredientsContent.scss";
 
 interface RouteIngredientsContentProps {
-    resolvedIngredients: ResolvedIngredient[]
-    routeMap: Map<string, string | null>
-    setRouteMap: (updater: (prev: Map<string, string | null>) => Map<string, string | null>) => void
-    defaultStoreId: string | null
-    setDefaultStoreId: (id: string | null) => void
-    unsureSet: Set<string>
-    onToggleUnsure: (ingredientId: string) => void
-    visibleStores: Store[]
-    recipeCount?: number
-    unitMap?: Map<string, string>
-    showPantryItems: boolean
-    onToggleShowPantryItems: () => void
+    resolvedIngredients: ResolvedIngredient[];
+    routeMap: Map<string, string | null>;
+    setRouteMap: (
+        updater: (prev: Map<string, string | null>) => Map<string, string | null>
+    ) => void;
+    defaultStoreId: string | null;
+    setDefaultStoreId: (id: string | null) => void;
+    unsureSet: Set<string>;
+    onToggleUnsure: (ingredientId: string) => void;
+    visibleStores: Store[];
+    recipeCount?: number;
+    unitMap?: Map<string, string>;
+    showPantryItems: boolean;
+    onToggleShowPantryItems: () => void;
 }
 
 const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
@@ -47,35 +49,39 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
     showPantryItems,
     onToggleShowPantryItems,
 }) => {
-    const shoppableIngredients = resolvedIngredients.filter((ri) => !ri.excluded)
-    const pantryIngredients = resolvedIngredients.filter((ri) => ri.excluded)
+    const shoppableIngredients = resolvedIngredients.filter((ri) => !ri.excluded);
+    const pantryIngredients = resolvedIngredients.filter((ri) => ri.excluded);
 
     // Group by recipe (in first-appearance order), then within each recipe
     // put non-pantry items before pantry items.
-    const recipeOrder = new Map<string, number>()
+    const recipeOrder = new Map<string, number>();
     for (const ri of resolvedIngredients) {
-        if (!recipeOrder.has(ri.recipeId)) recipeOrder.set(ri.recipeId, recipeOrder.size)
+        if (!recipeOrder.has(ri.recipeId)) recipeOrder.set(ri.recipeId, recipeOrder.size);
     }
     const visibleIngredients = (showPantryItems ? resolvedIngredients : shoppableIngredients)
         .slice()
         .sort((a, b) => {
-            const recipeDiff = recipeOrder.get(a.recipeId)! - recipeOrder.get(b.recipeId)!
-            if (recipeDiff !== 0) return recipeDiff
-            return Number(a.excluded) - Number(b.excluded)
-        })
+            const recipeDiff = recipeOrder.get(a.recipeId)! - recipeOrder.get(b.recipeId)!;
+            if (recipeDiff !== 0) return recipeDiff;
+            return Number(a.excluded) - Number(b.excluded);
+        });
 
     if (shoppableIngredients.length === 0 && !showPantryItems) {
         return (
             <div className="wizard-empty">
                 <IonNote>All ingredients are pantry-only and will be skipped.</IonNote>
                 {pantryIngredients.length > 0 && (
-                    <button type="button" className="route-pantry-toggle" onClick={onToggleShowPantryItems}>
+                    <button
+                        type="button"
+                        className="route-pantry-toggle"
+                        onClick={onToggleShowPantryItems}
+                    >
                         Show {pantryIngredients.length} pantry{" "}
                         {pluralize("item", pantryIngredients.length)}
                     </button>
                 )}
             </div>
-        )
+        );
     }
 
     return (
@@ -124,16 +130,22 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
                 {visibleIngredients.map((ri) => (
                     <IonItem
                         key={ri.ingredientId}
-                        className={clsx("wizard-route-item", ri.excluded && "wizard-route-item--pantry")}
+                        className={clsx(
+                            "wizard-route-item",
+                            ri.excluded && "wizard-route-item--pantry"
+                        )}
                     >
                         <IonCheckbox
                             slot="start"
                             checked={ri.storeId !== null}
                             onIonChange={(e) =>
                                 setRouteMap((prev) => {
-                                    const next = new Map(prev)
-                                    next.set(ri.ingredientId, e.detail.checked ? DEFAULT_STORE : null)
-                                    return next
+                                    const next = new Map(prev);
+                                    next.set(
+                                        ri.ingredientId,
+                                        e.detail.checked ? DEFAULT_STORE : null
+                                    );
+                                    return next;
                                 })
                             }
                         />
@@ -167,7 +179,9 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
                             >
                                 <IonIcon
                                     icon={
-                                        unsureSet.has(ri.ingredientId) ? helpCircle : helpCircleOutline
+                                        unsureSet.has(ri.ingredientId)
+                                            ? helpCircle
+                                            : helpCircleOutline
                                     }
                                 />
                             </button>
@@ -178,14 +192,16 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
                                 value={routeMap.get(ri.ingredientId) ?? DEFAULT_STORE}
                                 onIonChange={(e) =>
                                     setRouteMap((prev) => {
-                                        const next = new Map(prev)
-                                        next.set(ri.ingredientId, e.detail.value ?? DEFAULT_STORE)
-                                        return next
+                                        const next = new Map(prev);
+                                        next.set(ri.ingredientId, e.detail.value ?? DEFAULT_STORE);
+                                        return next;
                                     })
                                 }
                                 interface="action-sheet"
                             >
-                                <IonSelectOption value={DEFAULT_STORE}>Default store</IonSelectOption>
+                                <IonSelectOption value={DEFAULT_STORE}>
+                                    Default store
+                                </IonSelectOption>
                                 {visibleStores.map((s) => (
                                     <IonSelectOption key={s.id} value={s.id}>
                                         {s.name}
@@ -197,7 +213,7 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
                 ))}
             </IonList>
         </>
-    )
-}
+    );
+};
 
-export default RouteIngredientsContent
+export default RouteIngredientsContent;

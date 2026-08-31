@@ -75,7 +75,10 @@ const RecipeCard = forwardRef<HTMLDivElement, RecipeCardProps>(
                                     }}
                                     aria-label="Edit recipe"
                                 >
-                                    <IonIcon icon={createOutline} className="recipe-card__add-icon" />
+                                    <IonIcon
+                                        icon={createOutline}
+                                        className="recipe-card__add-icon"
+                                    />
                                 </button>
                             )}
                             {onAddToList && (

@@ -25,9 +25,9 @@ import {
     removeOutline,
     sunnyOutline,
 } from "ionicons/icons";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Controller } from "react-hook-form";
-import { useStores } from "../../db/hooks";
+import { useVisibleStores } from "../../db/hooks";
 import { LLM_COLOR, LLM_ICON_SRC } from "../../llm/shared";
 import type { SettingsFormData } from "../../settings/settingsSchema";
 import { useSettingsForm } from "../../settings/useSettingsForm";
@@ -39,8 +39,7 @@ import AboutSection from "./AboutSection";
 const SettingsModal: React.FC = () => {
     const { form, performSave, isSubmitting } = useSettingsForm();
     const { isModalOpen, closeModal } = useAppHeader();
-    const { data: stores } = useStores();
-    const visibleStores = useMemo(() => stores?.filter((s) => !s.isHidden) ?? [], [stores]);
+    const visibleStores = useVisibleStores();
 
     const preOpenModeRef = useRef<string | null>(null);
     const saveSucceededRef = useRef(false);

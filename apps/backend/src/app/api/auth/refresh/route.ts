@@ -26,6 +26,9 @@ export async function POST(req: NextRequest) {
             )
             .get(refreshToken) as RefreshTokenRow | undefined;
 
+        // Deliberately hand-rolled rather than `throw new AuthenticationError(...)`: the client
+        // distinguishes a dead session from a retryable 401 by the X-Token-Status header
+        // (see mobile lib/api/client.ts), and toErrorResponse has no way to attach it.
         if (!tokenRow) {
             const response = NextResponse.json(
                 { code: "INVALID_REFRESH_TOKEN", message: "Invalid refresh token" },

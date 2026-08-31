@@ -1,27 +1,20 @@
-import {
-    IonButton,
-    IonContent,
-    IonFooter,
-    IonModal,
-    IonToggle,
-    IonToolbar,
-} from "@ionic/react"
-import type { RecipeTag } from "@basket-bot/core"
-import TagChip from "./TagChip"
+import { IonButton, IonContent, IonFooter, IonModal, IonToggle, IonToolbar } from "@ionic/react";
+import type { RecipeTag } from "@basket-bot/core";
+import TagChip from "./TagChip";
 
-import "./RecipeFilterSheet.scss"
+import "./RecipeFilterSheet.scss";
 
 export interface RecipeFilters {
-    tagIds: Set<string>
-    tagMode: "any" | "all"
-    maxCookingTimeMinutes: number | null
-    inPoolOnly: boolean
-    hasSteps: boolean
+    tagIds: Set<string>;
+    tagMode: "any" | "all";
+    maxCookingTimeMinutes: number | null;
+    inPoolOnly: boolean;
+    hasSteps: boolean;
 }
 
 export interface RecipeSort {
-    by: "name" | "cookTime" | "ingredientCount" | "dateAdded"
-    dir: "asc" | "desc"
+    by: "name" | "cookTime" | "ingredientCount" | "dateAdded";
+    dir: "asc" | "desc";
 }
 
 export const DEFAULT_FILTERS: RecipeFilters = {
@@ -30,30 +23,30 @@ export const DEFAULT_FILTERS: RecipeFilters = {
     maxCookingTimeMinutes: null,
     inPoolOnly: false,
     hasSteps: false,
-}
+};
 
-export const DEFAULT_SORT: RecipeSort = { by: "name", dir: "asc" }
+export const DEFAULT_SORT: RecipeSort = { by: "name", dir: "asc" };
 
 interface RecipeFilterSheetProps {
-    isOpen: boolean
-    filters: RecipeFilters
-    sort: RecipeSort
-    allTags: RecipeTag[]
-    hasPoolExcludedRecipes: boolean
-    onFiltersChange: (f: RecipeFilters) => void
-    onSortChange: (s: RecipeSort) => void
-    onReset: () => void
-    onDismiss: () => void
+    isOpen: boolean;
+    filters: RecipeFilters;
+    sort: RecipeSort;
+    allTags: RecipeTag[];
+    hasPoolExcludedRecipes: boolean;
+    onFiltersChange: (f: RecipeFilters) => void;
+    onSortChange: (s: RecipeSort) => void;
+    onReset: () => void;
+    onDismiss: () => void;
 }
 
 const SORT_FIELDS: { value: RecipeSort["by"]; label: string }[] = [
-    { value: "name",             label: "Name"        },
-    { value: "cookTime",         label: "Cook time"   },
-    { value: "ingredientCount",  label: "Ingredients" },
-    { value: "dateAdded",        label: "Date added"  },
-]
+    { value: "name", label: "Name" },
+    { value: "cookTime", label: "Cook time" },
+    { value: "ingredientCount", label: "Ingredients" },
+    { value: "dateAdded", label: "Date added" },
+];
 
-const TIME_PRESETS = [15, 30, 60] as const
+const TIME_PRESETS = [15, 30, 60] as const;
 
 const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
     isOpen,
@@ -66,18 +59,19 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
     onReset,
     onDismiss,
 }) => {
-    const setTagMode  = (m: "any" | "all") => onFiltersChange({ ...filters, tagMode: m })
-    const toggleTag   = (id: string) => {
-        const next = new Set(filters.tagIds)
-        if (next.has(id)) next.delete(id)
-        else next.add(id)
-        onFiltersChange({ ...filters, tagIds: next })
-    }
-    const setMaxTime  = (v: number | null) => onFiltersChange({ ...filters, maxCookingTimeMinutes: v })
-    const setInPool   = (v: boolean) => onFiltersChange({ ...filters, inPoolOnly: v })
-    const setHasSteps = (v: boolean) => onFiltersChange({ ...filters, hasSteps: v })
-    const setSortBy   = (by: RecipeSort["by"]) => onSortChange({ ...sort, by })
-    const toggleDir   = () => onSortChange({ ...sort, dir: sort.dir === "asc" ? "desc" : "asc" })
+    const setTagMode = (m: "any" | "all") => onFiltersChange({ ...filters, tagMode: m });
+    const toggleTag = (id: string) => {
+        const next = new Set(filters.tagIds);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        onFiltersChange({ ...filters, tagIds: next });
+    };
+    const setMaxTime = (v: number | null) =>
+        onFiltersChange({ ...filters, maxCookingTimeMinutes: v });
+    const setInPool = (v: boolean) => onFiltersChange({ ...filters, inPoolOnly: v });
+    const setHasSteps = (v: boolean) => onFiltersChange({ ...filters, hasSteps: v });
+    const setSortBy = (by: RecipeSort["by"]) => onSortChange({ ...sort, by });
+    const toggleDir = () => onSortChange({ ...sort, dir: sort.dir === "asc" ? "desc" : "asc" });
 
     return (
         <IonModal
@@ -88,7 +82,6 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
             handle
         >
             <IonContent className="recipe-filter-sheet">
-
                 {/* ── Sort ──────────────────────────────────────────────────── */}
                 <div className="recipe-filter-sheet__section">
                     <p className="recipe-filter-sheet__section-label">Sort</p>
@@ -109,7 +102,11 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
                             type="button"
                             className="recipe-filter-sheet__dir-btn"
                             onClick={toggleDir}
-                            aria-label={sort.dir === "asc" ? "Ascending, tap to reverse" : "Descending, tap to reverse"}
+                            aria-label={
+                                sort.dir === "asc"
+                                    ? "Ascending, tap to reverse"
+                                    : "Descending, tap to reverse"
+                            }
                         >
                             {sort.dir === "asc" ? "↑ Asc" : "↓ Desc"}
                         </button>
@@ -126,7 +123,9 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
                                     key={t}
                                     type="button"
                                     className={`recipe-filter-sheet__time-preset${filters.maxCookingTimeMinutes === t ? " active" : ""}`}
-                                    onClick={() => setMaxTime(filters.maxCookingTimeMinutes === t ? null : t)}
+                                    onClick={() =>
+                                        setMaxTime(filters.maxCookingTimeMinutes === t ? null : t)
+                                    }
                                 >
                                     ≤{t}m
                                 </button>
@@ -149,12 +148,13 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
                                     className="recipe-filter-sheet__time-input"
                                     value={filters.maxCookingTimeMinutes ?? ""}
                                     onChange={(e) => {
-                                        const raw = e.target.value
-                                        const parsed = raw.trim() ? parseInt(raw, 10) : null
-                                        const val = parsed !== null && !Number.isNaN(parsed)
-                                            ? Math.max(1, parsed)
-                                            : null
-                                        setMaxTime(val)
+                                        const raw = e.target.value;
+                                        const parsed = raw.trim() ? parseInt(raw, 10) : null;
+                                        const val =
+                                            parsed !== null && !Number.isNaN(parsed)
+                                                ? Math.max(1, parsed)
+                                                : null;
+                                        setMaxTime(val);
                                     }}
                                     placeholder="—"
                                     min={1}
@@ -199,9 +199,11 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
                                 >
                                     <TagChip
                                         tag={tag}
-                                        selected={filters.tagIds.size > 0
-                                            ? filters.tagIds.has(tag.id)
-                                            : undefined}
+                                        selected={
+                                            filters.tagIds.size > 0
+                                                ? filters.tagIds.has(tag.id)
+                                                : undefined
+                                        }
                                     />
                                 </button>
                             ))}
@@ -216,7 +218,9 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
                     <div className="recipe-filter-sheet__section">
                         <p className="recipe-filter-sheet__section-label">Randomizer pool</p>
                         <div className="recipe-filter-sheet__toggle-row">
-                            <span className="recipe-filter-sheet__toggle-label">In-pool recipes only</span>
+                            <span className="recipe-filter-sheet__toggle-label">
+                                In-pool recipes only
+                            </span>
                             <IonToggle
                                 checked={filters.inPoolOnly}
                                 onIonChange={(e) => setInPool(e.detail.checked)}
@@ -229,14 +233,15 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
                 <div className="recipe-filter-sheet__section">
                     <p className="recipe-filter-sheet__section-label">Instructions</p>
                     <div className="recipe-filter-sheet__toggle-row">
-                        <span className="recipe-filter-sheet__toggle-label">Has cooking instructions</span>
+                        <span className="recipe-filter-sheet__toggle-label">
+                            Has cooking instructions
+                        </span>
                         <IonToggle
                             checked={filters.hasSteps}
                             onIonChange={(e) => setHasSteps(e.detail.checked)}
                         />
                     </div>
                 </div>
-
             </IonContent>
 
             <IonFooter className="recipe-filter-sheet-footer">
@@ -250,7 +255,7 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
                 </IonToolbar>
             </IonFooter>
         </IonModal>
-    )
-}
+    );
+};
 
-export default RecipeFilterSheet
+export default RecipeFilterSheet;

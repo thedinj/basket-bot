@@ -3,10 +3,7 @@ import { db } from "../db/db";
 import { boolToInt, intToBool } from "../utils/sqliteUtils";
 
 type PlanSlotRow = Omit<PlanSlot, "tagIds" | "pinned"> & { tagIds: string; pinned: number | null };
-type PlanIngredientRouteRow = Omit<
-    PlanIngredientRoute,
-    "overridden" | "checked" | "isUnsure"
-> & {
+type PlanIngredientRouteRow = Omit<PlanIngredientRoute, "overridden" | "checked" | "isUnsure"> & {
     overridden: number | null;
     checked: number | null;
     isUnsure: number | null;

@@ -37,11 +37,7 @@ export const LLMItem: React.FC<LLMItemProps> = ({
             }}
             {...props}
         >
-            <IonIcon
-                src={LLM_ICON_SRC}
-                slot="start"
-                style={{ color: LLM_COLOR }}
-            />
+            <IonIcon src={LLM_ICON_SRC} slot="start" style={{ color: LLM_COLOR }} />
             {typeof children === "string" ? (
                 <IonLabel
                     style={{
@@ -53,18 +49,13 @@ export const LLMItem: React.FC<LLMItemProps> = ({
                 </IonLabel>
             ) : React.isValidElement(children) && children.type === IonLabel ? (
                 React.cloneElement(
-                    children as React.ReactElement<
-                        ComponentProps<typeof IonLabel>
-                    >,
+                    children as React.ReactElement<ComponentProps<typeof IonLabel>>,
                     {
                         style: {
                             color: LLM_COLOR,
                             letterSpacing: "0.5px",
-                            ...((
-                                children as React.ReactElement<
-                                    ComponentProps<typeof IonLabel>
-                                >
-                            ).props.style || {}),
+                            ...((children as React.ReactElement<ComponentProps<typeof IonLabel>>)
+                                .props.style || {}),
                         },
                     }
                 )

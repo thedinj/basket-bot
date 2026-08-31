@@ -17,10 +17,7 @@ interface ItemNameAndLocationFieldsProps<T extends FieldValues = FieldValues> {
     errors: FieldErrors<T>;
     storeId: number | string;
     disabled?: boolean;
-    renderNameField?: (props: {
-        control: Control<T>;
-        errors: FieldErrors<T>;
-    }) => ReactNode;
+    renderNameField?: (props: { control: Control<T>; errors: FieldErrors<T> }) => ReactNode;
 }
 
 export function ItemNameAndLocationFields<T extends FieldValues = FieldValues>({
@@ -49,9 +46,7 @@ export function ItemNameAndLocationFields<T extends FieldValues = FieldValues>({
                         autocapitalize="sentences"
                     />
                     {errors.name && (
-                        <IonLabel color="danger">
-                            {errors.name.message as string}
-                        </IonLabel>
+                        <IonLabel color="danger">{errors.name.message as string}</IonLabel>
                     )}
                 </IonItem>
             )}

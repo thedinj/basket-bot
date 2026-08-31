@@ -81,11 +81,11 @@ export interface RecipeInitialData {
     }>;
 }
 
-const genKey = () => Math.random().toString(36).slice(2)
+const genKey = () => Math.random().toString(36).slice(2);
 const sortRows = (rows: IngredientRow[]) =>
     [...rows].sort((a, b) => {
-        if (a.excluded !== b.excluded) return a.excluded ? 1 : -1
-        return a.name.localeCompare(b.name)
+        if (a.excluded !== b.excluded) return a.excluded ? 1 : -1;
+        return a.name.localeCompare(b.name);
     });
 const emptyRow = (): IngredientRow => ({
     rowKey: genKey(),
@@ -190,18 +190,24 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                 );
                 if (initialData.ingredients && initialData.ingredients.length > 0) {
                     setIngredients(
-                        sortRows(initialData.ingredients.map((ing) => ({
-                            rowKey: genKey(),
-                            name: ing.name,
-                            shoppingName: ing.shoppingName ?? "",
-                            qty: ing.qty,
-                            shoppingQty: ing.shoppingQty != null ? String(ing.shoppingQty) : "",
-                            unitId: ing.unitId,
-                            shoppingUnitId: ing.shoppingUnitId ?? null,
-                            excluded: ing.excluded,
-                            isUnsure: false,
-                            shopExpanded: !!(ing.shoppingName || ing.shoppingQty != null || ing.shoppingUnitId),
-                        })))
+                        sortRows(
+                            initialData.ingredients.map((ing) => ({
+                                rowKey: genKey(),
+                                name: ing.name,
+                                shoppingName: ing.shoppingName ?? "",
+                                qty: ing.qty,
+                                shoppingQty: ing.shoppingQty != null ? String(ing.shoppingQty) : "",
+                                unitId: ing.unitId,
+                                shoppingUnitId: ing.shoppingUnitId ?? null,
+                                excluded: ing.excluded,
+                                isUnsure: false,
+                                shopExpanded: !!(
+                                    ing.shoppingName ||
+                                    ing.shoppingQty != null ||
+                                    ing.shoppingUnitId
+                                ),
+                            }))
+                        )
                     );
                 }
             }
@@ -226,19 +232,25 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
 
         const rows: IngredientRow[] =
             recipe.ingredients.length > 0
-                ? sortRows(recipe.ingredients.map((ing) => ({
-                      rowKey: genKey(),
-                      id: ing.id,
-                      name: ing.name,
-                      shoppingName: ing.shoppingName ?? "",
-                      qty: ing.qty !== null ? String(ing.qty) : "",
-                      shoppingQty: ing.shoppingQty !== null ? String(ing.shoppingQty) : "",
-                      unitId: ing.unitId ?? null,
-                      shoppingUnitId: ing.shoppingUnitId ?? null,
-                      excluded: !!ing.excluded,
-                      isUnsure: !!ing.isUnsure,
-                      shopExpanded: !!(ing.shoppingName || ing.shoppingQty !== null || ing.shoppingUnitId !== null),
-                  })))
+                ? sortRows(
+                      recipe.ingredients.map((ing) => ({
+                          rowKey: genKey(),
+                          id: ing.id,
+                          name: ing.name,
+                          shoppingName: ing.shoppingName ?? "",
+                          qty: ing.qty !== null ? String(ing.qty) : "",
+                          shoppingQty: ing.shoppingQty !== null ? String(ing.shoppingQty) : "",
+                          unitId: ing.unitId ?? null,
+                          shoppingUnitId: ing.shoppingUnitId ?? null,
+                          excluded: !!ing.excluded,
+                          isUnsure: !!ing.isUnsure,
+                          shopExpanded: !!(
+                              ing.shoppingName ||
+                              ing.shoppingQty !== null ||
+                              ing.shoppingUnitId !== null
+                          ),
+                      }))
+                  )
                 : [emptyRow()];
 
         setIngredients(rows);
@@ -327,7 +339,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                         qty: row.qty ? Number(row.qty) : null,
                         shoppingQty: parsedShoppingQty,
                         unitId: row.unitId || null,
-                        shoppingUnitId: parsedShoppingQty ? (row.shoppingUnitId || null) : null,
+                        shoppingUnitId: parsedShoppingQty ? row.shoppingUnitId || null : null,
                         excluded: row.excluded,
                         isUnsure: row.isUnsure,
                     });
@@ -365,7 +377,9 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                 }
                 for (const row of validRows) {
                     const parsedShoppingQty = row.shoppingQty ? Number(row.shoppingQty) : null;
-                    const resolvedShoppingUnitId = parsedShoppingQty ? (row.shoppingUnitId || null) : null;
+                    const resolvedShoppingUnitId = parsedShoppingQty
+                        ? row.shoppingUnitId || null
+                        : null;
                     if (!row.id) {
                         await addIngredientMutation.mutateAsync({
                             recipeId: savedId,
@@ -597,7 +611,11 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                             >
                                                 <IonIcon
                                                     slot="icon-only"
-                                                    icon={row.isUnsure ? helpCircle : helpCircleOutline}
+                                                    icon={
+                                                        row.isUnsure
+                                                            ? helpCircle
+                                                            : helpCircleOutline
+                                                    }
                                                 />
                                             </IonButton>
                                         )}
@@ -626,10 +644,15 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                             type="button"
                                             className={`recipe-editor-unit-btn${row.unitId ? " has-value" : ""}`}
                                             onClick={() =>
-                                                setUnitPickerState({ rowKey: row.rowKey, field: "unitId" })
+                                                setUnitPickerState({
+                                                    rowKey: row.rowKey,
+                                                    field: "unitId",
+                                                })
                                             }
                                         >
-                                            {row.unitId ? unitMap.get(row.unitId) ?? "Unit" : "Unit"}
+                                            {row.unitId
+                                                ? (unitMap.get(row.unitId) ?? "Unit")
+                                                : "Unit"}
                                         </button>
                                     </div>
                                     {row.name.trim() && !row.shopExpanded && (
@@ -689,10 +712,16 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                                     type="button"
                                                     className={`recipe-editor-unit-btn recipe-editor-unit-btn--shopping${row.shoppingUnitId ? " has-value" : ""}`}
                                                     onClick={() =>
-                                                        setUnitPickerState({ rowKey: row.rowKey, field: "shoppingUnitId" })
+                                                        setUnitPickerState({
+                                                            rowKey: row.rowKey,
+                                                            field: "shoppingUnitId",
+                                                        })
                                                     }
                                                 >
-                                                    {row.shoppingUnitId ? unitMap.get(row.shoppingUnitId) ?? "Unit" : "Unit"}
+                                                    {row.shoppingUnitId
+                                                        ? (unitMap.get(row.shoppingUnitId) ??
+                                                          "Unit")
+                                                        : "Unit"}
                                                 </button>
                                             </div>
                                         </div>
@@ -724,7 +753,6 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                 />
                             </IonItem>
                         </IonList>
-
                     </>
                 )}
             </IonContent>
@@ -751,12 +779,18 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
             <ClickableSelectionModal
                 isOpen={unitPickerState !== null}
                 items={unitItems}
-                value={unitPickerState ? (ingredients.find((r) => r.rowKey === unitPickerState.rowKey)?.[unitPickerState.field] ?? undefined) : undefined}
+                value={
+                    unitPickerState
+                        ? (ingredients.find((r) => r.rowKey === unitPickerState.rowKey)?.[
+                              unitPickerState.field
+                          ] ?? undefined)
+                        : undefined
+                }
                 title="Select unit"
                 allowClear
                 onSelect={(id) => {
                     if (unitPickerState) {
-                        updateRow(unitPickerState.rowKey, unitPickerState.field, id)
+                        updateRow(unitPickerState.rowKey, unitPickerState.field, id);
                     }
                 }}
                 onDismiss={() => setUnitPickerState(null)}

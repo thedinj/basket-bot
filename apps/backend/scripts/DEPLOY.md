@@ -35,6 +35,7 @@ chmod +x apps/backend/scripts/*.sh
 ```
 
 **Interactive prompts during install:**
+
 - Edit `.env` — set `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` (press Enter when done)
 - Enable HTTPS? → `y`, then enter `basketbot.ddns.net`
 - Install Samba? → `y` or `n`
@@ -68,6 +69,7 @@ pi-app-install ~/chance-a-maran/apps/backend/scripts/deploy.config.sh
 ```
 
 **Interactive prompts during install:**
+
 - Edit `.env` — confirm `PORT=3001`, set admin credentials
 - Enable HTTPS? → `y`, then enter `chanceamaran.ddns.net`
 - Install Samba? → existing shares will be reused, safe to say `y` or `n`
@@ -150,10 +152,10 @@ cd ~/basket-bot && git pull && apps/backend/scripts/bootstrap.sh
 
 ## Port map
 
-| App            | Backend port | Frontend         | Domain                   |
-|----------------|-------------|-----------------|--------------------------|
-| Basket Bot     | 3000        | None (API only) | basketbot.ddns.net       |
-| Chance-a-Maran | 3001        | Vite SPA (static, served by Caddy) | chanceamaran.ddns.net |
+| App            | Backend port | Frontend                           | Domain                |
+| -------------- | ------------ | ---------------------------------- | --------------------- |
+| Basket Bot     | 3000         | None (API only)                    | basketbot.ddns.net    |
+| Chance-a-Maran | 3001         | Vite SPA (static, served by Caddy) | chanceamaran.ddns.net |
 
 Both backends are **localhost-only** — Caddy is the sole public entry point on
 ports 80/443. Neither backend port is opened in the firewall.

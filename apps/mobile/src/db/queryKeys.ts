@@ -28,8 +28,8 @@
 
 // Meal-planning / household ids can be null while the entity is still loading; the key
 // still needs to be well-formed so the query stays disabled rather than throwing.
-type Id = string
-type NullableId = string | null
+type Id = string;
+type NullableId = string | null;
 
 export const queryKeys = {
     // --- Auth & local device state ---
@@ -111,4 +111,4 @@ export const queryKeys = {
     },
     invitations: () => ["invitations"],
     notificationCounts: () => ["notifications", "counts"],
-}
+};

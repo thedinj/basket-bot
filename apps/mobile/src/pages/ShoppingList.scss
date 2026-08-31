@@ -1,26 +1,3 @@
-.shopping-list-empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    // ion-content's scroll box has a definite height, so a plain percentage min-height
-    // resolves against it directly — no need to turn ion-content into a flex container
-    // (which would put every sibling, including <FabSpacer /> and the real item lists, at
-    // risk of being shrunk to fit; see git history for the bug that caused).
-    min-height: 100%;
-    text-align: center;
-    padding: 20px;
-    box-sizing: border-box;
-
-    // Only the states rendered inside ShoppingListBody are followed by a trailing
-    // <FabSpacer /> — a fixed, known height — so it's subtracted here to center against the
-    // actually-visible area rather than the space behind that clearance. The "select a
-    // store" state has no FabSpacer/FAB, so it's left centering against the full height.
-    &--with-fab-spacer {
-        min-height: calc(100% - var(--fab-spacer-height));
-    }
-}
-
 // Ionic's ion-list carries a default 8px top padding, which reads as an odd gap
 // directly under the progress line. Only the first list needs it removed.
 .shopping-list-content ion-list:first-of-type {

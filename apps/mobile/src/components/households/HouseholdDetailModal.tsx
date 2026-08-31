@@ -311,17 +311,17 @@ const HouseholdDetailModal: React.FC<HouseholdDetailModalProps> = ({
 
                             {/* Actions Section */}
                             {household.members.length > 1 && (
-                            <div className="ion-padding">
-                                <IonButton
-                                    expand="block"
-                                    color="warning"
-                                    fill="outline"
-                                    onClick={handleLeaveHousehold}
-                                    disabled={removeMember.isPending}
-                                >
-                                    Leave Household
-                                </IonButton>
-                            </div>
+                                <div className="ion-padding">
+                                    <IonButton
+                                        expand="block"
+                                        color="warning"
+                                        fill="outline"
+                                        onClick={handleLeaveHousehold}
+                                        disabled={removeMember.isPending}
+                                    >
+                                        Leave Household
+                                    </IonButton>
+                                </div>
                             )}
                         </>
                     ) : null}

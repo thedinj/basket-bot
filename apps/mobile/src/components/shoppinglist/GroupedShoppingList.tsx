@@ -132,11 +132,15 @@ export const GroupedShoppingList = ({
     const refreshAfterCategorization = useCallback(async () => {
         if (!storeId) return;
         await Promise.all([
-            queryClient.invalidateQueries({ queryKey: queryKeys.shoppingListItems.byStore(storeId) }),
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.shoppingListItems.byStore(storeId),
+            }),
             queryClient.invalidateQueries({ queryKey: queryKeys.items.byStore(storeId) }),
             queryClient.invalidateQueries({ queryKey: queryKeys.items.withDetails(storeId) }),
         ]);
-        await queryClient.refetchQueries({ queryKey: queryKeys.shoppingListItems.byStore(storeId) });
+        await queryClient.refetchQueries({
+            queryKey: queryKeys.shoppingListItems.byStore(storeId),
+        });
     }, [storeId, queryClient]);
 
     // Handler for auto-categorizing all uncategorized items

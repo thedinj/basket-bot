@@ -21,6 +21,7 @@ import {
 } from "../../db/hooks";
 import { queryKeys } from "../../db/queryKeys";
 import RefreshConfig from "../../hooks/refresh/RefreshConfig";
+import { isPendingUnsure } from "../../utils/shoppingListDerivations";
 import { toUpsertPayload } from "../../utils/shoppingListItemPayload";
 import { useAppHeader } from "../layout/useAppHeader";
 import { GroupedItemList } from "../shared/GroupedItemList";
@@ -39,7 +40,7 @@ const UnsureItemsModalContent: React.FC<{ onClose: () => void }> = ({ onClose })
     const groups = useMemo<ItemGroup<ShoppingListItemWithDetails>[]>(() => {
         return storesWithItems
             .map(({ store, items }, index) => {
-                const unsureItems = items.filter((item) => !item.isChecked && item.isUnsure);
+                const unsureItems = items.filter(isPendingUnsure);
                 return {
                     id: `store-${store.id}`,
                     items: unsureItems,
