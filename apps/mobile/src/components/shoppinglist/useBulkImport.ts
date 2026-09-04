@@ -53,7 +53,9 @@ export function useBulkImport(storeId: string) {
                     );
 
                     try {
-                        // Find existing store item by normalized name (handles singular/plural)
+                        // Must use the storage normalizer, not the search one: `nameNorm` is
+                        // written by the backend and is not singularized, so singularizing here
+                        // would miss every plural and create a duplicate store item.
                         const parsedNameNorm = normalizeItemName(parsed.name);
                         const existingItem = storeItems?.find(
                             (item) => item.nameNorm === parsedNameNorm

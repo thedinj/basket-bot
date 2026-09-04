@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { validateBulkImportResult, type BulkImportResponse } from "../../llm/features/bulkImport";
+import { bulkImportResponseSchema, type BulkImportResponse } from "../../llm/features/bulkImport";
 import { BULK_IMPORT_PROMPT } from "../../llm/features/bulkImportPrompt";
 import { useLLMModal } from "../../llm/shared/useLLMModal";
 import BulkImportItemList from "./BulkImportItemList";
@@ -17,19 +17,12 @@ export function useBulkImportModal(storeId: string) {
         openModal<BulkImportResponse, Set<number>>({
             title: "Import Shopping List",
             prompt: BULK_IMPORT_PROMPT,
-            model: "gpt-4o",
+            tier: "smart",
+            schema: bulkImportResponseSchema,
             userInstructions:
                 "Paste your shopping list as text or upload a photo of a handwritten/printed list.",
             buttonText: "Scan List",
             shieldMessage: "Scanning list with AI...",
-            validateResponse: (response) => {
-                if (!validateBulkImportResult(response.data)) {
-                    throw new Error(
-                        "Failed to parse shopping list. The response was not in the expected format."
-                    );
-                }
-                return true;
-            },
             // All items start checked; uncheckedIds is the set of deselected indices
             initialState: () => new Set<number>(),
             renderOutput: (response, uncheckedIds, setUncheckedIds) => (

@@ -51,10 +51,23 @@ pnpm build            # Compile TypeScript to dist/
 pnpm dev              # Watch mode
 ```
 
+**Backend only (`apps/backend/`) — tests:**
+
+```bash
+pnpm test             # Vitest against an in-memory SQLite schema
+```
+
+Backend suites get a real schema with no setup: `test/setup/inMemoryDb.ts` claims `globalThis.db`
+before `lib/db/db.ts` is evaluated and runs `initializeDatabase()`, so every repo transparently
+talks to a fresh `:memory:` database (one per test file). Seed rows with the factories in
+`test/support/fixtures.ts` and call `resetDb()` from `test/support/resetDb.ts` in a `beforeEach`
+when a file needs per-test isolation.
+
 **Run a single test file:**
 
 ```bash
 cd packages/core && pnpm vitest run src/schemas/mySchema.test.ts
+pnpm --filter @basket-bot/mobile test src/utils/dateUtils.test.ts
 ```
 
 ## Architecture
@@ -118,6 +131,11 @@ recipe detail AND `queryKeys.recipes.byHousehold(householdId)`** (the list carri
 ingredient details).
 **Full registry + cascade tables (keep updated in the same change):**
 [`apps/mobile/docs/CACHE_KEYS.md`](apps/mobile/docs/CACHE_KEYS.md).
+**These rules are enforced**: [`apps/mobile/src/db/cacheCascade.test.ts`](apps/mobile/src/db/cacheCascade.test.ts)
+(store domain) and [`apps/mobile/src/db/mealsCascade.test.ts`](apps/mobile/src/db/mealsCascade.test.ts)
+(recipes/plans/tags) run every mutation hook and assert the exact set of keys it invalidates, and a
+coverage guard in each fails the suite when a new mutation hook has no documented cascade. Adding a
+mutation means adding its row there too.
 
 **Mutation errors are handled centrally — never add a per-hook `onError` toast.** The
 shared `QueryClient` in [`apps/mobile/src/db/DatabaseContext.tsx`](apps/mobile/src/db/DatabaseContext.tsx)
@@ -130,9 +148,15 @@ double toast (the global handler still fires) or, if the mutation has no `onErro
 all, historically caused _silent_ failures instead. If a mutation needs to react to a
 specific error itself (e.g. an inline form field error, or a silent cache refresh on a 404) instead of the generic toast, call `markErrorHandled(error)` from
 `apps/mobile/src/utils/errorUtils.ts` inside its `onError` to suppress the global toast
-for that error — see `useUpdateItem` (ITEM_NAME_CONFLICT → inline field error) or
-`useToggleItemChecked` (404 → silent refresh) in
-[`apps/mobile/src/db/hooks.ts`](apps/mobile/src/db/hooks.ts) for the pattern.
+for that error — see `useToggleItemChecked` (404 → silent refresh) in
+[`apps/mobile/src/db/shoppingListHooks.ts`](apps/mobile/src/db/shoppingListHooks.ts) for the
+pattern.
+
+Name conflicts arrive as a `ConflictError` with a specific code (`AISLE_NAME_CONFLICT`,
+`SECTION_NAME_CONFLICT`, `ITEM_NAME_CONFLICT`) and a message naming the existing row, so the
+generic toast is already useful; add an `onError` + `markErrorHandled` only when a screen wants
+the message inline on the field instead. Note `updateItem` is the exception — a rename onto an
+existing name _merges_ the two items rather than conflicting.
 
 **Every `IonFab` needs a `FabSpacer`:** a `slot="fixed"` FAB floats over scrollable
 content, so the last row(s) of any list/table it sits on top of become unclickable unless
@@ -143,6 +167,52 @@ a FAB — even if the FAB only appears conditionally (e.g. per-tab or per-segmen
 `FabSpacer` must render unconditionally for every state that can show that FAB. Do not
 invent ad-hoc padding — reuse `FabSpacer` so clearance stays consistent with the FAB's
 actual size and safe-area handling.
+
+### LLM features (mobile-only)
+
+All AI runs client-side in `apps/mobile/src/llm/`; the backend has no LLM code. Three rules
+keep it provider-agnostic:
+
+- **Never name a model at a call site.** Features declare a capability tier — `fast`
+  (item categorization), `smart` (parsing pasted lists/recipes), or `vision` (store scans)
+  — and the concrete model comes from the user's config. A request carrying an attachment
+  is upgraded to `vision` automatically by `runLLM`, so a text-only bulk import still uses
+  the cheap model.
+- **Never call a provider directly.** [`runLLM`](apps/mobile/src/llm/shared/runLLM.ts) is
+  the only entry point: it resolves provider + model, keeps the screen awake, and
+  validates the response with the caller's Zod schema. `LLMModalConfig` takes `tier` and
+  `schema`, never `model`.
+- **Vendors are named in exactly one place**:
+  [`llm/providers/registry.ts`](apps/mobile/src/llm/providers/registry.ts). Adding a
+  provider (including a future backend proxy — `requiresApiKey: false` plus an adapter
+  posting to our own API) is one descriptor entry; no feature or settings field changes.
+
+Response shapes are Zod schemas in `llm/features/*.ts` (`bulkImportResponseSchema`,
+`recipeImportResponseSchema`, `autoCategorizeResultSchema`, `storeScanResultSchema`) —
+never hand-written type guards. They also drive structured output for providers that
+support it, via `toStructuredOutputSchema` (which strips the JSON Schema keywords those
+compilers reject).
+
+Config lives in the Capacitor Preferences key `llm_config` (parsed by `parseLLMConfig`,
+which never throws) and API keys in secure storage under `llm_api_key_${providerId}`.
+The pre-provider `openai_api_key` slot is still **read** as a fallback so existing
+installs keep working — never write to it.
+
+### Name normalization
+
+Two functions in `@basket-bot/core` (`packages/core/src/utils/normalizeName.ts`), and picking the
+wrong one causes duplicate records:
+
+- **`normalizeItemName`** — the storage/uniqueness key. Trims, lowercases, collapses whitespace;
+  does **not** singularize. This is what is written to every `nameNorm` column and what the
+  `UNIQUE (storeId, nameNorm)` constraints compare, so it is the only correct choice when
+  comparing against a stored `nameNorm`.
+- **`normalizeForSearch`** — the same, plus singularization. Display-side filtering only, and it
+  must be applied to **both** sides of a comparison.
+
+These were previously one same-named function defined twice with different behavior (the backend
+collapsed whitespace, the client singularized), which made bulk import miss every plural and
+create duplicate store items. Do not reintroduce a local copy in either app.
 
 ### Data Hierarchy
 
@@ -164,6 +234,24 @@ Stores have owners and collaborators. Households exist but are reserved for futu
 1. Create a new migration file in `apps/backend/src/db/migrations/`
 2. Update `apps/backend/src/db/init.ts` to reflect the new schema
 3. Update Zod schemas in `packages/core/src/schemas/` and rebuild core (`pnpm build`)
+
+Steps 1 and 2 are enforced by `apps/backend/src/db/migrationDrift.test.ts`: it builds one database
+from `init.ts` and another by replaying every migration onto an empty one, and requires the two
+schemas to be identical (column _order_ is normalised away, since `ALTER TABLE ADD COLUMN` always
+appends). Write a migration without updating `init.ts`, or vice versa, and it fails naming exactly
+what each side is missing. `apps/backend/src/db/schemaSnapshot.test.ts` additionally renders any
+`init.ts` change as a readable SQL diff in `__snapshots__/schema.sql` — accept an intentional one
+with `pnpm test -u`.
+
+**The migration chain starts at `00000000_000000_baseline.ts`**, which reconstructs the schema as
+of just before the first real migration. It exists so migrations can be replayed onto an empty
+database at all; it is frozen history, so never edit it — add a new migration. `runMigrations()`
+records it as applied without executing it whenever the database already has tables, so it can
+never resurrect the tables later migrations dropped.
+
+A freshly `db:init`-ed database is already at the current schema, so `db:seed` stamps every
+migration as applied (`markAllMigrationsApplied()`), leaving a subsequent `pnpm db:migrate` a
+no-op rather than an error.
 
 ## Authentication
 

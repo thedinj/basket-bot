@@ -45,6 +45,8 @@ export const queryKeys = {
         all: () => ["stores"],
         detail: (storeId: Id) => ["stores", storeId],
     },
+    /** Server-owned catalog of starting layouts; static per deploy, never invalidated. */
+    storeTemplates: () => ["store-templates"],
     quantityUnits: () => ["quantityUnits"],
     appSettings: {
         all: () => ["appSettings"],

@@ -13,22 +13,15 @@ export const toSentenceCase = (str: string): string => {
 };
 
 /**
- * Normalizes an item name for database storage and matching
- * - Converts to singular form (using pluralize library)
- * - Converts to lowercase
- * - Trims whitespace
+ * Name normalization now lives in `@basket-bot/core` so the client and the backend that writes
+ * `nameNorm` cannot disagree. Re-exported here because ~a dozen call sites import it from this
+ * module.
  *
- * This ensures that "apple", "apples", "Apple", and "Apples" all normalize to "apple"
- * enabling proper matching while preserving the user's original input in the display name.
- *
- * @param name - The item name to normalize
- * @returns The normalized name for storage in nameNorm field
+ * - `normalizeItemName` — the storage/uniqueness key. Use it to compare against a `nameNorm`.
+ * - `normalizeForSearch` — lenient, singularizing, for filtering lists in the UI. Apply it to
+ *   both sides of a comparison and never against a stored `nameNorm`.
  */
-export const normalizeItemName = (name: string): string => {
-    const trimmed = name.trim();
-    const singular = pluralize.singular(trimmed);
-    return singular.toLowerCase();
-};
+export { normalizeForSearch, normalizeItemName } from "@basket-bot/core";
 
 /**
  * Normalizes a raw unit string from LLM output for matching against known units.

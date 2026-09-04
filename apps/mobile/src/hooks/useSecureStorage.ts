@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/db/queryKeys";
-import { secureStorage } from "../utils/secureStorage";
+import { llmApiKeyStorageKey, secureStorage } from "../utils/secureStorage";
 
 /**
  * Generic hook for writing a value to secure storage with TanStack Query invalidation.
@@ -44,19 +44,10 @@ export const useSecureValue = <T = string>(
 };
 
 /**
- * Hook to get the OpenAI API key from secure storage.
- * Uses useSecureValue with the correct key and getter.
- */
-export const useSecureApiKey = (): string | null =>
-    useSecureValue("openai_api_key", () => secureStorage.getApiKey());
-
-/**
- * Hook to save the OpenAI API key to secure storage.
- * Only works on native platforms (Android Keystore).
- * Web platform throws error (must use .env file instead).
+ * Hook to get the stored API key for an LLM provider.
  *
- * @returns TanStack Query mutation for saving the API key
+ * @param providerId The configured provider's id
+ * @returns The stored key, or null if the provider has none yet
  */
-export const useSaveSecureApiKey = () => {
-    return useSaveSecureValue("openai_api_key", (value: string) => secureStorage.setApiKey(value));
-};
+export const useLLMApiKey = (providerId: string): string | null =>
+    useSecureValue(llmApiKeyStorageKey(providerId), () => secureStorage.getLLMApiKey(providerId));

@@ -37,7 +37,11 @@ export function withAuth(handler: RouteHandler, options?: { requireScopes?: stri
             const authenticatedReq = req as AuthenticatedRequest;
             authenticatedReq.auth = payload;
 
-            return handler(authenticatedReq, context);
+            // `return await`, not a bare `return`: an async function that returns a promise
+            // settles it *after* leaving the try block, so a handler that throws instead of
+            // catching would sail straight past this catch and surface as an unmapped 500 with
+            // no requestId and no ErrorLog row. Awaiting here keeps the backstop real.
+            return await handler(authenticatedReq, context);
         } catch (error) {
             const userId = (req as AuthenticatedRequest).auth?.sub;
             const response = toErrorResponse(error, req, { userId });

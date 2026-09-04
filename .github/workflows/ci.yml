@@ -1,0 +1,39 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+# A new push to the same branch supersedes the run in flight.
+concurrency:
+    group: ci-${{ github.ref }}
+    cancel-in-progress: true
+
+env:
+    TURBO_TELEMETRY_DISABLED: 1
+
+jobs:
+    verify:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            # Reads `packageManager: pnpm@10.28.0` from the root package.json.
+            - uses: pnpm/action-setup@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: pnpm
+
+            # better-sqlite3 is listed in pnpm-workspace.yaml's `onlyBuiltDependencies`, and the
+            # backend's own `postinstall` rebuilds it, so the native addon the backend test suite
+            # needs is built here. If that ever turns flaky, add an explicit
+            # `pnpm --filter @basket-bot/backend rebuild better-sqlite3` step rather than a
+            # custom container.
+            - run: pnpm install --frozen-lockfile
+
+            - run: pnpm typecheck
+            - run: pnpm lint
+            - run: pnpm test

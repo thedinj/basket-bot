@@ -10,6 +10,12 @@ data — this document exists so the cascade is auditable rather than guessed.
 > shallow-equal). A typo or wrong casing (`["shoppingListItems"]` vs
 > `["shopping-list-items"]`, `["store", id]` vs `["stores", id]`) silently no-ops.
 
+> **This document is executable.** Two suites drive every mutation hook and assert the exact set
+> of keys it invalidates against the tables below — `src/db/cacheCascade.test.ts` for the store
+> domain and `src/db/mealsCascade.test.ts` for recipes/plans/tags. Each carries a coverage guard
+> that fails when a mutation hook in its modules has no documented cascade, so a new mutation
+> cannot ship without a row here. Update §2/§3 and the matching suite together.
+
 ## 0. Required: build every key with the `queryKeys` factory
 
 **Never hand-write a query-key array.** All keys are declared once in
@@ -57,6 +63,7 @@ The builders live in `src/db/queryKeys.ts`; the hooks that consume them live in
 | `["secure-storage", key]`                                    | `queryKeys.secureStorage(key)`                                    |
 | `["stores"]`                                                 | `queryKeys.stores.all()`                                          |
 | `["stores", storeId]`                                        | `queryKeys.stores.detail(storeId)`                                |
+| `["store-templates"]`                                        | `queryKeys.storeTemplates()`                                      |
 | `["quantityUnits"]`                                          | `queryKeys.quantityUnits()`                                       |
 | `["appSettings"]` (prefix)                                   | `queryKeys.appSettings.all()`                                     |
 | `["appSettings", key]`                                       | `queryKeys.appSettings.detail(key)`                               |
@@ -91,12 +98,13 @@ The builders live in `src/db/queryKeys.ts`; the hooks that consume them live in
 
 ### Store domain (`db/hooks.ts`)
 
-| Key                    | Contains                        | Owner hook                     | Joins / derived from | Stale time        |
-| ---------------------- | ------------------------------- | ------------------------------ | -------------------- | ----------------- |
-| `["stores"]`           | All of the user's stores (list) | `useStores` (suspense)         | —                    | prefetched 30 min |
-| `["stores", storeId]`  | One store's detail              | `useStore`, `useStoreSuspense` | —                    | default (2 min)   |
-| `["quantityUnits"]`    | Static unit reference data      | `useQuantityUnits`             | —                    | **Infinity**      |
-| `["appSettings", key]` | One app setting value           | `useAppSetting`                | —                    | 5 min             |
+| Key                    | Contains                                     | Owner hook                     | Joins / derived from | Stale time        |
+| ---------------------- | -------------------------------------------- | ------------------------------ | -------------------- | ----------------- |
+| `["stores"]`           | All of the user's stores (list)              | `useStores` (suspense)         | —                    | prefetched 30 min |
+| `["stores", storeId]`  | One store's detail                           | `useStore`, `useStoreSuspense` | —                    | default (2 min)   |
+| `["store-templates"]`  | Server catalog of new-store starting layouts | `useStoreTemplates`            | —                    | **Infinity**      |
+| `["quantityUnits"]`    | Static unit reference data                   | `useQuantityUnits`             | —                    | **Infinity**      |
+| `["appSettings", key]` | One app setting value                        | `useAppSetting`                | —                    | 5 min             |
 
 ### Store layout (`db/hooks.ts`)
 
@@ -163,26 +171,26 @@ use it when the mutation can affect more than one, or the set is unknown.
 
 ### Store / layout mutations (`db/hooks.ts`)
 
-| Mutation                        | Writes                   | Invalidates                                                                                                                                   |
-| ------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `useCreateStore`                | store                    | `["stores"]`                                                                                                                                  |
-| `useUpdateStore`                | store                    | `["stores"]`, `["stores", id]`                                                                                                                |
-| `useDeleteStore`                | store                    | `["stores"]`                                                                                                                                  |
-| `useDuplicateStore`             | store (+layout/items)    | `["stores"]`                                                                                                                                  |
-| `useReorderStores`              | per-user store tab order | `["stores"]`                                                                                                                                  |
-| `useUpdateStoreHousehold`       | store sharing            | `["stores", storeId]`, `["stores"]`                                                                                                           |
-| `useUpdateStoreVisibility`      | store hidden flag        | `["stores", storeId]`, `["stores"]`                                                                                                           |
-| `useSaveAppSetting`             | app setting              | `["appSettings", key]`                                                                                                                        |
-| `useCreateAisle`                | aisle                    | `["aisles", storeId]`                                                                                                                         |
-| `useUpdateAisle`                | aisle name               | `["aisles", storeId]`, `["aisles","detail",id]`, `["items", storeId]`, `["items","with-details",storeId]`, `["shopping-list-items", storeId]` |
-| `useDeleteAisle`                | aisle                    | `["aisles", storeId]`, `["items","with-details",storeId]`, `["shopping-list-items", storeId]`                                                 |
-| `useReorderAisles`              | aisle order              | `["aisles", storeId]`, `["shopping-list-items", storeId]`                                                                                     |
-| `useCreateSection`              | section                  | `["sections", storeId]`                                                                                                                       |
-| `useUpdateSection`              | section name/aisle       | `["sections", storeId]`, `["sections","detail",id]`, `["items","with-details",storeId]`, `["shopping-list-items", storeId]`                   |
-| `useDeleteSection`              | section                  | `["sections", storeId]`, `["items","with-details",storeId]`, `["shopping-list-items", storeId]`                                               |
-| `useMoveSection`                | section aisle + order    | `["sections", storeId]`, `["items","with-details",storeId]`, `["shopping-list-items", storeId]`                                               |
-| `useReorderSections`            | section order            | `["sections", storeId]`, `["shopping-list-items", storeId]`                                                                                   |
-| `useBulkApplyAislesAndSections` | aisles + sections (bulk) | `["aisles", storeId]`, `["sections", storeId]`                                                                                                |
+| Mutation                        | Writes                                    | Invalidates                                                                                                                                   |
+| ------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useCreateStore`                | store (+layout when a template is chosen) | `["stores"]`, `["aisles", newStoreId]`, `["sections", newStoreId]`                                                                            |
+| `useUpdateStore`                | store                                     | `["stores"]`, `["stores", id]`                                                                                                                |
+| `useDeleteStore`                | store                                     | `["stores"]`                                                                                                                                  |
+| `useDuplicateStore`             | store (+layout/items)                     | `["stores"]`                                                                                                                                  |
+| `useReorderStores`              | per-user store tab order                  | `["stores"]`                                                                                                                                  |
+| `useUpdateStoreHousehold`       | store sharing                             | `["stores", storeId]`, `["stores"]`                                                                                                           |
+| `useUpdateStoreVisibility`      | store hidden flag                         | `["stores", storeId]`, `["stores"]`                                                                                                           |
+| `useSaveAppSetting`             | app setting                               | `["appSettings", key]`                                                                                                                        |
+| `useCreateAisle`                | aisle                                     | `["aisles", storeId]`                                                                                                                         |
+| `useUpdateAisle`                | aisle name                                | `["aisles", storeId]`, `["aisles","detail",id]`, `["items", storeId]`, `["items","with-details",storeId]`, `["shopping-list-items", storeId]` |
+| `useDeleteAisle`                | aisle                                     | `["aisles", storeId]`, `["items","with-details",storeId]`, `["shopping-list-items", storeId]`                                                 |
+| `useReorderAisles`              | aisle order                               | `["aisles", storeId]`, `["shopping-list-items", storeId]`                                                                                     |
+| `useCreateSection`              | section                                   | `["sections", storeId]`                                                                                                                       |
+| `useUpdateSection`              | section name/aisle                        | `["sections", storeId]`, `["sections","detail",id]`, `["items","with-details",storeId]`, `["shopping-list-items", storeId]`                   |
+| `useDeleteSection`              | section                                   | `["sections", storeId]`, `["items","with-details",storeId]`, `["shopping-list-items", storeId]`                                               |
+| `useMoveSection`                | section aisle + order                     | `["sections", storeId]`, `["items","with-details",storeId]`, `["shopping-list-items", storeId]`                                               |
+| `useReorderSections`            | section order                             | `["sections", storeId]`, `["shopping-list-items", storeId]`                                                                                   |
+| `useBulkApplyAislesAndSections` | aisles + sections (bulk)                  | `["aisles", storeId]`, `["sections", storeId]`                                                                                                |
 
 ### Store-item mutations (`db/hooks.ts`)
 

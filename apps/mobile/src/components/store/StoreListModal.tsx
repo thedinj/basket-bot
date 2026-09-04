@@ -36,6 +36,7 @@ import { sortStoresByPreference } from "../../utils/storeSort";
 import { useAppHeader } from "../layout/useAppHeader";
 import TabEmptyState from "../shared/TabEmptyState";
 import StoreManagementModal from "./StoreManagementModal";
+import StoreTemplatePicker from "./StoreTemplatePicker";
 
 import "./StoreListModal.scss";
 
@@ -44,6 +45,9 @@ const storeFormSchema = z.object({
         .string()
         .min(1, "Name is required")
         .transform((val) => val.trim()),
+    // Server-defined starting layout. Undefined until the catalog loads (or if it fails),
+    // in which case the server creates an empty store.
+    templateId: z.string().optional(),
 });
 
 type StoreFormData = z.infer<typeof storeFormSchema>;
@@ -73,18 +77,18 @@ const StoreListModal: React.FC = () => {
     });
 
     const openCreateModal = useCallback(() => {
-        reset({ name: "" });
+        reset({ name: "", templateId: undefined });
         setIsCreateModalOpen(true);
     }, [reset]);
 
     const closeCreateModal = useCallback(() => {
         setIsCreateModalOpen(false);
-        reset({ name: "" });
+        reset({ name: "", templateId: undefined });
     }, [reset]);
 
     const onSubmit = useCallback(
         async (data: StoreFormData) => {
-            await createStore.mutateAsync(data.name);
+            await createStore.mutateAsync({ name: data.name, templateId: data.templateId });
             closeCreateModal();
         },
         [createStore, closeCreateModal]
@@ -285,6 +289,17 @@ const StoreListModal: React.FC = () => {
                                 </p>
                             </IonText>
                         )}
+
+                        <Controller
+                            name="templateId"
+                            control={control}
+                            render={({ field }) => (
+                                <StoreTemplatePicker
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                />
+                            )}
+                        />
 
                         <IonButton
                             expand="block"

@@ -41,7 +41,10 @@ export const planIngredientRouteSchema = z.object({
     storeId: z.string().uuid().nullable(),
     overridden: z.boolean(),
     checked: z.boolean(),
-    isUnsure: z.boolean().nullable(),
+    // Two-state, like `overridden` beside it. A route only exists because the user filled in
+    // this screen, so "unset" is not a state it can be in — and typing it three-state is what
+    // invited `dispatchPlan` to treat an explicit "no" as "ask the recipe instead".
+    isUnsure: z.boolean(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
 });

@@ -3,9 +3,9 @@ name: polish
 description: Final quality pass before shipping. Fixes alignment, spacing, consistency, and detail issues that separate good from great.
 user-invokable: true
 args:
-  - name: target
-    description: The feature or area to polish (optional)
-    required: false
+    - name: target
+      description: The feature or area to polish (optional)
+      required: false
 ---
 
 **First**: Use the frontend-design skill for design principles and anti-patterns.
@@ -17,18 +17,18 @@ Perform a meticulous final pass to catch all the small details that separate goo
 Understand the current state and goals:
 
 1. **Review completeness**:
-   - Is it functionally complete?
-   - Are there known issues to preserve (mark with TODOs)?
-   - What's the quality bar? (MVP vs flagship feature?)
-   - When does it ship? (How much time for polish?)
+    - Is it functionally complete?
+    - Are there known issues to preserve (mark with TODOs)?
+    - What's the quality bar? (MVP vs flagship feature?)
+    - When does it ship? (How much time for polish?)
 
 2. **Identify polish areas**:
-   - Visual inconsistencies
-   - Spacing and alignment issues
-   - Interaction state gaps
-   - Copy inconsistencies
-   - Edge cases and error states
-   - Loading and transition smoothness
+    - Visual inconsistencies
+    - Spacing and alignment issues
+    - Interaction state gaps
+    - Copy inconsistencies
+    - Edge cases and error states
+    - Loading and transition smoothness
 
 **CRITICAL**: Polish is the last step, not the first. Don't polish work that's not functionally complete.
 
@@ -45,6 +45,7 @@ Work through these dimensions methodically:
 - **Grid adherence**: Elements snap to baseline grid
 
 **Check**:
+
 - Enable grid overlay and verify alignment
 - Check spacing with browser inspector
 - Test at multiple viewport sizes
@@ -182,6 +183,7 @@ Go through systematically:
 **IMPORTANT**: Polish is about details. Zoom in. Squint at it. Use it yourself. The little things add up.
 
 **NEVER**:
+
 - Polish before it's functionally complete
 - Spend hours on polish if it ships in 30 minutes (triage)
 - Introduce bugs while polishing (test thoroughly)

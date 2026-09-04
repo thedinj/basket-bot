@@ -169,20 +169,3 @@ export function createAisleSectionGroups<T extends GroupableItem>(
 
     return groups;
 }
-
-/**
- * Flattens a nested group structure into a single-level array
- * Useful for operations that need to process all items linearly
- */
-export function flattenGroups<T>(groups: ItemGroup<T>[]): ItemGroup<T>[] {
-    const flattened: ItemGroup<T>[] = [];
-
-    for (const group of groups) {
-        flattened.push(group);
-        if (group.children && group.children.length > 0) {
-            flattened.push(...flattenGroups(group.children));
-        }
-    }
-
-    return flattened;
-}

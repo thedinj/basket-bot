@@ -2,7 +2,9 @@ import { compareTwoStrings } from "string-similarity";
 
 /**
  * Fuzzy match threshold for aisle/section name matching during store scans.
- * 0.7 = 70% similarity - lenient enough to match "Dairy" to "Dairy Products"
+ * 0.7 = 70% similarity on the Dice coefficient. That is tighter than it sounds: it matches
+ * near-spellings and short prefixes ("Produce" / "Fresh Produce" scores 0.71) but not a name
+ * against a much longer one ("Dairy" / "Dairy Products" scores 0.50, and does not match).
  */
 export const FUZZY_MATCH_THRESHOLD = 0.7;
 
@@ -24,8 +26,9 @@ export function normalizeForMatch(name: string): string {
  * @returns true if similarity >= threshold
  *
  * @example
- * fuzzyMatch("Dairy", "Dairy Products", 0.7) // true
- * fuzzyMatch("Dairy", "Bakery", 0.7) // false
+ * fuzzyMatch("Produce", "Fresh Produce", 0.7) // true  (0.71)
+ * fuzzyMatch("Dairy", "Dairy Products", 0.7) // false (0.50 - too much extra text)
+ * fuzzyMatch("Dairy", "Bakery", 0.7) // false (0.22)
  */
 export function fuzzyMatch(str1: string, str2: string, threshold: number): boolean {
     const normalized1 = normalizeForMatch(str1);

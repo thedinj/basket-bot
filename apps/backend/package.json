@@ -9,6 +9,8 @@
         "start": "next start",
         "lint": "next lint",
         "typecheck": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest",
         "db:init": "tsx db/seed.ts",
         "db:seed": "tsx db/seed.ts",
         "db:migrate": "tsx src/db/migrate.ts",
@@ -33,16 +35,20 @@
     },
     "devDependencies": {
         "@eslint/eslintrc": "^3.3.3",
+        "@next/eslint-plugin-next": "^15.5.9",
         "@types/bcryptjs": "^2.4.6",
         "@types/better-sqlite3": "^7.6.12",
         "@types/jsonwebtoken": "^9.0.7",
         "@types/node": "^22.10.5",
         "@types/react": "^19.0.6",
         "@types/react-dom": "^19.0.2",
+        "@vitest/coverage-v8": "^2.1.9",
         "eslint": "^9.18.0",
         "eslint-config-next": "^15.1.6",
+        "eslint-plugin-react-hooks": "^5.2.0",
         "rimraf": "^6.1.2",
         "tsx": "^4.19.2",
-        "typescript": "^5.7.2"
+        "typescript": "^5.7.2",
+        "vitest": "^2.1.9"
     }
 }

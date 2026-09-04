@@ -347,7 +347,7 @@ function mapRoute(row: PlanIngredientRouteRow): PlanIngredientRoute {
         storeId: row.storeId ?? null,
         overridden: intToBool(row.overridden),
         checked: intToBool(row.checked),
-        isUnsure: row.isUnsure != null ? intToBool(row.isUnsure) : null,
+        isUnsure: intToBool(row.isUnsure),
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };

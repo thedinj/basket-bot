@@ -1,30 +1,9 @@
 import { useCallback, useState } from "react";
 
-export const DEFAULT_STORE = "__default__";
-
-export interface RawIngredient {
-    id: string;
-    recipeId: string;
-    name: string;
-    recipeName: string;
-    qty: number | null;
-    unitId: string | null;
-    excluded: boolean;
-    isUnsure: boolean;
-}
-
-export interface ResolvedIngredient {
-    ingredientId: string;
-    recipeId: string;
-    name: string;
-    recipeName: string;
-    storeId: string | null;
-    qty: number | null;
-    scaledQty: number | null;
-    unitId: string | null;
-    isUnsure: boolean;
-    excluded: boolean;
-}
+/**
+ * Holds the user's in-progress routing decisions for a set of recipe ingredients.
+ * The derivation these feed is in `utils/ingredientRouting.ts`; this hook is state only.
+ */
 
 export function useRouteIngredients() {
     const [routeMap, setRouteMap] = useState<Map<string, string | null>>(new Map());

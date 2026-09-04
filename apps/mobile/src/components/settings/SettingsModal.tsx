@@ -28,11 +28,14 @@ import {
 import { useEffect, useRef } from "react";
 import { Controller } from "react-hook-form";
 import { useVisibleStores } from "../../db/hooks";
+import { configForProvider } from "../../llm/config/llmConfig";
+import { getProviderOrDefault, listProviders } from "../../llm/providers/registry";
 import { LLM_COLOR, LLM_ICON_SRC } from "../../llm/shared";
 import type { SettingsFormData } from "../../settings/settingsSchema";
 import { useSettingsForm } from "../../settings/useSettingsForm";
 import { applyTheme } from "../../theme/applyTheme";
 import { FormPasswordInput } from "../form/FormPasswordInput";
+import { FormTextInput } from "../form/FormTextInput";
 import { useAppHeader } from "../layout/useAppHeader";
 import AboutSection from "./AboutSection";
 
@@ -40,6 +43,22 @@ const SettingsModal: React.FC = () => {
     const { form, performSave, isSubmitting } = useSettingsForm();
     const { isModalOpen, closeModal } = useAppHeader();
     const visibleStores = useVisibleStores();
+
+    // Descriptor for whatever provider the form currently shows, so the labels,
+    // placeholder, and base-URL visibility follow the picker without a save.
+    const selectedProviderId = form.watch("llmProviderId");
+    const selectedProvider = getProviderOrDefault(selectedProviderId ?? "");
+
+    /** Switching provider reseeds the model fields with that provider's own defaults. */
+    const handleProviderChange = (providerId: string) => {
+        const seeded = configForProvider(providerId);
+        form.setValue("llmProviderId", seeded.providerId);
+        form.setValue("llmBaseUrl", seeded.baseUrl ?? undefined);
+        form.setValue("llmApiKey", undefined);
+        form.setValue("llmModelFast", seeded.models.fast);
+        form.setValue("llmModelSmart", seeded.models.smart);
+        form.setValue("llmModelVision", seeded.models.vision);
+    };
 
     const preOpenModeRef = useRef<string | null>(null);
     const saveSucceededRef = useRef(false);
@@ -227,12 +246,75 @@ const SettingsModal: React.FC = () => {
                             </h2>
                         </IonListHeader>
 
-                        <FormPasswordInput
-                            name="openaiApiKey"
+                        <Controller
+                            name="llmProviderId"
                             control={form.control}
-                            label="OpenAI API Key"
-                            placeholder="sk-..."
-                            helperText="Enter your OpenAI API key for AI-powered features"
+                            render={({ field }) => (
+                                <IonItem>
+                                    <IonLabel>Provider</IonLabel>
+                                    <IonSelect
+                                        value={field.value ?? selectedProvider.id}
+                                        onIonChange={(e) => handleProviderChange(e.detail.value)}
+                                        interface="action-sheet"
+                                        disabled={isSubmitting}
+                                    >
+                                        {listProviders().map((option) => (
+                                            <IonSelectOption key={option.id} value={option.id}>
+                                                {option.label}
+                                            </IonSelectOption>
+                                        ))}
+                                    </IonSelect>
+                                </IonItem>
+                            )}
+                        />
+                        <IonItem lines="none">
+                            <IonNote>{selectedProvider.hint}</IonNote>
+                        </IonItem>
+
+                        {selectedProvider.baseUrlEditable && (
+                            <FormTextInput
+                                name="llmBaseUrl"
+                                control={form.control}
+                                label="Base URL"
+                                placeholder={selectedProvider.defaultBaseUrl}
+                                helperText="The OpenAI-compatible endpoint, including any /v1 suffix"
+                                disabled={isSubmitting}
+                            />
+                        )}
+
+                        {selectedProvider.requiresApiKey && (
+                            <FormPasswordInput
+                                name="llmApiKey"
+                                control={form.control}
+                                label={`${selectedProvider.label} API Key`}
+                                placeholder={selectedProvider.apiKeyPlaceholder}
+                                helperText={`Enter your ${selectedProvider.label} API key for AI-powered features`}
+                                disabled={isSubmitting}
+                            />
+                        )}
+
+                        <FormTextInput
+                            name="llmModelFast"
+                            control={form.control}
+                            label="Fast model"
+                            placeholder={selectedProvider.defaultModels.fast}
+                            helperText="High-volume work: categorizing individual items"
+                            disabled={isSubmitting}
+                        />
+                        <FormTextInput
+                            name="llmModelSmart"
+                            control={form.control}
+                            label="Smart model"
+                            placeholder={selectedProvider.defaultModels.smart}
+                            helperText="Parsing pasted lists and recipes"
+                            disabled={isSubmitting}
+                        />
+                        <FormTextInput
+                            name="llmModelVision"
+                            control={form.control}
+                            label="Vision model"
+                            placeholder={selectedProvider.defaultModels.vision}
+                            helperText="Anything with a photo attached, including store scans"
                             disabled={isSubmitting}
                         />
 

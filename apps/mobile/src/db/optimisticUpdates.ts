@@ -187,6 +187,15 @@ export const useOptimisticMutation = <TVariables, TData = void, TError = Error>(
             // Rollback all snapshots
             if (context?.snapshots) {
                 context.snapshots.forEach(({ queryKey, previousData }) => {
+                    if (previousData === undefined) {
+                        // `setQueryData(key, undefined)` is a no-op in TanStack Query - passing
+                        // undefined means "leave it alone" - so a key that held nothing before the
+                        // mutation cannot be restored by writing. Dropping the entry is what
+                        // actually returns it to "no data", and stops a rejected mutation from
+                        // leaving behind cache data the server never confirmed.
+                        queryClient.removeQueries({ queryKey, exact: true });
+                        return;
+                    }
                     queryClient.setQueryData(queryKey, previousData);
                 });
             }

@@ -3,13 +3,16 @@
  */
 
 import type { StoreAisle, StoreSection } from "@basket-bot/core";
+import { z } from "zod";
 
-export interface AutoCategorizeResult {
-    aisleName: string;
-    sectionName: string | null;
-    confidence: number;
-    reasoning: string;
-}
+export const autoCategorizeResultSchema = z.object({
+    aisleName: z.string(),
+    sectionName: z.string().nullable(),
+    confidence: z.number(),
+    reasoning: z.string(),
+});
+
+export type AutoCategorizeResult = z.infer<typeof autoCategorizeResultSchema>;
 
 export interface AutoCategorizeInput {
     itemName: string;
@@ -17,24 +20,6 @@ export interface AutoCategorizeInput {
         name: string;
         sections?: string[]; // Optional: omit if no sections
     }>;
-}
-
-/**
- * Validates the LLM response for auto-categorization
- */
-export function validateAutoCategorizeResult(data: unknown): data is AutoCategorizeResult {
-    if (typeof data !== "object" || data === null) {
-        return false;
-    }
-
-    const result = data as Record<string, unknown>;
-
-    return (
-        typeof result.aisleName === "string" &&
-        (typeof result.sectionName === "string" || result.sectionName === null) &&
-        typeof result.confidence === "number" &&
-        typeof result.reasoning === "string"
-    );
 }
 
 /**

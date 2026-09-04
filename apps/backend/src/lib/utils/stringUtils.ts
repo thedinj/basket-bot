@@ -1,9 +1,6 @@
 /**
- * Normalize a name for case-insensitive comparison and uniqueness checking.
- * Trims, lowercases, and collapses internal whitespace runs to a single space
- * so e.g. "Spices" and " Spices" (or "Spi  ces") are treated as duplicates.
- * Shared by items, sections, and aisles.
+ * Re-exported from `@basket-bot/core` so the backend (which writes every stored `nameNorm`)
+ * and the mobile client cannot drift apart again. See the notes in
+ * `packages/core/src/utils/normalizeName.ts` for why that mattered.
  */
-export function normalizeItemName(name: string): string {
-    return name.trim().toLowerCase().replace(/\s+/g, " ");
-}
+export { normalizeItemName } from "@basket-bot/core";

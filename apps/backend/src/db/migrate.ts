@@ -13,6 +13,24 @@ interface Migration {
 const MIGRATIONS_DIR = path.join(__dirname, "migrations");
 
 /**
+ * The one migration that reconstructs the original schema rather than changing it. It is only
+ * meaningful against an empty database; see `applicationTablesExist`.
+ */
+const BASELINE_MIGRATION = "00000000_000000_baseline.ts";
+
+/**
+ * True when the database already holds application data - i.e. it was created by
+ * `initializeDatabase()` or by an earlier migration run, rather than being empty.
+ */
+function applicationTablesExist(): boolean {
+    const row = db
+        .prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'User'`)
+        .get();
+
+    return !!row;
+}
+
+/**
  * Get all migration files sorted by timestamp
  */
 function getMigrationFiles(): string[] {
@@ -58,6 +76,33 @@ function recordMigration(filename: string): void {
 }
 
 /**
+ * Record every known migration as applied without running any of them.
+ *
+ * `initializeDatabase()` builds the *current* schema directly, so a freshly initialised database
+ * already reflects every migration ever written. Stamping them here is what stops `db:migrate`
+ * from then trying to re-apply them - which used to fail immediately, because the first migration
+ * adds a column `init.ts` already creates.
+ */
+export function markAllMigrationsApplied(): void {
+    initMigrationsTable();
+
+    const applied = new Set(getAppliedMigrations());
+    const pending = getMigrationFiles().filter((file) => !applied.has(file));
+
+    if (pending.length === 0) {
+        return;
+    }
+
+    db.transaction(() => {
+        for (const filename of pending) {
+            recordMigration(filename);
+        }
+    })();
+
+    console.log(`Marked ${pending.length} migration(s) as applied for the new schema`);
+}
+
+/**
  * Remove a migration record (for rollback)
  */
 function unrecordMigration(filename: string): void {
@@ -84,6 +129,16 @@ export async function runMigrations(): Promise<void> {
     console.log(`Found ${pendingMigrations.length} pending migration(s)`);
 
     for (const filename of pendingMigrations) {
+        // The baseline reconstructs the original schema, so running it against a database that
+        // already has tables would be wrong - `CREATE TABLE IF NOT EXISTS` would silently
+        // resurrect `StoreCollaborator` and `StoreInvitation`, which a later migration drops on
+        // purpose. Record it and move on.
+        if (filename === BASELINE_MIGRATION && applicationTablesExist()) {
+            recordMigration(filename);
+            console.log(`  - Skipped (database already exists): ${filename}`);
+            continue;
+        }
+
         console.log(`  Applying: ${filename}...`);
 
         const migrationPath = path.join(MIGRATIONS_DIR, filename);

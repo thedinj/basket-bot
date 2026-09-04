@@ -6,11 +6,11 @@ import type { StoreAisle, StoreSection } from "@basket-bot/core";
 import pluralize from "pluralize";
 import { useCallback } from "react";
 import { useShield } from "../../components/shield/useShield";
-import { useSecureApiKey } from "../../hooks/useSecureStorage";
-import { callLLMDirect } from "../shared/directCall";
+import { useLLMConfig } from "../config/useLLMConfig";
+import { runLLM } from "../shared/runLLM";
 import {
+    autoCategorizeResultSchema,
     transformAutoCategorizeResult,
-    validateAutoCategorizeResult,
     type AutoCategorizeInput,
 } from "./autoCategorize";
 import { AUTO_CATEGORIZE_PROMPT } from "./autoCategorizePrompt";
@@ -33,7 +33,7 @@ export interface UseAutoCategorizeResult {
  * Component will suspend until API key is loaded (via Suspense).
  */
 export function useAutoCategorize() {
-    const apiKeyValue = useSecureApiKey();
+    const { config: llmConfig, provider, apiKey, isReady } = useLLMConfig();
     const { raiseShield, lowerShield } = useShield();
 
     const autoCategorize = useCallback(
@@ -47,8 +47,8 @@ export function useAutoCategorize() {
             try {
                 raiseShield(shieldId);
 
-                if (!apiKeyValue) {
-                    throw new Error("API key is not configured");
+                if (!isReady) {
+                    throw new Error(`No ${provider.label} API key configured`);
                 }
 
                 if (!itemName?.trim()) {
@@ -109,18 +109,14 @@ export function useAutoCategorize() {
                     aisles,
                 };
 
-                const response = await callLLMDirect({
-                    apiKey: apiKeyValue,
+                const response = await runLLM({
+                    tier: "fast",
+                    schema: autoCategorizeResultSchema,
                     prompt: AUTO_CATEGORIZE_PROMPT,
                     userText: JSON.stringify(input),
-                    model: "gpt-4o",
+                    config: llmConfig,
+                    apiKey,
                 });
-
-                if (!validateAutoCategorizeResult(response.data)) {
-                    throw new Error(
-                        "Invalid response from AI: expected aisleName, sectionName, confidence, and reasoning fields"
-                    );
-                }
 
                 const { aisleId, sectionId } = transformAutoCategorizeResult(
                     response.data,
@@ -146,7 +142,7 @@ export function useAutoCategorize() {
                 lowerShield(shieldId);
             }
         },
-        [apiKeyValue, raiseShield, lowerShield]
+        [llmConfig, provider, apiKey, isReady, raiseShield, lowerShield]
     );
 
     return autoCategorize;

@@ -1,4 +1,4 @@
-import { useSecureApiKey } from "@/hooks/useSecureStorage";
+import { useLLMConfig } from "@/llm/config/useLLMConfig";
 import { queryKeys } from "@/db/queryKeys";
 import type { ShoppingListItemWithDetails } from "@basket-bot/core";
 import { IonIcon } from "@ionic/react";
@@ -80,7 +80,7 @@ export const GroupedShoppingList = ({
     isClearing,
 }: GroupedShoppingListProps) => {
     const queryClient = useQueryClient();
-    const apiKeyValue = useSecureApiKey();
+    const { isReady: isLLMReady } = useLLMConfig();
     const { showToast } = useToast();
     const batchAutoCategorize = useBatchAutoCategorize();
     const [isAutoCategorizing, setIsAutoCategorizing] = useState(false);
@@ -214,7 +214,7 @@ export const GroupedShoppingList = ({
                 : 0;
 
             if (
-                apiKeyValue &&
+                isLLMReady &&
                 aisles.length > 0 &&
                 uncategorizedGroup &&
                 uncategorizedCount > 0 &&
@@ -236,7 +236,7 @@ export const GroupedShoppingList = ({
         return itemGroups;
     }, [
         aisles,
-        apiKeyValue,
+        isLLMReady,
         handleAutoCategorizeAll,
         isAutoCategorizing,
         isClearing,

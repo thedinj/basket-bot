@@ -57,6 +57,22 @@ export function useQuantityUnits() {
 }
 
 /**
+ * Hook to fetch the starting layouts offered when creating a store.
+ *
+ * The catalog is server-owned so new templates need no client release; it is static per
+ * deploy, hence the indefinite cache.
+ */
+export function useStoreTemplates() {
+    const database = useDatabase();
+    return useTanstackQuery({
+        queryKey: queryKeys.storeTemplates(),
+        queryFn: () => database.loadStoreTemplates(),
+        staleTime: CORE_DATA_CACHE.STATIC.staleTime,
+        gcTime: CORE_DATA_CACHE.STATIC.gcTime,
+    });
+}
+
+/**
  * Hook to fetch a single store by ID
  */
 export function useStore(id: string) {
@@ -106,10 +122,15 @@ export function useCreateStore() {
     const queryClient = useQueryClient();
 
     return useTanstackMutation({
-        mutationFn: (name: string) => database.insertStore(name),
+        mutationFn: ({ name, templateId }: { name: string; templateId?: string }) =>
+            database.insertStore(name, templateId),
         meta: { operation: "create store" },
-        onSuccess: () => {
+        onSuccess: (store) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.stores.all() });
+            // A templated store arrives with aisles and sections already in it, so the
+            // (empty) prefetched layout for this id must not be served as current.
+            queryClient.invalidateQueries({ queryKey: queryKeys.aisles.byStore(store.id) });
+            queryClient.invalidateQueries({ queryKey: queryKeys.sections.byStore(store.id) });
         },
     });
 }

@@ -10,6 +10,7 @@ import type {
     StoreItem,
     StoreItemWithDetails,
     StoreSection,
+    StoreTemplateSummary,
 } from "@basket-bot/core";
 import { apiClient, ApiError } from "../lib/api/client";
 import { mutationQueue } from "../lib/mutationQueue";
@@ -70,17 +71,27 @@ export class RemoteDatabase implements Database {
     }
 
     // ========== Store Operations ==========
-    async insertStore(name: string): Promise<Store> {
+    async insertStore(name: string, templateId?: string): Promise<Store> {
         return this.executeMutation(
             "insertStore",
             "/api/stores",
             "POST",
             async () => {
-                const response = await apiClient.post<{ store: Store }>("/api/stores", { name });
+                const response = await apiClient.post<{ store: Store }>("/api/stores", {
+                    name,
+                    templateId,
+                });
                 return response.store;
             },
-            { name }
+            { name, templateId }
         );
+    }
+
+    async loadStoreTemplates(): Promise<StoreTemplateSummary[]> {
+        const response = await apiClient.get<{ templates: StoreTemplateSummary[] }>(
+            "/api/stores/templates"
+        );
+        return response.templates;
     }
 
     async loadAllStores(): Promise<Store[]> {

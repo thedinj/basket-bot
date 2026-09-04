@@ -13,7 +13,7 @@ import {
 } from "@ionic/react";
 import { helpCircle, helpCircleOutline } from "ionicons/icons";
 import clsx from "clsx";
-import { DEFAULT_STORE, type ResolvedIngredient } from "../../hooks/useRouteIngredients";
+import { DEFAULT_STORE, type ResolvedIngredient } from "../../utils/ingredientRouting";
 import PantryBadge from "../shared/PantryBadge";
 
 import "./RouteIngredientsContent.scss";

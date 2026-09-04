@@ -30,6 +30,7 @@ async function handlePost(req: AuthenticatedRequest) {
         const store = storeService.createStore({
             name: data.name,
             userId: req.auth.sub,
+            templateId: data.templateId,
         });
 
         return NextResponse.json({ store }, { status: 201 });

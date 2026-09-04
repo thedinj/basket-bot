@@ -2,6 +2,9 @@
  * LLM Infrastructure Types
  */
 
+import type { z } from "zod";
+import type { LLMTier } from "../providers/types";
+
 /**
  * Attachment file for LLM requests
  */
@@ -22,23 +25,6 @@ export interface LLMResponse<T = unknown> {
     data: T;
     /** Raw response text (JSON string) */
     raw: string;
-}
-
-/**
- * API client interface for making LLM calls
- */
-export interface LLMApiClient {
-    /**
-     * Call the LLM API with a prompt and optional attachments
-     * @param params - Request parameters
-     * @returns Promise resolving to parsed JSON response
-     */
-    call<T = unknown>(params: {
-        prompt: string;
-        model: string;
-        attachments?: LLMAttachment[];
-        userText?: string;
-    }): Promise<LLMResponse<T>>;
 }
 
 /**
@@ -77,8 +63,14 @@ export interface LLMModalConfig<T = unknown, S = void> {
     prompt: string;
     /** User-facing instructions displayed in the modal */
     userInstructions?: string;
-    /** The model to use (e.g., "gpt-4o-mini") */
-    model?: string;
+    /**
+     * The capability this feature needs. Never a model name — the concrete model comes
+     * from the user's provider configuration, and a request with an attachment is
+     * upgraded to the `vision` tier automatically.
+     */
+    tier: LLMTier;
+    /** Validates the response and types `renderOutput` / `onAccept`. */
+    schema: z.ZodType<T>;
     /**
      * Factory that derives initial interaction state from the LLM response.
      * Required when `S` is not `void`. Called once after the API response arrives.
@@ -98,8 +90,6 @@ export interface LLMModalConfig<T = unknown, S = void> {
     onAccept: (response: LLMResponse<T>, state: S) => void;
     /** Optional callback when user cancels */
     onCancel?: () => void;
-    /** Optional validation function for LLM response. Return true if valid, false otherwise. */
-    validateResponse?: (response: LLMResponse<T>) => boolean;
     /** Modal title */
     title?: string;
     /** Text for the Run button (default: "Run LLM") */

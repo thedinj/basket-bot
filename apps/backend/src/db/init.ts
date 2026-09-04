@@ -228,7 +228,7 @@ export function initializeDatabase() {
             "qty" REAL,
             "shoppingQty" REAL,
             "unitId" TEXT,
-            "shoppingUnitId" TEXT,
+            "shoppingUnitId" TEXT REFERENCES "QuantityUnit" ("id") ON DELETE SET NULL,
             "sortOrder" INTEGER NOT NULL DEFAULT 0,
             "notes" TEXT CHECK("notes" IS NULL OR length("notes") <= 500),
             "excluded" INTEGER,

@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { config } from "dotenv";
 import { resolve } from "path";
 import { initializeDatabase } from "../src/db/init";
+import { markAllMigrationsApplied } from "../src/db/migrate";
 import { db } from "../src/lib/db/db";
 import * as referenceRepo from "../src/lib/repos/referenceRepo";
 
@@ -59,6 +60,10 @@ async function main() {
 
     // Initialize database schema
     initializeDatabase();
+
+    // `init.ts` builds the current schema outright, so every migration is already reflected in it.
+    // Stamping them keeps a later `pnpm db:migrate` a no-op instead of an error.
+    markAllMigrationsApplied();
 
     // Seed REGISTRATION_INVITATION_CODE into AppSettings
     const invitationCode = process.env.REGISTRATION_INVITATION_CODE || "";

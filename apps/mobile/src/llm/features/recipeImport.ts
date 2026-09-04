@@ -1,73 +1,34 @@
 /**
- * Recipe import types and validation for LLM-based recipe extraction
+ * Recipe import types and schema for LLM-based recipe extraction
  */
 
-export interface ParsedRecipeIngredient {
-    name: string;
-    shoppingName?: string | null;
-    qty: number | null;
-    shoppingQty?: number | null;
-    unit: string | null;
-    shoppingUnit?: string | null;
-    isPantryItem?: boolean;
-}
+import { z } from "zod";
 
-export interface ParsedRecipe {
-    name: string;
-    source: string | null;
-    description: string | null;
-    steps: string | null;
-    cookingTimeMinutes: number | null;
-    ingredients: ParsedRecipeIngredient[];
-}
+export const parsedRecipeIngredientSchema = z.object({
+    name: z.string().min(1),
+    /** Present when the shopping-list form of the ingredient differs from the recipe's. */
+    shoppingName: z.string().nullable().optional(),
+    qty: z.number().nullable(),
+    shoppingQty: z.number().nullable().optional(),
+    unit: z.string().nullable(),
+    shoppingUnit: z.string().nullable().optional(),
+    /** Staples the user probably already owns — pre-unchecked in the import preview. */
+    isPantryItem: z.boolean().optional(),
+});
 
-export interface RecipeImportResponse {
-    recipe: ParsedRecipe;
-}
+export const parsedRecipeSchema = z.object({
+    name: z.string().min(1),
+    source: z.string().nullable().optional(),
+    description: z.string().nullable(),
+    steps: z.string().nullable(),
+    cookingTimeMinutes: z.number().nullable(),
+    ingredients: z.array(parsedRecipeIngredientSchema),
+});
 
-export function validateRecipeImportResult(data: unknown): data is RecipeImportResponse {
-    if (typeof data !== "object" || data === null) return false;
+export const recipeImportResponseSchema = z.object({
+    recipe: parsedRecipeSchema,
+});
 
-    const root = data as Record<string, unknown>;
-    if (typeof root.recipe !== "object" || root.recipe === null) return false;
-
-    const recipe = root.recipe as Record<string, unknown>;
-
-    if (typeof recipe.name !== "string" || recipe.name.trim() === "") return false;
-    if (recipe.source !== null && recipe.source !== undefined && typeof recipe.source !== "string")
-        return false;
-    if (recipe.description !== null && typeof recipe.description !== "string") return false;
-    if (recipe.steps !== null && typeof recipe.steps !== "string") return false;
-    if (recipe.cookingTimeMinutes !== null && typeof recipe.cookingTimeMinutes !== "number")
-        return false;
-    if (!Array.isArray(recipe.ingredients)) return false;
-
-    return recipe.ingredients.every((ing: unknown) => {
-        if (typeof ing !== "object" || ing === null) return false;
-        const i = ing as Record<string, unknown>;
-        if (typeof i.name !== "string" || i.name.trim() === "") return false;
-        if (i.qty !== null && typeof i.qty !== "number") return false;
-        if (i.unit !== null && typeof i.unit !== "string") return false;
-        // isPantryItem is optional; if present must be boolean
-        if (
-            i.shoppingName !== undefined &&
-            i.shoppingName !== null &&
-            typeof i.shoppingName !== "string"
-        )
-            return false;
-        if (
-            i.shoppingQty !== undefined &&
-            i.shoppingQty !== null &&
-            typeof i.shoppingQty !== "number"
-        )
-            return false;
-        if (
-            i.shoppingUnit !== undefined &&
-            i.shoppingUnit !== null &&
-            typeof i.shoppingUnit !== "string"
-        )
-            return false;
-        if (i.isPantryItem !== undefined && typeof i.isPantryItem !== "boolean") return false;
-        return true;
-    });
-}
+export type ParsedRecipeIngredient = z.infer<typeof parsedRecipeIngredientSchema>;
+export type ParsedRecipe = z.infer<typeof parsedRecipeSchema>;
+export type RecipeImportResponse = z.infer<typeof recipeImportResponseSchema>;

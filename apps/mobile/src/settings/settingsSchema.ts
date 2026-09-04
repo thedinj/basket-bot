@@ -21,7 +21,14 @@ const urlSchema = z
     );
 
 export const settingsSchema = z.object({
-    openaiApiKey: z.string().optional(),
+    /** Registry id of the active LLM provider. */
+    llmProviderId: z.string().optional(),
+    /** Only used by providers whose descriptor allows a custom host. */
+    llmBaseUrl: urlSchema,
+    llmApiKey: z.string().optional(),
+    llmModelFast: z.string().optional(),
+    llmModelSmart: z.string().optional(),
+    llmModelVision: z.string().optional(),
     remoteApiUrl: urlSchema,
     themeMode: themeModeSchema.optional(),
     defaultMealPlanSlots: z.number().int().min(1).max(12).optional(),

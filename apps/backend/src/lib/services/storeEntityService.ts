@@ -244,6 +244,15 @@ export function createItem(params: {
 }): StoreItem {
     verifyStoreAccess(params.storeId, params.userId);
 
+    const nameNorm = normalizeItemName(params.name);
+    const conflict = itemRepo.findItemByNameNorm(params.storeId, nameNorm, "");
+    if (conflict) {
+        throw new ConflictError(
+            `An item named "${conflict.name}" already exists in this store.`,
+            "ITEM_NAME_CONFLICT"
+        );
+    }
+
     return itemRepo.createItem({
         storeId: params.storeId,
         name: params.name,

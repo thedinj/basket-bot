@@ -2,6 +2,7 @@
  * Store Scan Feature - LLM-powered aisle/section extraction
  */
 
+import { z } from "zod";
 import { FUZZY_MATCH_THRESHOLD, fuzzyMatch } from "../../utils/stringMatch";
 import { naturalSort } from "../../utils/stringUtils";
 
@@ -24,12 +25,16 @@ export interface ExistingSection {
 /**
  * LLM response structure for store directory scan
  */
-export interface StoreScanResult {
-    aisles: Array<{
-        name: string;
-        sections: string[];
-    }>;
-}
+export const storeScanResultSchema = z.object({
+    aisles: z.array(
+        z.object({
+            name: z.string().min(1),
+            sections: z.array(z.string()),
+        })
+    ),
+});
+
+export type StoreScanResult = z.infer<typeof storeScanResultSchema>;
 
 /**
  * Transformed data ready for database insertion/update
@@ -135,35 +140,4 @@ export function transformStoreScanResult(
     });
 
     return transformed;
-}
-
-/**
- * Validate that the scan result has the expected structure
- */
-export function validateStoreScanResult(data: unknown): data is StoreScanResult {
-    if (!data || typeof data !== "object") {
-        return false;
-    }
-
-    const result = data as StoreScanResult;
-
-    if (!Array.isArray(result.aisles)) {
-        return false;
-    }
-
-    for (const aisle of result.aisles) {
-        if (typeof aisle.name !== "string" || !aisle.name.trim()) {
-            return false;
-        }
-        if (!Array.isArray(aisle.sections)) {
-            return false;
-        }
-        for (const section of aisle.sections) {
-            if (typeof section !== "string") {
-                return false;
-            }
-        }
-    }
-
-    return true;
 }

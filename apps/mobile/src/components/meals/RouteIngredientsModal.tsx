@@ -14,11 +14,13 @@ import {
 } from "@ionic/react";
 import { closeOutline } from "ionicons/icons";
 import { useEffect, useMemo, useState } from "react";
+import { useRouteIngredients } from "../../hooks/useRouteIngredients";
 import {
     DEFAULT_STORE,
+    countRoutedIngredients,
+    resolveIngredients,
     type RawIngredient,
-    useRouteIngredients,
-} from "../../hooks/useRouteIngredients";
+} from "../../utils/ingredientRouting";
 import { filterVisibleStores } from "../../utils/storeVisibility";
 import ScaleFactorControl from "./ScaleFactorControl";
 import RouteIngredientsContent from "./RouteIngredientsContent";
@@ -93,27 +95,19 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
 
     const resolvedIngredients = useMemo(
         () =>
-            rawIngredients.map((ing) => {
-                const raw = routing.routeMap.get(ing.id) ?? null;
-                const scaledQty =
-                    ing.qty != null ? parseFloat((ing.qty * factor).toPrecision(4)) : null;
-                return {
-                    ingredientId: ing.id,
-                    recipeId: ing.recipeId,
-                    name: ing.name,
-                    recipeName: ing.recipeName,
-                    storeId: raw === DEFAULT_STORE ? (routing.defaultStoreId ?? null) : raw,
-                    qty: ing.qty,
-                    scaledQty,
-                    unitId: ing.unitId,
-                    isUnsure: routing.unsureSet.has(ing.id),
-                    excluded: ing.excluded,
-                };
-            }),
+            resolveIngredients(
+                rawIngredients,
+                {
+                    routeMap: routing.routeMap,
+                    defaultStoreId: routing.defaultStoreId,
+                    unsureSet: routing.unsureSet,
+                },
+                factor
+            ),
         [rawIngredients, routing.routeMap, routing.defaultStoreId, routing.unsureSet, factor]
     );
 
-    const includedCount = resolvedIngredients.filter((r) => r.storeId !== null).length;
+    const includedCount = countRoutedIngredients(resolvedIngredients);
 
     const handleConfirm = () => {
         onConfirm(

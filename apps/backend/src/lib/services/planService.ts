@@ -238,7 +238,7 @@ export function dispatchPlan(
 
             const ingredient = db
                 .prepare(
-                    `SELECT ri.name, ri.shoppingName, ri.qty, ri.shoppingQty, ri.unitId, ri.shoppingUnitId, ri.recipeId, ri.isUnsure, r.name AS recipeName
+                    `SELECT ri.name, ri.shoppingName, ri.qty, ri.shoppingQty, ri.unitId, ri.shoppingUnitId, ri.recipeId, r.name AS recipeName
                      FROM RecipeIngredient ri
                      JOIN Recipe r ON r.id = ri.recipeId
                      WHERE ri.id = ?`
@@ -253,7 +253,7 @@ export function dispatchPlan(
                       | "unitId"
                       | "shoppingUnitId"
                       | "recipeId"
-                  > & { recipeName: string; isUnsure: 1 | null })
+                  > & { recipeName: string })
                 | undefined;
 
             if (!ingredient) {
@@ -283,7 +283,11 @@ export function dispatchPlan(
                 qty: scaledQty,
                 unitId: effectiveUnitId ?? null,
                 notes: ingredient.recipeName,
-                isUnsure: route.isUnsure ?? (ingredient.isUnsure === 1 ? true : null),
+                // The route is the last word. It exists only because the user worked through
+                // the routing screen, where the unsure box is seeded from the ingredient and
+                // then theirs to change; falling back to the ingredient here would overturn an
+                // explicit "no" that the screen has already shown them as accepted.
+                isUnsure: route.isUnsure,
                 userId,
             });
 

@@ -17,10 +17,21 @@ import { Capacitor } from "@capacitor/core";
 const STORAGE_PREFIX = "secure_";
 
 export const KEYS = {
-    OPENAI_API_KEY: "openai_api_key",
     ACCESS_TOKEN: "auth_access_token",
     REFRESH_TOKEN: "auth_refresh_token",
 } as const;
+
+/**
+ * Where the key for a given LLM provider lives. Keys are stored per provider so switching
+ * provider does not destroy the previous one.
+ */
+export const llmApiKeyStorageKey = (providerId: string): string => `llm_api_key_${providerId}`;
+
+/**
+ * The key slot used before providers were configurable. Still read (never written) so an
+ * existing install keeps working without the user re-entering their OpenAI key.
+ */
+const LEGACY_OPENAI_API_KEY = "openai_api_key";
 
 // Type for the secure storage plugin (loaded dynamically)
 type SecureStoragePlugin = {
@@ -198,31 +209,38 @@ class SecureStorageService {
     }
 
     /**
-     * Get the OpenAI API key from secure storage.
-     * Legacy method - prefer using get(KEYS.OPENAI_API_KEY) for new code.
+     * Get the API key for an LLM provider.
      *
-     * @returns The API key, or null if not found
+     * Falls back to the pre-provider OpenAI key slot so installs that predate configurable
+     * providers keep working. The fallback is read-only — saving always writes the
+     * per-provider key.
+     *
+     * @param providerId The provider whose key to read
+     * @returns The API key, or null if none is stored
      */
-    async getApiKey(): Promise<string | null> {
-        return this.get(KEYS.OPENAI_API_KEY);
+    async getLLMApiKey(providerId: string): Promise<string | null> {
+        const stored = await this.get(llmApiKeyStorageKey(providerId));
+        if (stored) return stored;
+        return providerId === "openai" ? this.get(LEGACY_OPENAI_API_KEY) : null;
     }
 
     /**
-     * Save the OpenAI API key to secure storage.
-     * Legacy method - prefer using set(KEYS.OPENAI_API_KEY, value) for new code.
+     * Save the API key for an LLM provider.
      *
+     * @param providerId The provider the key belongs to
      * @param value The API key to store
      */
-    async setApiKey(value: string): Promise<void> {
-        return this.set(KEYS.OPENAI_API_KEY, value);
+    async setLLMApiKey(providerId: string, value: string): Promise<void> {
+        return this.set(llmApiKeyStorageKey(providerId), value);
     }
 
     /**
-     * Remove the OpenAI API key from secure storage.
-     * Legacy method - prefer using remove(KEYS.OPENAI_API_KEY) for new code.
+     * Remove the API key for an LLM provider.
+     *
+     * @param providerId The provider whose key to forget
      */
-    async removeApiKey(): Promise<void> {
-        return this.remove(KEYS.OPENAI_API_KEY);
+    async removeLLMApiKey(providerId: string): Promise<void> {
+        return this.remove(llmApiKeyStorageKey(providerId));
     }
 }
 

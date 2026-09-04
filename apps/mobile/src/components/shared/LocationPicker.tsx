@@ -21,7 +21,7 @@ import {
 import { checkmarkOutline, chevronDownOutline, closeOutline, mapOutline } from "ionicons/icons";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AisleSortMode, useAisleSortMode } from "../../hooks/useAisleSortMode";
-import { naturalSort, normalizeItemName } from "../../utils/stringUtils";
+import { naturalSort, normalizeForSearch } from "../../utils/stringUtils";
 import TabEmptyState from "./TabEmptyState";
 import "./LocationPicker.scss";
 
@@ -45,11 +45,12 @@ const rankSearchEntries = (
     searchText: string,
     compareWithinTier: (a: SearchEntry, b: SearchEntry) => number
 ): SearchEntry[] => {
-    const lowerSearch = normalizeItemName(searchText);
+    const lowerSearch = normalizeForSearch(searchText);
     const tiered: Array<{ entry: SearchEntry; tier: number }> = [];
 
     entries.forEach((entry) => {
-        const lowerLabel = entry.label.toLowerCase();
+        // Both sides go through the same normalizer, so a plural search term matches.
+        const lowerLabel = normalizeForSearch(entry.label);
         if (lowerLabel.startsWith(lowerSearch)) {
             tiered.push({ entry, tier: 1 });
         } else if (lowerLabel.includes(lowerSearch)) {

@@ -44,12 +44,14 @@ import {
     useUpdatePlanSlots,
 } from "../db/mealsHooks";
 import { usePreference } from "../hooks/usePreference";
+import { useRouteIngredients } from "../hooks/useRouteIngredients";
+import { useToast } from "../hooks/useToast";
 import {
     DEFAULT_STORE,
+    countRoutedIngredients,
+    resolveIngredient,
     type ResolvedIngredient,
-    useRouteIngredients,
-} from "../hooks/useRouteIngredients";
-import { useToast } from "../hooks/useToast";
+} from "../utils/ingredientRouting";
 import { useHousehold } from "../households/useHousehold";
 
 import "./MealPlanWizard.scss";
@@ -401,33 +403,37 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
 
     const routeIngredients = useMemo(() => {
         if (!planData) return [];
+        const context = { routeMap, defaultStoreId, unsureSet: routing.unsureSet };
         const result: ResolvedIngredient[] = [];
         for (const slot of planData.slots) {
             if (!slot.pickedRecipeId) continue;
             const recipe = recipeById.get(slot.pickedRecipeId);
             if (!recipe) continue;
+            // Scaling is per recipe, so each slot's ingredients resolve with their own factor.
             const factor = scaleFactors.get(recipe.id) ?? 1;
             for (const ing of recipe.ingredients) {
-                const raw = routeMap.get(ing.id) ?? null;
-                result.push({
-                    ingredientId: ing.id,
-                    recipeId: recipe.id,
-                    name: ing.name,
-                    recipeName: recipe.name,
-                    storeId: raw === DEFAULT_STORE ? (defaultStoreId ?? null) : raw,
-                    qty: ing.qty,
-                    scaledQty:
-                        ing.qty != null ? parseFloat((ing.qty * factor).toPrecision(4)) : null,
-                    unitId: ing.unitId ?? null,
-                    isUnsure: routing.unsureSet.has(ing.id),
-                    excluded: ing.excluded,
-                });
+                result.push(
+                    resolveIngredient(
+                        {
+                            id: ing.id,
+                            recipeId: recipe.id,
+                            name: ing.name,
+                            recipeName: recipe.name,
+                            qty: ing.qty,
+                            unitId: ing.unitId ?? null,
+                            excluded: ing.excluded,
+                            isUnsure: routing.unsureSet.has(ing.id),
+                        },
+                        context,
+                        factor
+                    )
+                );
             }
         }
         return result;
     }, [planData, recipeById, routeMap, defaultStoreId, scaleFactors, routing.unsureSet]);
 
-    const includedCount = routeIngredients.filter((ri) => ri.storeId !== null).length;
+    const includedCount = countRoutedIngredients(routeIngredients);
 
     const pickedRecipes = useMemo(() => {
         if (!planData) return [];

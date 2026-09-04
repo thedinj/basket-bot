@@ -1,6 +1,6 @@
 import { IonIcon, IonItem, IonLabel } from "@ionic/react";
 import React, { ComponentProps } from "react";
-import { useSecureApiKey } from "../../hooks/useSecureStorage";
+import { useLLMConfig } from "../config/useLLMConfig";
 import { LLM_COLOR, LLM_ICON_SRC } from "./constants";
 
 type LLMItemProps = ComponentProps<typeof IonItem> & {
@@ -20,8 +20,8 @@ export const LLMItem: React.FC<LLMItemProps> = ({
     style,
     ...props
 }) => {
-    const apiKeyValue = useSecureApiKey();
-    const isDisabled = disabled || (requireApiKey && !apiKeyValue);
+    const { isReady } = useLLMConfig();
+    const isDisabled = disabled || (requireApiKey && !isReady);
 
     return (
         <IonItem

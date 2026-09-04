@@ -1,6 +1,6 @@
 import { IonAlert, IonButton, IonIcon } from "@ionic/react";
 import React, { ComponentProps, useState } from "react";
-import { useSecureApiKey } from "../../hooks/useSecureStorage";
+import { useLLMConfig } from "../config/useLLMConfig";
 import { LLM_COLOR, LLM_ICON_SRC } from "./constants";
 
 interface LLMButtonProps extends ComponentProps<typeof IonButton> {
@@ -21,11 +21,11 @@ export const LLMButton: React.FC<LLMButtonProps> = ({
     iconOnly = false,
     ...props
 }) => {
-    const apiKeyValue = useSecureApiKey();
+    const { provider, isReady } = useLLMConfig();
     const [showApiKeyAlert, setShowApiKeyAlert] = useState(false);
 
     const handleClick = (e: React.MouseEvent<HTMLIonButtonElement>) => {
-        if (!apiKeyValue) {
+        if (!isReady) {
             setShowApiKeyAlert(true);
             return;
         }
@@ -74,7 +74,7 @@ export const LLMButton: React.FC<LLMButtonProps> = ({
                 isOpen={showApiKeyAlert}
                 onDidDismiss={() => setShowApiKeyAlert(false)}
                 header="API Key Required"
-                message="OpenAI API key not configured. Please add it in Settings to use this feature."
+                message={`${provider.label} API key not configured. Please add it in Settings to use this feature.`}
                 buttons={["OK"]}
             />
         </>

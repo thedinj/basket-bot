@@ -2,8 +2,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { usePreference } from "../hooks/usePreference";
-import { useSaveSecureApiKey, useSecureApiKey } from "../hooks/useSecureStorage";
 import { useToast } from "../hooks/useToast";
+import { useLLMConfig } from "../llm/config/useLLMConfig";
+import { resolveBaseUrl } from "../llm/config/llmConfig";
+import { buildLLMSavePlan } from "./llmSettings";
 import { settingsSchema, type SettingsFormData, type ThemeMode } from "./settingsSchema";
 
 /**
@@ -12,8 +14,8 @@ import { settingsSchema, type SettingsFormData, type ThemeMode } from "./setting
 export function useSettingsForm() {
     const { showSuccess, showError } = useToast();
 
-    // Fetch API key from secure storage (suspends until loaded)
-    const apiKeyValue = useSecureApiKey();
+    // LLM provider config + the active provider's key (suspends until loaded)
+    const { config: llmConfig, provider, apiKey, saveConfig, saveApiKeyFor } = useLLMConfig();
 
     // Fetch remote API URL from preferences (suspends until loaded)
     const { value: remoteApiUrlValue, savePreference: saveRemoteApiUrl } =
@@ -30,14 +32,16 @@ export function useSettingsForm() {
     const { value: defaultMealPlanStoreValue, savePreference: saveDefaultMealPlanStore } =
         usePreference("default_meal_plan_store");
 
-    // Save API key mutation
-    const { mutateAsync: saveApiKey } = useSaveSecureApiKey();
-
     // Initialize form
     const form = useForm<SettingsFormData>({
         resolver: zodResolver(settingsSchema),
         defaultValues: {
-            openaiApiKey: undefined,
+            llmProviderId: undefined,
+            llmBaseUrl: undefined,
+            llmApiKey: undefined,
+            llmModelFast: undefined,
+            llmModelSmart: undefined,
+            llmModelVision: undefined,
             remoteApiUrl: undefined,
             themeMode: undefined,
             defaultMealPlanSlots: undefined,
@@ -50,7 +54,12 @@ export function useSettingsForm() {
     // Update form when preferences are loaded
     useEffect(() => {
         reset({
-            openaiApiKey: apiKeyValue || undefined,
+            llmProviderId: provider.id,
+            llmBaseUrl: provider.baseUrlEditable ? resolveBaseUrl(llmConfig) : undefined,
+            llmApiKey: apiKey || undefined,
+            llmModelFast: llmConfig.models.fast,
+            llmModelSmart: llmConfig.models.smart,
+            llmModelVision: llmConfig.models.vision,
             remoteApiUrl: remoteApiUrlValue || undefined,
             themeMode: (themeModeValue as ThemeMode) || undefined,
             defaultMealPlanSlots: defaultMealPlanSlotsValue
@@ -59,7 +68,9 @@ export function useSettingsForm() {
             defaultMealPlanStore: defaultMealPlanStoreValue || undefined,
         });
     }, [
-        apiKeyValue,
+        llmConfig,
+        provider,
+        apiKey,
         remoteApiUrlValue,
         themeModeValue,
         defaultMealPlanSlotsValue,
@@ -71,8 +82,14 @@ export function useSettingsForm() {
     const performSave = useCallback(
         async (data: SettingsFormData): Promise<boolean> => {
             try {
-                if (data.openaiApiKey && data.openaiApiKey.trim()) {
-                    await saveApiKey(data.openaiApiKey.trim());
+                const llmPlan = buildLLMSavePlan(data, llmConfig);
+
+                await saveConfig(llmPlan.config);
+
+                // The plan names the provider slot explicitly, so a submit that switches
+                // provider and enters a key files the key under the new provider.
+                if (llmPlan.apiKey) {
+                    await saveApiKeyFor(llmPlan.apiKey.providerId, llmPlan.apiKey.value);
                 }
 
                 const urlToSave = data.remoteApiUrl?.trim() || null;
@@ -95,7 +112,9 @@ export function useSettingsForm() {
             }
         },
         [
-            saveApiKey,
+            llmConfig,
+            saveConfig,
+            saveApiKeyFor,
             saveRemoteApiUrl,
             saveThemeMode,
             saveDefaultMealPlanSlots,

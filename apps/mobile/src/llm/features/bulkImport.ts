@@ -1,44 +1,19 @@
 /**
- * Bulk shopping list import types and functions
+ * Bulk shopping list import types and schema
  */
 
-export interface ParsedShoppingItem {
-    name: string;
-    quantity: number | null;
-    unit: string | null;
-    notes: string | null;
-}
+import { z } from "zod";
 
-export interface BulkImportResponse {
-    items: ParsedShoppingItem[];
-}
+export const parsedShoppingItemSchema = z.object({
+    name: z.string(),
+    quantity: z.number().nullable(),
+    unit: z.string().nullable(),
+    notes: z.string().nullable(),
+});
 
-/**
- * Validates the LLM response for bulk import
- */
-export function validateBulkImportResult(data: unknown): data is BulkImportResponse {
-    if (typeof data !== "object" || data === null) {
-        return false;
-    }
+export const bulkImportResponseSchema = z.object({
+    items: z.array(parsedShoppingItemSchema),
+});
 
-    const response = data as Record<string, unknown>;
-
-    if (!Array.isArray(response.items)) {
-        return false;
-    }
-
-    return response.items.every((item) => {
-        if (typeof item !== "object" || item === null) {
-            return false;
-        }
-
-        const parsed = item as Record<string, unknown>;
-
-        return (
-            typeof parsed.name === "string" &&
-            (typeof parsed.quantity === "number" || parsed.quantity === null) &&
-            (typeof parsed.unit === "string" || parsed.unit === null) &&
-            (typeof parsed.notes === "string" || parsed.notes === null)
-        );
-    });
-}
+export type ParsedShoppingItem = z.infer<typeof parsedShoppingItemSchema>;
+export type BulkImportResponse = z.infer<typeof bulkImportResponseSchema>;

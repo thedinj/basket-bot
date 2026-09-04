@@ -45,7 +45,7 @@ import {
 import { useToast } from "../../hooks/useToast";
 import {
     transformStoreScanResult,
-    validateStoreScanResult,
+    storeScanResultSchema,
     type ExistingAisle,
     type ExistingSection,
     type StoreScanResult,
@@ -427,7 +427,8 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
             prompt: generateStoreScanPrompt(existingLayout),
             userInstructions:
                 "Take a photo of the store directory showing aisle numbers and their sections/categories.",
-            model: "gpt-5.2",
+            tier: "vision",
+            schema: storeScanResultSchema,
             buttonText: "Scan Aisles & Sections",
             shieldMessage: "Scanning store directory...",
             initialState: (): StoreScanState => ({
@@ -435,14 +436,6 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
                 uncheckedAisles: new Set(),
                 uncheckedSections: new Set(),
             }),
-            validateResponse: (response: { data: unknown }) => {
-                if (!validateStoreScanResult(response.data)) {
-                    throw new Error(
-                        "Invalid scan result format. Could not parse aisles and sections."
-                    );
-                }
-                return true;
-            },
             renderOutput: (
                 response: { data: StoreScanResult },
                 state: StoreScanState,

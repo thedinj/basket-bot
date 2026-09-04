@@ -57,8 +57,35 @@ export const reorderStoresRequestSchema = z.object({
 
 export type ReorderStoresRequest = z.infer<typeof reorderStoresRequestSchema>;
 
+/**
+ * One selectable starting layout, as advertised by `GET /api/stores/templates`.
+ *
+ * The catalog itself lives server-side (`apps/backend/src/lib/data/storeTemplates.ts`) so a
+ * new template ships without a client release — only this response shape is shared, and
+ * `templateId` below is deliberately a plain string rather than an enum of known ids.
+ */
+export const storeTemplateSummarySchema = z.object({
+    id: z.string(),
+    label: z.string(),
+    description: z.string(),
+    aisleCount: z.number().int(),
+    sectionCount: z.number().int(),
+});
+
+export type StoreTemplateSummary = z.infer<typeof storeTemplateSummarySchema>;
+
+export const storeTemplatesResponseSchema = z.object({
+    templates: z.array(storeTemplateSummarySchema),
+});
+
+export type StoreTemplatesResponse = z.infer<typeof storeTemplatesResponseSchema>;
+
 export const createStoreRequestSchema = z.object({
     name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
+    // Optional starting layout. Omitted (older clients, replayed offline mutations) means an
+    // empty store — the behavior before templates existed. Validated against the server
+    // registry, not here.
+    templateId: z.string().optional(),
 });
 
 export type CreateStoreRequest = z.infer<typeof createStoreRequestSchema>;

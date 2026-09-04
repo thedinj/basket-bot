@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useQuantityUnits } from "../../db/hooks";
 import {
-    validateRecipeImportResult,
+    recipeImportResponseSchema,
     type RecipeImportResponse,
 } from "../../llm/features/recipeImport";
 import { RECIPE_IMPORT_PROMPT } from "../../llm/features/recipeImportPrompt";
@@ -22,17 +22,12 @@ export function useRecipeImportModal(onAccepted: (data: RecipeInitialData) => vo
         openModal<RecipeImportResponse, Set<number>>({
             title: "Import Recipe",
             prompt: RECIPE_IMPORT_PROMPT,
-            model: "gpt-4o",
+            tier: "smart",
+            schema: recipeImportResponseSchema,
             userInstructions:
                 "Paste recipe text or upload a photo of a recipe card or cookbook page.",
             buttonText: "Extract Recipe",
             shieldMessage: "Extracting recipe with AI...",
-            validateResponse: (response) => {
-                if (!validateRecipeImportResult(response.data)) {
-                    throw new Error("Could not parse a recipe from the response.");
-                }
-                return true;
-            },
             initialState: (response) =>
                 new Set<number>(
                     response.data.recipe.ingredients

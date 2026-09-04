@@ -1,4 +1,3 @@
-import { KeepAwake } from "@capacitor-community/keep-awake";
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { Capacitor } from "@capacitor/core";
 import {
@@ -19,16 +18,16 @@ import {
 import { attach, camera, close } from "ionicons/icons";
 import React, { useRef, useState } from "react";
 import { useShield } from "../../components/shield/useShield";
-import { useSecureApiKey } from "../../hooks/useSecureStorage";
 import { useToast } from "../../hooks/useToast";
-import { OpenAIClient } from "./openaiClient";
+import { useLLMConfig } from "../config/useLLMConfig";
+import { runLLM } from "./runLLM";
 import type { LLMAttachment } from "./types";
 import { useLLMModalContext } from "./useLLMModalContext";
 
 export const LLMModal: React.FC = () => {
     const { isOpen, config, closeModal, response, setResponse } = useLLMModalContext();
     const { showError } = useToast();
-    const apiKeyValue = useSecureApiKey();
+    const { config: llmConfig, provider, apiKey, isReady } = useLLMConfig();
     const { raiseShield, lowerShield } = useShield();
     const [attachments, setAttachments] = useState<LLMAttachment[]>([]);
     const [userText, setUserText] = useState("");
@@ -141,8 +140,8 @@ export const LLMModal: React.FC = () => {
     const handleRunLLM = async () => {
         if (!config) return;
 
-        if (!apiKeyValue) {
-            showError("OpenAI API key not configured. Please add it in Settings.");
+        if (!isReady) {
+            showError(`${provider.label} API key not configured. Please add it in Settings.`);
             return;
         }
 
@@ -158,49 +157,21 @@ export const LLMModal: React.FC = () => {
         setResponse(null);
 
         try {
-            // Keep screen on during API call to prevent network interruption
-            if (Capacitor.isNativePlatform()) {
-                await KeepAwake.keepAwake();
-            }
-
-            const client = new OpenAIClient(apiKeyValue);
-            const llmResponse = await client.call({
+            const llmResponse = await runLLM({
+                tier: config.tier,
+                schema: config.schema,
                 prompt: config.prompt,
-                model: config.model || "gpt-4o-mini",
-                attachments: attachments.length > 0 ? attachments : undefined,
                 userText: trimmedText || undefined,
+                attachments: attachments.length > 0 ? attachments : undefined,
+                config: llmConfig,
+                apiKey,
             });
-
-            // Validate response if validator is provided
-            if (config.validateResponse) {
-                try {
-                    const isValid = config.validateResponse(llmResponse);
-                    if (!isValid) {
-                        throw new Error("Response validation failed");
-                    }
-                } catch (validationError) {
-                    showError(
-                        validationError instanceof Error
-                            ? `Invalid response: ${validationError.message}`
-                            : "Failed to validate LLM response. The output was not in the expected format."
-                    );
-                    return;
-                }
-            }
 
             setResponse(llmResponse);
             setInteractionState(config.initialState ? config.initialState(llmResponse) : undefined);
         } catch (error) {
-            showError(
-                error instanceof Error
-                    ? `LLM API error: ${error.message}`
-                    : "Failed to call LLM API"
-            );
+            showError(error instanceof Error ? error.message : "Failed to call the LLM");
         } finally {
-            // Allow screen to sleep again
-            if (Capacitor.isNativePlatform()) {
-                await KeepAwake.allowSleep();
-            }
             lowerShield(shieldId);
         }
     };
@@ -223,7 +194,7 @@ export const LLMModal: React.FC = () => {
 
                 <IonContent className="ion-padding">
                     {/* API Key Warning */}
-                    {!apiKeyValue && (
+                    {!isReady && (
                         <div
                             style={{
                                 border: "2px solid var(--ion-color-danger)",
@@ -234,8 +205,8 @@ export const LLMModal: React.FC = () => {
                         >
                             <IonText color="danger">
                                 <p style={{ margin: 0, fontWeight: 500 }}>
-                                    ⚠️ OpenAI API key not configured. Please add it in Settings to
-                                    use this feature.
+                                    ⚠️ {provider.label} API key not configured. Please add it in
+                                    Settings to use this feature.
                                 </p>
                             </IonText>
                         </div>
@@ -389,7 +360,7 @@ export const LLMModal: React.FC = () => {
                             <IonButton
                                 expand="block"
                                 onClick={handleRunLLM}
-                                disabled={!apiKeyValue}
+                                disabled={!isReady}
                                 style={{ marginTop: "20px" }}
                             >
                                 {config.buttonText || "Run LLM"}

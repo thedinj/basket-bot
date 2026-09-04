@@ -16,7 +16,7 @@ import {
 } from "@ionic/react";
 import { closeOutline } from "ionicons/icons";
 import React, { useCallback, useRef, useMemo, useState } from "react";
-import { normalizeItemName } from "../../utils/stringUtils";
+import { normalizeForSearch } from "../../utils/stringUtils";
 
 export interface SelectableItem {
     id: string;
@@ -79,13 +79,15 @@ export const ClickableSelectionModal: React.FC<ClickableSelectionModalProps> = (
         if (!searchText.trim()) {
             return items;
         }
-        const lowerSearch = normalizeItemName(searchText);
+        const lowerSearch = normalizeForSearch(searchText);
 
         // Tier items based on match quality
         const tieredItems: Array<{ item: SelectableItem; tier: number }> = [];
 
         items.forEach((item) => {
-            const lowerLabel = item.label.toLowerCase();
+            // Both sides go through the same normalizer: singularizing only the search
+            // term would make "apples" fail to match the label "Apples".
+            const lowerLabel = normalizeForSearch(item.label);
 
             // Tier 1: Label starts with search string
             if (lowerLabel.startsWith(lowerSearch)) {

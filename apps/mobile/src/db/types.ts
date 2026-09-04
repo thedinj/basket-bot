@@ -10,6 +10,7 @@ import type {
     StoreItem,
     StoreItemWithDetails,
     StoreSection,
+    StoreTemplateSummary,
 } from "@basket-bot/core";
 
 // Re-export types for convenience
@@ -41,9 +42,16 @@ export type PartialPick<T, K extends keyof T> = Partial<Pick<T, K>>;
 export interface EntityDatabase {
     // ========== Store Operations ==========
     /**
-     * Insert a new store
+     * Insert a new store, optionally seeded from a server-defined starting layout.
+     * Omitting `templateId` creates an empty store.
      */
-    insertStore(name: string): Promise<Store>;
+    insertStore(name: string, templateId?: string): Promise<Store>;
+
+    /**
+     * The starting layouts offered when creating a store. Server-owned catalog — the client
+     * never hardcodes template ids.
+     */
+    loadStoreTemplates(): Promise<StoreTemplateSummary[]>;
 
     /**
      * Load all non-deleted stores
