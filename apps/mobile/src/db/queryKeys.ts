@@ -39,6 +39,8 @@ export const queryKeys = {
     },
     preference: (key: string) => ["preference", key],
     secureStorage: (key: string) => ["secure-storage", key],
+    /** Server-served LLM model catalogue. Read-only — nothing in the app mutates it. */
+    llmCatalog: () => ["llm-catalog"],
 
     // --- Store domain ---
     stores: {

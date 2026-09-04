@@ -11,8 +11,11 @@ import { queryKeys } from "@/db/queryKeys";
 import { usePreference } from "../../hooks/usePreference";
 import { useLLMApiKey } from "../../hooks/useSecureStorage";
 import { llmApiKeyStorageKey, secureStorage } from "../../utils/secureStorage";
+import type { LLMCatalog } from "@basket-bot/core";
 import { getProviderOrDefault } from "../providers/registry";
 import type { LLMProviderDescriptor } from "../providers/types";
+import { applyCatalogDefaults } from "./llmCatalog";
+import { useLLMCatalog } from "./useLLMCatalog";
 import {
     LLM_CONFIG_PREFERENCE_KEY,
     parseLLMConfig,
@@ -21,7 +24,21 @@ import {
 } from "./llmConfig";
 
 export interface UseLLMConfigResult {
+    /**
+     * What is actually stored: sparse, holding a model name only where the user overrode
+     * one. Settings edits this; passing it to `runLLM` would send a blank model.
+     */
     config: LLMConfig;
+    /**
+     * The same config with every unset field filled from the catalogue — what `runLLM`
+     * takes. Recomputed per render, so a changed server default takes effect immediately
+     * and is never written back to storage.
+     */
+    effectiveConfig: LLMConfig;
+    /** The served catalogue, or null while loading / when unreachable. */
+    catalog: LLMCatalog | null;
+    /** First-load state of the catalogue, for skeleton UI. */
+    isCatalogLoading: boolean;
     provider: LLMProviderDescriptor;
     apiKey: string | null;
     /** Whether an LLM call can actually be made — what the LLM buttons gate on. */
@@ -38,8 +55,11 @@ export interface UseLLMConfigResult {
 export const useLLMConfig = (): UseLLMConfigResult => {
     const { value: rawConfig, savePreference } = usePreference(LLM_CONFIG_PREFERENCE_KEY);
 
+    const { catalog, isLoading: isCatalogLoading } = useLLMCatalog();
+
     const config = useMemo(() => parseLLMConfig(rawConfig), [rawConfig]);
     const provider = useMemo(() => getProviderOrDefault(config.providerId), [config.providerId]);
+    const effectiveConfig = useMemo(() => applyCatalogDefaults(config, catalog), [config, catalog]);
 
     const apiKey = useLLMApiKey(provider.id);
     const queryClient = useQueryClient();
@@ -62,12 +82,24 @@ export const useLLMConfig = (): UseLLMConfigResult => {
     return useMemo(
         () => ({
             config,
+            effectiveConfig,
+            catalog,
+            isCatalogLoading,
             provider,
             apiKey,
             isReady: !provider.requiresApiKey || !!apiKey,
             saveConfig,
             saveApiKeyFor,
         }),
-        [config, provider, apiKey, saveConfig, saveApiKeyFor]
+        [
+            config,
+            effectiveConfig,
+            catalog,
+            isCatalogLoading,
+            provider,
+            apiKey,
+            saveConfig,
+            saveApiKeyFor,
+        ]
     );
 };

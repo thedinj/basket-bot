@@ -8,6 +8,12 @@
  *
  * Adding a backend proxy later is the same one-entry change — `requiresApiKey: false`
  * and an adapter that POSTs to the app's own API.
+ *
+ * The model names below are **fallbacks**, not the source of truth: the backend serves the
+ * live catalogue at `GET /api/llm/catalog` so a model can be swapped without an app
+ * release. These are what the app uses when that is unreachable, so keep them roughly in
+ * step with `apps/backend/src/lib/data/llmCatalog.ts` — but a device on an old build
+ * reaching a current backend gets the current models either way, which is the point.
  */
 
 import { anthropicProvider } from "./anthropicProvider";
@@ -24,10 +30,20 @@ export const LLM_PROVIDERS: readonly LLMProviderDescriptor[] = [
         baseUrlEditable: false,
         apiKeyPlaceholder: "sk-...",
         defaultModels: {
-            fast: "gpt-4o-mini",
-            smart: "gpt-4o",
-            vision: "gpt-4o",
+            fast: "gpt-5.6-luna",
+            smart: "gpt-5.6-sol",
+            vision: "gpt-5.6-sol",
         },
+        knownModels: [
+            { id: "gpt-5.6-luna", label: "GPT-5.6 Luna (fastest, cheapest)", tiers: ["fast"] },
+            {
+                id: "gpt-5.6-terra",
+                label: "GPT-5.6 Terra (balanced)",
+                tiers: ["fast", "smart", "vision"],
+            },
+            { id: "gpt-5.6-sol", label: "GPT-5.6 Sol (most capable)", tiers: ["smart", "vision"] },
+            { id: "gpt-6-astra", label: "GPT-6 Astra (flagship)", tiers: ["smart", "vision"] },
+        ],
         hint: "Uses the OpenAI API directly.",
     },
     {
@@ -43,6 +59,28 @@ export const LLM_PROVIDERS: readonly LLMProviderDescriptor[] = [
             smart: "claude-opus-5",
             vision: "claude-opus-5",
         },
+        knownModels: [
+            {
+                id: "claude-haiku-4-5",
+                label: "Claude Haiku 4.5 (fastest, cheapest)",
+                tiers: ["fast"],
+            },
+            {
+                id: "claude-sonnet-5",
+                label: "Claude Sonnet 5 (balanced)",
+                tiers: ["fast", "smart", "vision"],
+            },
+            {
+                id: "claude-opus-5",
+                label: "Claude Opus 5 (most capable)",
+                tiers: ["smart", "vision"],
+            },
+            {
+                id: "claude-fable-5",
+                label: "Claude Fable 5 (flagship)",
+                tiers: ["smart", "vision"],
+            },
+        ],
         hint: "Uses the Claude Messages API directly.",
     },
     {
@@ -58,6 +96,10 @@ export const LLM_PROVIDERS: readonly LLMProviderDescriptor[] = [
             smart: "llama3.2",
             vision: "llama3.2-vision",
         },
+        // Whatever server the user runs — we have nothing true to say about its models, so
+        // the picker falls back to free text. The backend's catalogue omits it for the same
+        // reason.
+        knownModels: [],
         hint: "Any server speaking the OpenAI protocol — OpenRouter, Groq, Ollama, LM Studio.",
     },
 ] as const;

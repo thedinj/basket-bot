@@ -33,6 +33,7 @@ const stubProvider = (
         baseUrlEditable: false,
         apiKeyPlaceholder: "key",
         defaultModels: { fast: "stub-fast", smart: "stub-smart", vision: "stub-vision" },
+        knownModels: [],
         hint: "",
         adapter: {
             call: async (request) => {

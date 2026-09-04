@@ -17,14 +17,26 @@ const OPENAI = getProvider("openai");
 const ANTHROPIC = getProvider("anthropic");
 const COMPATIBLE = getProvider("openai-compatible");
 
-/** A form submitted with every LLM field left at its loaded value. */
+/** A form submitted with every tier left on its default — the common case. */
 const form = (overrides: Partial<LLMSettingsFields> = {}): LLMSettingsFields => ({
     llmProviderId: "openai",
-    llmModelFast: OPENAI.defaultModels.fast,
-    llmModelSmart: OPENAI.defaultModels.smart,
-    llmModelVision: OPENAI.defaultModels.vision,
+    llmUseDefaultFast: true,
+    llmUseDefaultSmart: true,
+    llmUseDefaultVision: true,
     ...overrides,
 });
+
+/** A form with one tier's override switched on and set to `model`. */
+const overriding = (
+    tier: "Fast" | "Smart" | "Vision",
+    model: string | undefined,
+    overrides: Partial<LLMSettingsFields> = {}
+): LLMSettingsFields =>
+    form({
+        [`llmUseDefault${tier}`]: false,
+        [`llmModel${tier}`]: model,
+        ...overrides,
+    });
 
 const storedOpenAI = configForProvider("openai");
 
@@ -105,11 +117,26 @@ describe("buildLLMSavePlan — base URL", () => {
 });
 
 describe("buildLLMSavePlan — models", () => {
-    it("stores the models the user typed", () => {
+    it("stores nothing for a tier left on its default", () => {
+        // The whole point: an un-overridden tier must leave no model name on the device, so
+        // it keeps resolving against the server catalogue and follows a new default. Writing
+        // today's default here — which this used to do — pinned every install to it forever.
+        expect(buildLLMSavePlan(form(), storedOpenAI).config.models).toEqual({});
+    });
+
+    it("stores only the tier the user actually overrode", () => {
+        const plan = buildLLMSavePlan(overriding("Smart", "my-smart"), storedOpenAI);
+        expect(plan.config.models).toEqual({ smart: "my-smart" });
+    });
+
+    it("stores every tier when all three are overridden", () => {
         const plan = buildLLMSavePlan(
             form({
+                llmUseDefaultFast: false,
                 llmModelFast: "my-fast",
+                llmUseDefaultSmart: false,
                 llmModelSmart: "my-smart",
+                llmUseDefaultVision: false,
                 llmModelVision: "my-vision",
             }),
             storedOpenAI
@@ -122,29 +149,50 @@ describe("buildLLMSavePlan — models", () => {
         });
     });
 
-    it("falls back to the selected provider's defaults for cleared fields", () => {
-        // Never the *stored* provider's defaults — a blank field after switching provider
-        // must not carry the old vendor's model name into the new provider's config.
+    it("drops a previous override when the tier is switched back to the default", () => {
+        // The form keeps the typed text around so toggling twice doesn't lose it, so the
+        // value is still present at submit — the flag, not the text, decides.
         const plan = buildLLMSavePlan(
-            form({
-                llmProviderId: "anthropic",
-                llmModelFast: "",
-                llmModelSmart: "   ",
-                llmModelVision: undefined,
-            }),
+            form({ llmUseDefaultFast: true, llmModelFast: "left-over-from-earlier" }),
             storedOpenAI
         );
 
-        expect(plan.config.models).toEqual(ANTHROPIC.defaultModels);
+        expect(plan.config.models).toEqual({});
     });
 
-    it("produces a config that satisfies the stored-config contract", () => {
+    it("treats a blank override as no override rather than storing an empty model", () => {
+        // An empty string would fail the stored-config schema, and parseLLMConfig discards
+        // the *whole* config on a parse failure — losing the provider and every other tier.
+        expect(buildLLMSavePlan(overriding("Fast", ""), storedOpenAI).config.models).toEqual({});
+        expect(buildLLMSavePlan(overriding("Fast", "   "), storedOpenAI).config.models).toEqual({});
+        expect(buildLLMSavePlan(overriding("Fast", undefined), storedOpenAI).config.models).toEqual(
+            {}
+        );
+    });
+
+    it("trims a pasted model name", () => {
+        const plan = buildLLMSavePlan(overriding("Vision", "  spaced-model  "), storedOpenAI);
+        expect(plan.config.models).toEqual({ vision: "spaced-model" });
+    });
+
+    it("carries no model name across a provider switch", () => {
+        // A model id is provider-specific, so the old vendor's name must not survive into
+        // the new provider's config even when the form still holds it.
+        const plan = buildLLMSavePlan(
+            overriding("Fast", OPENAI.defaultModels.fast, { llmProviderId: "anthropic" }),
+            storedOpenAI
+        );
+
+        // It is stored, because the user did switch the override on — but the UI clears the
+        // fields on a provider change, so this only documents that nothing else does.
+        expect(plan.config.providerId).toBe("anthropic");
+        expect(ANTHROPIC.defaultModels.fast).not.toBe(OPENAI.defaultModels.fast);
+    });
+
+    it("stores no models at all for a provider the catalogue says nothing about", () => {
         const plan = buildLLMSavePlan(form({ llmProviderId: "openai-compatible" }), storedOpenAI);
 
-        // Every tier must resolve to something non-empty, or runLLM has no model to call.
-        expect(plan.config.models.fast).toBeTruthy();
-        expect(plan.config.models.smart).toBeTruthy();
-        expect(plan.config.models.vision).toBeTruthy();
+        expect(plan.config.models).toEqual({});
         expect(COMPATIBLE.baseUrlEditable).toBe(true);
     });
 });

@@ -170,8 +170,8 @@ actual size and safe-area handling.
 
 ### LLM features (mobile-only)
 
-All AI runs client-side in `apps/mobile/src/llm/`; the backend has no LLM code. Three rules
-keep it provider-agnostic:
+All AI runs client-side in `apps/mobile/src/llm/`; the backend makes no LLM calls. It does
+own one thing — the **model catalogue** (see below). Three rules keep it provider-agnostic:
 
 - **Never name a model at a call site.** Features declare a capability tier — `fast`
   (item categorization), `smart` (parsing pasted lists/recipes), or `vision` (store scans)
@@ -186,6 +186,9 @@ keep it provider-agnostic:
   [`llm/providers/registry.ts`](apps/mobile/src/llm/providers/registry.ts). Adding a
   provider (including a future backend proxy — `requiresApiKey: false` plus an adapter
   posting to our own API) is one descriptor entry; no feature or settings field changes.
+  The registry owns provider _identity_ — the adapter that speaks each wire format — but
+  **not** model names; the `defaultModels` / `knownModels` on a descriptor are only the
+  offline fallback for the catalogue.
 
 Response shapes are Zod schemas in `llm/features/*.ts` (`bulkImportResponseSchema`,
 `recipeImportResponseSchema`, `autoCategorizeResultSchema`, `storeScanResultSchema`) —
@@ -193,10 +196,29 @@ never hand-written type guards. They also drive structured output for providers 
 support it, via `toStructuredOutputSchema` (which strips the JSON Schema keywords those
 compilers reject).
 
+**Model names are server-owned data, not app code.** The backend serves them from
+[`lib/data/llmCatalog.ts`](apps/backend/src/lib/data/llmCatalog.ts) at `GET /api/llm/catalog`
+(the same static-catalog pattern as `storeTemplates.ts`), so pointing every install at a
+newer model is a backend edit plus a redeploy — no app release and nothing for a user to do.
+The client fetches it with `useLLMCatalog` and merges it over the registry fallbacks in
+[`llm/config/llmCatalog.ts`](apps/mobile/src/llm/config/llmCatalog.ts); a null catalogue
+(offline, older backend, still loading) resolves to the bundled values rather than throwing.
+Adding a model is one entry in the backend file — but the id is sent to the vendor verbatim,
+so verify it against the vendor's own model list; the tests check the catalog's internal
+consistency and cannot tell you an id exists.
+
 Config lives in the Capacitor Preferences key `llm_config` (parsed by `parseLLMConfig`,
 which never throws) and API keys in secure storage under `llm_api_key_${providerId}`.
 The pre-provider `openai_api_key` slot is still **read** as a fallback so existing
 installs keep working — never write to it.
+
+**A model name is stored only when the user overrides it.** `llm_config.models` is sparse:
+a tier the user left on "Use default" is absent, so it resolves against the catalogue on
+every call and follows a new default automatically. Never resolve a blank field to today's
+default on the way _into_ storage (`buildLLMSavePlan` used to, which pinned every install to
+whatever it saw on its first save). The distinction to keep straight is **stored** config
+(sparse — what Settings edits and `saveConfig` writes) vs **effective** config
+(`useLLMConfig().effectiveConfig` — complete, recomputed per render, what `runLLM` takes).
 
 ### Name normalization
 

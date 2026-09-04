@@ -27,7 +27,9 @@ import { useLLMModalContext } from "./useLLMModalContext";
 export const LLMModal: React.FC = () => {
     const { isOpen, config, closeModal, response, setResponse } = useLLMModalContext();
     const { showError } = useToast();
-    const { config: llmConfig, provider, apiKey, isReady } = useLLMConfig();
+    // `effectiveConfig`, not `config`: the stored one omits every default the user never
+    // overrode, so its model fields can be blank.
+    const { effectiveConfig: llmConfig, provider, apiKey, isReady } = useLLMConfig();
     const { raiseShield, lowerShield } = useShield();
     const [attachments, setAttachments] = useState<LLMAttachment[]>([]);
     const [userText, setUserText] = useState("");

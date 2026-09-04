@@ -26,9 +26,20 @@ export const settingsSchema = z.object({
     /** Only used by providers whose descriptor allows a custom host. */
     llmBaseUrl: urlSchema,
     llmApiKey: z.string().optional(),
+    /**
+     * Per-tier model overrides, paired with a "use the default" flag.
+     *
+     * The flag is what the user actually toggles; the model field is only read when it is
+     * off. Keeping them separate means switching back and forth doesn't discard what was
+     * typed, and — more importantly — that "I want the default" is stored as the *absence*
+     * of a model rather than a copy of today's default. See `buildLLMSavePlan`.
+     */
     llmModelFast: z.string().optional(),
+    llmUseDefaultFast: z.boolean().optional(),
     llmModelSmart: z.string().optional(),
+    llmUseDefaultSmart: z.boolean().optional(),
     llmModelVision: z.string().optional(),
+    llmUseDefaultVision: z.boolean().optional(),
     remoteApiUrl: urlSchema,
     themeMode: themeModeSchema.optional(),
     defaultMealPlanSlots: z.number().int().min(1).max(12).optional(),

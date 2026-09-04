@@ -61,6 +61,7 @@ The builders live in `src/db/queryKeys.ts`; the hooks that consume them live in
 | `["auth", "invitation-required"]`                            | `queryKeys.auth.invitationRequired()`                             |
 | `["preference", key]`                                        | `queryKeys.preference(key)`                                       |
 | `["secure-storage", key]`                                    | `queryKeys.secureStorage(key)`                                    |
+| `["llm-catalog"]`                                            | `queryKeys.llmCatalog()`                                          |
 | `["stores"]`                                                 | `queryKeys.stores.all()`                                          |
 | `["stores", storeId]`                                        | `queryKeys.stores.detail(storeId)`                                |
 | `["store-templates"]`                                        | `queryKeys.storeTemplates()`                                      |
@@ -160,6 +161,7 @@ The builders live in `src/db/queryKeys.ts`; the hooks that consume them live in
 | `["auth", "invitation-required"]` | Whether registration needs an invite | `Register.tsx`                                         | —                          |
 | `["preference", key]`             | A Capacitor Preferences value        | `usePreference` (suspense)                             | updated via `setQueryData` |
 | `["secure-storage", key]`         | A secure-storage value               | `useSecureValue` (read) / `useSaveSecureValue` (write) | —                          |
+| `["llm-catalog"]`                 | Server-served LLM model catalogue    | `useLLMCatalog` (non-suspense)                         | 1 h stale; no mutations    |
 
 ---
 

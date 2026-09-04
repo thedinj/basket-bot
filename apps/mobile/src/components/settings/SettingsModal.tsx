@@ -28,7 +28,9 @@ import {
 import { useEffect, useRef } from "react";
 import { Controller } from "react-hook-form";
 import { useVisibleStores } from "../../db/hooks";
+import { LLM_TIERS } from "@basket-bot/core";
 import { configForProvider } from "../../llm/config/llmConfig";
+import { MODEL_FIELDS } from "../../settings/llmSettings";
 import { getProviderOrDefault, listProviders } from "../../llm/providers/registry";
 import { LLM_COLOR, LLM_ICON_SRC } from "../../llm/shared";
 import type { SettingsFormData } from "../../settings/settingsSchema";
@@ -38,9 +40,10 @@ import { FormPasswordInput } from "../form/FormPasswordInput";
 import { FormTextInput } from "../form/FormTextInput";
 import { useAppHeader } from "../layout/useAppHeader";
 import AboutSection from "./AboutSection";
+import { ModelTierField } from "./ModelTierField";
 
 const SettingsModal: React.FC = () => {
-    const { form, performSave, isSubmitting } = useSettingsForm();
+    const { form, performSave, isSubmitting, catalog, isCatalogLoading } = useSettingsForm();
     const { isModalOpen, closeModal } = useAppHeader();
     const visibleStores = useVisibleStores();
 
@@ -49,15 +52,19 @@ const SettingsModal: React.FC = () => {
     const selectedProviderId = form.watch("llmProviderId");
     const selectedProvider = getProviderOrDefault(selectedProviderId ?? "");
 
-    /** Switching provider reseeds the model fields with that provider's own defaults. */
+    /**
+     * Switching provider drops every override back to that provider's defaults. A model name
+     * is provider-specific, so carrying one across would leave a setting that cannot work.
+     */
     const handleProviderChange = (providerId: string) => {
         const seeded = configForProvider(providerId);
         form.setValue("llmProviderId", seeded.providerId);
         form.setValue("llmBaseUrl", seeded.baseUrl ?? undefined);
         form.setValue("llmApiKey", undefined);
-        form.setValue("llmModelFast", seeded.models.fast);
-        form.setValue("llmModelSmart", seeded.models.smart);
-        form.setValue("llmModelVision", seeded.models.vision);
+        for (const tier of LLM_TIERS) {
+            form.setValue(MODEL_FIELDS[tier].value, undefined);
+            form.setValue(MODEL_FIELDS[tier].useDefault, true);
+        }
     };
 
     const preOpenModeRef = useRef<string | null>(null);
@@ -293,30 +300,18 @@ const SettingsModal: React.FC = () => {
                             />
                         )}
 
-                        <FormTextInput
-                            name="llmModelFast"
-                            control={form.control}
-                            label="Fast model"
-                            placeholder={selectedProvider.defaultModels.fast}
-                            helperText="High-volume work: categorizing individual items"
-                            disabled={isSubmitting}
-                        />
-                        <FormTextInput
-                            name="llmModelSmart"
-                            control={form.control}
-                            label="Smart model"
-                            placeholder={selectedProvider.defaultModels.smart}
-                            helperText="Parsing pasted lists and recipes"
-                            disabled={isSubmitting}
-                        />
-                        <FormTextInput
-                            name="llmModelVision"
-                            control={form.control}
-                            label="Vision model"
-                            placeholder={selectedProvider.defaultModels.vision}
-                            helperText="Anything with a photo attached, including store scans"
-                            disabled={isSubmitting}
-                        />
+                        {LLM_TIERS.map((tier) => (
+                            <ModelTierField
+                                key={tier}
+                                tier={tier}
+                                control={form.control}
+                                setValue={form.setValue}
+                                providerId={selectedProvider.id}
+                                catalog={catalog}
+                                isCatalogLoading={isCatalogLoading}
+                                disabled={isSubmitting}
+                            />
+                        ))}
 
                         <div className="ion-padding">
                             <IonButton expand="block" type="submit" disabled={isSubmitting}>

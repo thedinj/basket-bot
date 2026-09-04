@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { usePreference } from "../hooks/usePreference";
 import { useToast } from "../hooks/useToast";
 import { useLLMConfig } from "../llm/config/useLLMConfig";
-import { resolveBaseUrl } from "../llm/config/llmConfig";
 import { buildLLMSavePlan } from "./llmSettings";
 import { settingsSchema, type SettingsFormData, type ThemeMode } from "./settingsSchema";
 
@@ -15,7 +14,17 @@ export function useSettingsForm() {
     const { showSuccess, showError } = useToast();
 
     // LLM provider config + the active provider's key (suspends until loaded)
-    const { config: llmConfig, provider, apiKey, saveConfig, saveApiKeyFor } = useLLMConfig();
+    // The *stored* config, not the effective one: the form must show a field as empty when
+    // the user has never overridden it, so that saving keeps following the default.
+    const {
+        config: llmConfig,
+        provider,
+        apiKey,
+        catalog,
+        isCatalogLoading,
+        saveConfig,
+        saveApiKeyFor,
+    } = useLLMConfig();
 
     // Fetch remote API URL from preferences (suspends until loaded)
     const { value: remoteApiUrlValue, savePreference: saveRemoteApiUrl } =
@@ -40,8 +49,11 @@ export function useSettingsForm() {
             llmBaseUrl: undefined,
             llmApiKey: undefined,
             llmModelFast: undefined,
+            llmUseDefaultFast: true,
             llmModelSmart: undefined,
+            llmUseDefaultSmart: true,
             llmModelVision: undefined,
+            llmUseDefaultVision: true,
             remoteApiUrl: undefined,
             themeMode: undefined,
             defaultMealPlanSlots: undefined,
@@ -55,11 +67,15 @@ export function useSettingsForm() {
     useEffect(() => {
         reset({
             llmProviderId: provider.id,
-            llmBaseUrl: provider.baseUrlEditable ? resolveBaseUrl(llmConfig) : undefined,
+            llmBaseUrl: provider.baseUrlEditable ? llmConfig.baseUrl : undefined,
             llmApiKey: apiKey || undefined,
-            llmModelFast: llmConfig.models.fast,
-            llmModelSmart: llmConfig.models.smart,
-            llmModelVision: llmConfig.models.vision,
+            // A tier is "using the default" precisely when nothing is stored for it.
+            llmModelFast: llmConfig.models?.fast,
+            llmUseDefaultFast: !llmConfig.models?.fast,
+            llmModelSmart: llmConfig.models?.smart,
+            llmUseDefaultSmart: !llmConfig.models?.smart,
+            llmModelVision: llmConfig.models?.vision,
+            llmUseDefaultVision: !llmConfig.models?.vision,
             remoteApiUrl: remoteApiUrlValue || undefined,
             themeMode: (themeModeValue as ThemeMode) || undefined,
             defaultMealPlanSlots: defaultMealPlanSlotsValue
@@ -128,5 +144,7 @@ export function useSettingsForm() {
         form,
         performSave,
         isSubmitting,
+        catalog,
+        isCatalogLoading,
     };
 }

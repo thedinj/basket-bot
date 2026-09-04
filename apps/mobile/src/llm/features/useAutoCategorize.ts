@@ -33,7 +33,9 @@ export interface UseAutoCategorizeResult {
  * Component will suspend until API key is loaded (via Suspense).
  */
 export function useAutoCategorize() {
-    const { config: llmConfig, provider, apiKey, isReady } = useLLMConfig();
+    // `effectiveConfig`, not `config`: the stored one omits every default the user never
+    // overrode, so its model fields can be blank.
+    const { effectiveConfig: llmConfig, provider, apiKey, isReady } = useLLMConfig();
     const { raiseShield, lowerShield } = useShield();
 
     const autoCategorize = useCallback(

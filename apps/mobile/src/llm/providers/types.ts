@@ -6,6 +6,8 @@
  * (including a future backend proxy) never touches a feature or a call site.
  */
 
+import { LLM_TIERS } from "@basket-bot/core";
+import type { LLMModelOption, LLMTier } from "@basket-bot/core";
 import type { LLMAttachment, LLMResponse } from "../shared/types";
 
 /**
@@ -16,9 +18,12 @@ import type { LLMAttachment, LLMResponse } from "../shared/types";
  * - `smart`  — reasoning over free text (recipe / list parsing)
  * - `vision` — anything with an image attached; `runLLM` upgrades to this tier
  *              automatically when a request carries attachments
+ *
+ * Defined in `@basket-bot/core` because the tier names are part of the wire contract for
+ * the model catalogue the backend serves, and re-exported here so no call site has to care.
  */
-export const LLM_TIERS = ["fast", "smart", "vision"] as const;
-export type LLMTier = (typeof LLM_TIERS)[number];
+export { LLM_TIERS };
+export type { LLMModelOption, LLMTier };
 
 /**
  * A single vendor-neutral request. Providers translate this into their own wire format.
@@ -75,8 +80,15 @@ export interface LLMProviderDescriptor {
     /** Whether the user may point this provider at a different host. */
     baseUrlEditable: boolean;
     apiKeyPlaceholder: string;
-    /** Seeds the three model fields in Settings when the user picks this provider. */
+    /**
+     * **Offline fallback only.** The backend's catalogue is the source of truth for model
+     * names (`GET /api/llm/catalog`); these are what the app falls back to when it is
+     * unreachable, and what a provider the catalogue says nothing about keeps using.
+     * Resolve through `resolveProviderCatalog` rather than reading this directly.
+     */
     defaultModels: Record<LLMTier, string>;
+    /** Offline fallback for the model picker, on the same terms as `defaultModels`. */
+    knownModels: readonly LLMModelOption[];
     /** One line of help shown under the provider picker. */
     hint: string;
 }
