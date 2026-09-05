@@ -21,8 +21,8 @@ import { ClickableSelectionModal } from "../shared/ClickableSelectionModal";
 import RobotLoadingContent from "../shared/RobotLoadingContent";
 import {
     addOutline,
-    archive,
     cart,
+    cartOutline,
     closeOutline,
     helpCircle,
     helpCircleOutline,
@@ -566,12 +566,6 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                         {/* Ingredients */}
                         <div className="recipe-editor-ingredients-header">
                             <p className="recipe-editor-section-label">Ingredients</p>
-                            <span className="recipe-editor-ingredients-hint">
-                                <IonIcon icon={cart} />
-                                &nbsp;shopping list&nbsp;&nbsp;
-                                <IonIcon icon={archive} />
-                                &nbsp;skipped
-                            </span>
                         </div>
                         <div className="recipe-editor-ingredients">
                             {ingredients.map((row) => (
@@ -600,7 +594,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                         >
                                             <IonIcon
                                                 slot="icon-only"
-                                                icon={row.excluded ? archive : cart}
+                                                icon={row.excluded ? cartOutline : cart}
                                             />
                                         </IonButton>
                                         {!row.excluded && (

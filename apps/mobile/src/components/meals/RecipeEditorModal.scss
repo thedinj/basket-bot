@@ -69,20 +69,6 @@
     }
 }
 
-.recipe-editor-ingredients-hint {
-    display: flex;
-    align-items: center;
-    font-size: 11px;
-    color: var(--ion-color-medium);
-    white-space: nowrap;
-    margin-top: 20px;
-
-    ion-icon {
-        font-size: 12px;
-        vertical-align: middle;
-    }
-}
-
 .recipe-editor-ingredients {
     display: flex;
     flex-direction: column;
@@ -180,7 +166,10 @@
     border-radius: 6px;
     padding: 2px 8px;
     white-space: nowrap;
-    transition: background 0.1s, border-color 0.1s, color 0.1s;
+    transition:
+        background 0.1s,
+        border-color 0.1s,
+        color 0.1s;
 
     &.has-value {
         color: var(--ion-text-color);
