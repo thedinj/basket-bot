@@ -8,7 +8,10 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { anthropicProvider } from "./anthropicProvider";
-import { openAICompatibleProvider } from "./openAICompatibleProvider";
+import {
+    createOpenAICompatibleProvider,
+    openAICompatibleProvider,
+} from "./openAICompatibleProvider";
 import type { LLMRequest } from "./types";
 
 const request = (overrides: Partial<LLMRequest> = {}): LLMRequest => ({
@@ -155,6 +158,112 @@ const messagesResponse = (text: string) => ({
 });
 
 const anthropicContext = { apiKey: "sk-ant-test", baseUrl: "https://api.anthropic.com" };
+
+describe("openAICompatibleProvider — output-token parameter", () => {
+    /** A 400 shaped like OpenAI's rejection of the parameter it no longer accepts. */
+    const unsupported = (param: string) =>
+        JSON.stringify({
+            error: {
+                message: `Unsupported parameter: '${param}' is not supported with this model.`,
+                type: "invalid_request_error",
+                param,
+                code: "unsupported_parameter",
+            },
+        });
+
+    /** Stub `fetch` with a queue of responses, one per successive call. */
+    const mockFetchSequence = (
+        responses: Array<{ ok: boolean; status: number; body?: unknown; text?: string }>
+    ) => {
+        const fetchMock = vi.fn();
+        for (const next of responses) {
+            fetchMock.mockResolvedValueOnce({
+                ok: next.ok,
+                status: next.status,
+                json: async () => next.body,
+                text: async () => next.text ?? "",
+            });
+        }
+        vi.stubGlobal("fetch", fetchMock);
+        return fetchMock;
+    };
+
+    it("sends the parameter name the provider declares", async () => {
+        const fetchMock = mockFetch(chatResponse('{"ok":true}'));
+        const provider = createOpenAICompatibleProvider({
+            outputTokenParam: "max_completion_tokens",
+        });
+
+        await provider.call(request(), openAIContext);
+
+        expect(sentBody(fetchMock).max_completion_tokens).toBeGreaterThan(0);
+        expect(sentBody(fetchMock).max_tokens).toBeUndefined();
+    });
+
+    it("defaults to the original name for self-hosted servers", async () => {
+        const fetchMock = mockFetch(chatResponse('{"ok":true}'));
+
+        await openAICompatibleProvider.call(request(), openAIContext);
+
+        expect(sentBody(fetchMock).max_tokens).toBeGreaterThan(0);
+        expect(sentBody(fetchMock).max_completion_tokens).toBeUndefined();
+    });
+
+    it("retries under the other name when the server rejects the one it sent", async () => {
+        // The failure this prevents: a user pointing the compatible provider at a server on
+        // the far side of the rename gets a raw 400 and no way to act on it.
+        const fetchMock = mockFetchSequence([
+            { ok: false, status: 400, text: unsupported("max_tokens") },
+            { ok: true, status: 200, body: chatResponse('{"ok":true}') },
+        ]);
+
+        const result = await openAICompatibleProvider.call(request(), openAIContext);
+
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(JSON.parse(fetchMock.mock.calls[1][1].body).max_completion_tokens).toBeGreaterThan(
+            0
+        );
+        expect(result.data).toEqual({ ok: true });
+    });
+
+    it("retries in the other direction too", async () => {
+        const fetchMock = mockFetchSequence([
+            { ok: false, status: 400, text: unsupported("max_completion_tokens") },
+            { ok: true, status: 200, body: chatResponse('{"ok":true}') },
+        ]);
+        const provider = createOpenAICompatibleProvider({
+            outputTokenParam: "max_completion_tokens",
+        });
+
+        await provider.call(request(), openAIContext);
+
+        expect(JSON.parse(fetchMock.mock.calls[1][1].body).max_tokens).toBeGreaterThan(0);
+    });
+
+    it("does not retry a 400 that is about something else", async () => {
+        // Retrying a real error would double every failed request and bury the cause.
+        const fetchMock = mockFetchSequence([
+            { ok: false, status: 400, text: '{"error":{"message":"model not found"}}' },
+        ]);
+
+        await expect(openAICompatibleProvider.call(request(), openAIContext)).rejects.toThrow(
+            /model not found/
+        );
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("surfaces the second failure when the retry also fails", async () => {
+        const fetchMock = mockFetchSequence([
+            { ok: false, status: 400, text: unsupported("max_tokens") },
+            { ok: false, status: 401, text: "bad key" },
+        ]);
+
+        await expect(openAICompatibleProvider.call(request(), openAIContext)).rejects.toThrow(
+            /401: bad key/
+        );
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+});
 
 describe("anthropicProvider", () => {
     it("posts to the messages endpoint with the versioned API key headers", async () => {

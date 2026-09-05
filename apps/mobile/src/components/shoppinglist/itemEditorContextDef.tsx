@@ -4,7 +4,7 @@ import type {
     StoreAisle,
     StoreSection,
 } from "@basket-bot/core";
-import { createContext } from "react";
+import { createContext, RefObject } from "react";
 import { Control, FieldErrors, UseFormSetValue, UseFormWatch } from "react-hook-form";
 
 export interface ItemEditorContextType {
@@ -16,6 +16,8 @@ export interface ItemEditorContextType {
     aisles: StoreAisle[] | undefined;
     sections: StoreSection[] | undefined;
     editingItem: ShoppingListItemWithDetails | null;
+    /** Attached to the name field so the modal can focus it once presented for a new item. */
+    nameInputRef: RefObject<HTMLIonInputElement | null>;
 }
 
 export const ItemEditorContext = createContext<ItemEditorContextType | undefined>(undefined);

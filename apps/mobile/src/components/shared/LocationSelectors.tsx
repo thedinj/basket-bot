@@ -1,7 +1,8 @@
 import type { StoreSection } from "@basket-bot/core";
 import { IonChip, IonIcon, IonLabel } from "@ionic/react";
+import clsx from "clsx";
 import { closeCircle } from "ionicons/icons";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import {
     Control,
     FieldValues,
@@ -17,6 +18,10 @@ import { useAutoCategorize } from "../../llm/features/useAutoCategorize";
 import { LLM_COLOR, LLM_ICON_SRC } from "../../llm/shared/constants";
 import AislesSectionsManagementModal from "../store/AislesSectionsManagementModal";
 import { LocationPicker } from "./LocationPicker";
+import "./LocationSelectors.css";
+
+// How long the "just auto-located" shimmer plays on the aisle/section chips.
+const AUTO_LOCATE_SHIMMER_MS = 2200;
 
 interface LocationSelectorsProps<T extends FieldValues = FieldValues> {
     control: Control<T>;
@@ -37,6 +42,10 @@ export function LocationSelectors<T extends FieldValues = FieldValues>(
 
     const [isPickerOpen, setIsPickerOpen] = useState(false);
     const [isManageOpen, setIsManageOpen] = useState(false);
+    const [justAutoLocated, setJustAutoLocated] = useState(false);
+    const shimmerTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+    useEffect(() => () => clearTimeout(shimmerTimeoutRef.current), []);
 
     const { showError, showSuccess } = useToast();
     const autoCategorize = useAutoCategorize();
@@ -87,6 +96,12 @@ export function LocationSelectors<T extends FieldValues = FieldValues>(
             });
 
             setLocation(result.aisleId, result.sectionId);
+
+            clearTimeout(shimmerTimeoutRef.current);
+            setJustAutoLocated(true);
+            shimmerTimeoutRef.current = setTimeout(() => {
+                setJustAutoLocated(false);
+            }, AUTO_LOCATE_SHIMMER_MS);
 
             showSuccess(
                 `Auto-categorized to ${result.aisleName}${
@@ -139,7 +154,13 @@ export function LocationSelectors<T extends FieldValues = FieldValues>(
                     ) : (
                         <>
                             {currentAisle && (
-                                <IonChip disabled={disabled} outline>
+                                <IonChip
+                                    disabled={disabled}
+                                    outline
+                                    className={clsx(
+                                        justAutoLocated && "location-chip--newly-located"
+                                    )}
+                                >
                                     <IonLabel>{currentAisle.name}</IonLabel>
                                     {!disabled && (
                                         <IonIcon
@@ -153,7 +174,13 @@ export function LocationSelectors<T extends FieldValues = FieldValues>(
                                 </IonChip>
                             )}
                             {currentSection && (
-                                <IonChip disabled={disabled} outline>
+                                <IonChip
+                                    disabled={disabled}
+                                    outline
+                                    className={clsx(
+                                        justAutoLocated && "location-chip--newly-located"
+                                    )}
+                                >
                                     <IonLabel>{currentSection.name}</IonLabel>
                                     {!disabled && (
                                         <IonIcon

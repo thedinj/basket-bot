@@ -218,4 +218,30 @@
             opacity: 0;
         }
     }
+
+    /* Shimmer sweep across a row that AI just auto-located, drawing the eye to its new
+       aisle/section. Runs once; GroupedShoppingList removes the class after the sweep. */
+    .shopping-list-item--newly-located::part(native) {
+        background-image: linear-gradient(
+            100deg,
+            transparent 30%,
+            color-mix(in srgb, var(--ion-color-primary) 35%, transparent) 50%,
+            transparent 70%
+        );
+        background-size: 250% 100%;
+        background-repeat: no-repeat;
+        animation: newlyLocatedShimmer 2.2s ease-out 1;
+    }
+
+    @keyframes newlyLocatedShimmer {
+        0% {
+            background-position: 150% 0;
+        }
+        65% {
+            background-position: -50% 0;
+        }
+        100% {
+            background-position: -50% 0;
+        }
+    }
 }

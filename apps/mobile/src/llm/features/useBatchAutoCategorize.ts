@@ -17,6 +17,8 @@ interface BatchAutoCategorizeResult {
     successCount: number;
     failureCount: number;
     errors: Error[];
+    /** storeItemIds that were successfully categorized, so callers can highlight them. */
+    succeededIds: string[];
 }
 
 /**
@@ -37,6 +39,7 @@ export function useBatchAutoCategorize() {
         ): Promise<BatchAutoCategorizeResult> => {
             const shieldId = "batch-auto-categorize";
             const errors: Error[] = [];
+            const succeededIds: string[] = [];
             let successCount = 0;
             let failureCount = 0;
 
@@ -68,6 +71,7 @@ export function useBatchAutoCategorize() {
                         );
 
                         successCount++;
+                        succeededIds.push(item.id);
                     } catch (error) {
                         // Log error and continue with remaining items
                         failureCount++;
@@ -84,6 +88,7 @@ export function useBatchAutoCategorize() {
                     successCount,
                     failureCount,
                     errors,
+                    succeededIds,
                 };
             } finally {
                 // Always lower the batch shield

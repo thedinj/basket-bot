@@ -148,6 +148,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
     const originalTagIds = useRef<Set<string>>(new Set());
     const originalIngredients = useRef<IngredientRow[]>([]);
     const initialized = useRef(false);
+    const nameInputRef = useRef<HTMLIonInputElement>(null);
 
     const createRecipe = useCreateRecipe(householdId);
     const updateRecipe = useUpdateRecipe(householdId);
@@ -449,7 +450,11 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
     const isLoadingEdit = !isNew && recipeLoading && !initialized.current;
 
     return (
-        <IonModal isOpen={isOpen} onDidDismiss={() => onDismiss()}>
+        <IonModal
+            isOpen={isOpen}
+            onDidDismiss={() => onDismiss()}
+            onDidPresent={() => isNew && nameInputRef.current?.setFocus()}
+        >
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>{isNew ? "New Recipe" : "Edit Recipe"}</IonTitle>
@@ -478,6 +483,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                             <IonItem>
                                 <IonLabel position="stacked">Name</IonLabel>
                                 <IonInput
+                                    ref={nameInputRef}
                                     value={name}
                                     onIonInput={(e) => setName(e.detail.value ?? "")}
                                     placeholder="Enter recipe name"

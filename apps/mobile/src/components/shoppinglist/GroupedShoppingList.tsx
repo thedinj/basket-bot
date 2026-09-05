@@ -15,6 +15,7 @@ import { GroupedItemList } from "../shared/GroupedItemList";
 import { ItemGroup } from "../shared/grouping.types";
 import { createAisleSectionGroups } from "../shared/grouping.utils";
 import { ShoppingListItem } from "./ShoppingListItem";
+import { useShoppingListContext } from "./useShoppingListContext";
 
 interface GroupedShoppingListProps {
     items: ShoppingListItemWithDetails[];
@@ -84,6 +85,7 @@ export const GroupedShoppingList = ({
     const { showToast } = useToast();
     const batchAutoCategorize = useBatchAutoCategorize();
     const [isAutoCategorizing, setIsAutoCategorizing] = useState(false);
+    const { newlyLocatedIds, markAutoLocated } = useShoppingListContext();
 
     // Get storeId from first item (all items in list belong to same store)
     const storeId = items[0]?.storeId;
@@ -158,6 +160,16 @@ export const GroupedShoppingList = ({
             const result = await batchAutoCategorize(uncategorizedItems, storeId, aisles, sections);
             await refreshAfterCategorization();
             showResultToast(result);
+
+            if (result.succeededIds.length > 0) {
+                const succeededStoreItemIds = new Set(result.succeededIds);
+                const locatedItemIds = items
+                    .filter(
+                        (item) => item.storeItemId && succeededStoreItemIds.has(item.storeItemId)
+                    )
+                    .map((item) => item.id);
+                markAutoLocated(locatedItemIds);
+            }
         } catch (error: unknown) {
             showToast({ message: `Error: ${formatErrorMessage(error)}`, type: "error" });
         } finally {
@@ -167,8 +179,10 @@ export const GroupedShoppingList = ({
         storeId,
         aisles,
         sections,
+        items,
         getUncategorizedItems,
         batchAutoCategorize,
+        markAutoLocated,
         refreshAfterCategorization,
         showResultToast,
         showToast,
@@ -246,6 +260,17 @@ export const GroupedShoppingList = ({
 
     const getItemKey = useCallback((item: ShoppingListItemWithDetails) => item.id, []);
 
+    const renderItem = useCallback(
+        (item: ShoppingListItemWithDetails) => (
+            <ShoppingListItem
+                item={item}
+                isChecked={item.isChecked}
+                isNewlyLocated={newlyLocatedIds.has(item.id)}
+            />
+        ),
+        [newlyLocatedIds]
+    );
+
     if (items.length === 0) {
         return null;
     }
@@ -253,7 +278,7 @@ export const GroupedShoppingList = ({
     return (
         <GroupedItemList<ShoppingListItemWithDetails>
             groups={groups}
-            renderItem={(item) => <ShoppingListItem item={item} isChecked={item.isChecked} />}
+            renderItem={renderItem}
             getItemKey={getItemKey}
         />
     );

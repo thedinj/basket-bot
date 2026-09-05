@@ -18,6 +18,11 @@ export interface ShoppingListContextValue {
     confirmDelete: (id: string, name: string) => void;
     cancelDelete: () => void;
     executeDelete: () => void;
+
+    // Shopping list item ids that AI just assigned an aisle/section to, so rows can shimmer
+    // to draw attention to their new location. Cleared automatically after the shimmer plays.
+    newlyLocatedIds: Set<string>;
+    markAutoLocated: (itemIds: string[]) => void;
 }
 
 export const ShoppingListContext = createContext<ShoppingListContextValue | undefined>(undefined);

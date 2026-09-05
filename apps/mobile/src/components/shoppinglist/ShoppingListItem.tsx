@@ -46,6 +46,8 @@ import "./ShoppingListItem.css";
 interface ShoppingListItemProps {
     item: ShoppingListItemWithDetails;
     isChecked: boolean;
+    /** True briefly after AI auto-locates this item, to draw the eye to its new aisle/section. */
+    isNewlyLocated?: boolean;
     /**
      * When provided (together with `onRejectUnsure`), this is the Review Unsure Items view:
      * the checkbox and move-to-store button are replaced with "I don't need this" /
@@ -76,6 +78,7 @@ const useSnoozeStatus = (snoozedUntil: string | null) => {
 export const ShoppingListItem = ({
     item,
     isChecked,
+    isNewlyLocated,
     onConfirmUnsure,
     isConfirmingUnsure,
     onRejectUnsure,
@@ -270,7 +273,8 @@ export const ShoppingListItem = ({
                     item.isIdea && "shopping-list-item--idea",
                     item.isUnsure && !onConfirmUnsure && "shopping-list-item--unsure",
                     item.isPrivate && "shopping-list-item--private",
-                    justChecked && "shopping-list-item--just-checked"
+                    justChecked && "shopping-list-item--just-checked",
+                    isNewlyLocated && "shopping-list-item--newly-located"
                 )}
                 button={false}
             >

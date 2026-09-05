@@ -1,5 +1,5 @@
 import type { ShoppingListItemWithDetails } from "@basket-bot/core";
-import { ReactNode, useCallback, useMemo, useRef, useState } from "react";
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDeleteShoppingListItem, useStores } from "../../db/hooks";
 import { useLastShoppingListStore } from "../../hooks/useLastShoppingListStore";
 import { ShoppingListContext, ShoppingListContextValue } from "./ShoppingListContext";
@@ -7,6 +7,9 @@ import { ShoppingListContext, ShoppingListContextValue } from "./ShoppingListCon
 interface ShoppingListProviderProps {
     children: ReactNode;
 }
+
+// How long the "just auto-located" shimmer stays on a row after AI assigns it an aisle/section.
+const AUTO_LOCATE_SHIMMER_MS = 2500;
 
 export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) => {
     const [userSelectedStoreId, setUserSelectedStoreId] = useState<string | null>(null);
@@ -18,6 +21,20 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
     } | null>(null);
 
     const deleteItemMutation = useDeleteShoppingListItem();
+
+    const [newlyLocatedIds, setNewlyLocatedIds] = useState<Set<string>>(new Set());
+    const shimmerTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+    useEffect(() => () => clearTimeout(shimmerTimeoutRef.current), []);
+
+    const markAutoLocated = useCallback((itemIds: string[]) => {
+        if (itemIds.length === 0) return;
+        clearTimeout(shimmerTimeoutRef.current);
+        setNewlyLocatedIds(new Set(itemIds));
+        shimmerTimeoutRef.current = setTimeout(() => {
+            setNewlyLocatedIds(new Set());
+        }, AUTO_LOCATE_SHIMMER_MS);
+    }, []);
 
     const { data: stores } = useStores();
     const { lastShoppingListStoreId, saveLastShoppingListStore } = useLastShoppingListStore();
@@ -107,6 +124,8 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
             confirmDelete,
             cancelDelete,
             executeDelete,
+            newlyLocatedIds,
+            markAutoLocated,
         };
     }, [
         cancelDelete,
@@ -117,6 +136,8 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
         executeDelete,
         handleSetSelectedStoreId,
         isItemModalOpen,
+        markAutoLocated,
+        newlyLocatedIds,
         openCreateModal,
         openEditModal,
         selectedStoreId,

@@ -17,14 +17,15 @@
  */
 
 import { anthropicProvider } from "./anthropicProvider";
-import { openAICompatibleProvider } from "./openAICompatibleProvider";
+import { createOpenAICompatibleProvider } from "./openAICompatibleProvider";
 import type { LLMProviderDescriptor } from "./types";
 
 export const LLM_PROVIDERS: readonly LLMProviderDescriptor[] = [
     {
         id: "openai",
         label: "OpenAI",
-        adapter: openAICompatibleProvider,
+        // Current OpenAI models reject the older `max_tokens` outright.
+        adapter: createOpenAICompatibleProvider({ outputTokenParam: "max_completion_tokens" }),
         requiresApiKey: true,
         defaultBaseUrl: "https://api.openai.com/v1",
         baseUrlEditable: false,
@@ -86,7 +87,9 @@ export const LLM_PROVIDERS: readonly LLMProviderDescriptor[] = [
     {
         id: "openai-compatible",
         label: "OpenAI-compatible",
-        adapter: openAICompatibleProvider,
+        // Self-hosted servers overwhelmingly still take `max_tokens`; the adapter retries
+        // under the newer name if one turns out not to.
+        adapter: createOpenAICompatibleProvider({ outputTokenParam: "max_tokens" }),
         requiresApiKey: true,
         defaultBaseUrl: "http://localhost:11434/v1",
         baseUrlEditable: true,

@@ -1,0 +1,24 @@
+/* Shimmer/glow on the aisle/section chip right after AI auto-locates it, drawing the eye
+   to the newly-filled-in location. Runs once; the component removes the class after.
+   ion-chip doesn't expose a "native" shadow part (unlike ion-item), so this animates
+   box-shadow and filter directly on the host element instead of piercing the shadow DOM. */
+@media (prefers-reduced-motion: no-preference) {
+    .location-chip--newly-located {
+        animation: locationChipShimmer 2.2s ease-out 1;
+    }
+
+    @keyframes locationChipShimmer {
+        0% {
+            box-shadow: 0 0 0 0 color-mix(in srgb, var(--ion-color-primary) 60%, transparent);
+            filter: brightness(1.35);
+        }
+        55% {
+            box-shadow: 0 0 0 7px color-mix(in srgb, var(--ion-color-primary) 0%, transparent);
+            filter: brightness(1.1);
+        }
+        100% {
+            box-shadow: 0 0 0 0 color-mix(in srgb, var(--ion-color-primary) 0%, transparent);
+            filter: brightness(1);
+        }
+    }
+}

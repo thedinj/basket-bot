@@ -8,6 +8,14 @@
  * JSON schema: schema mode is not implemented consistently across OpenAI-compatible
  * servers, whereas plain JSON mode is near-universal. `runLLM` validates the result with
  * the caller's Zod schema regardless, so nothing depends on the server enforcing shape.
+ *
+ * The output-token limit is the one parameter the protocol has split on: OpenAI renamed
+ * `max_tokens` to `max_completion_tokens` and now rejects the old name outright on current
+ * models, while most self-hosted servers still only know `max_tokens`. Each provider
+ * declares which name it wants (`createOpenAICompatibleProvider`), and a request rejected
+ * for that specific parameter is retried once under the other name — because "any server
+ * speaking the OpenAI protocol" means servers that predate and postdate the rename, and the
+ * user has no way to tell which they are pointing at.
  */
 
 import type { LLMResponse } from "../shared/types";
@@ -15,6 +23,24 @@ import type { LLMProviderAdapter, LLMProviderContext, LLMRequest } from "./types
 
 /** Ceiling on generated tokens. Store scans return the largest payloads we produce. */
 const MAX_OUTPUT_TOKENS = 8192;
+
+/** The two names the OpenAI protocol has used for the output-token ceiling. */
+export type OutputTokenParam = "max_tokens" | "max_completion_tokens";
+
+const OTHER_PARAM: Record<OutputTokenParam, OutputTokenParam> = {
+    max_tokens: "max_completion_tokens",
+    max_completion_tokens: "max_tokens",
+};
+
+/**
+ * Whether a 400 body is the server objecting to the token-limit parameter by name.
+ *
+ * Matched on the parameter name rather than the prose so a reworded message still routes
+ * to the retry; anything else is a real error and must surface unchanged.
+ */
+const rejectedOutputTokenParam = (body: string, sent: OutputTokenParam): boolean =>
+    body.includes(sent) &&
+    (body.includes("unsupported_parameter") || body.includes("unsupported parameter"));
 
 type ChatContentPart =
     | { type: "text"; text: string }
@@ -56,23 +82,47 @@ const buildMessages = (request: LLMRequest): ChatMessage[] => {
     return messages;
 };
 
-export const openAICompatibleProvider: LLMProviderAdapter = {
+export interface OpenAICompatibleOptions {
+    /**
+     * Which name this provider's server expects for the output-token ceiling. Only the
+     * starting guess — a rejection for this exact parameter is retried under the other name.
+     */
+    outputTokenParam?: OutputTokenParam;
+}
+
+export const createOpenAICompatibleProvider = ({
+    outputTokenParam = "max_tokens",
+}: OpenAICompatibleOptions = {}): LLMProviderAdapter => ({
     async call(request: LLMRequest, context: LLMProviderContext): Promise<LLMResponse> {
         const base = (context.baseUrl ?? "").replace(/\/+$/, "");
+        const messages = buildMessages(request);
 
-        const response = await fetch(`${base}/chat/completions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${context.apiKey ?? ""}`,
-            },
-            body: JSON.stringify({
-                model: request.model,
-                messages: buildMessages(request),
-                max_tokens: MAX_OUTPUT_TOKENS,
-                response_format: { type: "json_object" },
-            }),
-        });
+        const post = (tokenParam: OutputTokenParam) =>
+            fetch(`${base}/chat/completions`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${context.apiKey ?? ""}`,
+                },
+                body: JSON.stringify({
+                    model: request.model,
+                    messages,
+                    [tokenParam]: MAX_OUTPUT_TOKENS,
+                    response_format: { type: "json_object" },
+                }),
+            });
+
+        let response = await post(outputTokenParam);
+
+        if (response.status === 400) {
+            // Read once — the body cannot be consumed twice, and it is needed either to
+            // decide on the retry or to report the original failure.
+            const body = await response.text();
+            if (!rejectedOutputTokenParam(body, outputTokenParam)) {
+                throw new Error(`400: ${body}`);
+            }
+            response = await post(OTHER_PARAM[outputTokenParam]);
+        }
 
         if (!response.ok) {
             throw new Error(`${response.status}: ${await response.text()}`);
@@ -86,4 +136,7 @@ export const openAICompatibleProvider: LLMProviderAdapter = {
 
         return { data: JSON.parse(raw), raw };
     },
-};
+});
+
+/** Default instance for servers that still use the original parameter name. */
+export const openAICompatibleProvider: LLMProviderAdapter = createOpenAICompatibleProvider();

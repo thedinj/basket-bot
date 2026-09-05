@@ -20,7 +20,7 @@ import {
     useIonAlert,
 } from "@ionic/react";
 import { closeOutline, informationCircleOutline, trash } from "ionicons/icons";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useCreateItem, useDeleteItem, useUpdateItem } from "../../db/hooks";
 import ItemInfoModal from "../shared/ItemInfoModal";
@@ -47,6 +47,7 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
     const deleteItem = useDeleteItem();
     const [presentAlert] = useIonAlert();
     const [isInfoOpen, setIsInfoOpen] = useState(false);
+    const nameInputRef = useRef<HTMLIonInputElement>(null);
 
     const form = useForm<StoreItemFormData>({
         resolver: zodResolver(storeItemInputSchema),
@@ -124,7 +125,11 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
     const isPending = createItem.isPending || updateItem.isPending || deleteItem.isPending;
 
     return (
-        <IonModal isOpen={isOpen} onDidDismiss={handleDismiss}>
+        <IonModal
+            isOpen={isOpen}
+            onDidDismiss={handleDismiss}
+            onDidPresent={() => !editingItem && nameInputRef.current?.setFocus()}
+        >
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>{editingItem ? "Edit Item" : "Add Item"}</IonTitle>
@@ -191,6 +196,7 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
                                             <IonItem>
                                                 <IonLabel position="stacked">Item Name</IonLabel>
                                                 <IonInput
+                                                    ref={nameInputRef}
                                                     value={field.value}
                                                     placeholder="Enter item name"
                                                     onIonInput={(e) =>

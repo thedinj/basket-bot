@@ -8,7 +8,8 @@ import { useStoreItemAutocomplete } from "../../db/hooks";
 import { useItemEditorContext } from "./useItemEditorContext";
 
 export const NameAutocomplete: React.FC = () => {
-    const { control, errors, setValue, storeId, aisles, sections, watch } = useItemEditorContext();
+    const { control, errors, setValue, storeId, aisles, sections, watch, nameInputRef } =
+        useItemEditorContext();
 
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
@@ -91,6 +92,7 @@ export const NameAutocomplete: React.FC = () => {
                     <IonItem>
                         <IonLabel position="stacked">Item</IonLabel>
                         <IonInput
+                            ref={nameInputRef}
                             value={searchTerm}
                             placeholder="Enter item name"
                             onIonInput={(e) => handleSearchChange(e.detail.value || "")}

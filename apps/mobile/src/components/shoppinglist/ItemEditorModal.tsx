@@ -22,7 +22,7 @@ import {
     informationCircleOutline,
     trash,
 } from "ionicons/icons";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
     useDeleteShoppingListItem,
@@ -59,6 +59,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
     const deleteItem = useDeleteShoppingListItem();
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
     const [isInfoOpen, setIsInfoOpen] = useState(false);
+    const nameInputRef = useRef<HTMLIonInputElement>(null);
 
     const {
         control,
@@ -221,7 +222,11 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
     };
 
     return (
-        <IonModal isOpen={isItemModalOpen} onDidDismiss={closeItemModal}>
+        <IonModal
+            isOpen={isItemModalOpen}
+            onDidDismiss={closeItemModal}
+            onDidPresent={() => !editingItem && nameInputRef.current?.setFocus()}
+        >
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>
@@ -295,6 +300,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                     errors={errors}
                     setValue={setValue}
                     watch={watch}
+                    nameInputRef={nameInputRef}
                 >
                     <form onSubmit={handleSubmit(onSubmit)}>
                         {isIdea ? (
