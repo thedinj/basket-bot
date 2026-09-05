@@ -1,4 +1,5 @@
 import HouseholdManagementModal from "@/components/households/HouseholdManagementModal";
+import AboutModal from "@/components/settings/AboutModal";
 import PasswordChangeModal from "@/components/settings/PasswordChangeModal";
 import ProfileEditorModal from "@/components/settings/ProfileEditorModal";
 import SettingsModal from "@/components/settings/SettingsModal";
@@ -20,6 +21,7 @@ import {
 import {
     helpCircleOutline,
     homeOutline,
+    informationCircleOutline,
     keyOutline,
     logOut,
     person,
@@ -42,6 +44,7 @@ export const AppMenu: React.FC = () => {
     const handleOpenHouseholds = useCallback(() => openModal("households"), [openModal]);
     const handleOpenStores = useCallback(() => openModal("stores"), [openModal]);
     const handleOpenUnsureItems = useCallback(() => openModal("unsureItems"), [openModal]);
+    const handleOpenAbout = useCallback(() => openModal("about"), [openModal]);
 
     const handleLogout = async () => {
         try {
@@ -144,6 +147,12 @@ export const AppMenu: React.FC = () => {
                                 <IonLabel>Review Unsure Items</IonLabel>
                             </IonItem>
                         </IonMenuToggle>
+                        <IonMenuToggle autoHide={false}>
+                            <IonItem button onClick={handleOpenAbout} lines="none">
+                                <IonIcon icon={informationCircleOutline} slot="start" />
+                                <IonLabel>About</IonLabel>
+                            </IonItem>
+                        </IonMenuToggle>
                     </IonList>
                     <div style={{ padding: "16px", marginTop: "auto" }}>
                         <IonButton expand="block" color="danger" onClick={handleLogout}>
@@ -159,6 +168,7 @@ export const AppMenu: React.FC = () => {
             <StoreListModal />
             <HouseholdManagementModal />
             <UnsureItemsModal />
+            <AboutModal />
         </>
     );
 };

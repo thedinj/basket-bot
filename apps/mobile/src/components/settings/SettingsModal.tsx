@@ -39,7 +39,6 @@ import { applyTheme } from "../../theme/applyTheme";
 import { FormPasswordInput } from "../form/FormPasswordInput";
 import { FormTextInput } from "../form/FormTextInput";
 import { useAppHeader } from "../layout/useAppHeader";
-import AboutSection from "./AboutSection";
 import { ModelTierField } from "./ModelTierField";
 
 const SettingsModal: React.FC = () => {
@@ -320,8 +319,6 @@ const SettingsModal: React.FC = () => {
                         </div>
                     </IonList>
                 </form>
-
-                <AboutSection />
             </IonContent>
         </IonModal>
     );

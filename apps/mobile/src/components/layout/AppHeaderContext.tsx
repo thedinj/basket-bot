@@ -37,7 +37,8 @@ export type ModalName =
     | "password"
     | "households"
     | "stores"
-    | "unsureItems";
+    | "unsureItems"
+    | "about";
 
 export interface AppHeaderContextValue {
     currentModal: ModalName | null;
