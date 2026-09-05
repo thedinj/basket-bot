@@ -1,4 +1,4 @@
-import { IonItem, IonLabel, IonList, IonListHeader } from "@ionic/react";
+import { IonItem, IonLabel, IonList } from "@ionic/react";
 import { useState } from "react";
 import DebugLogView from "./DebugLogView";
 
@@ -25,9 +25,6 @@ const AboutSection: React.FC = () => {
 
     return (
         <IonList>
-            <IonListHeader>
-                <h2>About</h2>
-            </IonListHeader>
             <IonItem button detail={false} onClick={handleVersionTap}>
                 <IonLabel>
                     <p>

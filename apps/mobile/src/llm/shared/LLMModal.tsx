@@ -159,7 +159,7 @@ export const LLMModal: React.FC = () => {
         setResponse(null);
 
         try {
-            const llmResponse = await runLLM({
+            let llmResponse = await runLLM({
                 tier: config.tier,
                 schema: config.schema,
                 prompt: config.prompt,
@@ -168,6 +168,10 @@ export const LLMModal: React.FC = () => {
                 config: llmConfig,
                 apiKey,
             });
+
+            if (config.postProcess) {
+                llmResponse = await config.postProcess(llmResponse);
+            }
 
             setResponse(llmResponse);
             setInteractionState(config.initialState ? config.initialState(llmResponse) : undefined);

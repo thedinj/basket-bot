@@ -1,6 +1,6 @@
 import { IonCheckbox, IonItem, IonLabel, IonList } from "@ionic/react";
 import type { ParsedRecipe, ParsedRecipeIngredient } from "../../llm/features/recipeImport";
-import PantryBadge from "../shared/PantryBadge";
+import SkippedBadge from "../shared/SkippedBadge";
 import TabEmptyState from "../shared/TabEmptyState";
 import "./RecipeImportPreview.scss";
 
@@ -37,7 +37,7 @@ const RecipeImportPreview: React.FC<RecipeImportPreviewProps> = ({
             </div>
 
             <p className="recipe-import-preview__hint">
-                Uncheck pantry staples to skip them when adding this recipe to your cart
+                Uncheck anything you don't need to buy for this recipe
             </p>
 
             <IonList className="recipe-import-preview__list">
@@ -64,7 +64,7 @@ const RecipeImportPreview: React.FC<RecipeImportPreviewProps> = ({
                                 </span>
                                 <span className="recipe-import-preview__ing-name">
                                     {ing.name}
-                                    {ing.isPantryItem && <PantryBadge />}
+                                    {ing.excluded && <SkippedBadge />}
                                 </span>
                             </IonLabel>
                         </IonItem>

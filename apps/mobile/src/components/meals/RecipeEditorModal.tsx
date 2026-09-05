@@ -44,7 +44,7 @@ import {
     useUpdateRecipe,
 } from "../../db/mealsHooks";
 import { useToast } from "../../hooks/useToast";
-import PantryBadge from "../shared/PantryBadge";
+import SkippedBadge from "../shared/SkippedBadge";
 import TagChip from "./TagChip";
 import TagManagerModal from "./TagManagerModal";
 
@@ -586,16 +586,16 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                             }
                                             autocapitalize="sentences"
                                         />
-                                        {row.excluded && <PantryBadge />}
+                                        {row.excluded && <SkippedBadge />}
                                         <IonButton
                                             fill="clear"
                                             size="small"
-                                            className={`recipe-editor-pantry-toggle-btn${!row.excluded ? " included" : ""}`}
+                                            className={`recipe-editor-skip-toggle-btn${!row.excluded ? " included" : ""}`}
                                             onClick={() => toggleRowExcluded(row.rowKey)}
                                             aria-label={
                                                 row.excluded
                                                     ? "Add to shopping list"
-                                                    : "Mark as pantry item"
+                                                    : "Skip this ingredient"
                                             }
                                         >
                                             <IonIcon

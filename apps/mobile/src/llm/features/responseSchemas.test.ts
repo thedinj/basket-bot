@@ -60,7 +60,7 @@ describe("recipeImportResponseSchema", () => {
                         shoppingName: "Kidney beans",
                         shoppingQty: 1,
                         shoppingUnit: "tin",
-                        isPantryItem: true,
+                        excluded: true,
                     },
                 ],
             },

@@ -90,6 +90,12 @@ export interface LLMModalConfig<T = unknown, S = void> {
     onAccept: (response: LLMResponse<T>, state: S) => void;
     /** Optional callback when user cancels */
     onCancel?: () => void;
+    /**
+     * Optional second pass run automatically after the LLM responds, before the result
+     * reaches `renderOutput`/`initialState`/`onAccept`. Same `T` in and out — a feature that
+     * doesn't need one leaves this unset and is unaffected.
+     */
+    postProcess?: (response: LLMResponse<T>) => Promise<LLMResponse<T>>;
     /** Modal title */
     title?: string;
     /** Text for the Run button (default: "Run LLM") */

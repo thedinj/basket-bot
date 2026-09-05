@@ -14,7 +14,7 @@ import {
 import { helpCircle, helpCircleOutline } from "ionicons/icons";
 import clsx from "clsx";
 import { DEFAULT_STORE, type ResolvedIngredient } from "../../utils/ingredientRouting";
-import PantryBadge from "../shared/PantryBadge";
+import SkippedBadge from "../shared/SkippedBadge";
 
 import "./RouteIngredientsContent.scss";
 
@@ -50,7 +50,7 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
     onToggleShowPantryItems,
 }) => {
     const shoppableIngredients = resolvedIngredients.filter((ri) => !ri.excluded);
-    const pantryIngredients = resolvedIngredients.filter((ri) => ri.excluded);
+    const excludedIngredients = resolvedIngredients.filter((ri) => ri.excluded);
 
     // Group by recipe (in first-appearance order), then within each recipe
     // put non-pantry items before pantry items.
@@ -70,14 +70,14 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
         return (
             <div className="wizard-empty">
                 <IonNote>All ingredients are pantry-only and will be skipped.</IonNote>
-                {pantryIngredients.length > 0 && (
+                {excludedIngredients.length > 0 && (
                     <button
                         type="button"
                         className="route-pantry-toggle"
                         onClick={onToggleShowPantryItems}
                     >
-                        Show {pantryIngredients.length} pantry{" "}
-                        {pluralize("item", pantryIngredients.length)}
+                        Show {excludedIngredients.length} pantry{" "}
+                        {pluralize("item", excludedIngredients.length)}
                     </button>
                 )}
             </div>
@@ -114,14 +114,14 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
                 )}
             </div>
 
-            {pantryIngredients.length > 0 && (
+            {excludedIngredients.length > 0 && (
                 <div className="route-pantry-toggle-row">
                     <IonToggle
                         checked={showPantryItems}
                         onIonChange={onToggleShowPantryItems}
                         labelPlacement="start"
                     >
-                        Show pantry items ({pantryIngredients.length})
+                        Show pantry items ({excludedIngredients.length})
                     </IonToggle>
                 </div>
             )}
@@ -132,7 +132,7 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
                         key={ri.ingredientId}
                         className={clsx(
                             "wizard-route-item",
-                            ri.excluded && "wizard-route-item--pantry"
+                            ri.excluded && "wizard-route-item--skipped"
                         )}
                     >
                         <IonCheckbox
@@ -152,7 +152,7 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
                         <IonLabel>
                             <h3>
                                 {ri.name}
-                                {ri.excluded && <PantryBadge />}
+                                {ri.excluded && <SkippedBadge />}
                             </h3>
                             {ri.scaledQty != null && (
                                 <p className="route-ingredient-qty">
