@@ -570,7 +570,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                 <IonIcon icon={cart} />
                                 &nbsp;shopping list&nbsp;&nbsp;
                                 <IonIcon icon={archive} />
-                                &nbsp;pantry
+                                &nbsp;skipped
                             </span>
                         </div>
                         <div className="recipe-editor-ingredients">

@@ -54,12 +54,12 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
     const visibleStores = useMemo(() => filterVisibleStores(stores), [stores]);
     const routing = useRouteIngredients();
     const [factor, setFactor] = useState(1);
-    const [showPantryItems, setShowPantryItems] = useState(false);
+    const [showSkippedItems, setShowSkippedItems] = useState(false);
 
     useEffect(() => {
         if (!isOpen) return;
         setFactor(1);
-        setShowPantryItems(false);
+        setShowSkippedItems(false);
         const initialMap = new Map<string, string | null>();
         const initialUnsure = new Set<string>();
         for (const ing of rawIngredients) {
@@ -75,11 +75,11 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
         routing.init(initialMap, defStore, initialUnsure);
     }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const handleToggleShowPantryItems = () => {
-        setShowPantryItems((prev) => {
+    const handleToggleShowSkippedItems = () => {
+        setShowSkippedItems((prev) => {
             const next = !prev;
             if (!next) {
-                // Hiding pantry items again — uncheck any that were checked so a
+                // Hiding skipped items again — uncheck any that were checked so a
                 // hidden item can never be silently included in the submission.
                 routing.setRouteMap((prevMap) => {
                     const nextMap = new Map(prevMap);
@@ -148,8 +148,8 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
                     onToggleUnsure={routing.toggleUnsure}
                     visibleStores={visibleStores}
                     unitMap={unitMap}
-                    showPantryItems={showPantryItems}
-                    onToggleShowPantryItems={handleToggleShowPantryItems}
+                    showSkippedItems={showSkippedItems}
+                    onToggleShowSkippedItems={handleToggleShowSkippedItems}
                 />
             </IonContent>
 

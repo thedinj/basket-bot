@@ -267,13 +267,13 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
     const routeMap = routing.routeMap;
     const setRouteMap = routing.setRouteMap;
     const defaultStoreId = routing.defaultStoreId;
-    const [showPantryItems, setShowPantryItems] = useState(false);
+    const [showSkippedItems, setShowSkippedItems] = useState(false);
 
-    const handleToggleShowPantryItems = () => {
-        setShowPantryItems((prev) => {
+    const handleToggleShowSkippedItems = () => {
+        setShowSkippedItems((prev) => {
             const next = !prev;
             if (!next) {
-                // Hiding pantry items again — uncheck any that were checked so a
+                // Hiding skipped items again — uncheck any that were checked so a
                 // hidden item can never be silently included in the submission.
                 setRouteMap((prevMap) => {
                     const nextMap = new Map(prevMap);
@@ -651,14 +651,14 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
             if (!recipe) continue;
             for (const ing of recipe.ingredients) {
                 const existing = planData.routes.find((r) => r.ingredientId === ing.id);
-                // Existing explicit routes keep their store; new non-pantry items default to
-                // the sentinel, new pantry items default to unchecked.
+                // Existing explicit routes keep their store; new shoppable items default to
+                // the sentinel, new skipped items default to unchecked.
                 newMap.set(ing.id, existing?.storeId ?? (ing.excluded ? null : DEFAULT_STORE));
                 if (existing ? existing.isUnsure : ing.isUnsure) newUnsureSet.add(ing.id);
             }
         }
 
-        setShowPantryItems(false);
+        setShowSkippedItems(false);
         routing.init(newMap, storeId, newUnsureSet);
         setStep(3);
     };
@@ -958,8 +958,8 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                             visibleStores={visibleStores}
                             recipeCount={pickedRecipes.length}
                             unitMap={unitMap}
-                            showPantryItems={showPantryItems}
-                            onToggleShowPantryItems={handleToggleShowPantryItems}
+                            showSkippedItems={showSkippedItems}
+                            onToggleShowSkippedItems={handleToggleShowSkippedItems}
                         />
                     </>
                 )}

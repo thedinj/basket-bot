@@ -31,8 +31,8 @@ interface RouteIngredientsContentProps {
     visibleStores: Store[];
     recipeCount?: number;
     unitMap?: Map<string, string>;
-    showPantryItems: boolean;
-    onToggleShowPantryItems: () => void;
+    showSkippedItems: boolean;
+    onToggleShowSkippedItems: () => void;
 }
 
 const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
@@ -46,19 +46,19 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
     visibleStores,
     recipeCount,
     unitMap,
-    showPantryItems,
-    onToggleShowPantryItems,
+    showSkippedItems,
+    onToggleShowSkippedItems,
 }) => {
     const shoppableIngredients = resolvedIngredients.filter((ri) => !ri.excluded);
     const excludedIngredients = resolvedIngredients.filter((ri) => ri.excluded);
 
     // Group by recipe (in first-appearance order), then within each recipe
-    // put non-pantry items before pantry items.
+    // put shoppable items before skipped items.
     const recipeOrder = new Map<string, number>();
     for (const ri of resolvedIngredients) {
         if (!recipeOrder.has(ri.recipeId)) recipeOrder.set(ri.recipeId, recipeOrder.size);
     }
-    const visibleIngredients = (showPantryItems ? resolvedIngredients : shoppableIngredients)
+    const visibleIngredients = (showSkippedItems ? resolvedIngredients : shoppableIngredients)
         .slice()
         .sort((a, b) => {
             const recipeDiff = recipeOrder.get(a.recipeId)! - recipeOrder.get(b.recipeId)!;
@@ -66,17 +66,17 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
             return Number(a.excluded) - Number(b.excluded);
         });
 
-    if (shoppableIngredients.length === 0 && !showPantryItems) {
+    if (shoppableIngredients.length === 0 && !showSkippedItems) {
         return (
             <div className="wizard-empty">
-                <IonNote>All ingredients are pantry-only and will be skipped.</IonNote>
+                <IonNote>Every ingredient here will be skipped.</IonNote>
                 {excludedIngredients.length > 0 && (
                     <button
                         type="button"
-                        className="route-pantry-toggle"
-                        onClick={onToggleShowPantryItems}
+                        className="route-skipped-toggle"
+                        onClick={onToggleShowSkippedItems}
                     >
-                        Show {excludedIngredients.length} pantry{" "}
+                        Show {excludedIngredients.length} skipped{" "}
                         {pluralize("item", excludedIngredients.length)}
                     </button>
                 )}
@@ -115,13 +115,13 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
             </div>
 
             {excludedIngredients.length > 0 && (
-                <div className="route-pantry-toggle-row">
+                <div className="route-skipped-toggle-row">
                     <IonToggle
-                        checked={showPantryItems}
-                        onIonChange={onToggleShowPantryItems}
+                        checked={showSkippedItems}
+                        onIonChange={onToggleShowSkippedItems}
                         labelPlacement="start"
                     >
-                        Show pantry items ({excludedIngredients.length})
+                        Show skipped items ({excludedIngredients.length})
                     </IonToggle>
                 </div>
             )}

@@ -48,7 +48,7 @@ describe("recipeImportResponseSchema", () => {
         expect(recipeImportResponseSchema.safeParse({ recipe }).success).toBe(true);
     });
 
-    it("accepts the optional pantry and shopping overrides", () => {
+    it("accepts the optional exclusion and shopping overrides", () => {
         const result = recipeImportResponseSchema.safeParse({
             recipe: {
                 ...recipe,

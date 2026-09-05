@@ -200,7 +200,7 @@ describe("countRoutedIngredients", () => {
     });
 
     it("counts an excluded-but-routed ingredient, since routing is the decision that ships", () => {
-        // `excluded` marks a pantry staple; it only hides the row by default. If the user
+        // `excluded` marks a skipped ingredient; it only hides the row by default. If the user
         // reveals it and routes it anyway, it is part of the order.
         const resolved = resolveIngredients(
             [ingredient({ id: "a", excluded: true })],
