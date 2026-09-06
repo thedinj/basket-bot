@@ -1,13 +1,17 @@
-import { IonCheckbox, IonItem, IonLabel, IonList } from "@ionic/react";
-import type { ParsedRecipe, ParsedRecipeIngredient } from "../../llm/features/recipeImport";
+import { IonItem, IonLabel, IonList } from "@ionic/react";
+import IncludeToggleButton from "../shared/IncludeToggleButton";
 import SkippedBadge from "../shared/SkippedBadge";
 import TabEmptyState from "../shared/TabEmptyState";
+import UnsureToggleButton from "../shared/UnsureToggleButton";
+import type { ParsedRecipe, ParsedRecipeIngredient } from "../../llm/features/recipeImport";
 import "./RecipeImportPreview.scss";
 
 interface RecipeImportPreviewProps {
     recipe: ParsedRecipe;
     excludedIds: Set<number>;
-    onToggle: (idx: number, excluded: boolean) => void;
+    unsureIds: Set<number>;
+    onToggleExcluded: (idx: number, excluded: boolean) => void;
+    onToggleUnsure: (idx: number) => void;
 }
 
 function formatQty(ing: ParsedRecipeIngredient): string {
@@ -19,7 +23,9 @@ function formatQty(ing: ParsedRecipeIngredient): string {
 const RecipeImportPreview: React.FC<RecipeImportPreviewProps> = ({
     recipe,
     excludedIds,
-    onToggle,
+    unsureIds,
+    onToggleExcluded,
+    onToggleUnsure,
 }) => {
     const selectedCount = recipe.ingredients.length - excludedIds.size;
 
@@ -50,11 +56,15 @@ const RecipeImportPreview: React.FC<RecipeImportPreviewProps> = ({
                             className={`recipe-import-preview__item${excluded ? " recipe-import-preview__item--excluded" : ""}`}
                             lines="none"
                         >
-                            <IonCheckbox
-                                slot="start"
-                                checked={!excluded}
-                                onIonChange={(e) => onToggle(idx, !e.detail.checked)}
-                                aria-label={`Include ${ing.name} in shopping list`}
+                            <IncludeToggleButton
+                                included={!excluded}
+                                onClick={() => onToggleExcluded(idx, !excluded)}
+                                label={ing.name}
+                            />
+                            <UnsureToggleButton
+                                active={unsureIds.has(idx)}
+                                disabled={excluded}
+                                onClick={() => onToggleUnsure(idx)}
                             />
                             <IonLabel className="recipe-import-preview__row">
                                 <span className="recipe-import-preview__qty">

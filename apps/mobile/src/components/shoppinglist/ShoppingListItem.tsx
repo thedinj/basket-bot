@@ -317,7 +317,7 @@ export const ShoppingListItem = ({
                             {item.isSample ? <span className="sample-badge">[sample]</span> : null}
                             {item.isUnsure && !onConfirmUnsure ? (
                                 <IonIcon
-                                    icon={isChecked ? helpCircleOutline : helpCircle}
+                                    icon={helpCircle}
                                     className="unsure-icon"
                                     title="Unsure if needed"
                                 />

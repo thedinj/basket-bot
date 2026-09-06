@@ -18,17 +18,10 @@ import {
     IonToolbar,
 } from "@ionic/react";
 import { ClickableSelectionModal } from "../shared/ClickableSelectionModal";
+import IncludeToggleButton from "../shared/IncludeToggleButton";
 import RobotLoadingContent from "../shared/RobotLoadingContent";
-import {
-    addOutline,
-    cart,
-    cartOutline,
-    closeOutline,
-    helpCircle,
-    helpCircleOutline,
-    pricetagOutline,
-    trashOutline,
-} from "ionicons/icons";
+import UnsureToggleButton from "../shared/UnsureToggleButton";
+import { addOutline, closeOutline, pricetagOutline, trashOutline } from "ionicons/icons";
 import { useEffect, useRef, useState } from "react";
 import { useUnitItems } from "../../hooks/useUnitItems";
 import {
@@ -44,7 +37,6 @@ import {
     useUpdateRecipe,
 } from "../../db/mealsHooks";
 import { useToast } from "../../hooks/useToast";
-import SkippedBadge from "../shared/SkippedBadge";
 import TagChip from "./TagChip";
 import TagManagerModal from "./TagManagerModal";
 
@@ -78,6 +70,7 @@ export interface RecipeInitialData {
         unitId: string | null;
         shoppingUnitId?: string | null;
         excluded: boolean;
+        isUnsure?: boolean;
     }>;
 }
 
@@ -201,7 +194,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                 unitId: ing.unitId,
                                 shoppingUnitId: ing.shoppingUnitId ?? null,
                                 excluded: ing.excluded,
-                                isUnsure: false,
+                                isUnsure: !!ing.isUnsure,
                                 shopExpanded: !!(
                                     ing.shoppingName ||
                                     ing.shoppingQty != null ||
@@ -580,45 +573,16 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                             }
                                             autocapitalize="sentences"
                                         />
-                                        {row.excluded && <SkippedBadge />}
-                                        <IonButton
-                                            fill="clear"
-                                            size="small"
-                                            className={`recipe-editor-skip-toggle-btn${!row.excluded ? " included" : ""}`}
+                                        <IncludeToggleButton
+                                            included={!row.excluded}
                                             onClick={() => toggleRowExcluded(row.rowKey)}
-                                            aria-label={
-                                                row.excluded
-                                                    ? "Add to shopping list"
-                                                    : "Skip this ingredient"
-                                            }
-                                        >
-                                            <IonIcon
-                                                slot="icon-only"
-                                                icon={row.excluded ? cartOutline : cart}
-                                            />
-                                        </IonButton>
-                                        {!row.excluded && (
-                                            <IonButton
-                                                fill="clear"
-                                                size="small"
-                                                className={`recipe-editor-unsure-toggle-btn${row.isUnsure ? " active" : ""}`}
-                                                onClick={() => toggleRowIsUnsure(row.rowKey)}
-                                                aria-label={
-                                                    row.isUnsure
-                                                        ? "Marked unsure if needed"
-                                                        : "Mark unsure if needed"
-                                                }
-                                            >
-                                                <IonIcon
-                                                    slot="icon-only"
-                                                    icon={
-                                                        row.isUnsure
-                                                            ? helpCircle
-                                                            : helpCircleOutline
-                                                    }
-                                                />
-                                            </IonButton>
-                                        )}
+                                            label={row.name || "this ingredient"}
+                                        />
+                                        <UnsureToggleButton
+                                            active={row.isUnsure}
+                                            disabled={row.excluded}
+                                            onClick={() => toggleRowIsUnsure(row.rowKey)}
+                                        />
                                         <IonButton
                                             fill="clear"
                                             size="small"

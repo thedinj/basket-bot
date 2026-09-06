@@ -65,22 +65,22 @@ export const useStoreItemOperations = (storeId: string) => {
     );
 
     const handleMarkUnsure = useCallback(
-        async (shoppingListItem: ShoppingListItemWithDetails) => {
+        async (shoppingListItem: ShoppingListItemWithDetails, isUnsure: boolean) => {
             try {
                 await upsertShoppingListItem.mutateAsync(
-                    toUpsertPayload(shoppingListItem, { isUnsure: true })
+                    toUpsertPayload(shoppingListItem, { isUnsure })
                 );
             } catch (error) {
                 console.error("[useStoreItemOperations] markUnsure error:", error);
                 if (error instanceof ApiError && error.isNetworkError) {
                     showWarning(
-                        "No connection — will mark item unsure automatically once reconnected",
+                        `No connection — will ${isUnsure ? "mark" : "unmark"} item unsure automatically once reconnected`,
                         {
                             position: "bottom",
                         }
                     );
                 } else {
-                    showError("Failed to mark item unsure");
+                    showError(`Failed to ${isUnsure ? "mark" : "unmark"} item unsure`);
                 }
             }
         },

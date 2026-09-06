@@ -15,6 +15,11 @@ import { matchUnitId } from "../../utils/stringUtils";
 import type { RecipeInitialData } from "./RecipeEditorModal";
 import RecipeImportPreview from "./RecipeImportPreview";
 
+interface ImportInteractionState {
+    excludedIds: Set<number>;
+    unsureIds: Set<number>;
+}
+
 /**
  * Hook to open the LLM recipe import modal.
  * On accept, calls onAccepted with pre-populated form data for the Recipe Editor.
@@ -27,7 +32,7 @@ export function useRecipeImportModal(onAccepted: (data: RecipeInitialData) => vo
     const { effectiveConfig: llmConfig, apiKey } = useLLMConfig();
 
     const openRecipeImport = useCallback(() => {
-        openModal<RecipeImportResponse, Set<number>>({
+        openModal<RecipeImportResponse, ImportInteractionState>({
             title: "Import Recipe",
             prompt: RECIPE_IMPORT_PROMPT,
             tier: "smart",
@@ -61,27 +66,41 @@ export function useRecipeImportModal(onAccepted: (data: RecipeInitialData) => vo
                     raw: response.raw,
                 };
             },
-            initialState: (response) =>
-                new Set<number>(
+            initialState: (response) => ({
+                excludedIds: new Set<number>(
                     response.data.recipe.ingredients
                         .map((ing, idx) => (ing.excluded === true ? idx : -1))
                         .filter((idx) => idx !== -1)
                 ),
-            renderOutput: (response, excludedIds, setExcludedIds) => (
+                unsureIds: new Set<number>(),
+            }),
+            renderOutput: (response, { excludedIds, unsureIds }, setState) => (
                 <RecipeImportPreview
                     recipe={response.data.recipe}
                     excludedIds={excludedIds}
-                    onToggle={(idx, excluded) => {
-                        setExcludedIds((prev) => {
-                            const next = new Set(prev);
-                            if (excluded) next.add(idx);
-                            else next.delete(idx);
-                            return next;
+                    unsureIds={unsureIds}
+                    onToggleExcluded={(idx, excluded) => {
+                        setState((prev) => {
+                            const nextExcluded = new Set(prev.excludedIds);
+                            if (excluded) nextExcluded.add(idx);
+                            else nextExcluded.delete(idx);
+                            if (!excluded) return { ...prev, excludedIds: nextExcluded };
+                            const nextUnsure = new Set(prev.unsureIds);
+                            nextUnsure.delete(idx);
+                            return { excludedIds: nextExcluded, unsureIds: nextUnsure };
+                        });
+                    }}
+                    onToggleUnsure={(idx) => {
+                        setState((prev) => {
+                            const next = new Set(prev.unsureIds);
+                            if (next.has(idx)) next.delete(idx);
+                            else next.add(idx);
+                            return { ...prev, unsureIds: next };
                         });
                     }}
                 />
             ),
-            onAccept: (response, excludedIds) => {
+            onAccept: (response, { excludedIds, unsureIds }) => {
                 const { name, source, description, steps, cookingTimeMinutes, ingredients } =
                     response.data.recipe;
                 const initialData: RecipeInitialData = {
@@ -98,6 +117,7 @@ export function useRecipeImportModal(onAccepted: (data: RecipeInitialData) => vo
                         unitId: matchUnitId(ing.unit, units),
                         shoppingUnitId: matchUnitId(ing.shoppingUnit ?? null, units),
                         excluded: excludedIds.has(idx),
+                        isUnsure: unsureIds.has(idx),
                     })),
                 };
                 onAccepted(initialData);

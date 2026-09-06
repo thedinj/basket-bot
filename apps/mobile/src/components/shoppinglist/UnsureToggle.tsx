@@ -12,7 +12,7 @@ export const UnsureToggle = () => {
             control={control}
             render={({ field }) => (
                 <ItemFlagTile
-                    icon={field.value ? helpCircleOutline : helpCircle}
+                    icon={field.value ? helpCircle : helpCircleOutline}
                     label="Unsure"
                     description="Unsure if needed — double-check before you buy it"
                     checked={field.value ?? false}

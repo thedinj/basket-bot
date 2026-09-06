@@ -190,25 +190,6 @@
     }
 }
 
-.recipe-editor-skip-toggle-btn {
-    flex: 0 0 auto;
-    --color: var(--ion-color-step-400, #718096);
-
-    &.included {
-        --color: var(--ion-color-primary, #7c3aed);
-    }
-}
-
-// Unsure toggle: mirrors the amber "unsure" treatment used on the shopping list itself
-.recipe-editor-unsure-toggle-btn {
-    flex: 0 0 auto;
-    --color: var(--ion-color-step-400, #718096);
-
-    &.active {
-        --color: var(--ion-color-warning);
-    }
-}
-
 .recipe-editor-qty {
     flex: 0 0 60px;
     font-size: 14px;

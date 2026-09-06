@@ -151,12 +151,12 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
         setRemoveFromListAlert(null);
     }, [removeFromListAlert, handleRemoveFromShoppingList]);
 
-    const handleMarkItemUnsure = useCallback(
-        (item: StoreItemWithDetails) => {
+    const handleSetItemUnsure = useCallback(
+        (item: StoreItemWithDetails, isUnsure: boolean) => {
             const shoppingListItem = shoppingListItemMap.get(item.id);
             if (!shoppingListItem) return;
 
-            return handleMarkUnsure(shoppingListItem);
+            return handleMarkUnsure(shoppingListItem, isUnsure);
         },
         [shoppingListItemMap, handleMarkUnsure]
     );
@@ -173,7 +173,7 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                     isUnsure={!!shoppingListItem?.isUnsure}
                     onToggleFavorite={handleToggleFavorite}
                     onAddToShoppingList={handleAddToShoppingList}
-                    onMarkUnsure={handleMarkItemUnsure}
+                    onSetUnsure={handleSetItemUnsure}
                     onRemoveFromShoppingList={(item) => confirmRemoveFromShoppingList(item)}
                     onEditItem={openEditModal}
                 />
@@ -183,7 +183,7 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
             shoppingListItemMap,
             handleToggleFavorite,
             handleAddToShoppingList,
-            handleMarkItemUnsure,
+            handleSetItemUnsure,
             confirmRemoveFromShoppingList,
             openEditModal,
         ]

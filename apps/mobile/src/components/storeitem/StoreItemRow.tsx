@@ -1,5 +1,7 @@
-import { IonButton, IonIcon, IonItem, IonLabel } from "@ionic/react";
-import { cart, cartOutline, helpCircle, star, starOutline } from "ionicons/icons";
+import { IonIcon, IonItem, IonLabel } from "@ionic/react";
+import { star, starOutline } from "ionicons/icons";
+import IncludeToggleButton from "../shared/IncludeToggleButton";
+import UnsureToggleButton from "../shared/UnsureToggleButton";
 import type { StoreItemWithDetails } from "../../db/types";
 
 interface StoreItemRowProps {
@@ -8,16 +10,16 @@ interface StoreItemRowProps {
     isUnsure: boolean;
     onToggleFavorite: (item: StoreItemWithDetails) => void | Promise<void>;
     onAddToShoppingList: (item: StoreItemWithDetails) => void | Promise<void>;
-    onMarkUnsure: (item: StoreItemWithDetails) => void | Promise<void>;
+    onSetUnsure: (item: StoreItemWithDetails, isUnsure: boolean) => void | Promise<void>;
     onRemoveFromShoppingList: (item: StoreItemWithDetails) => void | Promise<void>;
     onEditItem?: (item: StoreItemWithDetails) => void;
 }
 
 /**
- * Reusable store item row component
- * Displays store item with star (favorite), name, and a cart button that cycles through
- * three states as it's tapped: not in list -> in list -> unsure -> not in list.
- * Used in StoreItemsManagementModal
+ * Reusable store item row component.
+ * Displays store item with star (favorite), name, and the same include/unsure toggle
+ * pair used on the recipe/routing screens (see IncludeToggleButton/UnsureToggleButton).
+ * Used in StoreItemsManagementModal.
  */
 const StoreItemRow: React.FC<StoreItemRowProps> = ({
     item,
@@ -25,24 +27,11 @@ const StoreItemRow: React.FC<StoreItemRowProps> = ({
     isUnsure,
     onToggleFavorite,
     onAddToShoppingList,
-    onMarkUnsure,
+    onSetUnsure,
     onRemoveFromShoppingList,
     onEditItem,
 }) => {
     const isFavorite = item.isFavorite;
-
-    const handleCartClick = () => {
-        if (!isInShoppingList) {
-            onAddToShoppingList(item);
-        } else if (!isUnsure) {
-            onMarkUnsure(item);
-        } else {
-            onRemoveFromShoppingList(item);
-        }
-    };
-
-    const cartIcon = !isInShoppingList ? cartOutline : isUnsure ? helpCircle : cart;
-    const cartColor = !isInShoppingList ? "medium" : isUnsure ? "warning" : "primary";
 
     return (
         <IonItem key={item.id}>
@@ -58,9 +47,18 @@ const StoreItemRow: React.FC<StoreItemRowProps> = ({
             >
                 {item.name}
             </IonLabel>
-            <IonButton slot="end" fill="clear" onClick={handleCartClick}>
-                <IonIcon icon={cartIcon} color={cartColor} />
-            </IonButton>
+            <IncludeToggleButton
+                included={isInShoppingList}
+                onClick={() =>
+                    isInShoppingList ? onRemoveFromShoppingList(item) : onAddToShoppingList(item)
+                }
+                label={item.name}
+            />
+            <UnsureToggleButton
+                active={isUnsure}
+                disabled={!isInShoppingList}
+                onClick={() => onSetUnsure(item, !isUnsure)}
+            />
         </IonItem>
     );
 };

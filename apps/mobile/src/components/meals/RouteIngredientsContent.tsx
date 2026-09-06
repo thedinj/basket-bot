@@ -1,8 +1,6 @@
 import type { Store } from "@basket-bot/core";
 import pluralize from "pluralize";
 import {
-    IonCheckbox,
-    IonIcon,
     IonItem,
     IonLabel,
     IonList,
@@ -11,10 +9,11 @@ import {
     IonSelectOption,
     IonToggle,
 } from "@ionic/react";
-import { helpCircle, helpCircleOutline } from "ionicons/icons";
 import clsx from "clsx";
 import { DEFAULT_STORE, type ResolvedIngredient } from "../../utils/ingredientRouting";
+import IncludeToggleButton from "../shared/IncludeToggleButton";
 import SkippedBadge from "../shared/SkippedBadge";
+import UnsureToggleButton from "../shared/UnsureToggleButton";
 
 import "./RouteIngredientsContent.scss";
 
@@ -135,19 +134,25 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
                             ri.excluded && "wizard-route-item--skipped"
                         )}
                     >
-                        <IonCheckbox
-                            slot="start"
-                            checked={ri.storeId !== null}
-                            onIonChange={(e) =>
+                        <IncludeToggleButton
+                            included={ri.storeId !== null}
+                            onClick={() => {
+                                const willExclude = ri.storeId !== null;
                                 setRouteMap((prev) => {
                                     const next = new Map(prev);
-                                    next.set(
-                                        ri.ingredientId,
-                                        e.detail.checked ? DEFAULT_STORE : null
-                                    );
+                                    next.set(ri.ingredientId, willExclude ? null : DEFAULT_STORE);
                                     return next;
-                                })
-                            }
+                                });
+                                if (willExclude && unsureSet.has(ri.ingredientId)) {
+                                    onToggleUnsure(ri.ingredientId);
+                                }
+                            }}
+                            label={ri.name}
+                        />
+                        <UnsureToggleButton
+                            active={unsureSet.has(ri.ingredientId)}
+                            disabled={ri.storeId === null}
+                            onClick={() => onToggleUnsure(ri.ingredientId)}
                         />
                         <IonLabel>
                             <h3>
@@ -166,26 +171,6 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
                                 <p className="route-ingredient-recipe">{ri.recipeName}</p>
                             )}
                         </IonLabel>
-                        {ri.storeId !== null && (
-                            <button
-                                type="button"
-                                className={clsx(
-                                    "route-unsure-toggle",
-                                    unsureSet.has(ri.ingredientId) && "route-unsure-toggle--active"
-                                )}
-                                onClick={() => onToggleUnsure(ri.ingredientId)}
-                                title="Unsure if needed"
-                                aria-pressed={unsureSet.has(ri.ingredientId)}
-                            >
-                                <IonIcon
-                                    icon={
-                                        unsureSet.has(ri.ingredientId)
-                                            ? helpCircle
-                                            : helpCircleOutline
-                                    }
-                                />
-                            </button>
-                        )}
                         {ri.storeId !== null && visibleStores.length > 1 && (
                             <IonSelect
                                 className="wizard-store-select"
