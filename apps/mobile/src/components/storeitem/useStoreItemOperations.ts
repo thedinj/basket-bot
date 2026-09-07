@@ -40,11 +40,12 @@ export const useStoreItemOperations = (storeId: string) => {
     );
 
     const handleAddToShoppingList = useCallback(
-        async (item: StoreItemWithDetails) => {
+        async (item: StoreItemWithDetails, overrides: { isUnsure?: boolean } = {}) => {
             try {
                 await upsertShoppingListItem.mutateAsync({
                     storeId: storeId,
                     storeItemId: item.id,
+                    ...overrides,
                 });
                 showSuccess("Added to shopping list", { position: "bottom" });
             } catch (error) {

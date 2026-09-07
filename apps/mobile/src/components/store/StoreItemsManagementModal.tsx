@@ -154,11 +154,13 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
     const handleSetItemUnsure = useCallback(
         (item: StoreItemWithDetails, isUnsure: boolean) => {
             const shoppingListItem = shoppingListItemMap.get(item.id);
-            if (!shoppingListItem) return;
+            if (!shoppingListItem) {
+                return handleAddToShoppingList(item, { isUnsure });
+            }
 
             return handleMarkUnsure(shoppingListItem, isUnsure);
         },
-        [shoppingListItemMap, handleMarkUnsure]
+        [shoppingListItemMap, handleAddToShoppingList, handleMarkUnsure]
     );
 
     const renderItem = useCallback(

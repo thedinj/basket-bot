@@ -92,10 +92,18 @@ export function useRecipeImportModal(onAccepted: (data: RecipeInitialData) => vo
                     }}
                     onToggleUnsure={(idx) => {
                         setState((prev) => {
-                            const next = new Set(prev.unsureIds);
-                            if (next.has(idx)) next.delete(idx);
-                            else next.add(idx);
-                            return { ...prev, unsureIds: next };
+                            const nextUnsure = new Set(prev.unsureIds);
+                            if (nextUnsure.has(idx)) {
+                                nextUnsure.delete(idx);
+                                return { ...prev, unsureIds: nextUnsure };
+                            }
+                            nextUnsure.add(idx);
+                            if (!prev.excludedIds.has(idx)) {
+                                return { ...prev, unsureIds: nextUnsure };
+                            }
+                            const nextExcluded = new Set(prev.excludedIds);
+                            nextExcluded.delete(idx);
+                            return { excludedIds: nextExcluded, unsureIds: nextUnsure };
                         });
                     }}
                 />

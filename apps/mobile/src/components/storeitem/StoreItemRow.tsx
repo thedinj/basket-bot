@@ -54,11 +54,7 @@ const StoreItemRow: React.FC<StoreItemRowProps> = ({
                 }
                 label={item.name}
             />
-            <UnsureToggleButton
-                active={isUnsure}
-                disabled={!isInShoppingList}
-                onClick={() => onSetUnsure(item, !isUnsure)}
-            />
+            <UnsureToggleButton active={isUnsure} onClick={() => onSetUnsure(item, !isUnsure)} />
         </IonItem>
     );
 };

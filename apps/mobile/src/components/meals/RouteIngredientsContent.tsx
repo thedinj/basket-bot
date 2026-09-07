@@ -151,8 +151,16 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
                         />
                         <UnsureToggleButton
                             active={unsureSet.has(ri.ingredientId)}
-                            disabled={ri.storeId === null}
-                            onClick={() => onToggleUnsure(ri.ingredientId)}
+                            onClick={() => {
+                                if (ri.storeId === null) {
+                                    setRouteMap((prev) => {
+                                        const next = new Map(prev);
+                                        next.set(ri.ingredientId, DEFAULT_STORE);
+                                        return next;
+                                    });
+                                }
+                                onToggleUnsure(ri.ingredientId);
+                            }}
                         />
                         <IonLabel>
                             <h3>

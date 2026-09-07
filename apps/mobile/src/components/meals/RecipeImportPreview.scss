@@ -1,9 +1,10 @@
 .recipe-import-preview {
     &__header {
         display: flex;
+        flex-wrap: wrap;
         align-items: baseline;
         justify-content: space-between;
-        gap: 12px;
+        gap: 4px 12px;
         margin-bottom: 4px;
     }
 
@@ -12,11 +13,9 @@
         font-weight: 600;
         color: var(--ion-text-color);
         margin: 0;
-        flex: 1;
+        flex: 1 1 auto;
         min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        overflow-wrap: break-word;
     }
 
     &__count {
@@ -50,7 +49,7 @@
         --background: transparent;
         --padding-start: 0;
         --inner-padding-end: 0;
-        --min-height: 40px;
+        --min-height: 44px;
         transition: opacity 0.15s ease;
 
         &--excluded {
@@ -60,20 +59,24 @@
 
     // IonLabel reset — Ionic applies unwanted transforms
     &__row {
-        display: flex !important;
-        align-items: baseline;
-        gap: 8px;
         overflow: visible !important;
         white-space: normal !important;
+        margin: 8px 0 !important;
     }
 
-    &__qty {
+    &__ing-name {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.4;
+        color: var(--ion-text-color);
+        word-break: break-word;
+    }
+
+    &__ing-qty {
+        margin: 2px 0 0;
         font-family: "JetBrains Mono", monospace;
         font-size: 12px;
         color: var(--ion-color-medium);
-        min-width: 52px;
-        text-align: right;
-        flex-shrink: 0;
         line-height: 1.4;
     }
 
@@ -81,11 +84,27 @@
         opacity: 0.3;
     }
 
-    &__ing-name {
-        flex: 1;
-        min-width: 0;
-        font-size: 14px;
+    &__shopping-override {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: var(--ion-color-primary);
         line-height: 1.4;
+
+        ion-icon {
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+    }
+
+    &__shopping-qty {
+        font-family: "JetBrains Mono", monospace;
+        flex-shrink: 0;
+    }
+
+    &__shopping-name {
         word-break: break-word;
     }
 

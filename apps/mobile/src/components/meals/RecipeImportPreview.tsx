@@ -1,4 +1,5 @@
-import { IonItem, IonLabel, IonList } from "@ionic/react";
+import { IonIcon, IonItem, IonLabel, IonList } from "@ionic/react";
+import { arrowForward } from "ionicons/icons";
 import IncludeToggleButton from "../shared/IncludeToggleButton";
 import SkippedBadge from "../shared/SkippedBadge";
 import TabEmptyState from "../shared/TabEmptyState";
@@ -14,10 +15,19 @@ interface RecipeImportPreviewProps {
     onToggleUnsure: (idx: number) => void;
 }
 
-function formatQty(ing: ParsedRecipeIngredient): string {
-    if (ing.qty !== null && ing.unit) return `${ing.qty} ${ing.unit}`;
-    if (ing.qty !== null) return `${ing.qty}`;
+function formatQty(qty: number | null | undefined, unit: string | null | undefined): string {
+    if (qty !== null && qty !== undefined && unit) return `${qty} ${unit}`;
+    if (qty !== null && qty !== undefined) return `${qty}`;
     return "";
+}
+
+/** True when the shopping-list form of the ingredient differs from the recipe's. */
+function hasShoppingOverride(ing: ParsedRecipeIngredient): boolean {
+    return (
+        !!ing.shoppingName ||
+        (ing.shoppingQty !== null && ing.shoppingQty !== undefined) ||
+        !!ing.shoppingUnit
+    );
 }
 
 const RecipeImportPreview: React.FC<RecipeImportPreviewProps> = ({
@@ -49,7 +59,13 @@ const RecipeImportPreview: React.FC<RecipeImportPreviewProps> = ({
             <IonList className="recipe-import-preview__list">
                 {recipe.ingredients.map((ing, idx) => {
                     const excluded = excludedIds.has(idx);
-                    const qty = formatQty(ing);
+                    const recipeQty = formatQty(ing.qty, ing.unit);
+                    const shoppingOverride = hasShoppingOverride(ing);
+                    const shoppingName = ing.shoppingName ?? ing.name;
+                    const shoppingQty = formatQty(
+                        ing.shoppingQty ?? ing.qty,
+                        ing.shoppingUnit ?? ing.unit
+                    );
                     return (
                         <IonItem
                             key={idx}
@@ -59,23 +75,35 @@ const RecipeImportPreview: React.FC<RecipeImportPreviewProps> = ({
                             <IncludeToggleButton
                                 included={!excluded}
                                 onClick={() => onToggleExcluded(idx, !excluded)}
-                                label={ing.name}
+                                label={shoppingName}
                             />
                             <UnsureToggleButton
                                 active={unsureIds.has(idx)}
-                                disabled={excluded}
                                 onClick={() => onToggleUnsure(idx)}
                             />
                             <IonLabel className="recipe-import-preview__row">
-                                <span className="recipe-import-preview__qty">
-                                    {qty || (
-                                        <span className="recipe-import-preview__qty-empty">—</span>
-                                    )}
-                                </span>
-                                <span className="recipe-import-preview__ing-name">
+                                <h3 className="recipe-import-preview__ing-name">
                                     {ing.name}
                                     {ing.excluded && <SkippedBadge />}
-                                </span>
+                                </h3>
+                                <p className="recipe-import-preview__ing-qty">
+                                    {recipeQty || (
+                                        <span className="recipe-import-preview__qty-empty">—</span>
+                                    )}
+                                </p>
+                                {shoppingOverride && (
+                                    <p className="recipe-import-preview__shopping-override">
+                                        <IonIcon icon={arrowForward} />
+                                        {shoppingQty && (
+                                            <span className="recipe-import-preview__shopping-qty">
+                                                {shoppingQty}
+                                            </span>
+                                        )}
+                                        <span className="recipe-import-preview__shopping-name">
+                                            {shoppingName}
+                                        </span>
+                                    </p>
+                                )}
                             </IonLabel>
                         </IonItem>
                     );

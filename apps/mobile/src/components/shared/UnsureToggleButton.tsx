@@ -4,24 +4,18 @@ import "./UnsureToggleButton.scss";
 
 interface UnsureToggleButtonProps {
     active: boolean;
-    /**
-     * Disable rather than unmount when "unsure" doesn't apply (e.g. the item is
-     * excluded) — keeps this button's slot fixed so nothing after it in the row shifts.
-     */
-    disabled?: boolean;
     onClick: () => void;
 }
 
-const UnsureToggleButton: React.FC<UnsureToggleButtonProps> = ({
-    active,
-    disabled = false,
-    onClick,
-}) => (
+/**
+ * Always tappable, even when the item isn't currently included — tapping it then adds
+ * the item to the cart and marks it unsure in one action (see each caller's onClick).
+ */
+const UnsureToggleButton: React.FC<UnsureToggleButtonProps> = ({ active, onClick }) => (
     <IonButton
         fill="clear"
         size="small"
         color={active ? "warning" : "medium"}
-        disabled={disabled}
         onClick={onClick}
         className="unsure-toggle-btn"
         aria-label={active ? "Marked unsure if needed" : "Mark unsure if needed"}

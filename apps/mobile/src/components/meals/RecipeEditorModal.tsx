@@ -282,7 +282,13 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
 
     const toggleRowIsUnsure = (rowKey: string) => {
         setIngredients((prev) =>
-            prev.map((r) => (r.rowKey === rowKey ? { ...r, isUnsure: !r.isUnsure } : r))
+            prev.map((r) =>
+                r.rowKey === rowKey
+                    ? r.excluded
+                        ? { ...r, excluded: false, isUnsure: true }
+                        : { ...r, isUnsure: !r.isUnsure }
+                    : r
+            )
         );
     };
 
@@ -580,7 +586,6 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                         />
                                         <UnsureToggleButton
                                             active={row.isUnsure}
-                                            disabled={row.excluded}
                                             onClick={() => toggleRowIsUnsure(row.rowKey)}
                                         />
                                         <IonButton
