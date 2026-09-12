@@ -165,102 +165,103 @@ const RecipesList: React.FC<{
         );
     }
 
+    const searchPlaceholder =
+        activeFilterCount > 0
+            ? `Search ${filtered.length} matching ${pluralize("recipe", filtered.length)}`
+            : `Search ${filtered.length} ${pluralize("Recipe", filtered.length)}`;
+
     return (
         <>
-            <div className="meals-filter-bar">
-                <IonSearchbar
-                    value={search}
-                    onIonInput={(e) => setSearch(e.detail.value ?? "")}
-                    placeholder="Search recipes"
-                    debounce={150}
-                />
-                <button
-                    type="button"
-                    className={`meals-filter-btn${activeFilterCount > 0 ? " meals-filter-btn--active" : ""}`}
-                    onClick={() => setFilterSheetOpen(true)}
-                    aria-label="Open filter and sort options"
-                >
-                    <IonIcon icon={filterOutline} />
-                    {activeFilterCount > 0 && (
-                        <span className="meals-filter-btn__badge">{activeFilterCount}</span>
-                    )}
-                </button>
-            </div>
-
-            {activeFilterCount > 0 && (
-                <div className="meals-filter-row">
-                    <div className="meals-active-filters">
-                        {filters.maxCookingTimeMinutes !== null && (
-                            <button
-                                type="button"
-                                className="meals-active-chip"
-                                onClick={() =>
-                                    setFilters((f) => ({ ...f, maxCookingTimeMinutes: null }))
-                                }
-                            >
-                                ≤{filters.maxCookingTimeMinutes}min ×
-                            </button>
-                        )}
-                        {filters.tagIds.size > 0 && (
-                            <button
-                                type="button"
-                                className="meals-active-chip"
-                                onClick={() => setFilters((f) => ({ ...f, tagIds: new Set() }))}
-                            >
-                                {filters.tagIds.size} {pluralize("tag", filters.tagIds.size)} ×
-                            </button>
-                        )}
-                        {filters.inPoolOnly && (
-                            <button
-                                type="button"
-                                className="meals-active-chip"
-                                onClick={() => setFilters((f) => ({ ...f, inPoolOnly: false }))}
-                            >
-                                In pool ×
-                            </button>
-                        )}
-                        {filters.hasSteps && (
-                            <button
-                                type="button"
-                                className="meals-active-chip"
-                                onClick={() => setFilters((f) => ({ ...f, hasSteps: false }))}
-                            >
-                                Has steps ×
-                            </button>
-                        )}
-                        {(sort.by !== "name" || sort.dir !== "asc") && (
-                            <button
-                                type="button"
-                                className="meals-active-chip meals-active-chip--sort"
-                                onClick={() => setSort(DEFAULT_SORT)}
-                            >
-                                {sort.by === "name"
-                                    ? "Name"
-                                    : sort.by === "cookTime"
-                                      ? "Time"
-                                      : sort.by === "ingredientCount"
-                                        ? "Ingr."
-                                        : "Added"}{" "}
-                                {sort.dir === "asc" ? "↑" : "↓"} ×
-                            </button>
-                        )}
-                    </div>
+            <div className="meals-search-header">
+                <div className="meals-filter-bar">
+                    <IonSearchbar
+                        value={search}
+                        onIonInput={(e) => setSearch(e.detail.value ?? "")}
+                        placeholder={searchPlaceholder}
+                        debounce={150}
+                    />
                     <button
                         type="button"
-                        className="meals-filter-reset"
-                        onClick={handleReset}
-                        aria-label="Reset all filters"
+                        className={`meals-filter-btn${activeFilterCount > 0 ? " meals-filter-btn--active" : ""}`}
+                        onClick={() => setFilterSheetOpen(true)}
+                        aria-label="Open filter and sort options"
                     >
-                        Reset
+                        <IonIcon icon={filterOutline} />
+                        {activeFilterCount > 0 && (
+                            <span className="meals-filter-btn__badge">{activeFilterCount}</span>
+                        )}
                     </button>
                 </div>
-            )}
 
-            {(search.trim() || activeFilterCount > 0) && (
-                <div className="meals-filter-count">
-                    {filtered.length} {pluralize("recipe", filtered.length)}
-                </div>
-            )}
+                {activeFilterCount > 0 && (
+                    <div className="meals-filter-row">
+                        <div className="meals-active-filters">
+                            {filters.maxCookingTimeMinutes !== null && (
+                                <button
+                                    type="button"
+                                    className="meals-active-chip"
+                                    onClick={() =>
+                                        setFilters((f) => ({ ...f, maxCookingTimeMinutes: null }))
+                                    }
+                                >
+                                    ≤{filters.maxCookingTimeMinutes}min ×
+                                </button>
+                            )}
+                            {filters.tagIds.size > 0 && (
+                                <button
+                                    type="button"
+                                    className="meals-active-chip"
+                                    onClick={() => setFilters((f) => ({ ...f, tagIds: new Set() }))}
+                                >
+                                    {filters.tagIds.size} {pluralize("tag", filters.tagIds.size)} ×
+                                </button>
+                            )}
+                            {filters.inPoolOnly && (
+                                <button
+                                    type="button"
+                                    className="meals-active-chip"
+                                    onClick={() => setFilters((f) => ({ ...f, inPoolOnly: false }))}
+                                >
+                                    In pool ×
+                                </button>
+                            )}
+                            {filters.hasSteps && (
+                                <button
+                                    type="button"
+                                    className="meals-active-chip"
+                                    onClick={() => setFilters((f) => ({ ...f, hasSteps: false }))}
+                                >
+                                    Has steps ×
+                                </button>
+                            )}
+                            {(sort.by !== "name" || sort.dir !== "asc") && (
+                                <button
+                                    type="button"
+                                    className="meals-active-chip meals-active-chip--sort"
+                                    onClick={() => setSort(DEFAULT_SORT)}
+                                >
+                                    {sort.by === "name"
+                                        ? "Name"
+                                        : sort.by === "cookTime"
+                                          ? "Time"
+                                          : sort.by === "ingredientCount"
+                                            ? "Ingr."
+                                            : "Added"}{" "}
+                                    {sort.dir === "asc" ? "↑" : "↓"} ×
+                                </button>
+                            )}
+                        </div>
+                        <button
+                            type="button"
+                            className="meals-filter-reset"
+                            onClick={handleReset}
+                            aria-label="Reset all filters"
+                        >
+                            Reset
+                        </button>
+                    </div>
+                )}
+            </div>
 
             {filtered.length === 0 ? (
                 <TabEmptyState
