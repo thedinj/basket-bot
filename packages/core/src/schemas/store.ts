@@ -456,6 +456,19 @@ export const updateStoreItemRequestSchema = storeItemInputBaseSchema
 
 export type UpdateStoreItemRequest = z.infer<typeof updateStoreItemRequestSchema>;
 
+/**
+ * Folds one store item into another: the item named in the URL is the loser and is deleted,
+ * its shopping-list rows repointing onto `intoItemId`. `canonicalName` optionally renames the
+ * survivor, so the better of the two names can win rather than whichever row happened to exist
+ * first.
+ */
+export const mergeStoreItemsRequestSchema = z.object({
+    intoItemId: z.string().uuid(),
+    canonicalName: minMaxLengthString(1, MAX_NAME_LENGTH, "Name").optional(),
+});
+
+export type MergeStoreItemsRequest = z.infer<typeof mergeStoreItemsRequestSchema>;
+
 // Shopping List Item requests
 export const createShoppingListItemRequestSchema = shoppingListItemInputBaseSchema.omit({
     id: true,

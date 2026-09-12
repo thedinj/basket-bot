@@ -8,6 +8,7 @@ import {
     Path,
 } from "react-hook-form";
 import { ReactNode } from "react";
+import type { DuplicateMatch } from "../../llm/features/itemDedupe";
 import { LocationSelectors } from "./LocationSelectors";
 
 interface ItemNameAndLocationFieldsProps<T extends FieldValues = FieldValues> {
@@ -18,6 +19,8 @@ interface ItemNameAndLocationFieldsProps<T extends FieldValues = FieldValues> {
     storeId: number | string;
     disabled?: boolean;
     renderNameField?: (props: { control: Control<T>; errors: FieldErrors<T> }) => ReactNode;
+    /** Passed through to `LocationSelectors` — see its prop docs. */
+    onUseExistingItem?: (match: DuplicateMatch) => void;
 }
 
 export function ItemNameAndLocationFields<T extends FieldValues = FieldValues>({
@@ -28,6 +31,7 @@ export function ItemNameAndLocationFields<T extends FieldValues = FieldValues>({
     storeId,
     disabled = false,
     renderNameField,
+    onUseExistingItem,
 }: ItemNameAndLocationFieldsProps<T>) {
     const storeIdStr = typeof storeId === "number" ? String(storeId) : storeId;
     const itemName = watch("name" as Path<T>);
@@ -58,6 +62,7 @@ export function ItemNameAndLocationFields<T extends FieldValues = FieldValues>({
                 watch={watch}
                 disabled={disabled}
                 itemName={itemName}
+                onUseExistingItem={onUseExistingItem}
             />
         </>
     );

@@ -8,7 +8,12 @@ import type {
     StoreItemWithDetails,
     StoreSection,
 } from "@basket-bot/core";
-import { AuthorizationError, ConflictError } from "@basket-bot/core";
+import {
+    AuthorizationError,
+    ConflictError,
+    NotFoundError,
+    ValidationError,
+} from "@basket-bot/core";
 import * as aisleRepo from "../repos/aisleRepo";
 import * as itemRepo from "../repos/itemRepo";
 import * as sectionRepo from "../repos/sectionRepo";
@@ -302,6 +307,63 @@ export function updateItem(params: {
         sectionId: params.sectionId ?? null,
         updatedById: params.userId,
     });
+}
+
+/**
+ * Folds `loserId` into `intoItemId` and returns the survivor.
+ *
+ * This is the front door to `itemRepo.mergeItemInto`, which until now was only reachable as a
+ * side effect of renaming an item onto an existing name (see `updateItem`). Auto-Locate's
+ * duplicate detection needs to merge two items whose names stay different ("Shredded mozzarella"
+ * vs "Mozzarella, shredded"), and it needs to pick which name survives — neither of which the
+ * rename path can express.
+ *
+ * `canonicalName` is applied through `updateItem`, so renaming the survivor onto yet a third
+ * item's name merges that one in too rather than violating `UNIQUE (storeId, nameNorm)`.
+ */
+export function mergeItems(params: {
+    loserId: string;
+    intoItemId: string;
+    storeId: string;
+    canonicalName?: string;
+    userId: string;
+}): StoreItem {
+    verifyStoreAccess(params.storeId, params.userId);
+
+    if (params.loserId === params.intoItemId) {
+        throw new ValidationError("An item cannot be merged into itself");
+    }
+
+    const loser = itemRepo.getItemById(params.loserId);
+    const winner = itemRepo.getItemById(params.intoItemId);
+
+    if (!loser || loser.storeId !== params.storeId) {
+        throw new NotFoundError("Item not found");
+    }
+    if (!winner || winner.storeId !== params.storeId) {
+        throw new NotFoundError("Item to merge into not found");
+    }
+
+    const merged = itemRepo.mergeItemInto(params.loserId, params.intoItemId);
+    if (!merged) {
+        throw new NotFoundError("Item not found");
+    }
+
+    if (!params.canonicalName || normalizeItemName(params.canonicalName) === merged.nameNorm) {
+        return merged;
+    }
+
+    // The survivor keeps its own location — a rename must not move it.
+    const renamed = updateItem({
+        id: merged.id,
+        storeId: params.storeId,
+        name: params.canonicalName,
+        aisleId: merged.aisleId,
+        sectionId: merged.sectionId,
+        userId: params.userId,
+    });
+
+    return renamed ?? merged;
 }
 
 export function toggleItemFavorite(id: string, storeId: string, userId: string): StoreItem | null {

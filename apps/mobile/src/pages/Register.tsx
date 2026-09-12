@@ -1,4 +1,3 @@
-import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
 import { queryKeys } from "@/db/queryKeys";
 import pluralize from "pluralize";
 import { MIN_PASSWORD_LENGTH, passwordSchema } from "@basket-bot/core";
@@ -39,7 +38,6 @@ const registerSchema = z
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 const Register: React.FC = () => {
-    useRenderStormDetector("Register");
     const { register: registerUser } = useAuth();
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);

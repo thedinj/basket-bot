@@ -1,4 +1,3 @@
-import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
 import pluralize from "pluralize";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -28,7 +27,6 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const Login: React.FC = () => {
-    useRenderStormDetector("Login");
     const { login } = useAuth();
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);

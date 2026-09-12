@@ -225,6 +225,17 @@ export interface EntityDatabase {
     ): Promise<StoreItem>;
 
     /**
+     * Fold one store item into another. `id` is deleted and its shopping-list rows repoint
+     * onto `intoItemId`; `canonicalName` optionally renames the survivor. Returns the survivor.
+     */
+    mergeItems(
+        storeId: string,
+        id: string,
+        intoItemId: string,
+        canonicalName?: string
+    ): Promise<StoreItem>;
+
+    /**
      * Toggle the favorite status of an item
      */
     toggleItemFavorite(storeId: string, id: string): Promise<StoreItem>;

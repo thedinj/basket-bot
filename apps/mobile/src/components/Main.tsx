@@ -1,10 +1,11 @@
 import { LLMModalProvider } from "@/llm/shared";
 import { IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } from "@ionic/react";
-import { calendarOutline, cartOutline, restaurantOutline } from "ionicons/icons";
 import { useEffect, useRef } from "react";
 import { Route } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { usePreloadCoreData } from "../db/hooks";
+import { APP_TABS } from "../hooks/appTabs";
+import { useTabNavWatchdog } from "../hooks/useTabNavWatchdog";
 import { HouseholdProvider } from "../households/HouseholdProvider";
 import Plans from "../pages/Plans";
 import Recipes from "../pages/Recipes";
@@ -14,13 +15,6 @@ import { AppMenu } from "./layout/AppMenu";
 import NetworkStatusBanner from "./shared/NetworkStatusBanner";
 import ShieldProvider from "./shield/ShieldProvider";
 
-interface AppTab {
-    tab: string;
-    href: string;
-    icon: string;
-    label: string;
-}
-
 /**
  * Main app component with authenticated routes and tabs
  * Only rendered when user is authenticated
@@ -29,6 +23,11 @@ const Main: React.FC = () => {
     const { isAuthReady } = useAuth();
     const { prefetchCoreData } = usePreloadCoreData();
     const hasPrefetched = useRef(false);
+
+    // Records to the on-device debug log when a tab tap fails to navigate, so the
+    // intermittent "stuck on a tab" report can be diagnosed from the phone instead of
+    // inferred. App menu → About → tap the build row 7×.
+    useTabNavWatchdog();
 
     // Preload static/core data on app initialization
     // Wait for auth to be fully ready (tokens validated and refreshed if needed)
@@ -42,26 +41,7 @@ const Main: React.FC = () => {
         }
     }, [isAuthReady, prefetchCoreData]);
 
-    const tabs: AppTab[] = [
-        {
-            tab: "shoppinglist",
-            href: "/shoppinglist",
-            icon: cartOutline,
-            label: "Shopping List",
-        },
-        {
-            tab: "recipes",
-            href: "/recipes",
-            icon: restaurantOutline,
-            label: "Recipes",
-        },
-        {
-            tab: "plans",
-            href: "/plans",
-            icon: calendarOutline,
-            label: "Meal Plans",
-        },
-    ];
+    const tabs = APP_TABS;
 
     // Add body class when tab bar is present for conditional FAB positioning
     useEffect(() => {

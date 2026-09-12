@@ -2,7 +2,7 @@ import { Preferences } from "@capacitor/preferences";
 
 /**
  * A single recorded client-side error, shown in the hidden debug log
- * (Settings > tap version 7x) so a request can be cross-referenced against
+ * (app menu > About > tap the build row 7x) so a request can be cross-referenced against
  * the admin portal's Error Logs page by requestId.
  */
 export interface ClientErrorLogEntry {

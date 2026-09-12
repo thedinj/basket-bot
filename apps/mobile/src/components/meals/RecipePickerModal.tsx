@@ -24,6 +24,7 @@ import {
     type RecipeSort,
 } from "../../utils/recipeSearch";
 import RecipeBrowser from "./RecipeBrowser";
+import RecipeFilterSheet from "./RecipeFilterSheet";
 import TagChipList from "./TagChipList";
 
 import "./RecipePickerModal.scss";
@@ -69,6 +70,7 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
     const [query, setQuery] = useState("");
     const [sort, setSort] = useState<RecipeSort>(DEFAULT_SORT);
     const [filters, setFilters] = useState<RecipeFilters>(() => poolOnly(initialFilters));
+    const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
     // Reseed from the slot each time the picker opens, so a previous visit's abandoned
     // edits never leak into the next one.
@@ -76,6 +78,7 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
         setQuery("");
         setSort(DEFAULT_SORT);
         setFilters(poolOnly(initialFilters));
+        setFilterSheetOpen(false);
     };
 
     // How many recipes the pool pin is the *only* thing hiding. Searching for a recipe you
@@ -101,12 +104,17 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
               ? `${benchedCount} ${pluralize("recipe", benchedCount)} ${benchedCount === 1 ? "matches" : "match"}, but the randomizer pool leaves ${benchedCount === 1 ? "it" : "them"} out. The planner only deals in pool recipes — change that on the Recipes tab.`
               : "Every recipe here sits outside the randomizer pool. The planner only deals in pool recipes — change that on the Recipes tab.";
 
+    // Both exits tear this modal down, and the filter sheet is a child overlay: close it
+    // through its own dismiss lifecycle first, because Ionic skips that lifecycle when an
+    // open overlay is simply unmounted (see the note on RecipeBrowser).
     const handleDismiss = () => {
+        setFilterSheetOpen(false);
         setQuery("");
         onDismiss();
     };
 
     const handlePick = (recipe: RecipeWithDetails) => {
+        setFilterSheetOpen(false);
         setQuery("");
         onPick(recipe);
     };
@@ -127,7 +135,6 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
             <IonContent>
                 <RecipeBrowser
                     recipes={recipes}
-                    allTags={allTags}
                     query={query}
                     onQueryChange={setQuery}
                     filters={filters}
@@ -135,8 +142,8 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                     onFiltersChange={(next) => setFilters(poolOnly(next))}
                     onSortChange={setSort}
                     onReset={() => setFilters(poolOnly(DEFAULT_FILTERS))}
+                    onOpenFilters={() => setFilterSheetOpen(true)}
                     sections={["sort", "time", "tags"]}
-                    filterSheetHeading={slotNumber !== null ? `Slot ${slotNumber}` : undefined}
                     emptyStateVariant="full"
                     emptyStateBody={benchedBody}
                 >
@@ -170,6 +177,22 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                     )}
                 </RecipeBrowser>
             </IonContent>
+
+            {/* Mounted here, as a sibling of IonContent, so it is outside the subtree that
+                swaps between the recipe list and the empty state. */}
+            <RecipeFilterSheet
+                isOpen={filterSheetOpen}
+                filters={filters}
+                sort={sort}
+                allTags={allTags}
+                hasPoolExcludedRecipes={false}
+                onFiltersChange={(next) => setFilters(poolOnly(next))}
+                onSortChange={setSort}
+                onReset={() => setFilters(poolOnly(DEFAULT_FILTERS))}
+                onDismiss={() => setFilterSheetOpen(false)}
+                sections={["sort", "time", "tags"]}
+                heading={slotNumber !== null ? `Slot ${slotNumber}` : undefined}
+            />
         </IonModal>
     );
 };

@@ -23,6 +23,7 @@ import { closeOutline, informationCircleOutline, trash } from "ionicons/icons";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useCreateItem, useDeleteItem, useUpdateItem } from "../../db/hooks";
+import { useToast } from "../../hooks/useToast";
 import ItemInfoModal from "../shared/ItemInfoModal";
 import { ItemNameAndLocationFields } from "../shared/ItemNameAndLocationFields";
 import { StoreItemEditorProvider } from "./StoreItemEditorProvider";
@@ -46,6 +47,7 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
     const updateItem = useUpdateItem();
     const deleteItem = useDeleteItem();
     const [presentAlert] = useIonAlert();
+    const { showSuccess } = useToast();
     const [isInfoOpen, setIsInfoOpen] = useState(false);
     const nameInputRef = useRef<HTMLIonInputElement>(null);
 
@@ -187,6 +189,18 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
                             errors={errors}
                             storeId={storeId}
                             disabled={isPending}
+                            // Only in create mode: this form's create path is `useCreateItem`,
+                            // which rejects a colliding name rather than merging, so the default
+                            // rename-onto-the-existing-name would dead-end in a conflict. Editing
+                            // saves through `useUpdateItem`, which merges, so it keeps the default.
+                            onUseExistingItem={
+                                editingItem
+                                    ? undefined
+                                    : (match) => {
+                                          showSuccess(`"${match.existing.name}" is already here`);
+                                          onClose();
+                                      }
+                            }
                             renderNameField={({ control }) => (
                                 <Controller
                                     name="name"

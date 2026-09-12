@@ -1,7 +1,7 @@
-import type { RecipeTag, RecipeWithDetails } from "@basket-bot/core";
+import type { RecipeWithDetails } from "@basket-bot/core";
 import { IonButton } from "@ionic/react";
 import pluralize from "pluralize";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
     countActiveFilters,
     type RecipeFilterSection,
@@ -12,21 +12,30 @@ import {
     type RecipeSort,
 } from "../../utils/recipeSearch";
 import TabEmptyState from "../shared/TabEmptyState";
-import RecipeFilterSheet from "./RecipeFilterSheet";
 import RecipeSearchHeader from "./RecipeSearchHeader";
 
 /**
- * The one recipe browsing surface: search box, filter sheet, active-filter chips and the
- * "nothing matched" state, shared by the Recipes tab and the meal planner's recipe picker.
+ * The one recipe browsing surface: search box, active-filter chips, result filtering/sorting
+ * and the "nothing matched" state, shared by the Recipes tab and the meal planner.
  *
  * List rendering stays with the caller — one draws a card grid it scrolls into view, the
  * other draws tappable rows — so results come back through `children` rather than through a
  * list abstraction general enough to serve both. Search and filter state is controlled for
  * the same reason: the planner keeps a slot's filters in its own per-slot map.
+ *
+ * **This component deliberately does not render `RecipeFilterSheet`.** That sheet is an
+ * `IonModal`, and an overlay mutates document-global state (body scroll lock, focus trap,
+ * `aria-hidden` on the router outlet, backdrop and z-index stacking) that is only unwound by
+ * its dismiss lifecycle. Ionic skips that lifecycle when an open overlay is unmounted
+ * (`createInlineOverlayComponent.componentWillUnmount` just calls `node.remove()`), so an
+ * overlay must never live inside a subtree that gets conditionally torn down — which is
+ * exactly what this component's results/empty-state swap is, in two different hosts, one of
+ * them nested inside another modal. Pure logic and inert presentation are safe to share; an
+ * overlay is not. Each host therefore owns its own sheet and mounts it at its own stable top
+ * level, and `onOpenFilters` is how this surface asks for it.
  */
 interface RecipeBrowserProps {
     recipes: RecipeWithDetails[];
-    allTags: RecipeTag[];
     query: string;
     onQueryChange: (value: string) => void;
     filters: RecipeFilters;
@@ -34,9 +43,9 @@ interface RecipeBrowserProps {
     onFiltersChange: (filters: RecipeFilters) => void;
     onSortChange: (sort: RecipeSort) => void;
     onReset: () => void;
+    /** Asks the host to present its own `RecipeFilterSheet`. */
+    onOpenFilters: () => void;
     sections?: readonly RecipeFilterSection[];
-    filterSheetHeading?: string;
-    filterSheetPrimaryAction?: { label: string; onClick: () => void; isWorking?: boolean };
     emptyStateVariant?: "page" | "full";
     /** Replaces the generic "nothing matched" copy where the caller knows a better reason. */
     emptyStateBody?: React.ReactNode;
@@ -45,7 +54,6 @@ interface RecipeBrowserProps {
 
 const RecipeBrowser: React.FC<RecipeBrowserProps> = ({
     recipes,
-    allTags,
     query,
     onQueryChange,
     filters,
@@ -53,21 +61,16 @@ const RecipeBrowser: React.FC<RecipeBrowserProps> = ({
     onFiltersChange,
     onSortChange,
     onReset,
+    onOpenFilters,
     sections,
-    filterSheetHeading,
-    filterSheetPrimaryAction,
     emptyStateVariant = "page",
     emptyStateBody,
     children,
 }) => {
-    const [filterSheetOpen, setFilterSheetOpen] = useState(false);
-
     const filtered = useMemo(
         () => filterAndSortRecipes(recipes, { query, filters, sort }),
         [recipes, query, filters, sort]
     );
-
-    const hasPoolExcludedRecipes = useMemo(() => recipes.some((r) => r.isPoolExcluded), [recipes]);
 
     const activeFilterCount = countActiveFilters(filters, sort, sections);
     const trimmedQuery = query.trim();
@@ -91,7 +94,7 @@ const RecipeBrowser: React.FC<RecipeBrowserProps> = ({
                 sort={sort}
                 onFiltersChange={onFiltersChange}
                 onSortChange={onSortChange}
-                onOpenFilters={() => setFilterSheetOpen(true)}
+                onOpenFilters={onOpenFilters}
                 onReset={onReset}
                 resultCount={filtered.length}
                 sections={sections}
@@ -120,32 +123,6 @@ const RecipeBrowser: React.FC<RecipeBrowserProps> = ({
             ) : (
                 children(filtered)
             )}
-
-            <RecipeFilterSheet
-                isOpen={filterSheetOpen}
-                filters={filters}
-                sort={sort}
-                allTags={allTags}
-                hasPoolExcludedRecipes={hasPoolExcludedRecipes}
-                onFiltersChange={onFiltersChange}
-                onSortChange={onSortChange}
-                onReset={onReset}
-                onDismiss={() => setFilterSheetOpen(false)}
-                sections={sections}
-                heading={filterSheetHeading}
-                primaryAction={
-                    filterSheetPrimaryAction && {
-                        ...filterSheetPrimaryAction,
-                        // Close before acting: the action can tear down whatever hosts this
-                        // sheet, and unmounting a parent modal around an open child leaves a
-                        // stuck backdrop.
-                        onClick: () => {
-                            setFilterSheetOpen(false);
-                            filterSheetPrimaryAction.onClick();
-                        },
-                    }
-                }
-            />
         </>
     );
 };

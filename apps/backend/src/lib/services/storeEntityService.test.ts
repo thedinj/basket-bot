@@ -1,9 +1,17 @@
-import { AuthorizationError, ConflictError } from "@basket-bot/core";
+import {
+    AuthorizationError,
+    ConflictError,
+    NotFoundError,
+    ValidationError,
+} from "@basket-bot/core";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
     seedAisle,
     seedHousehold,
     seedHouseholdMember,
+    seedItem,
+    seedListItem,
+    seedSection,
     seedStore,
     seedUser,
 } from "../../../test/support/fixtures";
@@ -63,6 +71,13 @@ describe("store access control", () => {
             storeEntityService.getItemsByStoreWithDetails(storeId, stranger),
         updateItem: () =>
             storeEntityService.updateItem({ id: "i", storeId, name: "X", userId: stranger }),
+        mergeItems: () =>
+            storeEntityService.mergeItems({
+                loserId: "i",
+                intoItemId: "j",
+                storeId,
+                userId: stranger,
+            }),
         toggleItemFavorite: () => storeEntityService.toggleItemFavorite("i", storeId, stranger),
         deleteItem: () => storeEntityService.deleteItem("i", storeId, stranger),
         searchStoreItems: () => storeEntityService.searchStoreItems(storeId, "x", stranger),
@@ -267,5 +282,192 @@ describe("name conflicts", () => {
         expect(() =>
             storeEntityService.createItem({ storeId, name: "Apples", userId: owner })
         ).not.toThrow();
+    });
+});
+
+/**
+ * `mergeItems` is the front door to `itemRepo.mergeItemInto`, opened so Auto-Locate's duplicate
+ * detection can fold "Mozzarella, shredded" into an existing "Shredded mozzarella". It deletes a
+ * row, so the guards around *which* row matter as much as the merge itself.
+ */
+describe("merging duplicate items", () => {
+    let aisleId: string;
+    let sectionId: string;
+
+    beforeEach(() => {
+        aisleId = seedAisle({ storeId, ownerId: owner, name: "Dairy" });
+        sectionId = seedSection({ storeId, aisleId, ownerId: owner, name: "Cheese" });
+    });
+
+    it("repoints the loser's list rows onto the winner and deletes the loser", () => {
+        const winner = seedItem({
+            storeId,
+            ownerId: owner,
+            name: "Shredded mozzarella",
+            sectionId,
+        });
+        const loser = seedItem({ storeId, ownerId: owner, name: "Mozzarella, shredded" });
+        const listItem = seedListItem({ storeId, ownerId: owner, storeItemId: loser });
+
+        const survivor = storeEntityService.mergeItems({
+            loserId: loser,
+            intoItemId: winner,
+            storeId,
+            userId: owner,
+        });
+
+        expect(survivor.id).toBe(winner);
+        expect(
+            db.prepare(`SELECT storeItemId FROM ShoppingListItem WHERE id = ?`).get(listItem)
+        ).toEqual({ storeItemId: winner });
+        expect(db.prepare(`SELECT id FROM StoreItem WHERE id = ?`).get(loser)).toBeUndefined();
+    });
+
+    it("renames the survivor when a canonical name is given, keeping its location", () => {
+        const winner = seedItem({
+            storeId,
+            ownerId: owner,
+            name: "Mozzarella, shredded",
+            sectionId,
+        });
+        const loser = seedItem({ storeId, ownerId: owner, name: "Shredded mozzarella" });
+
+        const survivor = storeEntityService.mergeItems({
+            loserId: loser,
+            intoItemId: winner,
+            storeId,
+            canonicalName: "Shredded mozzarella",
+            userId: owner,
+        });
+
+        expect(survivor.id).toBe(winner);
+        expect(survivor.name).toBe("Shredded mozzarella");
+        expect(survivor.sectionId).toBe(sectionId);
+        expect(survivor.aisleId).toBeNull();
+    });
+
+    it("refuses to merge an item into itself", () => {
+        const item = seedItem({ storeId, ownerId: owner, name: "Milk" });
+
+        expect(() =>
+            storeEntityService.mergeItems({
+                loserId: item,
+                intoItemId: item,
+                storeId,
+                userId: owner,
+            })
+        ).toThrow(ValidationError);
+    });
+
+    // The store id comes from the URL while both item ids come from the body, so a caller with
+    // access to one store could otherwise name items belonging to another.
+    it("refuses to merge an item that belongs to a different store", () => {
+        const otherStore = seedStore({ ownerId: owner, name: "Other" });
+        const mine = seedItem({ storeId, ownerId: owner, name: "Milk" });
+        const theirs = seedItem({ storeId: otherStore, ownerId: owner, name: "Milk" });
+
+        expect(() =>
+            storeEntityService.mergeItems({
+                loserId: mine,
+                intoItemId: theirs,
+                storeId,
+                userId: owner,
+            })
+        ).toThrow(NotFoundError);
+    });
+
+    /**
+     * Notes live on `ShoppingListItem`, not `StoreItem`, and a merge only repoints
+     * `storeItemId` — it must not touch the per-row detail the user typed. The case that
+     * matters is both sides already being on the list with *different* notes: nothing may be
+     * overwritten and nothing silently dropped, because a note is often the only reason an
+     * entry exists ("for lasagna" vs "for the salad").
+     */
+    it("preserves the notes, qty and unit on both sides' list rows", () => {
+        const winner = seedItem({
+            storeId,
+            ownerId: owner,
+            name: "Green peppers",
+            sectionId,
+        });
+        const loser = seedItem({ storeId, ownerId: owner, name: "Peppers, green" });
+
+        const winnerRow = seedListItem({
+            storeId,
+            ownerId: owner,
+            storeItemId: winner,
+            notes: "for the salad",
+            qty: 2,
+        });
+        const loserRow = seedListItem({
+            storeId,
+            ownerId: owner,
+            storeItemId: loser,
+            notes: "for lasagna",
+            qty: 5,
+        });
+
+        storeEntityService.mergeItems({
+            loserId: loser,
+            intoItemId: winner,
+            storeId,
+            userId: owner,
+        });
+
+        const rows = storeEntityService.getShoppingListItems(storeId, owner);
+
+        // Both entries survive as separate rows pointing at the survivor.
+        expect(rows).toHaveLength(2);
+        expect(rows.every((r) => r.storeItemId === winner)).toBe(true);
+
+        const byId = new Map(rows.map((r) => [r.id, r]));
+        expect(byId.get(winnerRow)?.notes).toBe("for the salad");
+        expect(byId.get(winnerRow)?.qty).toBe(2);
+        expect(byId.get(loserRow)?.notes).toBe("for lasagna");
+        expect(byId.get(loserRow)?.qty).toBe(5);
+    });
+
+    it("keeps the loser's note when the survivor is also renamed", () => {
+        const winner = seedItem({
+            storeId,
+            ownerId: owner,
+            name: "Mozzarella, shredded",
+            sectionId,
+        });
+        const loser = seedItem({ storeId, ownerId: owner, name: "Shredded mozzarella" });
+        const row = seedListItem({
+            storeId,
+            ownerId: owner,
+            storeItemId: loser,
+            notes: "block, not bagged",
+        });
+
+        storeEntityService.mergeItems({
+            loserId: loser,
+            intoItemId: winner,
+            storeId,
+            canonicalName: "Shredded mozzarella",
+            userId: owner,
+        });
+
+        const merged = storeEntityService
+            .getShoppingListItems(storeId, owner)
+            .find((r) => r.id === row);
+
+        expect(merged?.notes).toBe("block, not bagged");
+        expect(merged?.itemName).toBe("Shredded mozzarella");
+    });
+
+    it("reports a missing item rather than silently doing nothing", () => {
+        const item = seedItem({ storeId, ownerId: owner, name: "Milk" });
+
+        expect(() =>
+            storeEntityService.mergeItems({
+                loserId: crypto.randomUUID(),
+                intoItemId: item,
+                storeId,
+                userId: owner,
+            })
+        ).toThrow(NotFoundError);
     });
 });

@@ -110,6 +110,21 @@ can round-trip back to you. Full pattern, status-code table, and a migration che
 - **Mutation queuing** persists failed mutations and retries on reconnect
 - **Shield system** blocks UI during long-running operations
 
+**A tab page must render its `IonPage` before anything that can suspend.** Ionic's router
+outlet only transitions a page in once that page registers itself, so a tab route component
+that calls a suspense hook (`usePreference`, `useStores`, `useRecipes`, …) _above_ its
+`IonPage` never registers one: the suspension escapes to the app-level `Suspense` in
+[`apps/mobile/src/App.tsx`](apps/mobile/src/App.tsx), which hides the whole `Main` shell —
+tabs and outlet included — and on the way back every page in the outlet is left marked
+`ion-page-invisible` **permanently**. The tab buttons still update the URL and the tab-bar
+highlight, but no page is ever shown again; it reads as "the tab button doesn't work and I'm
+stuck". So the shape is always `IonPage` → `Suspense` → content, with every suspending hook
+in the content component (see `ShoppingList.tsx` / `Recipes.tsx`). Enforced by
+[`apps/mobile/src/pages/tabPageSuspense.test.ts`](apps/mobile/src/pages/tabPageSuspense.test.ts),
+which derives the set of suspending hooks from the hook sources so new ones are covered
+automatically. The same reasoning applies to a suspending child rendered bare inside
+`IonContent` — give it its own boundary rather than letting it reach the app-level one.
+
 **Query keys — always use the `queryKeys` factory:** every cache key is declared once in
 [`apps/mobile/src/db/queryKeys.ts`](apps/mobile/src/db/queryKeys.ts) and **must** be built
 by calling a function on the exported `queryKeys` object (e.g.
@@ -140,7 +155,7 @@ mutation means adding its row there too.
 **Mutation errors are handled centrally — never add a per-hook `onError` toast.** The
 shared `QueryClient` in [`apps/mobile/src/db/DatabaseContext.tsx`](apps/mobile/src/db/DatabaseContext.tsx)
 has a `MutationCache.onError` that shows the toast and records the failure to the local
-`clientErrorLog` (viewable via Settings → tap the version 7×) for every mutation. When
+`clientErrorLog` (viewable via app menu → About → tap the build row 7×) for every mutation. When
 adding a new `useMutation`/`useTanstackMutation`/`useOptimisticMutation`, just pass
 `meta: { operation: "short description" }` so the global handler can build a specific
 message — do not write your own `onError: (error) => showError(...)`, that produces a

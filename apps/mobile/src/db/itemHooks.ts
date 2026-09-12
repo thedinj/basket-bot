@@ -129,6 +129,50 @@ export function useUpdateItem() {
 }
 
 /**
+ * Hook to fold one store item into another (duplicate resolution).
+ *
+ * The loser is deleted and its shopping-list rows repoint onto the winner, so every query that
+ * surfaces either item — and the shopping list itself — has to be invalidated.
+ */
+export function useMergeItems() {
+    const database = useDatabase();
+    const queryClient = useQueryClient();
+
+    return useTanstackMutation({
+        mutationFn: ({
+            storeId,
+            id,
+            intoItemId,
+            canonicalName,
+        }: {
+            storeId: string;
+            id: string;
+            intoItemId: string;
+            canonicalName?: string;
+        }) => database.mergeItems(storeId, id, intoItemId, canonicalName),
+        meta: { operation: "merge duplicate items" },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.items.byStore(variables.storeId),
+            });
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.items.withDetails(variables.storeId),
+            });
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.items.detail(variables.id),
+            });
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.items.detail(variables.intoItemId),
+            });
+            // The loser's shopping list rows now point at the winner.
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
+            });
+        },
+    });
+}
+
+/**
  * Hook to get or create a store item by name
  * Useful for adding items to shopping lists - finds existing or creates new
  */

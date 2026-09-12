@@ -433,6 +433,27 @@ export class RemoteDatabase implements Database {
         );
     }
 
+    async mergeItems(
+        storeId: string,
+        id: string,
+        intoItemId: string,
+        canonicalName?: string
+    ): Promise<StoreItem> {
+        return this.executeMutation(
+            "mergeItems",
+            `/api/stores/${storeId}/items/${id}/merge`,
+            "POST",
+            async () => {
+                const response = await apiClient.post<{ item: StoreItem }>(
+                    `/api/stores/${storeId}/items/${id}/merge`,
+                    { intoItemId, canonicalName }
+                );
+                return response.item;
+            },
+            { intoItemId, canonicalName }
+        );
+    }
+
     async toggleItemFavorite(storeId: string, id: string): Promise<StoreItem> {
         return this.executeMutation(
             "toggleItemFavoriteForStore",

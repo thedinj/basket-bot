@@ -5,7 +5,7 @@ import { IonIcon } from "@ionic/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { bulbOutline, checkmarkDone } from "ionicons/icons";
 import { useCallback, useMemo, useState } from "react";
-import { useStoreAisles, useStoreSections } from "../../db/hooks";
+import { useStoreAisles, useStoreItems, useStoreSections } from "../../db/hooks";
 import { useToast } from "../../hooks/useToast";
 import { useBatchAutoCategorize } from "../../llm/features/useBatchAutoCategorize";
 import { LLM_ICON_SRC } from "../../llm/shared/constants";
@@ -93,6 +93,8 @@ export const GroupedShoppingList = ({
     // Fetch aisles and sections for auto-categorization
     const { data: aisles = [] } = useStoreAisles(storeId || "");
     const { data: sections = [] } = useStoreSections(storeId || "");
+    // The candidate pool for the duplicate check that follows each categorization.
+    const { data: storeItems = [] } = useStoreItems(storeId || "");
 
     // Extract uncategorized items that can be categorized
     const getUncategorizedItems = useCallback(() => {
@@ -107,15 +109,23 @@ export const GroupedShoppingList = ({
 
     // Show appropriate toast based on categorization results
     const showResultToast = useCallback(
-        (result: { successCount: number; failureCount: number; errors: Error[] }) => {
+        (result: {
+            successCount: number;
+            failureCount: number;
+            mergedCount: number;
+            errors: Error[];
+        }) => {
+            const mergedSuffix =
+                result.mergedCount > 0 ? ` (${result.mergedCount} merged as duplicates)` : "";
+
             if (result.failureCount === 0) {
                 showToast({
-                    message: `Successfully categorized ${result.successCount} items`,
+                    message: `Successfully categorized ${result.successCount} items${mergedSuffix}`,
                     type: "success",
                 });
             } else if (result.successCount > 0) {
                 showToast({
-                    message: `Categorized ${result.successCount} items (${result.failureCount} failed)`,
+                    message: `Categorized ${result.successCount} items (${result.failureCount} failed)${mergedSuffix}`,
                     type: "warning",
                 });
             } else {
@@ -157,7 +167,13 @@ export const GroupedShoppingList = ({
 
         setIsAutoCategorizing(true);
         try {
-            const result = await batchAutoCategorize(uncategorizedItems, storeId, aisles, sections);
+            const result = await batchAutoCategorize(
+                uncategorizedItems,
+                storeId,
+                aisles,
+                sections,
+                storeItems
+            );
             await refreshAfterCategorization();
             showResultToast(result);
 
@@ -179,6 +195,7 @@ export const GroupedShoppingList = ({
         storeId,
         aisles,
         sections,
+        storeItems,
         items,
         getUncategorizedItems,
         batchAutoCategorize,

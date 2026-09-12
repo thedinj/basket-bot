@@ -121,7 +121,11 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
     };
 
     return (
-        <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
+        // The close button is disabled while the add is in flight, so the backdrop must be
+        // too — otherwise a tap there dismisses the sheet mid-request and the user is left
+        // with no idea whether the add landed. Deliberately not `canDismiss`, which would
+        // also block the programmatic dismiss that closes the sheet on success.
+        <IonModal isOpen={isOpen} onDidDismiss={onDismiss} backdropDismiss={!isWorking}>
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>Add to shopping list</IonTitle>

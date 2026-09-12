@@ -1,5 +1,4 @@
 import StoreItemsManagementModal from "@/components/store/StoreItemsManagementModal";
-import { useRenderStormDetector } from "@/hooks/useRenderStormDetector";
 import { IonContent, IonFab, IonFabButton, IonIcon, IonPage, useIonAlert } from "@ionic/react";
 import {
     add,
@@ -361,8 +360,6 @@ const ShoppingListContent: React.FC = () => {
 };
 
 const ShoppingList: React.FC = () => {
-    useRenderStormDetector("ShoppingList");
-
     return (
         <IonPage>
             <Suspense fallback={<LoadingFallback />}>

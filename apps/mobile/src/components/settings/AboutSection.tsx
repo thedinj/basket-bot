@@ -5,7 +5,7 @@ import DebugLogView from "./DebugLogView";
 const DEBUG_UNLOCK_TAPS = 7;
 
 /**
- * About panel shown in Settings. Tapping the version 7x unlocks the hidden
+ * About panel shown in the About modal (app menu > About). Tapping the build row 7x unlocks the hidden
  * debug log (standard "developer options" convention) for the rest of the
  * session, without needing a separate discoverable menu entry.
  */

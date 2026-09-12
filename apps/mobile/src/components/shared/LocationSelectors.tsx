@@ -1,5 +1,5 @@
 import type { StoreSection } from "@basket-bot/core";
-import { IonChip, IonIcon, IonLabel } from "@ionic/react";
+import { IonAlert, IonChip, IonIcon, IonLabel } from "@ionic/react";
 import clsx from "clsx";
 import { closeCircle } from "ionicons/icons";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -12,8 +12,9 @@ import {
     UseFormWatch,
     useController,
 } from "react-hook-form";
-import { useStoreAisles, useStoreSections } from "../../db/hooks";
+import { useStoreAisles, useStoreItems, useStoreSections } from "../../db/hooks";
 import { useToast } from "../../hooks/useToast";
+import { SUGGEST_MERGE_CONFIDENCE, type DuplicateMatch } from "../../llm/features/itemDedupe";
 import { useAutoCategorize } from "../../llm/features/useAutoCategorize";
 import { LLM_COLOR, LLM_ICON_SRC } from "../../llm/shared/constants";
 import AislesSectionsManagementModal from "../store/AislesSectionsManagementModal";
@@ -30,19 +31,28 @@ interface LocationSelectorsProps<T extends FieldValues = FieldValues> {
     storeId: string;
     disabled?: boolean;
     itemName?: string;
+    /**
+     * What "Use existing" does when Auto-Locate finds this item already exists under another
+     * wording. The default renames the form's name field onto the existing item's name, which
+     * is what every save path that goes through `updateItem`/`getOrCreateStoreItem` needs — the
+     * backend then merges or reuses. Supply this only where that is not the save path.
+     */
+    onUseExistingItem?: (match: DuplicateMatch) => void;
 }
 
 export function LocationSelectors<T extends FieldValues = FieldValues>(
     props: LocationSelectorsProps<T>
 ) {
-    const { control, setValue, storeId, disabled = false, itemName } = props;
+    const { control, setValue, storeId, disabled = false, itemName, onUseExistingItem } = props;
 
     const { data: aisles } = useStoreAisles(storeId);
     const { data: sections } = useStoreSections(storeId);
+    const { data: storeItems } = useStoreItems(storeId);
 
     const [isPickerOpen, setIsPickerOpen] = useState(false);
     const [isManageOpen, setIsManageOpen] = useState(false);
     const [justAutoLocated, setJustAutoLocated] = useState(false);
+    const [duplicatePrompt, setDuplicatePrompt] = useState<DuplicateMatch | null>(null);
     const shimmerTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     useEffect(() => () => clearTimeout(shimmerTimeoutRef.current), []);
@@ -93,6 +103,7 @@ export function LocationSelectors<T extends FieldValues = FieldValues>(
                 itemName,
                 fullAisles: aisles ?? [],
                 fullSections: sections || [],
+                existingItems: storeItems,
             });
 
             setLocation(result.aisleId, result.sectionId);
@@ -103,6 +114,16 @@ export function LocationSelectors<T extends FieldValues = FieldValues>(
                 setJustAutoLocated(false);
             }, AUTO_LOCATE_SHIMMER_MS);
 
+            // Never merge behind the user's back in this flow — they are looking at the form.
+            if (
+                result.duplicateOf &&
+                result.duplicateOf.confidence >= SUGGEST_MERGE_CONFIDENCE &&
+                result.duplicateOf.existing.name !== itemName
+            ) {
+                setDuplicatePrompt(result.duplicateOf);
+                return;
+            }
+
             showSuccess(
                 `Auto-categorized to ${result.aisleName}${
                     result.sectionName ? ` • ${result.sectionName}` : ""
@@ -111,6 +132,21 @@ export function LocationSelectors<T extends FieldValues = FieldValues>(
         } catch (error) {
             showError(error instanceof Error ? error.message : "Auto-categorize failed");
         }
+    };
+
+    const applyExistingItem = (match: DuplicateMatch) => {
+        if (onUseExistingItem) {
+            onUseExistingItem(match);
+            return;
+        }
+
+        // The existing item's *exact* name, not the model's preferred wording: matching its
+        // `nameNorm` is what makes the save reuse or merge into that row rather than add another.
+        setValue("name" as Path<T>, match.existing.name as PathValue<T, Path<T>>, {
+            shouldDirty: true,
+            shouldTouch: true,
+            shouldValidate: true,
+        });
     };
 
     const hasLocation = Boolean(currentAisle || currentSection);
@@ -237,6 +273,29 @@ export function LocationSelectors<T extends FieldValues = FieldValues>(
                 isOpen={isManageOpen}
                 onClose={() => setIsManageOpen(false)}
                 storeId={storeId}
+            />
+
+            <IonAlert
+                isOpen={duplicatePrompt !== null}
+                onDidDismiss={() => setDuplicatePrompt(null)}
+                header="Possible duplicate"
+                message={
+                    duplicatePrompt
+                        ? `"${duplicatePrompt.existing.name}" is already filed here. Shall I record "${itemName}" as the same item?`
+                        : ""
+                }
+                buttons={[
+                    {
+                        text: "Keep separate",
+                        role: "cancel",
+                    },
+                    {
+                        text: "Use existing",
+                        handler: () => {
+                            if (duplicatePrompt) applyExistingItem(duplicatePrompt);
+                        },
+                    },
+                ]}
             />
         </>
     );

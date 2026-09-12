@@ -109,6 +109,7 @@ const TARGET_STORE = "store-2";
 const AISLE = "aisle-1";
 const SECTION = "section-1";
 const ITEM = "item-1";
+const OTHER_ITEM = "item-2";
 const LIST_ITEM = "list-item-1";
 const HOUSEHOLD = "household-1";
 const INVITATION = "invitation-1";
@@ -282,6 +283,18 @@ const CASCADES: Cascade[] = [
             queryKeys.items.byStore(STORE),
             queryKeys.items.withDetails(STORE),
             queryKeys.items.detail(ITEM),
+            queryKeys.shoppingListItems.byStore(STORE),
+        ],
+    },
+    {
+        name: "useMergeItems",
+        hook: itemHooks.useMergeItems,
+        vars: { storeId: STORE, id: ITEM, intoItemId: OTHER_ITEM },
+        invalidates: [
+            queryKeys.items.byStore(STORE),
+            queryKeys.items.withDetails(STORE),
+            queryKeys.items.detail(ITEM),
+            queryKeys.items.detail(OTHER_ITEM),
             queryKeys.shoppingListItems.byStore(STORE),
         ],
     },

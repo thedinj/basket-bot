@@ -11,7 +11,6 @@ import {
 import { addOutline, calendarOutline, restaurantOutline } from "ionicons/icons";
 import pluralize from "pluralize";
 import { Suspense, useState } from "react";
-import { useHistory } from "react-router-dom";
 import { AppHeader } from "../components/layout/AppHeader";
 import { HouseholdSelect } from "../components/households/HouseholdSelect";
 import LoadingFallback from "../components/LoadingFallback";
@@ -22,6 +21,7 @@ import TabEmptyState from "../components/shared/TabEmptyState";
 import { usePlansHistory, useRecipes } from "../db/mealsHooks";
 import { queryKeys } from "../db/queryKeys";
 import RefreshConfig from "../hooks/refresh/RefreshConfig";
+import { useTabNavigation } from "../hooks/useTabNavigation";
 import { useHousehold } from "../households/useHousehold";
 import MealPlanWizard from "./MealPlanWizard";
 
@@ -33,7 +33,7 @@ import "./Plans.scss";
 // the history is actually empty.
 const PlansEmptyState: React.FC<{ householdId: string | null }> = ({ householdId }) => {
     const { data: recipes } = useRecipes(householdId);
-    const history = useHistory();
+    const goToTab = useTabNavigation();
 
     if (recipes.length === 0) {
         return (
@@ -41,9 +41,7 @@ const PlansEmptyState: React.FC<{ householdId: string | null }> = ({ householdId
                 icon={restaurantOutline}
                 title="No recipes to plan with"
                 body="The meal plan wizard picks from your recipes. Add a few, then come back to build a plan."
-                action={
-                    <IonButton onClick={() => history.push("/recipes")}>Go to Recipes</IonButton>
-                }
+                action={<IonButton onClick={() => goToTab("recipes")}>Go to Recipes</IonButton>}
             />
         );
     }
