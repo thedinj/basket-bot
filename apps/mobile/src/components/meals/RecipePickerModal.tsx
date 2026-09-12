@@ -4,28 +4,55 @@ import {
     IonButtons,
     IonContent,
     IonHeader,
-    IonIcon,
     IonItem,
     IonLabel,
     IonList,
     IonModal,
-    IonNote,
-    IonSearchbar,
+    IonIcon,
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
 import { closeOutline } from "ionicons/icons";
-import { useState } from "react";
-import TagChip from "./TagChip";
+import pluralize from "pluralize";
+import { useMemo, useState } from "react";
+import {
+    DEFAULT_FILTERS,
+    DEFAULT_SORT,
+    matchesRecipeFilters,
+    matchesRecipeSearchFuzzy,
+    type RecipeFilters,
+    type RecipeSort,
+} from "../../utils/recipeSearch";
+import RecipeBrowser from "./RecipeBrowser";
 import TagChipList from "./TagChipList";
+
+import "./RecipePickerModal.scss";
+
+/**
+ * Browse and pick a recipe for a meal-plan slot.
+ *
+ * Search, filtering and sorting come from the same `RecipeBrowser` the Recipes tab uses, so
+ * the two surfaces behave identically.
+ *
+ * Everything here is throwaway: the only thing this modal reports back is whether a recipe
+ * was picked. Filters are seeded from the slot so browsing starts somewhere sensible, but
+ * edits stay local and are discarded on close — the slot's own filter button is what edits
+ * the filters the plan persists and the server rerolls against.
+ *
+ * The planner only ever draws from the randomizer pool (the server's own candidate query
+ * requires `isPoolExcluded IS NULL`), so `inPoolOnly` is pinned on here and the "pool"
+ * section is never offered — otherwise the picker would list recipes no plan can use.
+ */
+const poolOnly = (f: RecipeFilters): RecipeFilters => ({ ...f, inPoolOnly: true });
 
 interface RecipePickerModalProps {
     isOpen: boolean;
     onDismiss: () => void;
     recipes: RecipeWithDetails[];
+    allTags: RecipeTag[];
     onPick: (recipe: RecipeWithDetails) => void;
-    filterTags?: RecipeTag[];
-    maxCookingTimeMinutes?: number | null;
+    initialFilters: RecipeFilters;
+    slotNumber: number | null;
     title?: string;
 }
 
@@ -33,18 +60,46 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
     isOpen,
     onDismiss,
     recipes,
+    allTags,
     onPick,
-    filterTags = [],
-    maxCookingTimeMinutes,
+    initialFilters,
+    slotNumber,
     title = "Pick a recipe",
 }) => {
     const [query, setQuery] = useState("");
+    const [sort, setSort] = useState<RecipeSort>(DEFAULT_SORT);
+    const [filters, setFilters] = useState<RecipeFilters>(() => poolOnly(initialFilters));
 
-    const filtered = query.trim()
-        ? recipes.filter((r) => r.name.toLowerCase().includes(query.trim().toLowerCase()))
-        : recipes;
+    // Reseed from the slot each time the picker opens, so a previous visit's abandoned
+    // edits never leak into the next one.
+    const handleWillPresent = () => {
+        setQuery("");
+        setSort(DEFAULT_SORT);
+        setFilters(poolOnly(initialFilters));
+    };
 
-    const hasFilters = filterTags.length > 0 || maxCookingTimeMinutes != null;
+    // How many recipes the pool pin is the *only* thing hiding. Searching for a recipe you
+    // know exists and getting a bare "no matches" is the trap this surface would otherwise
+    // set, so when that happens the empty state names the real reason.
+    const benchedCount = useMemo(
+        () =>
+            recipes.filter(
+                (r) =>
+                    r.isPoolExcluded &&
+                    matchesRecipeSearchFuzzy(r, query) &&
+                    matchesRecipeFilters(r, { ...filters, inPoolOnly: false })
+            ).length,
+        [recipes, query, filters]
+    );
+
+    const isNarrowed =
+        !!query.trim() || filters.tagIds.size > 0 || filters.maxCookingTimeMinutes !== null;
+    const benchedBody =
+        benchedCount === 0
+            ? undefined
+            : isNarrowed
+              ? `${benchedCount} ${pluralize("recipe", benchedCount)} ${benchedCount === 1 ? "matches" : "match"}, but the randomizer pool leaves ${benchedCount === 1 ? "it" : "them"} out. The planner only deals in pool recipes — change that on the Recipes tab.`
+              : "Every recipe here sits outside the randomizer pool. The planner only deals in pool recipes — change that on the Recipes tab.";
 
     const handleDismiss = () => {
         setQuery("");
@@ -57,7 +112,7 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
     };
 
     return (
-        <IonModal isOpen={isOpen} onDidDismiss={handleDismiss}>
+        <IonModal isOpen={isOpen} onWillPresent={handleWillPresent} onDidDismiss={handleDismiss}>
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>{title}</IonTitle>
@@ -67,95 +122,53 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                         </IonButton>
                     </IonButtons>
                 </IonToolbar>
-                <IonToolbar>
-                    <IonSearchbar
-                        value={query}
-                        onIonInput={(e) => setQuery(e.detail.value ?? "")}
-                        placeholder="Search recipes"
-                        debounce={0}
-                    />
-                </IonToolbar>
-                {hasFilters && (
-                    <IonToolbar>
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "6px",
-                                padding: "4px 12px 8px",
-                                flexWrap: "wrap",
-                            }}
-                        >
-                            <IonNote
-                                style={{
-                                    fontSize: "11px",
-                                    fontFamily: "'JetBrains Mono', monospace",
-                                    flexShrink: 0,
-                                }}
-                            >
-                                filtered:
-                            </IonNote>
-                            {filterTags.map((t) => (
-                                <TagChip key={t.id} tag={t} />
-                            ))}
-                            {maxCookingTimeMinutes != null && (
-                                <IonNote
-                                    style={{
-                                        fontSize: "11px",
-                                        fontFamily: "'JetBrains Mono', monospace",
-                                    }}
-                                >
-                                    ≤{maxCookingTimeMinutes}min
-                                </IonNote>
-                            )}
-                        </div>
-                    </IonToolbar>
-                )}
             </IonHeader>
 
             <IonContent>
-                {filtered.length === 0 ? (
-                    <div className="ion-padding ion-text-center">
-                        <IonNote>
-                            {query.trim()
-                                ? `No recipes match "${query}"`
-                                : "No recipes match these filters"}
-                        </IonNote>
-                    </div>
-                ) : (
-                    <IonList>
-                        {filtered.map((recipe) => (
-                            <IonItem
-                                key={recipe.id}
-                                button
-                                detail={false}
-                                onClick={() => handlePick(recipe)}
-                            >
-                                <IonLabel>
-                                    <h3>{recipe.name}</h3>
-                                    {recipe.source && (
-                                        <p
-                                            style={{
-                                                fontSize: "12px",
-                                                color: "var(--ion-color-step-400, #718096)",
-                                                margin: "2px 0 0",
-                                            }}
-                                        >
-                                            {recipe.source}
-                                        </p>
-                                    )}
-                                    {recipe.tags.length > 0 && (
-                                        <TagChipList
-                                            tags={recipe.tags}
-                                            max={4}
-                                            className="recipe-picker-item-tags"
-                                        />
-                                    )}
-                                </IonLabel>
-                            </IonItem>
-                        ))}
-                    </IonList>
-                )}
+                <RecipeBrowser
+                    recipes={recipes}
+                    allTags={allTags}
+                    query={query}
+                    onQueryChange={setQuery}
+                    filters={filters}
+                    sort={sort}
+                    onFiltersChange={(next) => setFilters(poolOnly(next))}
+                    onSortChange={setSort}
+                    onReset={() => setFilters(poolOnly(DEFAULT_FILTERS))}
+                    sections={["sort", "time", "tags"]}
+                    filterSheetHeading={slotNumber !== null ? `Slot ${slotNumber}` : undefined}
+                    emptyStateVariant="full"
+                    emptyStateBody={benchedBody}
+                >
+                    {(filtered) => (
+                        <IonList>
+                            {filtered.map((recipe) => (
+                                <IonItem
+                                    key={recipe.id}
+                                    button
+                                    detail={false}
+                                    onClick={() => handlePick(recipe)}
+                                >
+                                    <IonLabel>
+                                        <h3>{recipe.name}</h3>
+                                        {recipe.source && (
+                                            <p className="recipe-picker-item-source">
+                                                {recipe.source}
+                                            </p>
+                                        )}
+                                        {recipe.tags.length > 0 && (
+                                            <TagChipList
+                                                tags={recipe.tags}
+                                                max={4}
+                                                className="recipe-picker-item-tags"
+                                            />
+                                        )}
+                                    </IonLabel>
+                                </IonItem>
+                            ))}
+                        </IonList>
+                    )}
+                </RecipeBrowser>
             </IonContent>
         </IonModal>
     );

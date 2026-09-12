@@ -17,6 +17,7 @@ import * as recipeRepo from "../repos/recipeRepo";
 import * as recipeTagRepo from "../repos/recipeTagRepo";
 import * as shoppingListRepo from "../repos/shoppingListRepo";
 import { roundFactor } from "../utils/math";
+import { buildRecipeNote } from "../utils/recipeNote";
 
 /**
  * Service layer for Recipe operations (recipes, ingredients, tag assignments).
@@ -198,7 +199,7 @@ export function addRecipeToShoppingList(
             storeItemId: storeItem.id,
             qty: scaledQty,
             unitId: effectiveUnitId ?? null,
-            notes: recipe.name,
+            notes: buildRecipeNote(recipe, data),
             isUnsure: route.isUnsure ?? ingredient.isUnsure ?? null,
             userId,
         });

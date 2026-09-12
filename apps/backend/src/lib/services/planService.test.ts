@@ -349,6 +349,26 @@ describe("dispatchPlan", () => {
         ]);
     });
 
+    it("scales quantities and records the multiplier in the note", () => {
+        const storeId = seedStore({ ownerId: member });
+        const { planId, recipeId } = setupRoutedPlan({ storeId });
+
+        planService.dispatchPlan(householdId, planId, member, { [recipeId]: 2 });
+
+        expect(listRows(storeId)).toEqual([
+            { qty: 4, unitId: null, notes: "Soup × 2", isUnsure: null, itemName: "Carrot" },
+        ]);
+    });
+
+    it("leaves the note unscaled when the factor is 1", () => {
+        const storeId = seedStore({ ownerId: member });
+        const { planId, recipeId } = setupRoutedPlan({ storeId });
+
+        planService.dispatchPlan(householdId, planId, member, { [recipeId]: 1 });
+
+        expect(listRows(storeId)[0]).toMatchObject({ qty: 2, notes: "Soup" });
+    });
+
     it("skips an ingredient with no store routed", () => {
         const { planId } = setupRoutedPlan({ storeId: null });
 

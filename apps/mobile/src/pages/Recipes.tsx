@@ -1,27 +1,13 @@
 import type { RecipeWithDetails } from "@basket-bot/core";
-import {
-    IonButton,
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonIcon,
-    IonPage,
-    IonSearchbar,
-} from "@ionic/react";
-import { addOutline, filterOutline, restaurantOutline } from "ionicons/icons";
-import pluralize from "pluralize";
+import { IonButton, IonContent, IonFab, IonFabButton, IonIcon, IonPage } from "@ionic/react";
+import { addOutline, restaurantOutline } from "ionicons/icons";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "../components/layout/AppHeader";
 import LoadingFallback from "../components/LoadingFallback";
 import { HouseholdSelect } from "../components/households/HouseholdSelect";
+import RecipeBrowser from "../components/meals/RecipeBrowser";
 import RecipeCard from "../components/meals/RecipeCard";
 import RecipeEditorModal, { type RecipeInitialData } from "../components/meals/RecipeEditorModal";
-import RecipeFilterSheet, {
-    DEFAULT_FILTERS,
-    DEFAULT_SORT,
-    type RecipeFilters,
-    type RecipeSort,
-} from "../components/meals/RecipeFilterSheet";
 import RecipeViewSheet from "../components/meals/RecipeViewSheet";
 import RouteIngredientsModal from "../components/meals/RouteIngredientsModal";
 import { useRecipeImportModal } from "../components/meals/useRecipeImportModal";
@@ -43,6 +29,12 @@ import { usePreference } from "../hooks/usePreference";
 import { useUnitItems } from "../hooks/useUnitItems";
 import { useHousehold } from "../households/useHousehold";
 import { LLMFabButton } from "../llm/shared";
+import {
+    DEFAULT_FILTERS,
+    DEFAULT_SORT,
+    type RecipeFilters,
+    type RecipeSort,
+} from "../utils/recipeSearch";
 
 import "./Recipes.scss";
 
@@ -62,7 +54,6 @@ const RecipesList: React.FC<{
         tagIds: new Set(),
     }));
     const [sort, setSort] = useState<RecipeSort>(DEFAULT_SORT);
-    const [filterSheetOpen, setFilterSheetOpen] = useState(false);
     const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
     const handleReset = () => {
@@ -76,83 +67,13 @@ const RecipesList: React.FC<{
         handleReset();
     }, [scrollToRecipeId]);
 
-    const hasPoolExcludedRecipes = useMemo(
-        () => (recipes ?? []).some((r) => r.isPoolExcluded),
-        [recipes]
-    );
-
-    const activeFilterCount = useMemo(() => {
-        let n = 0;
-        if (filters.tagIds.size > 0) n++;
-        if (filters.maxCookingTimeMinutes !== null) n++;
-        if (filters.inPoolOnly) n++;
-        if (filters.hasSteps) n++;
-        if (sort.by !== "name" || sort.dir !== "asc") n++;
-        return n;
-    }, [filters, sort]);
-
-    const filtered = useMemo(() => {
-        if (!recipes) return [];
-        let result = recipes;
-
-        if (search.trim()) {
-            const q = search.trim().toLowerCase();
-            result = result.filter(
-                (r) =>
-                    r.name.toLowerCase().includes(q) ||
-                    (r.source?.toLowerCase().includes(q) ?? false)
-            );
-        }
-        if (filters.tagIds.size > 0) {
-            if (filters.tagMode === "any") {
-                result = result.filter((r) => r.tags.some((t) => filters.tagIds.has(t.id)));
-            } else {
-                result = result.filter((r) =>
-                    [...filters.tagIds].every((id) => r.tags.some((t) => t.id === id))
-                );
-            }
-        }
-        // Recipes with null cookingTimeMinutes are excluded when a time filter is active —
-        // unknown cook time might be 3 hours, so we can't promise it fits.
-        if (filters.maxCookingTimeMinutes !== null) {
-            result = result.filter(
-                (r) =>
-                    r.cookingTimeMinutes !== null &&
-                    r.cookingTimeMinutes <= filters.maxCookingTimeMinutes!
-            );
-        }
-        if (filters.inPoolOnly) result = result.filter((r) => !r.isPoolExcluded);
-        if (filters.hasSteps) result = result.filter((r) => !!r.steps?.trim());
-
-        return [...result].sort((a, b) => {
-            const d = sort.dir === "asc" ? 1 : -1;
-            switch (sort.by) {
-                case "name":
-                    return d * a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
-                case "cookTime": {
-                    if (a.cookingTimeMinutes == null && b.cookingTimeMinutes == null) return 0;
-                    if (a.cookingTimeMinutes == null) return 1;
-                    if (b.cookingTimeMinutes == null) return -1;
-                    return d * (a.cookingTimeMinutes - b.cookingTimeMinutes);
-                }
-                case "ingredientCount": {
-                    const ca = a.ingredients.filter((i) => !i.excluded).length;
-                    const cb = b.ingredients.filter((i) => !i.excluded).length;
-                    return d * (ca - cb);
-                }
-                case "dateAdded":
-                    return d * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-            }
-        });
-    }, [recipes, search, filters, sort]);
-
     useEffect(() => {
         if (!scrollToRecipeId) return;
         const el = cardRefs.current.get(scrollToRecipeId);
         if (!el) return;
         el.scrollIntoView({ behavior: "smooth", block: "center" });
         onScrolledToRecipe();
-    }, [scrollToRecipeId, filtered, onScrolledToRecipe]);
+    }, [scrollToRecipeId, recipes, search, filters, sort, onScrolledToRecipe]);
 
     if (recipes?.length === 0) {
         return (
@@ -165,109 +86,19 @@ const RecipesList: React.FC<{
         );
     }
 
-    const searchPlaceholder =
-        activeFilterCount > 0
-            ? `Search ${filtered.length} matching ${pluralize("recipe", filtered.length)}`
-            : `Search ${filtered.length} ${pluralize("Recipe", filtered.length)}`;
-
     return (
-        <>
-            <div className="meals-search-header">
-                <div className="meals-filter-bar">
-                    <IonSearchbar
-                        value={search}
-                        onIonInput={(e) => setSearch(e.detail.value ?? "")}
-                        placeholder={searchPlaceholder}
-                        debounce={150}
-                    />
-                    <button
-                        type="button"
-                        className={`meals-filter-btn${activeFilterCount > 0 ? " meals-filter-btn--active" : ""}`}
-                        onClick={() => setFilterSheetOpen(true)}
-                        aria-label="Open filter and sort options"
-                    >
-                        <IonIcon icon={filterOutline} />
-                        {activeFilterCount > 0 && (
-                            <span className="meals-filter-btn__badge">{activeFilterCount}</span>
-                        )}
-                    </button>
-                </div>
-
-                {activeFilterCount > 0 && (
-                    <div className="meals-filter-row">
-                        <div className="meals-active-filters">
-                            {filters.maxCookingTimeMinutes !== null && (
-                                <button
-                                    type="button"
-                                    className="meals-active-chip"
-                                    onClick={() =>
-                                        setFilters((f) => ({ ...f, maxCookingTimeMinutes: null }))
-                                    }
-                                >
-                                    ≤{filters.maxCookingTimeMinutes}min ×
-                                </button>
-                            )}
-                            {filters.tagIds.size > 0 && (
-                                <button
-                                    type="button"
-                                    className="meals-active-chip"
-                                    onClick={() => setFilters((f) => ({ ...f, tagIds: new Set() }))}
-                                >
-                                    {filters.tagIds.size} {pluralize("tag", filters.tagIds.size)} ×
-                                </button>
-                            )}
-                            {filters.inPoolOnly && (
-                                <button
-                                    type="button"
-                                    className="meals-active-chip"
-                                    onClick={() => setFilters((f) => ({ ...f, inPoolOnly: false }))}
-                                >
-                                    In pool ×
-                                </button>
-                            )}
-                            {filters.hasSteps && (
-                                <button
-                                    type="button"
-                                    className="meals-active-chip"
-                                    onClick={() => setFilters((f) => ({ ...f, hasSteps: false }))}
-                                >
-                                    Has steps ×
-                                </button>
-                            )}
-                            {(sort.by !== "name" || sort.dir !== "asc") && (
-                                <button
-                                    type="button"
-                                    className="meals-active-chip meals-active-chip--sort"
-                                    onClick={() => setSort(DEFAULT_SORT)}
-                                >
-                                    {sort.by === "name"
-                                        ? "Name"
-                                        : sort.by === "cookTime"
-                                          ? "Time"
-                                          : sort.by === "ingredientCount"
-                                            ? "Ingr."
-                                            : "Added"}{" "}
-                                    {sort.dir === "asc" ? "↑" : "↓"} ×
-                                </button>
-                            )}
-                        </div>
-                        <button
-                            type="button"
-                            className="meals-filter-reset"
-                            onClick={handleReset}
-                            aria-label="Reset all filters"
-                        >
-                            Reset
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            {filtered.length === 0 ? (
-                <TabEmptyState
-                    body={`No recipes match${search.trim() ? ` "${search.trim()}"` : ""}${activeFilterCount > 0 ? " with the active filters." : "."}`}
-                />
-            ) : (
+        <RecipeBrowser
+            recipes={recipes ?? []}
+            allTags={allTags}
+            query={search}
+            onQueryChange={setSearch}
+            filters={filters}
+            sort={sort}
+            onFiltersChange={setFilters}
+            onSortChange={setSort}
+            onReset={handleReset}
+        >
+            {(filtered) => (
                 <div className="meals-recipe-grid">
                     {filtered.map((recipe) => (
                         <RecipeCard
@@ -284,19 +115,7 @@ const RecipesList: React.FC<{
                     ))}
                 </div>
             )}
-
-            <RecipeFilterSheet
-                isOpen={filterSheetOpen}
-                filters={filters}
-                sort={sort}
-                allTags={allTags}
-                hasPoolExcludedRecipes={hasPoolExcludedRecipes}
-                onFiltersChange={setFilters}
-                onSortChange={setSort}
-                onReset={handleReset}
-                onDismiss={() => setFilterSheetOpen(false)}
-            />
-        </>
+        </RecipeBrowser>
     );
 };
 

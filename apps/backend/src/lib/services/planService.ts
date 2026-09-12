@@ -7,6 +7,7 @@ import * as planRepo from "../repos/planRepo";
 import * as recipeRepo from "../repos/recipeRepo";
 import * as shoppingListRepo from "../repos/shoppingListRepo";
 import { roundFactor } from "../utils/math";
+import { buildRecipeNote } from "../utils/recipeNote";
 
 /**
  * Verify user is a member of the household (throws "Access denied" if not).
@@ -282,7 +283,7 @@ export function dispatchPlan(
                 storeItemId: storeItem.id,
                 qty: scaledQty,
                 unitId: effectiveUnitId ?? null,
-                notes: ingredient.recipeName,
+                notes: buildRecipeNote({ name: ingredient.recipeName }, { factor }),
                 // The route is the last word. It exists only because the user worked through
                 // the routing screen, where the unsure box is seeded from the ingredient and
                 // then theirs to change; falling back to the ingredient here would overturn an

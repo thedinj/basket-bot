@@ -2,6 +2,22 @@
     --background: var(--ion-background-color);
     --padding-bottom: 80px;
 
+    // The extra primary-action row makes the footer taller, so the last section needs
+    // more clearance to stay scrollable clear of it.
+    &--with-primary {
+        --padding-bottom: 140px;
+    }
+
+    // ── Heading ────────────────────────────────────────────────────────────────
+    // Only rendered where the sheet needs to name what it is filtering (a plan slot).
+    &__heading {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ion-text-color);
+        padding: 16px 16px 0;
+    }
+
     // ── Section wrapper ────────────────────────────────────────────────────────
     // Each major section (sort, time, tags, toggles) gets a top divider except the first.
     &__section {
@@ -257,6 +273,15 @@
     }
 
     // ── Footer ─────────────────────────────────────────────────────────────────
+    &__footer-stack {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &__primary {
+        margin: 4px 8px 0;
+    }
+
     &__footer {
         display: flex;
         justify-content: space-between;

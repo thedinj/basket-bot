@@ -1,4 +1,4 @@
-import type { RecipeTag, RecipeWithDetails } from "@basket-bot/core";
+import type { RecipeWithDetails } from "@basket-bot/core";
 import {
     IonAlert,
     IonButton,
@@ -8,7 +8,6 @@ import {
     IonHeader,
     IonIcon,
     IonModal,
-    IonPage,
     IonSpinner,
     IonTitle,
     IonToolbar,
@@ -24,6 +23,7 @@ import {
 import pluralize from "pluralize";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/useAuth";
+import RecipeFilterSheet from "../components/meals/RecipeFilterSheet";
 import RecipePickerModal from "../components/meals/RecipePickerModal";
 import RecipeViewSheet from "../components/meals/RecipeViewSheet";
 import RouteIngredientsContent from "../components/meals/RouteIngredientsContent";
@@ -52,6 +52,12 @@ import {
     resolveIngredient,
     type ResolvedIngredient,
 } from "../utils/ingredientRouting";
+import {
+    DEFAULT_FILTERS,
+    recipeFiltersToSlotFilters,
+    slotFiltersToRecipeFilters,
+    type RecipeFilters,
+} from "../utils/recipeSearch";
 import { useHousehold } from "../households/useHousehold";
 
 import "./MealPlanWizard.scss";
@@ -74,6 +80,22 @@ const ROBOT_QUIPS: Record<number, string> = {
     11: "> Eleven. Unstoppable. Slightly alarming.",
     12: "> Twelve meals. A culinary marathon. Godspeed.",
 };
+
+/**
+ * Sign-off after a plan is dispatched. Rotated by the clock the same way
+ * `ROBOT_LOADING_MESSAGES` is, so the line stays fresh without being random enough to
+ * flicker between renders.
+ */
+const PLAN_SENT_QUIPS = [
+    "The rest is your department.",
+    "I have done my part.",
+    "Cooking them is on you.",
+    "Do not blame me for the results.",
+    "Consider it handled.",
+    "The lists are ready. You are, allegedly.",
+] as const;
+
+const pickQuip = (quips: readonly string[]) => quips[new Date().getMinutes() % quips.length];
 
 // ── Slot pool count (sub-component to avoid hooks-in-loop) ──────────────────
 
@@ -113,106 +135,6 @@ const StepBar: React.FC<{ step: WizardStep }> = ({ step }) => (
     </div>
 );
 
-// ── Slot filter sheet (bottom-sheet modal) ──────────────────────────────────
-
-interface SlotFilterSheetProps {
-    slotNumber: number;
-    filters: { tagIds: string[]; maxCookingTimeMinutes: number | null };
-    allTags: RecipeTag[];
-    hasRecipe: boolean;
-    isWorking: boolean;
-    onToggleTag: (tagId: string) => void;
-    onUpdateMaxTime: (val: number | null) => void;
-    onReroll: () => void;
-    onDismiss: () => void;
-}
-
-const SlotFilterSheet: React.FC<SlotFilterSheetProps> = ({
-    slotNumber,
-    filters,
-    allTags,
-    hasRecipe,
-    isWorking,
-    onToggleTag,
-    onUpdateMaxTime,
-    onReroll,
-    onDismiss,
-}) => (
-    <IonPage>
-        <IonContent className="slot-filter-sheet">
-            <div className="slot-filter-sheet__heading">
-                <span className="slot-filter-sheet__slot-num">Slot {slotNumber}</span>
-                <span className="slot-filter-sheet__title">Filters</span>
-            </div>
-
-            {allTags.length > 0 && (
-                <div className="slot-filter-sheet__section">
-                    <div className="slot-filter-sheet__section-label">Tags</div>
-                    <div className="slot-filter-sheet__tags">
-                        {allTags.map((tag) => {
-                            const selected = filters.tagIds.includes(tag.id);
-                            return (
-                                <button
-                                    key={tag.id}
-                                    type="button"
-                                    className={`wizard-tag-btn${selected ? " selected" : ""}`}
-                                    onClick={() => onToggleTag(tag.id)}
-                                >
-                                    <TagChip tag={tag} selected={selected} />
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-
-            <div className="slot-filter-sheet__section">
-                <div className="slot-filter-sheet__time-row">
-                    <span className="slot-filter-sheet__time-label">Max cooking time</span>
-                    <div className="slot-filter-sheet__time-input-wrap">
-                        <input
-                            type="number"
-                            className="slot-filter-sheet__time-input"
-                            value={filters.maxCookingTimeMinutes ?? ""}
-                            onChange={(e) => {
-                                const raw = e.target.value;
-                                const parsed = raw.trim() ? parseInt(raw, 10) : null;
-                                const val =
-                                    parsed !== null && !Number.isNaN(parsed)
-                                        ? Math.max(1, parsed)
-                                        : null;
-                                onUpdateMaxTime(val);
-                            }}
-                            placeholder="Any"
-                            min={1}
-                        />
-                        <span className="slot-filter-sheet__time-unit">min</span>
-                    </div>
-                </div>
-            </div>
-        </IonContent>
-
-        <IonFooter>
-            <IonToolbar>
-                <div className="slot-filter-footer-btns">
-                    <IonButton expand="block" onClick={onReroll} disabled={isWorking}>
-                        {isWorking ? (
-                            <IonSpinner name="dots" />
-                        ) : hasRecipe ? (
-                            "Reroll this slot"
-                        ) : (
-                            "Fill this slot"
-                        )}
-                    </IonButton>
-                    <IonButton expand="block" fill="clear" onClick={onDismiss}>
-                        Done
-                    </IonButton>
-                </div>
-            </IonToolbar>
-        </IonFooter>
-    </IonPage>
-);
-
 // ── Main wizard ─────────────────────────────────────────────────────────────
 
 const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
@@ -226,7 +148,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
     const { data: recipes } = useRecipes(activeHouseholdId);
     const { data: allTags = [] } = useTags(activeHouseholdId);
     const { data: units } = useQuantityUnits();
-    const { showError } = useToast();
+    const { showError, showSuccess } = useToast();
 
     const visibleStores = useVisibleStores();
     const unitMap = useMemo(
@@ -253,10 +175,10 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
     const [slotFilters, setSlotFilters] = useState<
         Map<number, { tagIds: string[]; maxCookingTimeMinutes: number | null }>
     >(new Map());
-    const [filterPopoverSlot, setFilterPopoverSlot] = useState<number | null>(null);
 
-    // Step 2: manual recipe picker
+    // Step 2: manual recipe picker, and the slot's own shortcut straight to its filters
     const [pickerSlot, setPickerSlot] = useState<number | null>(null);
+    const [filterPopoverSlot, setFilterPopoverSlot] = useState<number | null>(null);
     const [showPartialAlert, setShowPartialAlert] = useState(false);
 
     // Step 2: recipe peek sheet
@@ -305,8 +227,8 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
         setPlanId(null);
         setSpinRevealKey(0);
         setSlotFilters(new Map());
-        setFilterPopoverSlot(null);
         setPickerSlot(null);
+        setFilterPopoverSlot(null);
         setPeekRecipe(null);
         setScaleFactors(new Map());
         routing.init(new Map(), null);
@@ -372,34 +294,41 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
         slots.length === mealCount && slots.every((s) => s.pickedRecipeId != null);
     const canReview = slots.some((s) => s.pickedRecipeId != null);
 
-    const pickerSlotFilters =
-        pickerSlot !== null
-            ? (effectiveSlotFilters.get(pickerSlot) ?? { tagIds: [], maxCookingTimeMinutes: null })
-            : null;
-    const pickerFilterTags = useMemo(
-        () =>
-            pickerSlotFilters?.tagIds
-                .map((id) => allTags.find((t) => t.id === id))
-                .filter((t): t is NonNullable<typeof t> => t != null) ?? [],
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [pickerSlot, allTags, effectiveSlotFilters]
-    );
-    const pickerRecipes = useMemo(() => {
-        if (!pickerSlotFilters) return recipes;
-        const { tagIds, maxCookingTimeMinutes } = pickerSlotFilters;
-        return recipes.filter((r) => {
-            if (tagIds.length > 0 && !tagIds.every((id) => r.tags.some((t) => t.id === id)))
-                return false;
-            if (
-                maxCookingTimeMinutes != null &&
-                r.cookingTimeMinutes != null &&
-                r.cookingTimeMinutes > maxCookingTimeMinutes
-            )
-                return false;
-            return true;
+    // A slot's filters reach the shared sheet in the shared shape, whether the sheet was
+    // opened from the slot's own filter button or from inside the recipe picker. Both
+    // entry points read and write through these two helpers.
+    const filtersForSlot = (slotNumber: number | null): RecipeFilters =>
+        slotFiltersToRecipeFilters(
+            (slotNumber !== null ? effectiveSlotFilters.get(slotNumber) : null) ?? {
+                tagIds: [],
+                maxCookingTimeMinutes: null,
+            }
+        );
+
+    const setFiltersForSlot = (slotNumber: number | null, next: RecipeFilters) => {
+        if (slotNumber === null) return;
+        setSlotFilters((prev) => {
+            const map = new Map(prev);
+            map.set(slotNumber, recipeFiltersToSlotFilters(next));
+            return map;
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pickerSlot, recipes, effectiveSlotFilters]);
+    };
+
+    const slotPrimaryAction = (slotNumber: number | null) => {
+        const slot = planData?.slots.find((s) => s.slotNumber === slotNumber);
+        // A pinned slot is skipped by every reroll path, so applying filters to one used to
+        // do nothing visible. Say that the reroll unpins it, and then actually unpin.
+        const label = slot?.pinned
+            ? "Unpin & reroll"
+            : slot?.pickedRecipeId
+              ? "Reroll this slot"
+              : "Fill this slot";
+        return {
+            label,
+            onClick: () => slotNumber !== null && handleRerollSlotWithFilter(slotNumber),
+            isWorking,
+        };
+    };
 
     const routeIngredients = useMemo(() => {
         if (!planData) return [];
@@ -464,27 +393,6 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
     const handleClose = async () => {
         if (planId) await safeDeletePlan(planId);
         onDismiss();
-    };
-
-    const toggleSlotTag = (slotNumber: number, tagId: string) => {
-        setSlotFilters((prev) => {
-            const next = new Map(prev);
-            const current = next.get(slotNumber) ?? { tagIds: [], maxCookingTimeMinutes: null };
-            const tags = current.tagIds.includes(tagId)
-                ? current.tagIds.filter((t) => t !== tagId)
-                : [...current.tagIds, tagId];
-            next.set(slotNumber, { ...current, tagIds: tags });
-            return next;
-        });
-    };
-
-    const updateSlotMaxTime = (slotNumber: number, val: number | null) => {
-        setSlotFilters((prev) => {
-            const next = new Map(prev);
-            const current = next.get(slotNumber) ?? { tagIds: [], maxCookingTimeMinutes: null };
-            next.set(slotNumber, { ...current, maxCookingTimeMinutes: val });
-            return next;
-        });
     };
 
     const handleNext = async () => {
@@ -581,12 +489,12 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                         ? filters.maxCookingTimeMinutes
                         : s.maxCookingTimeMinutes,
                 pickedRecipeId: s.pickedRecipeId,
-                pinned: s.pinned,
+                // Rerolling a slot unpins it — every reroll path skips pinned slots, so
+                // leaving the pin on would silently turn this into a no-op.
+                pinned: s.slotNumber === slotNumber ? false : s.pinned,
             }));
             await updateSlotsMut.mutateAsync({ planId, slots: updatedSlots });
-            if (!planData.slots.find((s) => s.slotNumber === slotNumber)?.pinned) {
-                await rerollMut.mutateAsync({ planId, slots: [slotNumber] });
-            }
+            await rerollMut.mutateAsync({ planId, slots: [slotNumber] });
             setFilterPopoverSlot(null);
         } catch (e) {
             showError(
@@ -685,12 +593,22 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
 
     const handleDispatch = async () => {
         if (!planId) return;
+        // Read the tallies before dispatching — the plan is cleared from cache on success,
+        // which takes `routeIngredients` and everything derived from it with it.
+        const mealsSent = pickedRecipes.length;
+        const itemsSent = includedCount;
+        const listsSent = storeBreakdown.size;
         setIsWorking(true);
         try {
             await dispatchMut.mutateAsync({
                 planId,
                 scaleFactors: Object.fromEntries(scaleFactors),
             });
+            showSuccess(
+                `${mealsSent} ${pluralize("meal", mealsSent)}, ` +
+                    `${itemsSent} ${pluralize("item", itemsSent)}, ` +
+                    `${listsSent} ${pluralize("list", listsSent)}. ${pickQuip(PLAN_SENT_QUIPS)}`
+            );
             onDismiss();
         } catch (e) {
             showError(`Failed to dispatch: ${e instanceof Error ? e.message : "Unknown error"}`);
@@ -870,6 +788,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                                 setFilterPopoverSlot(slotNumber);
                                             }}
                                             disabled={isWorking}
+                                            aria-label={`Filter slot ${slotNumber}`}
                                         >
                                             <IonIcon
                                                 slot="icon-only"
@@ -885,6 +804,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                                 setPickerSlot(slotNumber);
                                             }}
                                             disabled={isWorking}
+                                            aria-label={`Browse recipes for slot ${slotNumber}`}
                                         >
                                             <IonIcon
                                                 slot="icon-only"
@@ -1101,11 +1021,27 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
             <RecipePickerModal
                 isOpen={pickerSlot !== null}
                 onDismiss={() => setPickerSlot(null)}
-                recipes={pickerRecipes}
+                recipes={recipes}
+                allTags={allTags}
                 onPick={handlePickRecipe}
-                filterTags={pickerFilterTags}
-                maxCookingTimeMinutes={pickerSlotFilters?.maxCookingTimeMinutes}
+                initialFilters={filtersForSlot(pickerSlot)}
+                slotNumber={pickerSlot}
                 title={pickerSlot !== null ? `Slot ${pickerSlot} — Pick a recipe` : "Pick a recipe"}
+            />
+
+            {/* The slot's filter shortcut opens the same sheet the picker uses, minus the
+                sort section — there is no recipe list behind it to reorder. */}
+            <RecipeFilterSheet
+                isOpen={filterPopoverSlot !== null}
+                filters={filtersForSlot(filterPopoverSlot)}
+                allTags={allTags}
+                hasPoolExcludedRecipes={false}
+                onFiltersChange={(next) => setFiltersForSlot(filterPopoverSlot, next)}
+                onReset={() => setFiltersForSlot(filterPopoverSlot, DEFAULT_FILTERS)}
+                onDismiss={() => setFilterPopoverSlot(null)}
+                sections={["time", "tags"]}
+                heading={filterPopoverSlot !== null ? `Slot ${filterPopoverSlot}` : undefined}
+                primaryAction={slotPrimaryAction(filterPopoverSlot)}
             />
 
             <RecipeViewSheet
@@ -1124,36 +1060,6 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                     { text: "Continue anyway", role: "confirm", handler: handleGoToRoute },
                 ]}
             />
-
-            <IonModal
-                isOpen={filterPopoverSlot !== null}
-                onDidDismiss={() => setFilterPopoverSlot(null)}
-                breakpoints={[0, 0.85]}
-                initialBreakpoint={0.85}
-                handle={true}
-            >
-                {filterPopoverSlot !== null && (
-                    <SlotFilterSheet
-                        slotNumber={filterPopoverSlot}
-                        filters={
-                            effectiveSlotFilters.get(filterPopoverSlot) ?? {
-                                tagIds: [],
-                                maxCookingTimeMinutes: null,
-                            }
-                        }
-                        allTags={allTags}
-                        hasRecipe={
-                            !!planData?.slots.find((s) => s.slotNumber === filterPopoverSlot)
-                                ?.pickedRecipeId
-                        }
-                        isWorking={isWorking}
-                        onToggleTag={(tagId) => toggleSlotTag(filterPopoverSlot, tagId)}
-                        onUpdateMaxTime={(val) => updateSlotMaxTime(filterPopoverSlot, val)}
-                        onReroll={() => handleRerollSlotWithFilter(filterPopoverSlot)}
-                        onDismiss={() => setFilterPopoverSlot(null)}
-                    />
-                )}
-            </IonModal>
         </IonModal>
     );
 };

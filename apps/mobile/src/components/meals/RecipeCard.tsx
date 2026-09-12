@@ -1,7 +1,7 @@
 import type { RecipeWithDetails } from "@basket-bot/core";
 import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonIcon } from "@ionic/react";
 import { cartOutline, createOutline } from "ionicons/icons";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { forwardRef } from "react";
 import TagChipList from "./TagChipList";
 
@@ -16,6 +16,7 @@ interface RecipeCardProps {
 
 const RecipeCard = forwardRef<HTMLDivElement, RecipeCardProps>(
     ({ recipe, onClick, onAddToList, onEdit }, ref) => {
+        const reducedMotion = useReducedMotion();
         const firstTagKey = recipe.tags[0]?.colorKey ?? null;
 
         const cardBg = firstTagKey
@@ -27,10 +28,16 @@ const RecipeCard = forwardRef<HTMLDivElement, RecipeCardProps>(
         return (
             <motion.div
                 ref={ref}
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                whileTap={{ scale: 0.965, transition: { duration: 0.09 } }}
+                initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 14 }}
+                animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                transition={
+                    reducedMotion
+                        ? { duration: 0.15 }
+                        : { duration: 0.24, ease: [0.22, 1, 0.36, 1] }
+                }
+                whileTap={
+                    reducedMotion ? undefined : { scale: 0.965, transition: { duration: 0.09 } }
+                }
                 className="recipe-card-motion"
             >
                 <IonCard
