@@ -53,6 +53,10 @@ const Login: React.FC = () => {
                         ? "Request timed out. Please check your connection and try again."
                         : "Network error. Please check your connection and try again."
                 );
+            } else if (err instanceof ApiError && err.status && err.status >= 500) {
+                // A server that failed to answer never judged the credentials — saying they
+                // were wrong sends the user to reset a password that is perfectly fine.
+                setError("The server is not answering. Your credentials were never assessed.");
             } else if (err instanceof ApiError && err.status === 429) {
                 const retryAfter = (err.details as RateLimitErrorDetails | undefined)?.retryAfter;
                 if (retryAfter) {

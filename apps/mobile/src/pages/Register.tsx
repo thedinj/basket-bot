@@ -84,6 +84,8 @@ const Register: React.FC = () => {
                         ? "Request timed out. Please check your connection and try again."
                         : "Network error. Please check your connection and try again."
                 );
+            } else if (err instanceof ApiError && err.status && err.status >= 500) {
+                setError("The server is not answering. Nothing was registered.");
             } else if (err instanceof ApiError && err.status === 429) {
                 const retryAfter = (err.details as RateLimitErrorDetails | undefined)?.retryAfter;
                 if (retryAfter) {

@@ -1,67 +1,83 @@
 import { IonText } from "@ionic/react";
-import pluralize from "pluralize";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutationQueue } from "../../hooks/useMutationQueue";
 import { useNetworkStatus } from "../../hooks/useNetworkStatus";
+import { useServerReachability } from "../../hooks/useServerReachability";
 import "./NetworkStatusBanner.scss";
 import QueueReviewModal from "./QueueReviewModal";
 
 /**
  * Banner that displays network status and queued mutation count
- * Shows when offline or when there are pending mutations
- * Click to open queue review modal when there are pending changes
+ * Shows when the device is offline, when the backend is unreachable, or when there are
+ * pending mutations. Click to open queue review modal when there are pending changes.
  */
 export const NetworkStatusBanner: React.FC = () => {
     const { isOffline } = useNetworkStatus();
+    const { isUnreachable, probeNow } = useServerReachability();
     const { queueSize, isProcessing } = useMutationQueue();
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Don't show banner if everything is healthy and nothing is queued
+    const isHidden = !isOffline && !isUnreachable && queueSize === 0;
+
+    // The banner is pinned (see the .scss); this is what reserves its space by pushing the
+    // tab shell down. Same body-class approach Main.tsx uses for `has-tabs`.
+    useEffect(() => {
+        document.body.classList.toggle("has-status-banner", !isHidden);
+
+        return () => {
+            document.body.classList.remove("has-status-banner");
+        };
+    }, [isHidden]);
 
     const handleClick = () => {
         if (queueSize > 0) {
             setIsModalOpen(true);
+        } else if (isUnreachable) {
+            probeNow();
         }
     };
 
-    // Don't show banner if online and no queued mutations
-    if (!isOffline && queueSize === 0) {
+    if (isHidden) {
         return null;
     }
 
-    // Determine banner message and color
+    // One short phrase, no counts and no countdown: this is a status strip on a phone, and
+    // the detail belongs in the queue review modal a tap away.
     let message: string;
     let colorClass: string;
 
     if (isOffline) {
-        if (queueSize > 0) {
-            message = `Offline • ${queueSize} ${pluralize("change", queueSize)} will sync when online`;
-            colorClass = "warning";
-        } else {
-            message = "Offline • Changes will sync when online";
-            colorClass = "warning";
-        }
+        message = "Network down. Not my doing.";
+        colorClass = "warning";
+    } else if (isUnreachable) {
+        message = "Network down. Retrying.";
+        colorClass = "warning";
     } else if (isProcessing) {
-        message = `Syncing ${queueSize} ${pluralize("change", queueSize)}...`;
+        message = "Syncing. Patience.";
         colorClass = "primary";
     } else if (queueSize > 0) {
-        message = `${queueSize} ${pluralize("change", queueSize)} pending • Tap sync to upload`;
-        colorClass = "medium";
+        // Queued work only exists because a request didn't reach the server, so this stays in
+        // the same warning register rather than reading as neutral bookkeeping.
+        message = "Network down. Changes not sent.";
+        colorClass = "warning";
     } else {
         return null;
     }
+
+    // Tapping reviews the queue when there is one, otherwise re-probes an unreachable server.
+    const isClickable = queueSize > 0 || isUnreachable;
 
     return (
         <>
             <div
                 className={`network-status-banner network-status-banner--${colorClass} ${
-                    queueSize > 0 ? "network-status-banner--clickable" : ""
+                    isClickable ? "network-status-banner--clickable" : ""
                 }`}
                 onClick={handleClick}
             >
                 <IonText color={colorClass}>
-                    <small>
-                        {message}
-                        {queueSize > 0 && " • Tap to review"}
-                    </small>
+                    <small>{message}</small>
                 </IonText>
             </div>
             <QueueReviewModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />

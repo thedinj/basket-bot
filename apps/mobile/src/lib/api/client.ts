@@ -1,5 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import { KEYS, secureStorage } from "../../utils/secureStorage";
+import { serverReachability } from "../serverReachability";
 
 const DEFAULT_API_BASE_URL = (() => {
     // If VITE_API_URL is explicitly set, use that (highest priority)
@@ -59,6 +60,26 @@ export class ApiError extends Error {
  */
 const REQUEST_TIMEOUT_MS = 15000;
 
+/**
+ * A fetch rejection means "the request never got an answer", but engines disagree on how they
+ * say so: Chrome/Android WebView throw `TypeError: Failed to fetch`, WebKit `TypeError: Load
+ * failed`, and some Capacitor bridges a plain `Error: Network request failed`. Matching only
+ * on "fetch" (as this once did) let the others through untagged, so they skipped the offline
+ * queue and were reported to the user as though the server had rejected the request.
+ */
+const NETWORK_ERROR_PATTERNS = /failed to fetch|load failed|network request failed|networkerror/i;
+
+export const isNetworkErrorLike = (error: unknown): boolean =>
+    error instanceof Error &&
+    (error instanceof TypeError || NETWORK_ERROR_PATTERNS.test(error.message));
+
+/**
+ * Statuses a reverse proxy returns when it is up but the app server behind it is not. The body
+ * is the proxy's own HTML, so there is no `code` to parse out of it — these are reachability
+ * failures, not application errors, and are tagged as such.
+ */
+const UNREACHABLE_STATUSES = new Set([502, 503, 504]);
+
 export class ApiClient {
     private baseUrl: string = DEFAULT_API_BASE_URL;
     private accessToken: string | null = null;
@@ -73,10 +94,17 @@ export class ApiClient {
         this.authReadyPromise = new Promise<void>((resolve) => {
             this.authReadyResolver = resolve;
         });
+        serverReachability.setBaseUrl(this.baseUrl);
     }
 
     setBaseUrl(url: string) {
         this.baseUrl = url;
+        // Keep health probes pointed at the same host the app's requests use.
+        serverReachability.setBaseUrl(url);
+    }
+
+    getBaseUrl(): string {
+        return this.baseUrl;
     }
 
     setAccessToken(token: string | null) {
@@ -112,13 +140,61 @@ export class ApiClient {
         this.isRefreshing = true;
         this.refreshPromise = (async () => {
             try {
-                const response = await fetch(`${this.baseUrl}/api/auth/refresh`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ refreshToken: this.refreshToken }),
-                });
+                // The refresh call gets the same timeout as any other request. Without one it
+                // could hang indefinitely against an unresponsive host, holding every queued
+                // request behind it.
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+                let response: Response;
+                try {
+                    response = await fetch(`${this.baseUrl}/api/auth/refresh`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ refreshToken: this.refreshToken }),
+                        signal: controller.signal,
+                    });
+                } catch (error: unknown) {
+                    // An unreachable server is NOT an invalid session. Reporting it as one is
+                    // what used to wipe the stored tokens and force a re-login after a brief
+                    // outage, so this deliberately leaves `tokenStatus` null and keeps the
+                    // refresh token intact.
+                    if (
+                        (error instanceof Error && error.name === "AbortError") ||
+                        isNetworkErrorLike(error)
+                    ) {
+                        serverReachability.reportUnreachable();
+                        throw new ApiError(
+                            "Cannot reach the server.",
+                            "REFRESH_UNREACHABLE",
+                            null,
+                            undefined,
+                            true,
+                            null,
+                            "/api/auth/refresh"
+                        );
+                    }
+                    throw error;
+                } finally {
+                    clearTimeout(timeoutId);
+                }
 
                 if (!response.ok) {
+                    // Proxy up, app server down: the refresh token was never actually judged,
+                    // so it must be kept.
+                    if (UNREACHABLE_STATUSES.has(response.status)) {
+                        serverReachability.reportUnreachable();
+                        throw new ApiError(
+                            "Cannot reach the server.",
+                            "SERVER_UNAVAILABLE",
+                            null,
+                            response.status,
+                            true,
+                            null,
+                            "/api/auth/refresh"
+                        );
+                    }
+
                     const tokenStatus = response.headers.get("X-Token-Status");
                     if (tokenStatus === "invalid") {
                         // Refresh token is invalid/expired - clear it
@@ -190,6 +266,7 @@ export class ApiClient {
 
             // Handle network errors (timeout, no connection, etc.)
             if (error instanceof Error && error.name === "AbortError") {
+                serverReachability.reportUnreachable();
                 throw new ApiError(
                     "Request timed out. Please check your connection.",
                     "TIMEOUT",
@@ -200,7 +277,8 @@ export class ApiClient {
                     endpoint
                 );
             }
-            if (error instanceof TypeError && error.message.includes("fetch")) {
+            if (isNetworkErrorLike(error)) {
+                serverReachability.reportUnreachable();
                 throw new ApiError(
                     "Network error. Please check your connection.",
                     "NETWORK_ERROR",
@@ -269,10 +347,25 @@ export class ApiClient {
                         throw retryError;
                     }
                 } catch (refreshError) {
-                    // Refresh token was already cleared in refreshAccessToken if needed
-                    // Re-throw with token status if it's an ApiError, otherwise create new one
+                    // Refresh token was already cleared in refreshAccessToken if needed.
+                    // Only a refusal by the server means the session is over. A refresh that
+                    // never reached the server says nothing about the token's validity, and
+                    // calling it "expired" here is what used to log the user out during an
+                    // outage — `AuthProvider` deletes stored tokens on `tokenStatus: "invalid"`.
                     if (refreshError instanceof ApiError) {
                         throw refreshError;
+                    }
+                    if (isNetworkErrorLike(refreshError)) {
+                        serverReachability.reportUnreachable();
+                        throw new ApiError(
+                            "Cannot reach the server.",
+                            "REFRESH_UNREACHABLE",
+                            null,
+                            undefined,
+                            true,
+                            null,
+                            endpoint
+                        );
                     }
                     throw new ApiError(
                         "Session expired, please log in again",
@@ -291,6 +384,25 @@ export class ApiClient {
                 );
             }
         }
+
+        // A proxy answering for a dead app server is an outage, not a request the server
+        // considered and rejected. Its body is the proxy's HTML, so there is no useful code to
+        // parse out of it; tag it as a network error so it queues and surfaces like one.
+        if (UNREACHABLE_STATUSES.has(responseToUse.status)) {
+            serverReachability.reportUnreachable();
+            throw new ApiError(
+                "Cannot reach the server.",
+                "SERVER_UNAVAILABLE",
+                null,
+                responseToUse.status,
+                true,
+                responseToUse.headers.get("X-Request-Id"),
+                endpoint
+            );
+        }
+
+        // Any other answer — including a 404 or a 400 — proves the server is alive.
+        serverReachability.reportReachable();
 
         if (!responseToUse.ok) {
             const error = await responseToUse.json().catch(() => ({

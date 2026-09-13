@@ -12,6 +12,11 @@ export const formatErrorMessage = (error: unknown, operation?: string): string =
             if (error.code === "TIMEOUT") {
                 return "Request timed out. Please check your connection and try again.";
             }
+            // The server is the thing that didn't answer, so don't send the user to check a
+            // connection that is working.
+            if (error.code === "SERVER_UNAVAILABLE" || error.code === "REFRESH_UNREACHABLE") {
+                return "The server is not answering. Retrying without your involvement.";
+            }
             return "Network error. Please check your connection.";
         }
 

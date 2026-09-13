@@ -1,6 +1,7 @@
 import type { LoginUser } from "@basket-bot/core";
 import { Preferences } from "@capacitor/preferences";
 import React, { useCallback, useEffect, useMemo, useState, type PropsWithChildren } from "react";
+import { useServerReachability } from "../hooks/useServerReachability";
 import { apiClient, ApiError } from "../lib/api/client";
 import { KEYS, secureStorage } from "../utils/secureStorage";
 import { AuthContext, type AuthContextValue } from "./AuthContext";
@@ -19,6 +20,9 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const [user, setUser] = useState<LoginUser | null>(null);
     const [isInitializing, setIsInitializing] = useState(true);
     const [shouldFetchUser, setShouldFetchUser] = useState(false);
+    const [hasStoredTokens, setHasStoredTokens] = useState(false);
+
+    const { isUnreachable } = useServerReachability();
 
     const loginMutation = useLoginMutation();
     const registerMutation = useRegisterMutation();
@@ -51,6 +55,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
                 if (accessToken && refreshToken) {
                     apiClient.setAccessToken(accessToken);
                     apiClient.setRefreshToken(refreshToken);
+                    setHasStoredTokens(true);
                     setShouldFetchUser(true); // This will trigger useAuthUser query
                     apiClient.markAuthReady();
                 } else {
@@ -98,12 +103,16 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
                     ]);
                     apiClient.setAccessToken(null);
                     apiClient.setRefreshToken(null);
+                    setHasStoredTokens(false);
                     setShouldFetchUser(false);
                     setIsInitializing(false);
                 };
                 clearInvalidTokens();
             } else {
-                // For other errors, just finish initializing
+                // A server we couldn't reach hasn't judged our tokens, so they stay put and
+                // `shouldFetchUser` stays true — the query remains mounted and refetches on
+                // its own once recovery invalidates it. Initializing ends either way, so the
+                // app can render the unreachable screen instead of the loading robot forever.
                 setIsInitializing(false);
             }
         }
@@ -116,6 +125,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
         async (email: string, password: string) => {
             const response = await loginMutation.mutateAsync({ email, password });
             setUser(response.user);
+            setHasStoredTokens(true);
             setShouldFetchUser(true);
         },
         [loginMutation]
@@ -157,6 +167,7 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
         } finally {
             // Update local state after mutation completes (success or failure)
             setUser(null);
+            setHasStoredTokens(false);
             setShouldFetchUser(false);
         }
     }, [logoutMutation]);
@@ -167,11 +178,13 @@ export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {
             isAuthenticated: !!user,
             isInitializing,
             isAuthReady: !isInitializing,
+            hasStoredTokens,
+            isServerUnreachable: isUnreachable,
             login,
             register,
             logout,
         };
-    }, [user, isInitializing, login, register, logout]);
+    }, [user, isInitializing, hasStoredTokens, isUnreachable, login, register, logout]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

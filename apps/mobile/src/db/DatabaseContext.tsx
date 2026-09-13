@@ -31,8 +31,10 @@ export const queryClient = new QueryClient({
             // don't also show a generic toast for the same failure.
             if (!isErrorHandled(error)) {
                 if (shouldQueueError(error)) {
+                    // Safe to promise: ServerRecoveryEffect replays the queue as soon as the
+                    // health probe reports the backend is back.
                     showImperativeToast(
-                        "No connection. This change will sync automatically once reconnected.",
+                        "Network down. Your change is queued and will sync itself.",
                         "warning"
                     );
                 } else {

@@ -129,7 +129,7 @@ describe("processQueue", () => {
         });
 
         expect(seen).toEqual(["first", "second"]);
-        expect(result).toEqual({ success: 2, failed: 0 });
+        expect(result).toEqual({ success: 2, failed: 0, aborted: false });
         expect(queue.getQueueSize()).toBe(0);
     });
 
@@ -180,8 +180,50 @@ describe("processQueue", () => {
             throw new ApiError("Not found", "NOT_FOUND", null, 404);
         });
 
-        expect(result).toEqual({ success: 0, failed: 1 });
+        expect(result).toEqual({ success: 0, failed: 1, aborted: false });
         expect(queue.getQueueSize()).toBe(0);
+    });
+
+    /**
+     * Replay is automatic now (ServerRecoveryEffect drains on reconnect), so a mutation no
+     * longer spends its three attempts only when the user deliberately taps sync. If an
+     * outage that returns and drops again counted against the budget, a flapping connection
+     * would discard the user's edit on its own — without the server ever having seen it.
+     */
+    it("does not spend a retry when the server is unreachable mid-replay", async () => {
+        const queue = await newQueue();
+        await queue.enqueue(anEdit());
+
+        const unreachable = async () => {
+            throw new ApiError("Cannot reach the server.", "SERVER_UNAVAILABLE", null, 502, true);
+        };
+
+        for (let attempt = 0; attempt < 5; attempt++) {
+            const result = await queue.processQueue(unreachable);
+            expect(result.aborted).toBe(true);
+            expect(result.failed).toBe(0);
+        }
+
+        expect(queue.getQueueSize()).toBe(1);
+        expect(queue.getQueue()[0].retryCount).toBe(0);
+    });
+
+    it("stops the drain at the first unreachable error instead of burning the whole queue", async () => {
+        const queue = await newQueue();
+        await queue.enqueue(anEdit({ operation: "first" }));
+        await queue.enqueue(anEdit({ operation: "second" }));
+        await queue.enqueue(anEdit({ operation: "third" }));
+
+        const attempted: string[] = [];
+        const result = await queue.processQueue(async (m) => {
+            attempted.push(m.operation);
+            throw new ApiError("Network error.", "NETWORK_ERROR", null, undefined, true);
+        });
+
+        // The rest would fail identically, so they are never tried.
+        expect(attempted).toEqual(["first"]);
+        expect(result.aborted).toBe(true);
+        expect(queue.getQueueSize()).toBe(3);
     });
 
     it("keeps retrying a timeout or rate-limit response", async () => {
@@ -218,7 +260,7 @@ describe("processQueue", () => {
             if (m.operation === "bad") throw new Error("network down");
         });
 
-        expect(result).toEqual({ success: 1, failed: 1 });
+        expect(result).toEqual({ success: 1, failed: 1, aborted: false });
         expect(queue.getQueue().map((m) => m.operation)).toEqual(["bad"]);
     });
 
@@ -237,7 +279,7 @@ describe("processQueue", () => {
         });
         const second = await queue.processQueue(async () => undefined);
 
-        expect(second).toEqual({ success: 0, failed: 0 });
+        expect(second).toEqual({ success: 0, failed: 0, aborted: false });
         expect(queue.isProcessingQueue()).toBe(true);
 
         release();

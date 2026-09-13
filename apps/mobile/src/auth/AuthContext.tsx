@@ -13,6 +13,14 @@ export interface AuthContextValue {
     isInitializing: boolean;
     /** Whether auth is fully ready (tokens validated, user loaded) */
     isAuthReady: boolean;
+    /**
+     * Whether stored tokens were found on launch. Distinguishes "signed out" from "signed in
+     * but the server hasn't confirmed it yet", which is what lets an outage show the
+     * unreachable screen instead of a login form the user cannot use.
+     */
+    hasStoredTokens: boolean;
+    /** Whether the backend is currently unreachable (as opposed to rejecting our tokens) */
+    isServerUnreachable: boolean;
     /** Login with email and password */
     login: (email: string, password: string) => Promise<void>;
     /** Register a new user and auto-login */

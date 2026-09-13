@@ -125,19 +125,21 @@ export class MutationQueue {
 
     /**
      * Process the queue by replaying mutations
-     * Returns the number of successful operations
+     * Returns the number of successful operations, and whether the run was cut short because
+     * the server became unreachable again.
      */
     async processQueue(
         executor: (mutation: QueuedMutation) => Promise<void>
-    ): Promise<{ success: number; failed: number }> {
+    ): Promise<{ success: number; failed: number; aborted: boolean }> {
         if (this.isProcessing) {
             console.warn("[MutationQueue] Already processing queue");
-            return { success: 0, failed: 0 };
+            return { success: 0, failed: 0, aborted: false };
         }
 
         this.isProcessing = true;
         let successCount = 0;
         let failedCount = 0;
+        let aborted = false;
 
         try {
             // Process mutations in order (FIFO)
@@ -156,6 +158,18 @@ export class MutationQueue {
                     );
 
                     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+                    // The server went away mid-replay. This says nothing about whether the
+                    // mutation is acceptable, so it must not spend one of its three attempts —
+                    // otherwise a flapping connection silently discards the user's edit without
+                    // the server ever having seen it. Every remaining item would fail the same
+                    // way and burn its budget too, so stop here and keep the queue intact.
+                    if (error instanceof ApiError && error.isNetworkError) {
+                        mutation.lastError = errorMessage;
+                        await this.saveQueue();
+                        aborted = true;
+                        break;
+                    }
 
                     // Check if this is a permanent failure (4xx error except timeout/rate limit)
                     const isPermanentFailure = this.isPermanentFailure(error);
@@ -192,7 +206,7 @@ export class MutationQueue {
             this.notifyListeners();
         }
 
-        return { success: successCount, failed: failedCount };
+        return { success: successCount, failed: failedCount, aborted };
     }
 
     /**

@@ -1,0 +1,48 @@
+.server-unreachable {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* 100% (not 100vh) for the same reason as .loading-fallback: this renders inside
+       ion-app, whose height already excludes the status bar. */
+    height: 100%;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    box-sizing: border-box;
+}
+
+.server-unreachable-copy {
+    text-align: center;
+    max-width: 22rem;
+
+    h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0 0 0.75rem;
+    }
+
+    p {
+        margin: 0 0 0.5rem;
+        font-size: 0.9375rem;
+        /* Ionic's reset leaves these paragraphs at a line-height tight enough that wrapped
+           copy collides with itself. */
+        line-height: 1.45;
+        color: var(--ion-color-medium);
+    }
+}
+
+.server-unreachable-host {
+    font-family: monospace;
+    /* The URL can be a long user-configured host; wrap it rather than overflow the card. */
+    word-break: break-all;
+}
+
+.server-unreachable-retry {
+    /* Reserve the line height so the countdown ticking down doesn't reflow the block. */
+    min-height: 1.4em;
+}
+
+.server-unreachable-actions {
+    width: 100%;
+    max-width: 22rem;
+}

@@ -12,7 +12,6 @@ import Recipes from "../pages/Recipes";
 import ShoppingList from "../pages/ShoppingList";
 import { AppHeaderProvider } from "./layout/AppHeaderProvider";
 import { AppMenu } from "./layout/AppMenu";
-import NetworkStatusBanner from "./shared/NetworkStatusBanner";
 import ShieldProvider from "./shield/ShieldProvider";
 
 /**
@@ -62,7 +61,6 @@ const Main: React.FC = () => {
                 <LLMModalProvider>
                     <AppHeaderProvider>
                         <AppMenu />
-                        <NetworkStatusBanner />
                         <IonTabs>
                             <IonRouterOutlet id="main-content" animated={false}>
                                 {/* REMEMBER: Most specific routes first */}

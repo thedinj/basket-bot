@@ -121,6 +121,12 @@ export const useSync = () => {
                     `Failed to sync ${result.failed} ${pluralize("change", result.failed)}. Some changes may have been rejected by the server.`
                 );
             }
+
+            // Nothing was rejected — the server simply stopped answering again. Saying anything
+            // about failure here would misrepresent changes that are still safely queued.
+            if (result.aborted) {
+                showInfo("Network down again. Remaining changes are still queued.");
+            }
         } catch (error) {
             console.error("[useSync] Error syncing mutations:", error);
             showError("Failed to sync changes. Please try again.");

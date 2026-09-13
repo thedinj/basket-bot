@@ -8,6 +8,9 @@ import AppErrorBoundary from "./components/AppErrorBoundary";
 import Auth from "./components/Auth";
 import LoadingFallback from "./components/LoadingFallback";
 import Main from "./components/Main";
+import ServerRecoveryEffect from "./components/ServerRecoveryEffect";
+import ServerUnreachable from "./components/ServerUnreachable";
+import NetworkStatusBanner from "./components/shared/NetworkStatusBanner";
 import ThemeApplier from "./components/ThemeApplier";
 import { DatabaseProvider } from "./db/DatabaseContext";
 
@@ -71,25 +74,42 @@ const RootRedirect: React.FC = () => {
  * App routing structure
  */
 const AppRoutes: React.FC = () => {
-    const { isInitializing } = useAuth();
+    const { isInitializing, isAuthenticated, hasStoredTokens, isServerUnreachable, logout } =
+        useAuth();
 
     // Wait for auth state to be determined before rendering routes
     if (isInitializing) {
         return <LoadingFallback />;
     }
 
+    // Stored credentials we couldn't verify because the server is down. Falling through here
+    // would redirect to /login, which cannot work without that same server. Rendered in place
+    // of the outlet rather than as a route: it is not an IonPage, and a non-page inside
+    // IonRouterOutlet leaves the outlet stuck (see the tab/Suspense note in CLAUDE.md).
+    if (!isAuthenticated && hasStoredTokens && isServerUnreachable) {
+        return <ServerUnreachable onSignOut={logout} />;
+    }
+
     return (
-        <IonRouterOutlet>
-            {/* Default redirect */}
-            <Route exact path="/" component={RootRedirect} />
+        <>
+            {/* Outside the router outlet on purpose: Ionic parks an inline overlay (the
+                banner's queue-review modal) in a <template> and presents it through a
+                delegate, and that delegate cannot present from inside IonRouterOutlet — the
+                modal opens in state but stays inert in the template, which is why tapping the
+                banner appeared to do nothing. */}
+            {isAuthenticated && <NetworkStatusBanner />}
+            <IonRouterOutlet>
+                {/* Default redirect */}
+                <Route exact path="/" component={RootRedirect} />
 
-            {/* Auth routes - redirect to /shoppinglist if authenticated */}
-            <Route exact path="/login" component={AuthContent} />
-            <Route exact path="/register" component={AuthContent} />
+                {/* Auth routes - redirect to /shoppinglist if authenticated */}
+                <Route exact path="/login" component={AuthContent} />
+                <Route exact path="/register" component={AuthContent} />
 
-            {/* Protected routes - all other routes render Main (if authenticated) or redirect to login */}
-            <Route component={ProtectedContent} />
-        </IonRouterOutlet>
+                {/* Protected routes - all other routes render Main (if authenticated) or redirect to login */}
+                <Route component={ProtectedContent} />
+            </IonRouterOutlet>
+        </>
     );
 };
 
@@ -102,6 +122,9 @@ const App: React.FC = () => {
                         <DatabaseProvider>
                             <ThemeApplier />
                             <AuthProvider>
+                                {/* Inside AuthProvider: replaying the queue needs to know
+                                    whether anyone is signed in. */}
+                                <ServerRecoveryEffect />
                                 <AppRoutes />
                             </AuthProvider>
                         </DatabaseProvider>

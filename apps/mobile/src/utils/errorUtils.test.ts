@@ -34,6 +34,23 @@ describe("formatErrorMessage", () => {
         expect(message).toMatch(/timed out/i);
     });
 
+    it.each(["SERVER_UNAVAILABLE", "REFRESH_UNREACHABLE"])(
+        "blames the server, not the user's connection, for %s",
+        (code) => {
+            const message = formatErrorMessage(apiError({ isNetworkError: true, code }));
+            expect(message).toMatch(/server/i);
+            // Telling the user to check a connection that is working sends them the wrong way.
+            expect(message).not.toMatch(/check your connection/i);
+        }
+    );
+
+    it("does not tell the user to log in again when the server was merely unreachable", () => {
+        const message = formatErrorMessage(
+            apiError({ isNetworkError: true, code: "REFRESH_UNREACHABLE" })
+        );
+        expect(message).not.toMatch(/log in/i);
+    });
+
     it("tells the user to log in again on an expired session", () => {
         expect(formatErrorMessage(apiError({ code: "SESSION_EXPIRED" }))).toMatch(/log in again/i);
         expect(formatErrorMessage(apiError({ status: 401 }))).toMatch(/log in again/i);
@@ -108,6 +125,16 @@ describe("shouldQueueError", () => {
         expect(shouldQueueError(apiError({ isNetworkError: true }))).toBe(true);
         expect(shouldQueueError(apiError({ status: 500 }))).toBe(false);
         expect(shouldQueueError(new Error("nope"))).toBe(false);
+    });
+
+    it("queues an edit lost to an unreachable server behind a proxy", () => {
+        // The client tags 502/503/504 as network errors precisely so they land here — the
+        // server never saw the change, so it is worth replaying.
+        expect(
+            shouldQueueError(
+                apiError({ isNetworkError: true, code: "SERVER_UNAVAILABLE", status: 502 })
+            )
+        ).toBe(true);
     });
 });
 
