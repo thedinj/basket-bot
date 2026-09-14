@@ -376,6 +376,22 @@ export function deleteItem(id: string, storeId: string, userId: string): boolean
     return itemRepo.deleteItem(id);
 }
 
+/** Items nobody has categorized, favorited, or placed on any list — the obliteration preview. */
+export function getOrphanItems(storeId: string, userId: string): StoreItem[] {
+    verifyStoreAccess(storeId, userId);
+    return itemRepo.getOrphanItems(storeId);
+}
+
+export function deleteOrphanItems(
+    storeId: string,
+    itemIds: string[],
+    userId: string
+): { deletedCount: number; skippedCount: number } {
+    verifyStoreAccess(storeId, userId);
+    const deletedCount = itemRepo.deleteOrphanItems(storeId, itemIds);
+    return { deletedCount, skippedCount: itemIds.length - deletedCount };
+}
+
 export function searchStoreItems(
     storeId: string,
     searchTerm: string,

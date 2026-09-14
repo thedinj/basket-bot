@@ -72,6 +72,8 @@ export const queryKeys = {
         byStore: (storeId: Id) => ["items", storeId],
         withDetails: (storeId: Id) => ["items", "with-details", storeId],
         detail: (id: Id) => ["items", "detail", id],
+        /** Server-computed obliteration candidates: uncategorized, unfavorited, on no list. */
+        orphans: (storeId: Id) => ["items", "orphans", storeId],
     },
     storeItemSearch: {
         /** Prefix for a store's autocomplete searches (invalidates every search term). */

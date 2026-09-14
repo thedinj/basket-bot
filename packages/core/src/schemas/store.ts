@@ -469,6 +469,26 @@ export const mergeStoreItemsRequestSchema = z.object({
 
 export type MergeStoreItemsRequest = z.infer<typeof mergeStoreItemsRequestSchema>;
 
+/**
+ * Ids the user confirmed for obliteration. The server re-checks every id against the orphan
+ * predicate (uncategorized, unfavorited, unhidden, referenced by no shopping-list row) and
+ * silently skips any that stopped qualifying between the preview and the confirmation, so a
+ * stale list can never destroy an item somebody just added to their cart.
+ */
+export const deleteOrphanStoreItemsRequestSchema = z.object({
+    itemIds: z.array(z.string().uuid()).min(1).max(5000),
+});
+
+export type DeleteOrphanStoreItemsRequest = z.infer<typeof deleteOrphanStoreItemsRequestSchema>;
+
+export const deleteOrphanStoreItemsResponseSchema = z.object({
+    success: z.boolean(),
+    deletedCount: z.number().int().min(0),
+    skippedCount: z.number().int().min(0),
+});
+
+export type DeleteOrphanStoreItemsResponse = z.infer<typeof deleteOrphanStoreItemsResponseSchema>;
+
 // Shopping List Item requests
 export const createShoppingListItemRequestSchema = shoppingListItemInputBaseSchema.omit({
     id: true,

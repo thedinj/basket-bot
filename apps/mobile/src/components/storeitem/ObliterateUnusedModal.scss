@@ -1,0 +1,85 @@
+// Fades the doomed rows out under the detonation flash, so they are not still
+// sitting there when the screen clears. Same two-rule approach as
+// components/shoppinglist/CheckedItems.scss, which solves the identical problem
+// for the laser.
+.obliterate-sheet-content {
+    transition: opacity 0.4s ease-out;
+}
+
+.obliterate-sheet-content--detonating {
+    opacity: 0;
+}
+
+// The sheet reads as a disposal manifest rather than a confirm dialog. Amber is
+// borrowed from the detonation's own palette so the warning and the blast are
+// visibly the same event; purple stays the brand accent everywhere else.
+.obliterate-manifest {
+    padding: 18px 16px 12px;
+}
+
+.obliterate-manifest-label {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    // Monospace is the data register here (see .impeccable.md), not decoration.
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ion-color-warning, #ffc409);
+}
+
+.obliterate-manifest-note {
+    margin: 10px 0 0;
+    max-width: 62ch;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--ion-color-step-500, #a0aec0);
+}
+
+// Hazard striping: the one piece of pure iconography in the sheet. Cheap
+// (a repeating gradient, no assets) and it does the work a colored side-stripe
+// on every row would otherwise be reached for.
+.obliterate-hazard-rule {
+    height: 6px;
+    background: repeating-linear-gradient(
+        135deg,
+        var(--ion-color-warning, #ffc409) 0 10px,
+        var(--ion-background-color, #0f0f23) 10px 20px
+    );
+    opacity: 0.8;
+}
+
+// Manifest line numbers. Also the reason no row needs a colored accent bar.
+.obliterate-row-index {
+    min-width: 3ch;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    text-align: right;
+    color: var(--ion-color-step-450, #8b93a7);
+}
+
+.obliterate-scanning {
+    padding: 18px 16px 6px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ion-color-step-450, #8b93a7);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .obliterate-scanning {
+        animation: obliterateScanPulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes obliterateScanPulse {
+        0%,
+        100% {
+            opacity: 0.45;
+        }
+        50% {
+            opacity: 1;
+        }
+    }
+}

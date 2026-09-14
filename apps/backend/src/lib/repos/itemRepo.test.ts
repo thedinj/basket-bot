@@ -179,3 +179,126 @@ describe("findItemByNameNorm", () => {
         expect(itemRepo.findItemByNameNorm(storeId, "apples", "")).toBeFalsy();
     });
 });
+
+/**
+ * Covers the orphan predicate behind the "Obliterate Unused" action. It hard-deletes rows with
+ * no undo, so every sparing condition is pinned here — especially the ones the client cannot
+ * see for itself (another member's private list row) and the one that looks like a bug but is
+ * not (a sectioned item legitimately carries a NULL `aisleId`).
+ */
+describe("orphan items", () => {
+    it("returns an item that is uncategorized, unfavorited, and on no list", () => {
+        const orphan = seedItem({ storeId, ownerId: userId, name: "Zucchini" });
+
+        expect(itemRepo.getOrphanItems(storeId).map((i) => i.id)).toEqual([orphan]);
+        expect(itemRepo.deleteOrphanItems(storeId, [orphan])).toBe(1);
+        expect(itemRow(orphan)).toBeUndefined();
+    });
+
+    it("orders by normalized name", () => {
+        seedItem({ storeId, ownerId: userId, name: "Banana" });
+        seedItem({ storeId, ownerId: userId, name: "apple" });
+
+        expect(itemRepo.getOrphanItems(storeId).map((i) => i.name)).toEqual(["apple", "Banana"]);
+    });
+
+    it("spares a favorited item", () => {
+        const fav = seedItem({ storeId, ownerId: userId, name: "Coffee", isFavorite: true });
+
+        expect(itemRepo.getOrphanItems(storeId)).toHaveLength(0);
+        expect(itemRepo.deleteOrphanItems(storeId, [fav])).toBe(0);
+        expect(itemRow(fav)).toBeDefined();
+    });
+
+    it("spares a hidden item", () => {
+        const hidden = seedItem({ storeId, ownerId: userId, name: "Ghost", isHidden: true });
+
+        expect(itemRepo.getOrphanItems(storeId)).toHaveLength(0);
+        expect(itemRepo.deleteOrphanItems(storeId, [hidden])).toBe(0);
+    });
+
+    it("spares an item placed in an aisle", () => {
+        const aisleId = seedAisle({ storeId, ownerId: userId, name: "Produce" });
+        const placed = seedItem({ storeId, ownerId: userId, name: "Kale", aisleId });
+
+        expect(itemRepo.getOrphanItems(storeId)).toHaveLength(0);
+        expect(itemRepo.deleteOrphanItems(storeId, [placed])).toBe(0);
+    });
+
+    // A sectioned item's own aisleId column is NULL by design — the section resolves it. The
+    // predicate must therefore check sectionId too, or every sectioned item reads as orphaned.
+    it("spares an item placed in a section despite its NULL aisleId", () => {
+        const aisleId = seedAisle({ storeId, ownerId: userId, name: "Produce" });
+        const sectionId = seedSection({ storeId, aisleId, ownerId: userId, name: "Greens" });
+        const placed = seedItem({ storeId, ownerId: userId, name: "Kale", sectionId });
+
+        expect(itemRow(placed)?.aisleId).toBeNull();
+        expect(itemRepo.getOrphanItems(storeId)).toHaveLength(0);
+        expect(itemRepo.deleteOrphanItems(storeId, [placed])).toBe(0);
+    });
+
+    it.each([
+        ["unchecked", { isChecked: false }],
+        ["checked", { isChecked: true }],
+        ["unsure", { isUnsure: true }],
+        ["an idea row", { isIdea: true }],
+        ["snoozed", { snoozedUntil: "2999-01-01T00:00:00.000Z" }],
+    ])("spares an item on a %s shopping-list row", (_label, listFlags) => {
+        const listed = seedItem({ storeId, ownerId: userId, name: "Milk" });
+        seedListItem({ storeId, storeItemId: listed, ownerId: userId, ...listFlags });
+
+        expect(itemRepo.getOrphanItems(storeId)).toHaveLength(0);
+        expect(itemRepo.deleteOrphanItems(storeId, [listed])).toBe(0);
+    });
+
+    // The deciding case for computing this server-side: the requesting client can never see
+    // this row, so a client-side predicate would happily delete the item out from under them.
+    it("spares an item on another member's private list row", () => {
+        const other = seedUser({ name: "Housemate" });
+        const listed = seedItem({ storeId, ownerId: userId, name: "Birthday Candles" });
+        seedListItem({ storeId, storeItemId: listed, ownerId: other, isPrivate: true });
+
+        expect(itemRepo.getOrphanItems(storeId)).toHaveLength(0);
+        expect(itemRepo.deleteOrphanItems(storeId, [listed])).toBe(0);
+    });
+
+    it("ignores ids belonging to another store", () => {
+        const otherStore = seedStore({ ownerId: userId, name: "Other" });
+        const elsewhere = seedItem({ storeId: otherStore, ownerId: userId, name: "Zucchini" });
+
+        expect(itemRepo.getOrphanItems(storeId)).toHaveLength(0);
+        expect(itemRepo.deleteOrphanItems(storeId, [elsewhere])).toBe(0);
+        expect(itemRow(elsewhere)).toBeDefined();
+    });
+
+    // The race guard: the preview is a snapshot, so the delete re-applies the predicate.
+    it("skips an id that stopped qualifying after the preview", () => {
+        const stillOrphan = seedItem({ storeId, ownerId: userId, name: "Napkins" });
+        const claimed = seedItem({ storeId, ownerId: userId, name: "Milk" });
+        const previewed = itemRepo.getOrphanItems(storeId).map((i) => i.id);
+        expect(previewed).toHaveLength(2);
+
+        seedListItem({ storeId, storeItemId: claimed, ownerId: userId });
+
+        expect(itemRepo.deleteOrphanItems(storeId, previewed)).toBe(1);
+        expect(itemRow(claimed)).toBeDefined();
+        expect(itemRow(stillOrphan)).toBeUndefined();
+    });
+
+    it("deletes nothing for an empty id list", () => {
+        seedItem({ storeId, ownerId: userId, name: "Napkins" });
+
+        expect(itemRepo.deleteOrphanItems(storeId, [])).toBe(0);
+        expect(itemRepo.getOrphanItems(storeId)).toHaveLength(1);
+    });
+
+    // Exercises the chunking loop in deleteOrphanItems (500 ids per statement).
+    it("deletes more ids than fit in a single statement", () => {
+        const ids = Array.from({ length: 1200 }, (_, i) =>
+            seedItem({ storeId, ownerId: userId, name: `Item ${i}` })
+        );
+
+        expect(itemRepo.deleteOrphanItems(storeId, ids)).toBe(1200);
+        expect(itemRepo.getOrphanItems(storeId)).toHaveLength(0);
+    });
+});

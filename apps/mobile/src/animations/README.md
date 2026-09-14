@@ -118,6 +118,21 @@ Reference them in the effects library with `/sounds/filename.mp3` paths.
 - **Visual**: Purple laser beam with white core sweeps from top to bottom
 - **Colors**: Uses `--ion-color-primary` CSS variable for purple
 
+### NUCLEAR_DETONATION
+
+- **Purpose**: Visual "deletion" effect for obliterating unused store items
+- **Duration**: 1200ms
+- **Sound**: `/sounds/explosion.mp3` (user-provided)
+- **Visual**: White-out flash, fireball bloom, expanding shockwave ring, amber fallout settle
+- **Colors**: Literal red/amber values rather than a theme variable - a detonation is not
+  brand-colored, and the palette is what separates it from the laser at a glance
+
+The two effects are deliberately disjoint so they read as different events rather than one
+effect recolored. The laser owns vertical sweep, purple with a white core, `box-shadow`
+bloom, band geometry and a ~1.6s cadence; the detonation owns radial geometry, red/amber,
+`backdrop-filter` blowout, `scale` rather than `translate`, and a punchier 1.2s. Keep a third
+effect off all of those axes too.
+
 ## Technical Details
 
 ### Preventing Simultaneous Animations

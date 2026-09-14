@@ -231,6 +231,52 @@ export function useDeleteItem() {
 }
 
 /**
+ * Hook to fetch a store's obliteration candidates. Only enabled while the preview is open —
+ * it gates a destructive action, so it is never served stale.
+ */
+export function useOrphanItems(storeId: string, enabled: boolean) {
+    const database = useDatabase();
+    return useTanstackQuery({
+        queryKey: queryKeys.items.orphans(storeId),
+        queryFn: () => database.getOrphanItems(storeId),
+        enabled: enabled && !!storeId,
+        staleTime: 0,
+        gcTime: 0,
+    });
+}
+
+/**
+ * Hook to obliterate a store's orphaned items. The server re-checks each id, so the count it
+ * returns can be lower than the count sent.
+ */
+export function useDeleteOrphanItems() {
+    const database = useDatabase();
+    const queryClient = useQueryClient();
+
+    return useTanstackMutation({
+        mutationFn: ({ storeId, itemIds }: { storeId: string; itemIds: string[] }) =>
+            database.deleteOrphanItems(storeId, itemIds),
+        meta: { operation: "obliterate unused items" },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.items.byStore(variables.storeId),
+            });
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.items.withDetails(variables.storeId),
+            });
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.items.orphans(variables.storeId),
+            });
+            // Defensive: an orphan is on no list by definition, so nothing should change here.
+            // Kept for parity with useDeleteItem in case the predicate ever loosens.
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
+            });
+        },
+    });
+}
+
+/**
  * Hook to toggle the favorite status of a store item
  * Uses optimistic updates for instant UI feedback
  */

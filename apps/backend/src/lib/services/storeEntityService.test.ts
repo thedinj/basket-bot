@@ -80,6 +80,8 @@ describe("store access control", () => {
             }),
         toggleItemFavorite: () => storeEntityService.toggleItemFavorite("i", storeId, stranger),
         deleteItem: () => storeEntityService.deleteItem("i", storeId, stranger),
+        getOrphanItems: () => storeEntityService.getOrphanItems(storeId, stranger),
+        deleteOrphanItems: () => storeEntityService.deleteOrphanItems(storeId, ["i"], stranger),
         searchStoreItems: () => storeEntityService.searchStoreItems(storeId, "x", stranger),
         getOrCreateStoreItemByName: () =>
             storeEntityService.getOrCreateStoreItemByName({

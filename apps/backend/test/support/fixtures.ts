@@ -150,6 +150,7 @@ export const seedItem = (overrides: {
     aisleId?: string | null;
     sectionId?: string | null;
     isFavorite?: boolean;
+    isHidden?: boolean;
     usageCount?: number;
     ownerId: string;
 }): string => {
@@ -165,7 +166,7 @@ export const seedItem = (overrides: {
     db.prepare(
         `INSERT INTO "StoreItem" (id, storeId, name, nameNorm, aisleId, sectionId, usageCount,
                                   isHidden, isFavorite, createdById, updatedById, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)`
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
         id,
         overrides.storeId,
@@ -174,6 +175,7 @@ export const seedItem = (overrides: {
         overrides.aisleId ?? null,
         overrides.sectionId ?? null,
         overrides.usageCount ?? 0,
+        overrides.isHidden ? 1 : 0,
         overrides.isFavorite ? 1 : 0,
         overrides.ownerId,
         overrides.ownerId,

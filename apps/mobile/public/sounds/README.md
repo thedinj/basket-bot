@@ -5,6 +5,7 @@ Place sound effect files in this directory for use with overlay animations.
 ## Expected Files
 
 - `laser-zap.mp3` - Laser obliteration effect for clearing checked shopping list items
+- `explosion.mp3` - Nuclear detonation effect for obliterating unused store items
 
 ## File Format
 

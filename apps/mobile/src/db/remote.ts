@@ -1,6 +1,7 @@
 import type {
     AppSetting,
     CheckConflictResult,
+    DeleteOrphanStoreItemsResponse,
     QuantityUnit,
     ShoppingListItem,
     ShoppingListItemInput,
@@ -478,6 +479,31 @@ export class RemoteDatabase implements Database {
             async () => {
                 await apiClient.delete(`/api/stores/${storeId}/items/${id}`);
             }
+        );
+    }
+
+    async getOrphanItems(storeId: string): Promise<StoreItem[]> {
+        const response = await apiClient.get<{ items: StoreItem[] }>(
+            `/api/stores/${storeId}/items/orphans`
+        );
+        return response.items;
+    }
+
+    async deleteOrphanItems(
+        storeId: string,
+        itemIds: string[]
+    ): Promise<DeleteOrphanStoreItemsResponse> {
+        return this.executeMutation(
+            "deleteOrphanItems",
+            `/api/stores/${storeId}/items/orphans`,
+            "POST",
+            async () => {
+                return apiClient.post<DeleteOrphanStoreItemsResponse>(
+                    `/api/stores/${storeId}/items/orphans`,
+                    { itemIds }
+                );
+            },
+            { itemIds }
         );
     }
 

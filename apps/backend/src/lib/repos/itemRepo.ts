@@ -214,6 +214,79 @@ export function deleteItem(id: string): boolean {
 }
 
 /**
+ * An "orphan": an item nobody has placed, kept, or hidden. Declared once so the preview and
+ * the delete can never drift apart — the delete re-applies it as its own race guard.
+ *
+ * `IFNULL(..., 0) = 0` rather than a bare `= 0` because booleans exist in two encodings here:
+ * `init.ts` declares these columns `DEFAULT 0`, but the house convention writes `1`/`NULL`.
+ * The `sectionId IS NULL` half matters: a sectioned item carries a NULL `aisleId` by design
+ * (`updateItem` normalizes it away), so it is categorized despite the null aisle column.
+ */
+const ORPHAN_PREDICATE = `
+    si.aisleId IS NULL
+    AND si.sectionId IS NULL
+    AND IFNULL(si.isFavorite, 0) = 0
+    AND IFNULL(si.isHidden, 0) = 0
+    AND NOT EXISTS (SELECT 1 FROM ShoppingListItem sli WHERE sli.storeItemId = si.id)
+`;
+
+/** SQLite caps bound parameters per statement; chunk well under it. */
+const ORPHAN_DELETE_CHUNK_SIZE = 500;
+
+export function getOrphanItems(storeId: string): StoreItem[] {
+    const rows = db
+        .prepare(
+            `SELECT si.id, si.storeId, si.name, si.nameNorm, si.aisleId, si.sectionId,
+                    si.usageCount, si.lastUsedAt, si.isHidden, si.isFavorite,
+                    si.createdById, si.updatedById, si.createdAt, si.updatedAt
+             FROM StoreItem si
+             WHERE si.storeId = ? AND ${ORPHAN_PREDICATE}
+             ORDER BY si.nameNorm ASC`
+        )
+        .all(storeId) as Array<
+        Omit<StoreItem, "isHidden" | "isFavorite"> & {
+            isHidden: number | null;
+            isFavorite: number | null;
+        }
+    >;
+
+    return rows.map((row) => ({
+        ...row,
+        isHidden: intToBool(row.isHidden),
+        isFavorite: intToBool(row.isFavorite),
+    }));
+}
+
+/** Deletes only the given ids that still satisfy `ORPHAN_PREDICATE`. Returns how many went. */
+export function deleteOrphanItems(storeId: string, ids: string[]): number {
+    if (ids.length === 0) {
+        return 0;
+    }
+
+    const deleteAll = db.transaction(() => {
+        let deleted = 0;
+
+        for (let offset = 0; offset < ids.length; offset += ORPHAN_DELETE_CHUNK_SIZE) {
+            const chunk = ids.slice(offset, offset + ORPHAN_DELETE_CHUNK_SIZE);
+            const placeholders = chunk.map(() => "?").join(", ");
+            const result = db
+                .prepare(
+                    `DELETE FROM StoreItem AS si
+                     WHERE si.storeId = ?
+                       AND si.id IN (${placeholders})
+                       AND ${ORPHAN_PREDICATE}`
+                )
+                .run(storeId, ...chunk);
+            deleted += result.changes;
+        }
+
+        return deleted;
+    });
+
+    return deleteAll();
+}
+
+/**
  * Merges loserId into winnerId: repoints the loser's shopping list rows onto the winner
  * (multiple rows for the same item are fine, e.g. separate entries from different recipes),
  * combines usage/visibility state, fills in the winner's aisle/section from the loser if the

@@ -1,6 +1,7 @@
 import type {
     AppSetting,
     CheckConflictResult,
+    DeleteOrphanStoreItemsResponse,
     QuantityUnit,
     ShoppingListItem,
     ShoppingListItemInput,
@@ -244,6 +245,18 @@ export interface EntityDatabase {
      * Soft delete an item
      */
     deleteItem(storeId: string, id: string): Promise<void>;
+
+    /**
+     * List the store's orphaned items: uncategorized, unfavorited, and referenced by no
+     * shopping-list row belonging to anyone. Server-computed — the client cannot see other
+     * members' private list rows, so it cannot derive this set itself.
+     */
+    getOrphanItems(storeId: string): Promise<StoreItem[]>;
+
+    /**
+     * Hard-delete the given items, skipping any that no longer qualify as orphans.
+     */
+    deleteOrphanItems(storeId: string, itemIds: string[]): Promise<DeleteOrphanStoreItemsResponse>;
 
     /**
      * Search for items by name prefix (for autocomplete)

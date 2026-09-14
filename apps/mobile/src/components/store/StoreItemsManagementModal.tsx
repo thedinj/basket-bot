@@ -18,7 +18,7 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { add, closeOutline, pricetagsOutline, searchOutline } from "ionicons/icons";
+import { add, closeOutline, nuclear, pricetagsOutline, searchOutline } from "ionicons/icons";
 import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { useStore, useStoreItemsWithDetails } from "../../db/hooks";
@@ -27,12 +27,14 @@ import { StoreItemWithDetails } from "../../db/types";
 import RefreshConfig from "../../hooks/refresh/RefreshConfig";
 import { useToast } from "../../hooks/useToast";
 import { GlobalActions } from "../layout/GlobalActions";
+import ActionSlotButton from "../shared/ActionSlotButton";
 import { FabSpacer } from "../shared/FabSpacer";
 import { GroupedItemList } from "../shared/GroupedItemList";
 import { ItemGroup } from "../shared/grouping.types";
 import { createAisleSectionGroups } from "../shared/grouping.utils";
 import PullToRefresh from "../shared/PullToRefresh";
 import TabEmptyState from "../shared/TabEmptyState";
+import ObliterateUnusedModal from "../storeitem/ObliterateUnusedModal";
 import { StoreItemEditorModal } from "../storeitem/StoreItemEditorModal";
 import StoreItemRow from "../storeitem/StoreItemRow";
 import { useShoppingListItemMap } from "../storeitem/useShoppingListItemMap";
@@ -73,6 +75,10 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
     } | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
+    const [isObliterateModalOpen, setIsObliterateModalOpen] = useState(false);
+
+    const openObliterateModal = useCallback(() => setIsObliterateModalOpen(true), []);
+    const closeObliterateModal = useCallback(() => setIsObliterateModalOpen(false), []);
 
     // Filter and split items into favorites and all, then create groups
     const { favoriteGroups, allGroups } = useMemo(() => {
@@ -109,8 +115,35 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                   })
                 : [];
 
+        // Offer "Obliterate Unused" on the Uncategorized divider, mirroring the shopping
+        // list's header actions. The count here is only a gate on *showing* the button —
+        // the authoritative set is computed server-side in the preview sheet, because this
+        // client cannot see other members' private shopping-list rows. Hidden while a search
+        // is active: the header would then sit over a filtered subset while the action still
+        // targets every orphan in the store.
+        const uncategorized = allGroups.find((group) => group.id === "aisle-null");
+        if (uncategorized?.header && !debouncedSearchTerm.trim()) {
+            const uncategorizedItems = [
+                ...uncategorized.items,
+                ...(uncategorized.children ?? []).flatMap((child) => child.items),
+            ];
+            const likelyUnused = uncategorizedItems.filter(
+                (item) => !item.isFavorite && !shoppingListItemMap.has(item.id)
+            ).length;
+
+            if (likelyUnused > 0) {
+                uncategorized.header.actionSlot = (
+                    <ActionSlotButton
+                        label="Obliterate Unused"
+                        icon={nuclear}
+                        onClick={openObliterateModal}
+                    />
+                );
+            }
+        }
+
         return { favoriteGroups, allGroups };
-    }, [items, debouncedSearchTerm]);
+    }, [items, debouncedSearchTerm, shoppingListItemMap, openObliterateModal]);
 
     const openCreateModal = useCallback(() => {
         setEditingItem(null);
@@ -299,6 +332,12 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                         onDismissed={handleEditorDismissed}
                         storeId={storeId}
                         editingItem={editingItem}
+                    />
+
+                    <ObliterateUnusedModal
+                        isOpen={isObliterateModalOpen}
+                        onClose={closeObliterateModal}
+                        storeId={storeId}
                     />
 
                     <IonAlert

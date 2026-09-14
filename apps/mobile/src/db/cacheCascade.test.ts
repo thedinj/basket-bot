@@ -315,6 +315,17 @@ const CASCADES: Cascade[] = [
         ],
     },
     {
+        name: "useDeleteOrphanItems",
+        hook: itemHooks.useDeleteOrphanItems,
+        vars: { storeId: STORE, itemIds: [ITEM] },
+        invalidates: [
+            queryKeys.items.byStore(STORE),
+            queryKeys.items.withDetails(STORE),
+            queryKeys.items.orphans(STORE),
+            queryKeys.shoppingListItems.byStore(STORE),
+        ],
+    },
+    {
         name: "useToggleFavorite",
         hook: itemHooks.useToggleFavorite,
         vars: { storeId: STORE, id: ITEM },
@@ -525,6 +536,7 @@ const NON_MUTATION_HOOKS = new Set([
     "useStoreItems",
     "useStoreItemsWithDetails",
     "useItem",
+    "useOrphanItems",
     "useShoppingListItems",
     "useShoppingListItemsIfLoaded",
     "useShoppingListItemsAllStores",

@@ -3,7 +3,7 @@ import { queryKeys } from "@/db/queryKeys";
 import type { ShoppingListItemWithDetails } from "@basket-bot/core";
 import { IonIcon } from "@ionic/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { bulbOutline, checkmarkDone } from "ionicons/icons";
+import { bulbOutline, nuclear } from "ionicons/icons";
 import { useCallback, useMemo, useState } from "react";
 import { useStoreAisles, useStoreItems, useStoreSections } from "../../db/hooks";
 import { useToast } from "../../hooks/useToast";
@@ -45,7 +45,7 @@ const createCheckedItemsGroup = (
         actionSlot: onClearChecked && (
             <ActionSlotButton
                 label="Obliterate"
-                icon={checkmarkDone}
+                icon={nuclear}
                 onClick={onClearChecked}
                 disabled={isClearing}
             />
