@@ -1,0 +1,139 @@
+/**
+ * TACTICAL AIRBURST
+ * Owns: radial geometry, red/amber palette, scale-out, backdrop-filter brightness.
+ *
+ * Three surfaces: the root carries the flash and the amber fallout settle, ::before is the
+ * fireball, ::after is the shockwave ring.
+ */
+
+/* Flash + fallout as ONE animation across the full 1.2s. Two separate animations
+   would both be writing `background` and the later one would simply win. */
+.overlay-animation.tactical-airburst {
+    animation: airburstScreen 1.2s linear forwards;
+}
+
+@keyframes airburstScreen {
+    0% {
+        background: rgba(255, 255, 255, 0);
+    }
+    2% {
+        background: rgba(255, 252, 240, 0.95);
+    }
+    7.5% {
+        background: rgba(255, 240, 200, 0.35);
+    }
+    25% {
+        background: rgba(255, 140, 40, 0.14);
+    }
+    60% {
+        background: rgba(255, 120, 30, 0.08);
+    }
+    100% {
+        background: rgba(255, 120, 30, 0);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    /* The fireball. vmax-sized so it still covers the viewport in landscape. */
+    .overlay-animation.tactical-airburst::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 60vmax;
+        height: 60vmax;
+        margin: -30vmax 0 0 -30vmax;
+        border-radius: 50%;
+        background: radial-gradient(
+            circle,
+            rgba(255, 255, 255, 1) 0%,
+            rgba(255, 235, 150, 0.95) 18%,
+            rgba(255, 150, 40, 0.85) 38%,
+            rgba(220, 60, 20, 0.5) 60%,
+            transparent 72%
+        );
+        filter: blur(8px);
+        opacity: 0;
+        animation: airburstFireball 0.55s cubic-bezier(0.12, 0.8, 0.3, 1) 0.04s forwards;
+    }
+
+    @keyframes airburstFireball {
+        0% {
+            transform: scale(0.04);
+            opacity: 0;
+        }
+        8% {
+            opacity: 1;
+        }
+        55% {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+        100% {
+            transform: scale(1.5);
+            opacity: 0;
+        }
+    }
+
+    /* The shockwave ring. A gradient band rather than a `border`: under
+       transform: scale() a border thickens along with the element, whereas a
+       gradient band scales proportionally - which is what a shock front does. */
+    .overlay-animation.tactical-airburst::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 40vmax;
+        height: 40vmax;
+        margin: -20vmax 0 0 -20vmax;
+        border-radius: 50%;
+        background: radial-gradient(
+            circle,
+            transparent 58%,
+            rgba(255, 220, 170, 0.95) 64%,
+            rgba(255, 120, 40, 0.5) 70%,
+            transparent 76%
+        );
+        opacity: 0;
+        animation: airburstShockwave 0.78s cubic-bezier(0.15, 0.7, 0.25, 1) 0.12s forwards;
+    }
+
+    @keyframes airburstShockwave {
+        0% {
+            transform: scale(0.05);
+            opacity: 0;
+        }
+        12% {
+            opacity: 1;
+        }
+        100% {
+            transform: scale(4.2);
+            opacity: 0;
+        }
+    }
+
+    /* Blows out the app *behind* the overlay for two frames, so the store list
+       itself reacts to the blast. Split out from airburstScreen because a
+       reduced-motion user should still get the flash but not the screen-wide
+       filter. Degrades silently where backdrop-filter is not animatable. */
+    .overlay-animation.tactical-airburst {
+        animation:
+            airburstScreen 1.2s linear forwards,
+            airburstBlowout 0.3s linear forwards;
+    }
+
+    @keyframes airburstBlowout {
+        0% {
+            backdrop-filter: brightness(1) saturate(1);
+        }
+        8% {
+            backdrop-filter: brightness(2.6) saturate(0.2);
+        }
+        30% {
+            backdrop-filter: brightness(1.4) saturate(0.7);
+        }
+        100% {
+            backdrop-filter: brightness(1) saturate(1);
+        }
+    }
+}

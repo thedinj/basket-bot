@@ -18,22 +18,24 @@ import {
 import clsx from "clsx";
 import { closeOutline, nuclear, shieldCheckmarkOutline } from "ionicons/icons";
 import pluralize from "pluralize";
-import React, { useCallback, useEffect, useRef } from "react";
-import { ANIMATION_EFFECTS } from "../../animations/effects";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { type AnimationEffect, pickStrike } from "../../animations/effects";
+import { preloadStrikeSound } from "../../animations/strikeAudio";
 import { useDeleteOrphanItems, useOrphanItems } from "../../db/itemHooks";
 import { useOverlayAnimation } from "../../hooks/useOverlayAnimation";
 import { useToast } from "../../hooks/useToast";
+import { HazardRule } from "../shared/HazardRule";
 import { OverlayAnimation } from "../shared/OverlayAnimation";
 import TabEmptyState from "../shared/TabEmptyState";
 
 import "./ObliterateUnusedModal.scss";
 
 /**
- * Dismiss just before the overlay clears, so the sheet never flickers back into view
- * un-faded between the fallout ending and the modal closing. Derived from the effect
- * rather than hand-copied, so retiming the blast cannot leave this behind.
+ * Dismiss this far before the overlay clears, so the sheet never flickers back into view
+ * un-faded between the strike ending and the modal closing. Subtracted from whichever munition
+ * was loaded rather than pinned to one, since they run 0.9s to 1.8s.
  */
-const SHEET_DISMISS_MS = ANIMATION_EFFECTS.NUCLEAR_DETONATION.duration - 50;
+const DISMISS_LEAD_MS = 50;
 
 interface ObliterateUnusedModalProps {
     isOpen: boolean;
@@ -72,12 +74,25 @@ const ObliterateUnusedModal: React.FC<ObliterateUnusedModalProps> = ({
     const { data: orphans, isLoading } = useOrphanItems(storeId, isOpen);
     const deleteOrphanItems = useDeleteOrphanItems();
     const { showSuccess, showInfo } = useToast();
+    // Rolled when the sheet opens rather than when Authorize is tapped, so the manifest can
+    // name the munition before you commit to it - and so its sound has the whole read-the-list
+    // pause to finish loading.
+    const [munition, setMunition] = useState<AnimationEffect>(pickStrike);
     const {
-        trigger: triggerDetonation,
+        trigger: triggerStrike,
         isActive: isDetonating,
         cssClass,
-    } = useOverlayAnimation(ANIMATION_EFFECTS.NUCLEAR_DETONATION);
+    } = useOverlayAnimation(munition);
     const dismissTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const next = pickStrike();
+        setMunition(next);
+        // Opening the sheet is a user gesture, which is what mobile WebViews wait for before
+        // doing any audio work. Warming it here is why the sound lands on the flash.
+        preloadStrikeSound(next);
+    }, [isOpen]);
 
     // A pending dismiss that outlives this component would call onClose() against a
     // stale closure - the same guard ShoppingList.tsx uses around its obliteration timer.
@@ -107,7 +122,7 @@ const ObliterateUnusedModal: React.FC<ObliterateUnusedModalProps> = ({
             itemIds: orphans.map((item) => item.id),
         });
 
-        await triggerDetonation();
+        await triggerStrike(munition);
 
         const spared =
             result.skippedCount > 0
@@ -117,15 +132,24 @@ const ObliterateUnusedModal: React.FC<ObliterateUnusedModalProps> = ({
         dismissTimeoutRef.current = setTimeout(() => {
             if (result.deletedCount > 0) {
                 showSuccess(
-                    `Strike confirmed. ${result.deletedCount} ${pluralize("item", result.deletedCount)} obliterated.${spared}`
+                    `${munition.label} confirmed. ${result.deletedCount} ${pluralize("item", result.deletedCount)} obliterated.${spared}`
                 );
             } else {
-                showInfo(`Nothing obliterated.${spared}`);
+                showInfo(`Strike authorized. Nothing left to hit.${spared}`);
             }
             dismissTimeoutRef.current = null;
             onClose();
-        }, SHEET_DISMISS_MS);
-    }, [orphans, deleteOrphanItems, storeId, triggerDetonation, showSuccess, showInfo, onClose]);
+        }, munition.duration - DISMISS_LEAD_MS);
+    }, [
+        orphans,
+        deleteOrphanItems,
+        storeId,
+        munition,
+        triggerStrike,
+        showSuccess,
+        showInfo,
+        onClose,
+    ]);
 
     return (
         // Dismissing mid-request would leave the user unsure whether the delete landed, so the
@@ -167,18 +191,19 @@ const ObliterateUnusedModal: React.FC<ObliterateUnusedModalProps> = ({
                     <>
                         <div className="obliterate-manifest">
                             <div className="obliterate-manifest-label">
-                                <span>Orbital strike</span>
+                                <span>{munition.label}</span>
                                 <span aria-hidden="true">&middot;</span>
                                 <span>
                                     {count} {pluralize("target", count)}
                                 </span>
                             </div>
                             <p className="obliterate-manifest-note">
-                                Coordinates designated from orbit. Nothing below is favorited,
-                                listed, or spoken for &mdash; and the platform does not ask twice.
+                                Coordinates locked. Nothing below is favorited, listed, or spoken
+                                for &mdash; and nobody will file a complaint, because nobody
+                                remembers creating them.
                             </p>
                         </div>
-                        <div className="obliterate-hazard-rule" aria-hidden="true" />
+                        <HazardRule />
                         <IonList>
                             {orphans?.map((item, index) => (
                                 <IonItem key={item.id}>

@@ -33,3 +33,61 @@
     color: var(--ion-color-primary-contrast, #fff);
     background: var(--ion-color-primary, #3880ff);
 }
+
+// Obliterate confirmation alert.
+//
+// Not nested under a page class on purpose: Ionic portals alerts to the document root, so these
+// selectors have to be global. The cssClass on presentAlert is what scopes them instead.
+//
+// Carries the same amber register as the store-items Obliterate sheet - hazard stripe, monospace
+// data line, amber confirm - so both halves of the feature read as the same weapons platform
+// rather than as two unrelated confirmations.
+.obliterate-alert {
+    .alert-wrapper {
+        overflow: hidden;
+    }
+
+    // Hazard striping across the top of the dialog. Matches HazardRule, which the store-items
+    // sheet renders in the same position relative to its manifest.
+    .alert-head {
+        position: relative;
+        padding-top: 22px;
+
+        &::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: repeating-linear-gradient(
+                135deg,
+                var(--ion-color-warning, #ed8936) 0 10px,
+                var(--ion-background-color, #0f0f23) 10px 20px
+            );
+            opacity: 0.8;
+        }
+    }
+
+    // The loaded munition, in the data register used everywhere else in this feature.
+    .alert-sub-title {
+        margin-top: 6px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ion-color-warning, #ed8936);
+    }
+
+    .alert-message {
+        max-width: 62ch;
+        line-height: 1.55;
+    }
+}
+
+// Amber rather than the default destructive red: the strike is the fun part, and the sheet
+// already treats amber as this action's colour.
+.obliterate-alert-confirm {
+    color: var(--ion-color-warning, #ed8936) !important;
+    font-weight: 600;
+}

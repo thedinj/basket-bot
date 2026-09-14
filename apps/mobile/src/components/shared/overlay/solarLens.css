@@ -1,0 +1,140 @@
+/**
+ * SOLAR LENS
+ * Owns: rotation, conic-gradient rays, and a slow build. The only munition that does not strike -
+ * an orbital mirror array walks its rays inward, holds focus until the point ignites, and leaves
+ * a retinal afterimage. At 1.8s it is the longest thing in the pool, and the crescendo is the
+ * whole point: every other effect is over before this one has finished aiming.
+ */
+
+.overlay-animation.solar-lens {
+    animation: lensScreen 1.8s linear forwards;
+}
+
+@keyframes lensScreen {
+    0% {
+        background: rgba(255, 214, 110, 0);
+    }
+    40% {
+        background: rgba(255, 214, 110, 0.06);
+    }
+    62% {
+        background: rgba(255, 224, 140, 0.16);
+    }
+    66% {
+        background: rgba(255, 250, 235, 0.92);
+    }
+    76% {
+        background: rgba(255, 206, 92, 0.3);
+    }
+    100% {
+        background: rgba(255, 184, 60, 0);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    /* The mirror array. A repeating conic gradient is 36 rays for the price of one element; the
+       mask fades them out at the hub and the rim so they read as light rather than as a pinwheel. */
+    .overlay-animation.solar-lens::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 150vmax;
+        height: 150vmax;
+        margin: -75vmax 0 0 -75vmax;
+        background: repeating-conic-gradient(
+            from 0deg,
+            transparent 0deg 7deg,
+            rgba(255, 226, 140, 0.55) 7deg 9deg,
+            transparent 9deg 10deg
+        );
+        -webkit-mask-image: radial-gradient(
+            circle,
+            transparent 2%,
+            rgba(0, 0, 0, 0.85) 16%,
+            rgba(0, 0, 0, 0.9) 42%,
+            transparent 62%
+        );
+        mask-image: radial-gradient(
+            circle,
+            transparent 2%,
+            rgba(0, 0, 0, 0.85) 16%,
+            rgba(0, 0, 0, 0.9) 42%,
+            transparent 62%
+        );
+        opacity: 0;
+        animation: lensConverge 1.4s cubic-bezier(0.4, 0, 0.35, 1) forwards;
+    }
+
+    /* Rotating while tightening. The scale is what sells "focusing" - the rays crowd in on the
+       point instead of merely spinning. */
+    @keyframes lensConverge {
+        0% {
+            transform: scale(1.6) rotate(0deg);
+            opacity: 0;
+        }
+        18% {
+            opacity: 0.35;
+        }
+        72% {
+            transform: scale(0.42) rotate(150deg);
+            opacity: 1;
+        }
+        86% {
+            transform: scale(0.16) rotate(186deg);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(0.1) rotate(200deg);
+            opacity: 0;
+        }
+    }
+
+    /* The focal point: dormant while the array aims, then it ignites. */
+    .overlay-animation.solar-lens::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 70vmax;
+        height: 70vmax;
+        margin: -35vmax 0 0 -35vmax;
+        border-radius: 50%;
+        background: radial-gradient(
+            circle,
+            rgba(255, 255, 255, 1) 0%,
+            rgba(255, 246, 205, 0.95) 14%,
+            rgba(255, 206, 92, 0.8) 32%,
+            rgba(237, 137, 54, 0.4) 54%,
+            transparent 70%
+        );
+        filter: blur(10px);
+        opacity: 0;
+        animation: lensIgnite 1.8s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+    }
+
+    @keyframes lensIgnite {
+        0% {
+            transform: scale(0.01);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(0.04);
+            opacity: 0.9;
+        }
+        /* 1.15s - ignition */
+        64% {
+            transform: scale(0.1);
+            opacity: 1;
+        }
+        72% {
+            transform: scale(1.05);
+            opacity: 1;
+        }
+        /* The afterimage. Slow, because this is what staring at it costs. */
+        100% {
+            transform: scale(1.35);
+            opacity: 0;
+        }
+    }
+}

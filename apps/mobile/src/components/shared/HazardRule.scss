@@ -1,0 +1,10 @@
+// Cheap by design: a repeating gradient, no assets.
+.hazard-rule {
+    height: 6px;
+    background: repeating-linear-gradient(
+        135deg,
+        var(--ion-color-warning, #ed8936) 0 10px,
+        var(--ion-background-color, #0f0f23) 10px 20px
+    );
+    opacity: 0.8;
+}

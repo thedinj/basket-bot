@@ -8,8 +8,10 @@ import {
     listOutline,
     storefrontOutline,
 } from "ionicons/icons";
+import pluralize from "pluralize";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ANIMATION_EFFECTS } from "../animations/effects";
+import { type AnimationEffect, pickStrike } from "../animations/effects";
+import { preloadStrikeSound } from "../animations/strikeAudio";
 import { AppHeader } from "../components/layout/AppHeader";
 import { GlobalActionConfig } from "../components/layout/AppHeaderContext";
 import { GlobalActions } from "../components/layout/GlobalActions";
@@ -66,12 +68,14 @@ const ShoppingListBody: React.FC<ShoppingListBodyProps> = ({
     const [presentAlert] = useIonAlert();
     const [wasJustCleared, setWasJustCleared] = useState(false);
 
-    // Laser obliteration animation
+    // Obliteration animation. The munition is rolled when the confirm alert is raised, so the
+    // alert can name what the platform loaded and the strike delivers exactly that.
+    const [munition, setMunition] = useState<AnimationEffect>(pickStrike);
     const {
-        trigger: triggerLaser,
+        trigger: triggerStrike,
         isActive: isObliterating,
         cssClass,
-    } = useOverlayAnimation(ANIMATION_EFFECTS.LASER_OBLITERATION);
+    } = useOverlayAnimation(munition);
 
     const { openBulkImport } = useBulkImportModal(storeId);
 
@@ -108,36 +112,52 @@ const ShoppingListBody: React.FC<ShoppingListBodyProps> = ({
         setHasTriggeredClear(false);
     }
 
-    const confirmClearChecked = useCallback(async () => {
-        // Trigger laser animation
-        await triggerLaser();
+    // Takes the munition rather than reading it from state: the alert is presented in the same
+    // tick that rolls it, so a closure over state here would name one weapon and fire the
+    // previous one.
+    const confirmClearChecked = useCallback(
+        async (strike: AnimationEffect) => {
+            await triggerStrike(strike);
 
-        // Clear items when forward beam finishes (~1s), independent of full animation duration
-        obliterationTimeoutRef.current = setTimeout(() => {
-            setHasTriggeredClear(true);
-            setWasJustCleared(true);
-            clearChecked.mutate({ storeId });
-            obliterationTimeoutRef.current = null;
-        }, 1000);
-    }, [clearChecked, storeId, triggerLaser]);
+            // Clear when this munition actually lands, which is not the same moment for all of
+            // them - a 0.9s null pulse and a 1.8s solar lens have very different impact points.
+            obliterationTimeoutRef.current = setTimeout(() => {
+                setHasTriggeredClear(true);
+                setWasJustCleared(true);
+                clearChecked.mutate({ storeId });
+                obliterationTimeoutRef.current = null;
+            }, strike.impactAtMs);
+        },
+        [clearChecked, storeId, triggerStrike]
+    );
 
     const handleClearChecked = useCallback(() => {
+        const next = pickStrike();
+        setMunition(next);
+        // Raising the alert is a user gesture, which is what mobile WebViews wait for before
+        // doing any audio work - so the sound is decoded well before Obliterate is tapped.
+        preloadStrikeSound(next);
+
+        const doomed = checkedItems.length;
         presentAlert({
             header: "Obliterate Checked Items?",
-            message: "Clear all checked items? If you're certain you're done with them.",
+            subHeader: `${next.label} armed`,
+            message: `${doomed} checked ${pluralize("item", doomed)} ${pluralize("is", doomed)} inside the blast radius. You already bought ${doomed === 1 ? "it" : "them"}, so this is purely ceremonial.`,
+            cssClass: "obliterate-alert",
             buttons: [
                 {
-                    text: "Cancel",
+                    text: "Abort",
                     role: "cancel",
                 },
                 {
-                    text: "Obliterate",
+                    text: "Authorize strike",
                     role: "destructive",
-                    handler: confirmClearChecked,
+                    cssClass: "obliterate-alert-confirm",
+                    handler: () => confirmClearChecked(next),
                 },
             ],
         });
-    }, [presentAlert, confirmClearChecked]);
+    }, [presentAlert, confirmClearChecked, checkedItems.length]);
 
     return (
         <IonContent fullscreen className="shopping-list-content">

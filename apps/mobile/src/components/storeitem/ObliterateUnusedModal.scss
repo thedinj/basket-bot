@@ -20,6 +20,9 @@
 .obliterate-manifest-label {
     display: flex;
     align-items: baseline;
+    // EQUATORIAL GUILLOTINE plus a target count is the longest line the pool can produce, and
+    // it does not fit one row on a narrow phone.
+    flex-wrap: wrap;
     gap: 8px;
     // Monospace is the data register here (see .impeccable.md), not decoration.
     font-family: "JetBrains Mono", monospace;
@@ -35,19 +38,6 @@
     font-size: 13px;
     line-height: 1.55;
     color: var(--ion-color-step-500, #a0aec0);
-}
-
-// Hazard striping: the one piece of pure iconography in the sheet. Cheap
-// (a repeating gradient, no assets) and it does the work a colored side-stripe
-// on every row would otherwise be reached for.
-.obliterate-hazard-rule {
-    height: 6px;
-    background: repeating-linear-gradient(
-        135deg,
-        var(--ion-color-warning, #ffc409) 0 10px,
-        var(--ion-background-color, #0f0f23) 10px 20px
-    );
-    opacity: 0.8;
 }
 
 // Manifest line numbers. Also the reason no row needs a colored accent bar.

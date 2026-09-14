@@ -1,0 +1,107 @@
+/**
+ * KINETIC ROD
+ * Owns: diagonal translation, blue-white heat, a bottom-anchored impact bloom.
+ *
+ * A tungsten rod arrives from the upper right at terminal velocity and throws dust up off the
+ * bottom edge. Nothing else in the pool travels on a diagonal or anchors to an edge.
+ */
+
+/* Reduced-motion floor: the heat of the impact, without the travel. */
+.overlay-animation.kinetic-rod {
+    animation: rodScreen 1.4s linear forwards;
+}
+
+@keyframes rodScreen {
+    0% {
+        background: rgba(190, 225, 255, 0);
+    }
+    40% {
+        background: rgba(190, 225, 255, 0);
+    }
+    48% {
+        background: rgba(225, 243, 255, 0.55);
+    }
+    62% {
+        background: rgba(150, 200, 255, 0.16);
+    }
+    100% {
+        background: rgba(150, 200, 255, 0);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    /* The rod. Rotated first, so translateY runs along its own long axis and the streak always
+       points the way it is travelling. ease-in because it is still accelerating. */
+    .overlay-animation.kinetic-rod::before {
+        content: "";
+        position: absolute;
+        top: -70vmax;
+        left: 62%;
+        width: 9px;
+        height: 130vmax;
+        margin-left: -4px;
+        border-radius: 9px;
+        background: linear-gradient(
+            to bottom,
+            rgba(150, 200, 255, 0) 0%,
+            rgba(180, 220, 255, 0.45) 55%,
+            rgba(235, 248, 255, 0.95) 88%,
+            rgba(255, 255, 255, 1) 100%
+        );
+        box-shadow:
+            0 0 24px rgba(140, 200, 255, 0.9),
+            0 0 60px rgba(90, 160, 255, 0.6);
+        animation: rodFall 0.62s cubic-bezier(0.55, 0.02, 0.9, 0.6) forwards;
+    }
+
+    @keyframes rodFall {
+        0% {
+            transform: rotate(24deg) translateY(-150vmax);
+            opacity: 0;
+        }
+        18% {
+            opacity: 1;
+        }
+        100% {
+            transform: rotate(24deg) translateY(45vmax);
+            opacity: 1;
+        }
+    }
+
+    /* Impact bloom, thrown up off the bottom edge rather than centred: the rod hit the ground,
+       not the camera. */
+    .overlay-animation.kinetic-rod::after {
+        content: "";
+        position: absolute;
+        bottom: -26vmax;
+        left: 50%;
+        width: 110vmax;
+        height: 60vmax;
+        margin-left: -55vmax;
+        border-radius: 50%;
+        background: radial-gradient(
+            ellipse at 50% 100%,
+            rgba(255, 255, 255, 0.95) 0%,
+            rgba(205, 235, 255, 0.8) 22%,
+            rgba(120, 175, 245, 0.45) 48%,
+            transparent 72%
+        );
+        filter: blur(10px);
+        opacity: 0;
+        animation: rodImpact 0.84s cubic-bezier(0.1, 0.75, 0.3, 1) 0.56s forwards;
+    }
+
+    @keyframes rodImpact {
+        0% {
+            transform: scale(0.2);
+            opacity: 0;
+        }
+        14% {
+            opacity: 1;
+        }
+        100% {
+            transform: scale(1.6);
+            opacity: 0;
+        }
+    }
+}

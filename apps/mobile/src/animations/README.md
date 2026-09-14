@@ -2,206 +2,187 @@
 
 ## Overview
 
-A reusable, CSS-first overlay animation system for full-screen effects in Basket Bot. Animations are defined in a central library and can be triggered programmatically with optional sound effects and haptic feedback.
+A reusable, CSS-first overlay animation system for full-screen effects in Basket Bot.
+
+Every effect is a **munition** the orbital weapons platform can load. Both "Obliterate" actions —
+the shopping list's _Obliterate Checked_ and the store items' _Obliterate Unused_ — roll one from
+a shared pool rather than always firing the same thing, and name the munition in the UI before
+firing it.
 
 ## Architecture
 
-### Components
+| Role                               | Path                                           |
+| ---------------------------------- | ---------------------------------------------- |
+| Effect registry + pool + picker    | `src/animations/effects.ts`                    |
+| Preloaded audio                    | `src/animations/strikeAudio.ts`                |
+| Hook (sound + haptics + lifecycle) | `src/hooks/useOverlayAnimation.ts`             |
+| Overlay element                    | `src/components/shared/OverlayAnimation.tsx`   |
+| Keyframes, one file per effect     | `src/components/shared/overlay/`               |
+| Developer test bed                 | `src/components/settings/StrikeRangeModal.tsx` |
 
-1. **Effects Library** (`src/animations/effects.ts`)
-    - Central registry of all available animations
-    - Each effect defines: CSS class, duration, sound path, haptic settings
+### The overlay element
 
-2. **Hook** (`src/hooks/useOverlayAnimation.ts`)
-    - Triggers animation, plays sound, provides haptic feedback
-    - Returns `{ trigger, isActive, cssClass }` for component integration
-    - Prevents simultaneous animations module-wide
+`OverlayAnimation` renders a fixed, full-viewport, `pointer-events: none` div at `z-index: 10000`,
+plus **three inert child layers**. The root and its `::before`/`::after` give three paintable
+surfaces; the layers and their pseudo-elements add nine more, addressed with `:nth-child()`. The
+MIRV salvo needs six impact points and the railgun needs four brackets — an effect that ignores
+the layers pays nothing for them.
 
-3. **Component** (`src/components/shared/OverlayAnimation.tsx`)
-    - Generic fixed-position overlay that covers viewport
-    - Applies CSS class from hook
-    - Removes itself when no class is active
-
-4. **CSS** (`src/components/shared/OverlayAnimation.css`)
-    - Base overlay styling (fixed, z-index 10000, pointer-events: none)
-    - Animation-specific keyframes and styles
-
-## Usage
-
-### Adding a New Animation
-
-1. **Define the effect** in `src/animations/effects.ts`:
-
-```typescript
-export const ANIMATION_EFFECTS = {
-    // ... existing effects
-
-    YOUR_ANIMATION: {
-        cssClass: "your-animation",
-        soundPath: "/sounds/your-sound.mp3", // optional
-        duration: 800, // milliseconds
-        haptic: true, // optional
-    } as AnimationEffect,
-} as const;
-```
-
-2. **Add CSS animation** in `src/components/shared/OverlayAnimation.css`:
-
-```css
-.overlay-animation.your-animation::before {
-    content: "";
-    position: absolute;
-    /* Your animation styles */
-    animation: yourKeyframe 0.8s ease-in-out forwards;
-}
-
-@keyframes yourKeyframe {
-    0% {
-        /* start state */
-    }
-    100% {
-        /* end state */
-    }
-}
-```
-
-3. **Use in component**:
-
-```typescript
-import { ANIMATION_EFFECTS } from "@/animations/effects";
-import { useOverlayAnimation } from "@/hooks/useOverlayAnimation";
-import { OverlayAnimation } from "@/components/shared/OverlayAnimation";
-
-const MyComponent: React.FC = () => {
-    const { trigger, isActive, cssClass } = useOverlayAnimation(
-        ANIMATION_EFFECTS.YOUR_ANIMATION
-    );
-
-    const handleAction = async () => {
-        await trigger(); // Plays animation + sound + haptics
-        // Wait for animation to complete
-        setTimeout(() => {
-            // Perform action after animation
-        }, ANIMATION_EFFECTS.YOUR_ANIMATION.duration);
-    };
-
-    return (
-        <>
-            <IonButton onClick={handleAction}>Trigger</IonButton>
-            <OverlayAnimation cssClass={cssClass} />
-        </>
-    );
-};
-```
-
-## Sound Files
-
-Place sound effect files in `public/sounds/` directory:
-
-```
-public/
-  sounds/
-    laser-zap.mp3
-    explosion.mp3
-    swipe.mp3
-```
-
-Reference them in the effects library with `/sounds/filename.mp3` paths.
+**Where to render it.** If the effect plays over a modal, render `<OverlayAnimation>` _inside_
+that modal. Ionic stacks modals, so an overlay rendered by a parent paints **behind** an open
+child sheet.
 
 ## Available Effects
 
-### LASER_OBLITERATION
+Distinctness is the point. A pool where three effects read as "orange flash" is worse than two
+good effects, so each munition owns a signature property no other one uses. **Keep a new effect
+off every axis already claimed here.**
 
-- **Purpose**: Visual "deletion" effect for clearing shopping list items
-- **Duration**: 1000ms (1 second)
-- **Sound**: `/sounds/laser-zap.mp3` (user-provided)
-- **Visual**: Purple laser beam with white core sweeps from top to bottom
-- **Colors**: Uses `--ion-color-primary` CSS variable for purple
+| Munition          | `label`               | Geometry                         | Palette            | Motion               | Signature property            |   ms | impact |
+| ----------------- | --------------------- | -------------------------------- | ------------------ | -------------------- | ----------------------------- | ---: | -----: |
+| Orbital lance     | ORBITAL LANCE         | vertical band                    | purple/white       | `translateY`         | `box-shadow` bloom            | 1600 |   1000 |
+| Tactical airburst | TACTICAL AIRBURST     | radial                           | red/amber          | `scale` out          | `backdrop-filter: brightness` | 1200 |    250 |
+| Kinetic rod       | KINETIC ROD           | diagonal streak, bottom bloom    | blue-white         | diagonal `translate` | bottom-anchored impact        | 1400 |    700 |
+| Railgun           | RAILGUN               | four reticle brackets            | amber              | converge, snap, ring | hard edges, zero blur         | 1650 |    900 |
+| MIRV salvo        | MIRV SALVO            | six points                       | orange/white       | staggered `scale`    | multi-layer stagger           | 1500 |   1100 |
+| Null pulse        | NULL PULSE            | hexagon wireframe                | steel/gray         | expand then collapse | `backdrop-filter: grayscale`  |  900 |    400 |
+| Solar lens        | SOLAR LENS            | converging conic rays            | yellow-white       | `rotate` + tighten   | `conic-gradient` + rotation   | 1800 |   1250 |
+| Event horizon     | EVENT HORIZON         | inward vignette + accretion disc | black/violet-white | `scale` **in**       | `backdrop-filter: blur` ramp  | 1500 |   1000 |
+| Eq. guillotine    | EQUATORIAL GUILLOTINE | razor line, widening gap         | white-hot on black | `scaleY` of a gap    | staccato snap-hold-open       | 1100 |    650 |
 
-### NUCLEAR_DETONATION
+Durations deliberately span 0.9s–1.8s so the _rhythm_ varies, not just the picture.
 
-- **Purpose**: Visual "deletion" effect for obliterating unused store items
-- **Duration**: 1200ms
-- **Sound**: `/sounds/explosion.mp3` (user-provided)
-- **Visual**: White-out flash, fireball bloom, expanding shockwave ring, amber fallout settle
-- **Colors**: Literal red/amber values rather than a theme variable - a detonation is not
-  brand-colored, and the palette is what separates it from the laser at a glance
+Two implementation notes worth knowing before editing them:
 
-The two effects are deliberately disjoint so they read as different events rather than one
-effect recolored. The laser owns vertical sweep, purple with a white core, `box-shadow`
-bloom, band geometry and a ~1.6s cadence; the detonation owns radial geometry, red/amber,
-`backdrop-filter` blowout, `scale` rather than `translate`, and a punchier 1.2s. Keep a third
-effect off all of those axes too.
+- **Null pulse's hex ring** is a single `clip-path` "keyhole" polygon — the outer hexagon
+  traversed clockwise, a seam, then the inner hexagon counter-clockwise. Under the default
+  nonzero fill rule that leaves the middle empty, which is the only way to get a true wireframe
+  out of one element.
+- **The equatorial guillotine's cut is implied.** The overlay paints _above_ the app, so it cannot actually
+  shear content apart; the effect sells it with a razor line, a beat of nothing, and a black gap
+  with cauterised edges.
+
+## The descriptor
+
+```typescript
+export interface AnimationEffect {
+    cssClass: string;
+    soundPath?: string;
+    /** Total wall time; must match the longest keyframe. */
+    duration: number;
+    haptic?: boolean;
+    /** Munition name shown in the UI, e.g. "KINETIC ROD". */
+    label: string;
+    /** When the strike lands - when a consumer may commit its destructive work. */
+    impactAtMs: number;
+}
+```
+
+`duration` is what the hook uses to self-reset and release its one-at-a-time guard, so it must
+equal the longest keyframe end. `impactAtMs` is what a consumer waits before committing a delete
+under cover of the effect — it was a hardcoded `1000` in `ShoppingList.tsx` until the pool made
+"when does it land" a per-munition question. The invariant `0 < impactAtMs <= duration` is
+enforced by `effects.test.ts`.
+
+## Rolling a munition
+
+```typescript
+import { pickStrike } from "@/animations/effects";
+
+const munition = pickStrike(); // never the same one twice running
+```
+
+`STRIKE_POOL` is derived from `ANIMATION_EFFECTS` rather than hand-listed, so an effect can never
+be registered and then silently left unreachable by a roll. `pickStrike` takes an injectable
+`random` so tests are deterministic instead of statistical.
+
+**Roll early, not at the last moment.** Both consumers pick when the confirm UI _opens_, which
+lets the UI name the munition before you commit to it and gives its sound the whole
+read-the-list pause to load.
+
+## Sound
+
+`strikeAudio.ts` keeps one `HTMLAudioElement` per path, created with `preload = "auto"`. Reusing
+elements is safe because the module-level guard means a sound can never overlap itself; each play
+rewinds to `currentTime = 0` first.
+
+```typescript
+preloadStrikeSound(munition); // idempotent - safe to call on every open
+```
+
+Call it **from a user gesture** — opening a sheet, presenting an alert. Mobile WebViews defer
+audio work until the first gesture, and those moments are what turn the first strike of a session
+from "fetch, decode, then play" into "play". Without it the bang lands _after_ the flash.
+
+Playback failure is not fatal: it rejects, the hook warns and falls back to haptics, and the
+visual still plays. Developing a new effect before its audio exists works fine.
+
+## Adding a New Animation
+
+1. **Check the distinctness table above** and pick axes nobody owns.
+2. **Add the effect** to `ANIMATION_EFFECTS` in `src/animations/effects.ts` with a `label`,
+   a `duration` matching your longest keyframe, and an `impactAtMs`. It joins `STRIKE_POOL`
+   automatically.
+3. **Add `src/components/shared/overlay/yourEffect.css`** and `@import` it from
+   `OverlayAnimation.css`. Scope everything to `.overlay-animation.your-class`.
+4. **Handle reduced motion**: leave a restrained variant _outside_
+   `@media (prefers-reduced-motion: no-preference)` and the full spectacle inside. Degrade, do
+   not disable — every existing effect does this.
+5. **Review it in the Strike Range**: app menu > About > tap the build row 7x > Strike range.
+   Fire it back to back against the rest of the pool; that is the only way to tell whether it
+   actually reads as a different event.
+
+### Styling guidelines
+
+- Use `vmax`/`vmin` sizing so effects still cover the viewport in landscape.
+- Animate `transform` and `opacity`; avoid `width`/`height`/`top`/`left`.
+- For an expanding ring, use a **gradient band, not a `border`** — under `transform: scale()` a
+  border thickens along with the element, whereas a gradient band scales proportionally, which is
+  what a real shock front does.
+- Keep total duration under ~2s.
 
 ## Technical Details
 
-### Preventing Simultaneous Animations
+### Preventing simultaneous animations
 
-The hook uses a module-level flag (`isAnyAnimationActive`) to ensure only one animation plays at a time. If `trigger()` is called while another animation is active, it logs a warning and exits early.
-
-### Sound Playback Error Handling
-
-If sound playback fails (e.g., autoplay policies, missing file), the system:
-
-1. Logs a warning to console
-2. Falls back to haptic feedback if `haptic: true`
-3. Continues with visual animation
+A module-level flag in the hook ensures only one animation plays at a time. Triggering during an
+active animation logs a warning and exits early.
 
 ### Cleanup
 
-The hook automatically:
+The hook clears its timeout on unmount and releases the global flag if it unmounts mid-animation.
+Audio is never paused on unmount — calling `pause()` can interrupt `play()` and raise an
+`AbortError`; sounds are short and complete naturally.
 
-- Clears timeouts on unmount
-- Stops audio playback on unmount
-- Resets global animation flag when component unmounts mid-animation
-
-## Styling Guidelines
-
-### CSS Best Practices
-
-- Use `::before` or `::after` pseudo-elements for animation content
-- Always set `pointer-events: none` on overlay elements
-- Use `position: fixed` for full-viewport coverage
-- Keep z-index at 10000 or higher to overlay all content
-- Use CSS variables for colors (e.g., `--ion-color-primary`)
-
-### Animation Performance
-
-- Use `transform` and `opacity` for smooth 60fps animations
-- Avoid animating `width`, `height`, `top`, `left` directly
-- Use `will-change` sparingly (only if needed for performance)
-- Keep duration under 2 seconds for good UX
-
-## Example: Laser Obliteration in ShoppingList
+## Usage
 
 ```typescript
-// Trigger animation before clearing items
-const confirmClearChecked = useCallback(async () => {
-    setShowClearCheckedAlert(false);
-    await triggerLaser(); // Start animation
+const [munition, setMunition] = useState<AnimationEffect>(pickStrike);
+const { trigger, isActive, cssClass } = useOverlayAnimation(munition);
 
-    // Wait for animation to complete
-    setTimeout(() => {
-        if (selectedStoreId) {
-            clearChecked.mutate({ storeId: selectedStoreId });
-        }
-    }, ANIMATION_EFFECTS.LASER_OBLITERATION.duration);
-}, [clearChecked, selectedStoreId, triggerLaser]);
+// Roll + preload when the confirm UI opens
+useEffect(() => {
+    if (!isOpen) return;
+    const next = pickStrike();
+    setMunition(next);
+    preloadStrikeSound(next);
+}, [isOpen]);
 
-// Fade out checked items during animation
-<CheckedItems
-    items={checkedItems}
-    onClearChecked={handleClearChecked}
-    isFadingOut={isObliterating}
-/>
+const handleConfirm = async () => {
+    await trigger(munition);
+    setTimeout(() => doTheDestructiveThing(), munition.impactAtMs);
+};
 
-// Render overlay
-<OverlayAnimation cssClass={cssClass} />
+return (
+    <>
+        {/* ... */}
+        <OverlayAnimation cssClass={cssClass} />
+    </>
+);
 ```
 
-## Future Enhancements
-
-- Add custom duration parameter to `useOverlayAnimation` hook
-- Support multiple simultaneous animations (with priority system)
-- Add animation completion callbacks
-- Create more preset animations (explosion, swipe, fade, etc.)
+`trigger` accepts an optional effect to fire instead of the hook's default. Use it whenever a
+caller rolls a munition and fires it **in the same handler** — the callback closes over the
+effect it was rendered with, so state set moments earlier would name one weapon and fire the
+previous one. `ShoppingList.tsx` threads the rolled munition through its alert handler for
+exactly this reason.

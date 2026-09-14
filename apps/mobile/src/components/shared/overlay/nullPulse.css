@@ -1,0 +1,122 @@
+/**
+ * NULL PULSE
+ * Owns: grayscale, hexagonal geometry, expand-then-collapse. The short cold one - no fire
+ * anywhere in it, and at 0.9s it is the rhythm break in a pool of 1.2-1.8s spectacles.
+ *
+ * The hex ring is a single clip-path "keyhole" polygon: the outer hexagon traversed clockwise,
+ * a seam, then the inner hexagon traversed counter-clockwise. Under the default nonzero fill
+ * rule that leaves the middle empty, which is the only way to get a true wireframe from one
+ * element.
+ */
+
+.overlay-animation.null-pulse {
+    animation: nullScreen 0.9s linear forwards;
+}
+
+@keyframes nullScreen {
+    0% {
+        background: rgba(148, 163, 184, 0);
+    }
+    18% {
+        background: rgba(203, 213, 225, 0.3);
+    }
+    60% {
+        background: rgba(148, 163, 184, 0.12);
+    }
+    100% {
+        background: rgba(148, 163, 184, 0);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    /* Drains the colour out of the app behind the overlay and lets it back in. The signature
+       property: nothing else in the pool touches saturation. */
+    .overlay-animation.null-pulse {
+        animation:
+            nullScreen 0.9s linear forwards,
+            nullDrain 0.9s cubic-bezier(0.3, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes nullDrain {
+        0% {
+            backdrop-filter: grayscale(0) contrast(1);
+        }
+        20% {
+            backdrop-filter: grayscale(1) contrast(1.25);
+        }
+        68% {
+            backdrop-filter: grayscale(1) contrast(1.25);
+        }
+        100% {
+            backdrop-filter: grayscale(0) contrast(1);
+        }
+    }
+
+    .overlay-animation.null-pulse::before,
+    .overlay-animation.null-pulse::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 56vmin;
+        height: 56vmin;
+        margin: -28vmin 0 0 -28vmin;
+        background: rgba(226, 232, 240, 0.9);
+        clip-path: polygon(
+            50% 0%,
+            95% 25%,
+            95% 75%,
+            50% 100%,
+            5% 75%,
+            5% 25%,
+            50% 0%,
+            50% 11%,
+            14.9% 30.5%,
+            14.9% 69.5%,
+            50% 89%,
+            85.1% 69.5%,
+            85.1% 30.5%,
+            50% 11%
+        );
+        opacity: 0;
+    }
+
+    /* Beat one: the field expands. */
+    .overlay-animation.null-pulse::before {
+        animation: nullExpand 0.52s cubic-bezier(0.15, 0.75, 0.3, 1) 0.1s forwards;
+    }
+
+    @keyframes nullExpand {
+        0% {
+            transform: scale(0.1) rotate(0deg);
+            opacity: 0;
+        }
+        22% {
+            opacity: 1;
+        }
+        100% {
+            transform: scale(2.6) rotate(30deg);
+            opacity: 0;
+        }
+    }
+
+    /* Beat two: a second field collapses back onto the point, which is what makes it read as a
+       pulse rather than another expanding ring. */
+    .overlay-animation.null-pulse::after {
+        animation: nullCollapse 0.34s cubic-bezier(0.5, 0, 0.75, 0.4) 0.44s forwards;
+    }
+
+    @keyframes nullCollapse {
+        0% {
+            transform: scale(2.2) rotate(30deg);
+            opacity: 0;
+        }
+        30% {
+            opacity: 0.85;
+        }
+        100% {
+            transform: scale(0.05) rotate(0deg);
+            opacity: 0;
+        }
+    }
+}

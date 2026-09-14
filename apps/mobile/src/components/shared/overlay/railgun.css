@@ -1,0 +1,227 @@
+/**
+ * RAILGUN
+ * Owns: hard-edged line art, converge-then-release, amber. The only munition with no blur
+ * anywhere - every edge in it is a hard gradient stop or a border.
+ *
+ * Four reticle brackets close on the target, hold, then a slug fires and a flat concussive ring
+ * is released. Uses the spare overlay layers: two layers x two pseudo-elements = four brackets.
+ */
+
+.overlay-animation.railgun {
+    animation: railgunScreen 1.65s linear forwards;
+}
+
+@keyframes railgunScreen {
+    0% {
+        background: rgba(237, 137, 54, 0);
+    }
+    50% {
+        background: rgba(237, 137, 54, 0.05);
+    }
+    55% {
+        background: rgba(255, 236, 200, 0.5);
+    }
+    70% {
+        background: rgba(237, 137, 54, 0.1);
+    }
+    100% {
+        background: rgba(237, 137, 54, 0);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .overlay-animation.railgun .overlay-animation__layer:nth-child(1),
+    .overlay-animation.railgun .overlay-animation__layer:nth-child(2) {
+        opacity: 1;
+    }
+
+    /* Corner brackets. Each is an L drawn with two borders; the layer positions it and the
+       keyframe walks it in toward the centre. */
+    .overlay-animation.railgun .overlay-animation__layer::before,
+    .overlay-animation.railgun .overlay-animation__layer::after {
+        content: "";
+        position: absolute;
+        width: 13vmin;
+        height: 13vmin;
+        border: 3px solid var(--ion-color-warning, #ed8936);
+        opacity: 0;
+    }
+
+    .overlay-animation.railgun .overlay-animation__layer:nth-child(1)::before {
+        top: 18%;
+        left: 14%;
+        border-right: none;
+        border-bottom: none;
+        animation: railgunBracketTL 0.85s cubic-bezier(0.3, 0, 0.2, 1) forwards;
+    }
+
+    .overlay-animation.railgun .overlay-animation__layer:nth-child(1)::after {
+        top: 18%;
+        right: 14%;
+        border-left: none;
+        border-bottom: none;
+        animation: railgunBracketTR 0.85s cubic-bezier(0.3, 0, 0.2, 1) forwards;
+    }
+
+    .overlay-animation.railgun .overlay-animation__layer:nth-child(2)::before {
+        bottom: 18%;
+        left: 14%;
+        border-right: none;
+        border-top: none;
+        animation: railgunBracketBL 0.85s cubic-bezier(0.3, 0, 0.2, 1) forwards;
+    }
+
+    .overlay-animation.railgun .overlay-animation__layer:nth-child(2)::after {
+        bottom: 18%;
+        right: 14%;
+        border-left: none;
+        border-top: none;
+        animation: railgunBracketBR 0.85s cubic-bezier(0.3, 0, 0.2, 1) forwards;
+    }
+
+    /* Converge, snap hard at 82%, then clear out before the ring fires. */
+    @keyframes railgunBracketTL {
+        0% {
+            transform: translate(-18vmin, -18vmin);
+            opacity: 0;
+        }
+        12% {
+            opacity: 1;
+        }
+        82% {
+            transform: translate(9vmin, 9vmin);
+            opacity: 1;
+        }
+        100% {
+            transform: translate(11vmin, 11vmin);
+            opacity: 0;
+        }
+    }
+
+    @keyframes railgunBracketTR {
+        0% {
+            transform: translate(18vmin, -18vmin);
+            opacity: 0;
+        }
+        12% {
+            opacity: 1;
+        }
+        82% {
+            transform: translate(-9vmin, 9vmin);
+            opacity: 1;
+        }
+        100% {
+            transform: translate(-11vmin, 11vmin);
+            opacity: 0;
+        }
+    }
+
+    @keyframes railgunBracketBL {
+        0% {
+            transform: translate(-18vmin, 18vmin);
+            opacity: 0;
+        }
+        12% {
+            opacity: 1;
+        }
+        82% {
+            transform: translate(9vmin, -9vmin);
+            opacity: 1;
+        }
+        100% {
+            transform: translate(11vmin, -11vmin);
+            opacity: 0;
+        }
+    }
+
+    @keyframes railgunBracketBR {
+        0% {
+            transform: translate(18vmin, 18vmin);
+            opacity: 0;
+        }
+        12% {
+            opacity: 1;
+        }
+        82% {
+            transform: translate(-9vmin, -9vmin);
+            opacity: 1;
+        }
+        100% {
+            transform: translate(-11vmin, -11vmin);
+            opacity: 0;
+        }
+    }
+
+    /* The slug: a hairline that snaps across the instant the brackets meet. */
+    .overlay-animation.railgun::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        margin-top: -1px;
+        background: linear-gradient(
+            to right,
+            transparent 0%,
+            var(--ion-color-warning, #ed8936) 12%,
+            rgba(255, 255, 255, 1) 50%,
+            var(--ion-color-warning, #ed8936) 88%,
+            transparent 100%
+        );
+        opacity: 0;
+        animation: railgunSlug 0.22s linear 0.85s forwards;
+    }
+
+    @keyframes railgunSlug {
+        0% {
+            transform: scaleX(0);
+            opacity: 1;
+        }
+        55% {
+            transform: scaleX(1);
+            opacity: 1;
+        }
+        100% {
+            transform: scaleX(1);
+            opacity: 0;
+        }
+    }
+
+    /* Concussive ring. Hard colour stops, no falloff: this weapon does not glow, it cuts. */
+    .overlay-animation.railgun::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 34vmax;
+        height: 34vmax;
+        margin: -17vmax 0 0 -17vmax;
+        border-radius: 50%;
+        background: radial-gradient(
+            circle,
+            transparent 0%,
+            transparent 60%,
+            var(--ion-color-warning, #ed8936) 60%,
+            rgba(255, 245, 225, 1) 66%,
+            var(--ion-color-warning, #ed8936) 70%,
+            transparent 70%
+        );
+        opacity: 0;
+        animation: railgunRing 0.8s cubic-bezier(0.1, 0.7, 0.2, 1) 0.85s forwards;
+    }
+
+    @keyframes railgunRing {
+        0% {
+            transform: scale(0.08);
+            opacity: 0;
+        }
+        10% {
+            opacity: 1;
+        }
+        100% {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+}

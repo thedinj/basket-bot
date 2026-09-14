@@ -1,0 +1,56 @@
+// Borrows the mono/amber data register from ObliterateUnusedModal rather than inventing a second
+// developer-tool look - this is the same weapons platform, just with the panel open.
+.strike-range-header {
+    padding: 18px 16px 14px;
+}
+
+.strike-range-label {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ion-color-warning, #ed8936);
+}
+
+.strike-range-note {
+    margin: 10px 0 12px;
+    max-width: 62ch;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--ion-color-step-500, #a0aec0);
+}
+
+.strike-range-rolled {
+    margin-top: 10px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ion-color-step-450, #8b93a7);
+}
+
+.strike-range-row-name {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+}
+
+.strike-range-row-data {
+    display: block;
+    margin-top: 2px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--ion-color-step-450, #8b93a7);
+}
+
+// Marks which row you are currently watching, since the overlay covers the list while it plays.
+.strike-range-row--firing {
+    --background: rgba(237, 137, 54, 0.14);
+
+    .strike-range-row-name {
+        color: var(--ion-color-warning, #ed8936);
+    }
+}

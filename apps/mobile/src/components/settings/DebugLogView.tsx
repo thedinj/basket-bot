@@ -4,7 +4,7 @@ import { useToast } from "../../hooks/useToast";
 import { clientErrorLog, type ClientErrorLogEntry } from "../../lib/clientErrorLog";
 
 /**
- * Hidden debug log shown after tapping the build row 7x in the app menu > About.
+ * Body of the Black Box modal (app menu > About > 7 taps > Black box).
  * Lists recent client-side errors so a requestId can be handed back to an admin
  * to cross-reference against the backend's Error Logs page.
  */
