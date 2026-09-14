@@ -1,11 +1,11 @@
 .auth-page-content {
-    --background: url(/img/splash.png) no-repeat center center / cover;
+    --background: url(/img/splash.jpg) no-repeat center center / cover;
 }
 
 .auth-card-container {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
     min-height: 100%;
 }
 
@@ -13,4 +13,45 @@
     max-width: 400px;
     width: 100%;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.85);
+
+    // The card always sits below the bot's head and on the centre line, in every viewport
+    // shape. One rule rather than an orientation split: there is no breakpoint to tune and
+    // nothing to flip on rotation, so no stale state can be left behind.
+    //
+    // It holds in landscape too. `cover` scales the square art to the viewport width and
+    // crops the top and bottom, which puts the visor band at the very top of a short
+    // viewport - so a bottom-anchored card still leaves the eyes reading above it.
+    //
+    // Auto margins rather than justify-content centring: when the card is taller than the
+    // viewport an auto margin collapses to zero and the page simply scrolls, where
+    // justify-content would push the top of the card past an edge that cannot be scrolled
+    // back to. That case is real - the Register card is taller than a landscape phone.
+    margin-top: auto;
+    margin-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
+    margin-inline: auto;
+
+    // Glass, so the bot still reads through wherever the card has to overlap it. The
+    // colours are the launcher icon's own: #0f0f23 visor cavity, #bdb5dd shell. ion-card
+    // paints --background on the host and clips the host to its own border-radius, so the
+    // hairline and the blur both follow the card's corners.
+    --background: rgba(15, 15, 35, 0.72);
+    border: 1px solid rgba(189, 181, 221, 0.18);
+    backdrop-filter: blur(14px) saturate(115%);
+    -webkit-backdrop-filter: blur(14px) saturate(115%);
+}
+
+// No blur available, or the viewer has asked for less of it: go nearly opaque rather than
+// leave form labels sitting on raw artwork.
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .auth-card {
+        --background: rgba(15, 15, 35, 0.94);
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .auth-card {
+        --background: rgba(15, 15, 35, 0.94);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
 }

@@ -12,8 +12,8 @@
             }
         },
         "splash": {
-            "sources": ["resources/splash.png"],
-            "darkSources": ["resources/splash-dark.png"]
+            "sources": ["resources/splash.jpg"],
+            "darkSources": ["resources/splash-dark.jpg"]
         }
     }
 }
