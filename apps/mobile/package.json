@@ -11,7 +11,7 @@
         "typecheck": "tsc --noEmit",
         "test": "vitest run",
         "test:watch": "vitest",
-        "lint": "eslint . --ext ts,tsx",
+        "lint": "eslint .",
         "ionic:build": "npm run build",
         "ionic:serve": "npm run dev",
         "cap": "cap",

@@ -4,17 +4,28 @@
     Used as LLM_ICON_SRC (see src/llm/shared/constants.ts) and tinted via currentColor,
     so the whole mark has to read in one value.
 
-    One path, fill-rule evenodd, so the nesting does the shading:
+    The face is one path, fill-rule evenodd, so the nesting does the shading:
       shell outline   -> filled
       visor cavity    -> hole
       the two lenses  -> filled again, inside the hole
       mouth           -> hole
 
-    Geometry matches resources/icon.svg exactly. The chin plate hairline is omitted
-    here - at the size this renders it would be well under a pixel.
+    The ear drums and antenna nubs ride in a SEPARATE group ahead of it, deliberately.
+    They overlap the shell, and under evenodd an overlap reads as a crossing - it would
+    punch a hole exactly where each drum meets the casing. As siblings in one colour the
+    overlap is simply painted twice, which is what we want.
+
+    Geometry matches resources/icon.svg exactly. Omitted here, being sub-pixel at the
+    size this renders: the chin plate hairline and the lighter cap on each nub.
 -->
-<svg viewBox="48 124 416 272" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+<svg viewBox="48 108 416 288" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
     fill-rule="evenodd">
+    <g>
+        <path d="M 112,183 L 69,183 Q 60,183 60,192 L 60,226 Q 60,235 69,235 L 112,235 Z" />
+        <path d="M 400,183 L 443,183 Q 452,183 452,192 L 452,226 Q 452,235 443,235 L 400,235 Z" />
+        <rect x="186" y="116" width="20" height="26" rx="10" />
+        <rect x="306" y="116" width="20" height="26" rx="10" />
+    </g>
     <path
         d="M 177,132 L 335,132 Q 392,132 401,167 L 445,345 Q 456,388 412,388 L 100,388 Q 56,388 67,345 L 111,167 Q 120,132 177,132 Z
            M 142,179 L 370,179 Q 384,179 384,193 L 384,225 Q 384,239 370,239 L 142,239 Q 128,239 128,225 L 128,193 Q 128,179 142,179 Z

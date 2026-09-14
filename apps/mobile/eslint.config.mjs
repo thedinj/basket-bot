@@ -37,6 +37,21 @@ export default tseslint.config(
         },
     },
     {
+        // Build tooling, run by node rather than shipped to the browser. The rest of this
+        // package has no globals declared at all, which is fine for .ts (typescript-eslint
+        // turns no-undef off and lets tsc do it) but leaves plain .mjs with nothing defined.
+        // Listed by hand rather than pulling in the `globals` package for one file - if more
+        // node scripts arrive, swap this for `globals.node`.
+        files: ["scripts/**/*.{js,mjs}"],
+        languageOptions: {
+            globals: {
+                Buffer: "readonly",
+                console: "readonly",
+                process: "readonly",
+            },
+        },
+    },
+    {
         ignores: ["dist/**", "node_modules/**", "android/**", "ios/**"],
     }
 );

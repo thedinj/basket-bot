@@ -77,8 +77,15 @@ const at = (...p) => path.join(ROOT, ...p);
  * only 83 away from the field colour, so a global key would punch a hole through it.
  * The RGBA buffer is interleaved by hand because sharp's joinChannel misreads the stride
  * on a raw pipeline.
+ *
+ * Tolerance is bounded from above by the drop shadow, not by the field. The field is flat
+ * enough that even 30 cuts it completely, but the shadow the render casts is a dark purple
+ * within ~55 of the field colour - so at 80 the fill starts creeping along the shadow into
+ * the seam behind each ear drum, and by 100 it bites a visible notch out of the drum. 60
+ * clears the field with room for JPEG noise and stops short of the shadow. Raise it only
+ * after checking the drum/casing junction in the output.
  */
-const cutField = async (src, tolerance = 100) => {
+const cutField = async (src, tolerance = 60) => {
     const { data, info } = await sharp(src).removeAlpha().raw().toBuffer({ resolveWithObject: true });
     const { width: W, height: H, channels: C } = info;
 
