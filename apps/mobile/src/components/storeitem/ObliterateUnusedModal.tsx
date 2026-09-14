@@ -90,7 +90,7 @@ const ObliterateUnusedModal: React.FC<ObliterateUnusedModalProps> = ({
         const next = pickStrike();
         setMunition(next);
         // Opening the sheet is a user gesture, which is what mobile WebViews wait for before
-        // doing any audio work. Warming it here is why the sound lands on the flash.
+        // doing any audio work. Warming it here is why the sound lands on time.
         preloadStrikeSound(next);
     }, [isOpen]);
 
