@@ -1,0 +1,72 @@
+Priority order
+
+If you only find a few, get these first — they're ranked by how badly the current shared file misfits:
+
+┌─────┬───────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│  #  │   Munition    │                                 Why the current sound is wrong                                  │
+├─────┼───────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 1   │ SOLAR LENS    │ It has a 1.15s build before anything happens. An instant zap is the worst mismatch in the pool. │
+├─────┼───────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 2   │ EVENT HORIZON │ It implodes. An explosion is literally backwards.                                               │
+├─────┼───────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 3   │ NULL PULSE    │ A laser zap for a silent grayscale drain with no fire in it.                                    │
+├─────┼───────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 4   │ MIRV SALVO    │ One boom for six separate impacts.                                                              │
+├─────┼───────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 5   │ GUILLOTINE    │ Zap is passable; a slash is much better.                                                        │
+├─────┼───────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 6   │ KINETIC ROD   │ explosion.mp3 is genuinely decent here.                                                         │
+├─────┼───────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 7   │ RAILGUN       │ laser-zap.mp3 is genuinely decent here.                                                         │
+└─────┴───────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+Search terms
+
+Save as the filename shown, into apps/mobile/public/sounds/.
+
+solar-lens.mp3 — 1.8s · needs a rising build to 1.15s, then ignition
+
+▎ energy charge up and fire · sci-fi laser charge blast · plasma beam charge · riser impact · heat ray
+
+The one clip where the tail matters as much as the attack. Look for something with an audible crescendo — "riser" is the term stock libraries use for exactly this shape.
+
+event-horizon.mp3 — 1.5s · swelling inhale → collapse at 0.9s → bass thump
+
+▎ implosion · black hole · reverse explosion · vacuum suck whoosh · sci-fi portal collapse · gravity well
+
+"Reverse explosion" is the highest-yield search — a reversed boom is exactly the physics here, and plenty of libraries publish them pre-reversed.
+
+null-pulse.mp3 — 0.9s · short, cold, no boom
+
+▎ EMP pulse · sci-fi power down · energy drain · electromagnetic pulse · system shutdown whoosh
+
+Wants a descending pitch, not a hit. If it has any fire or debris in it, it's wrong for this one.
+
+mirv-salvo.mp3 — 1.5s · six thuds at 120/280/400/560/720/880ms, then one big detonation
+
+▎ cluster bomb · carpet bombing run · artillery barrage · mortar salvo · distant multiple explosions
+
+The hardest to match, because the rhythm is specific. A "bomb run" recording with a natural stutter gets you most of the way; don't chase exact alignment.
+
+guillotine.mp3 — 1.1s · hard slash at t=0, then let it go quiet
+
+▎ sword slash · katana slice · blade swoosh metal · laser cut · whip crack
+
+Take a clean short slash and stop there. The 200ms of silence after the blade is the entire point of this effect — a clip that keeps rumbling through it destroys the beat.
+
+kinetic-rod.mp3 — 1.4s · descending whistle → heavy crack at ~600ms
+
+▎ incoming artillery whistle impact · meteor strike · mortar incoming · bunker buster · heavy projectile impact
+
+railgun.mp3 — 1.65s · electrical charge → sharp discharge at 850ms
+
+▎ railgun fire · gauss rifle shot · coil gun · capacitor discharge · electric cannon
+
+Practical constraints
+
+- No leading silence. playStrikeSound starts at currentTime = 0 the same instant the CSS animation begins, so any padding at the head of the file reads as lag. Trim the attack right up to the waveform.
+- The first ~100ms is what sells sync. The tail matters far less — if a clip has the right attack and a wrong-ish tail, take it.
+- Roughly match or undershoot the duration. Audio isn't stopped on unmount (pausing can throw AbortError), so a long tail keeps playing after the sheet closes.
+- Keep them small and CC0. The existing two are 24KB and 84KB. Freesound (filter to CC0), Pixabay Sound Effects, and Mixkit are the usual sources; mono is fine.
+
+Drop whatever you find into public/sounds/ and tell me — wiring each one is a single soundPath line in effects.ts, and the ZAP/BOOM family constants disappear as they get replaced. Anything you don't find keeps its current shared file with no work needed.

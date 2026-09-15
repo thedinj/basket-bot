@@ -49,6 +49,7 @@ off every axis already claimed here.**
 | Solar lens        | SOLAR LENS            | converging conic rays            | yellow-white       | `rotate` + tighten   | `conic-gradient` + rotation   | 1800 |   1250 |
 | Event horizon     | EVENT HORIZON         | inward vignette + accretion disc | black/violet-white | `scale` **in**       | `backdrop-filter: blur` ramp  | 1500 |   1000 |
 | Eq. guillotine    | EQUATORIAL GUILLOTINE | razor line, widening gap         | white-hot on black | `scaleY` of a gap    | staccato snap-hold-open       | 1100 |    650 |
+| Laser lattice     | LASER LATTICE         | orthogonal beam mesh             | laser red/white    | `translateZ` + turn  | `perspective` depth           | 1700 |   1200 |
 
 Durations deliberately span 0.9s–1.8s so the _rhythm_ varies, not just the picture.
 

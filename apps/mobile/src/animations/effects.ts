@@ -163,6 +163,21 @@ export const ANIMATION_EFFECTS = {
         label: "EQUATORIAL GUILLOTINE",
         impactAtMs: 650,
     },
+
+    /**
+     * A single ranging beam sweeps the room, a red laser lattice arms behind it, turns as it
+     * bears down and passes through the camera, then the seams it cut glow and cool. The only
+     * munition with real depth - `perspective` + `translateZ` rather than a flat scale - and
+     * the only mesh.
+     */
+    LASER_LATTICE: {
+        cssClass: "laser-lattice",
+        soundPath: ZAP,
+        duration: 1700, // ranging beam 0-460ms, lattice 340-1360ms, seams 1080-1700ms
+        haptic: true,
+        label: "LASER LATTICE",
+        impactAtMs: 1200,
+    },
 } satisfies Record<string, AnimationEffect>;
 
 export type AnimationEffectName = keyof typeof ANIMATION_EFFECTS;

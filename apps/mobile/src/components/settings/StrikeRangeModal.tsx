@@ -31,7 +31,7 @@ interface StrikeRangeModalProps {
 /**
  * Developer test bed for the munition pool.
  *
- * Nine effects cannot be reviewed through the real flows - seeing a specific one means seeding
+ * The pool cannot be reviewed through the real flows - seeing a specific one means seeding
  * orphan items and re-rolling until the pool happens to hand it to you. Here every munition is
  * one tap away, which is the only way to judge whether any two of them read as the same event.
  */

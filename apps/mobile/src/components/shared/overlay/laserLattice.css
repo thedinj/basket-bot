@@ -1,0 +1,237 @@
+/**
+ * LASER LATTICE
+ * Owns: 3D depth. Every other munition is flat compositing on the viewport plane; this one is
+ * the only effect built on `perspective` + `translateZ`, so the grid genuinely rushes the camera
+ * instead of scaling up in place.
+ *
+ * Also the only effect whose geometry is an orthogonal mesh, drawn with one
+ * `repeating-linear-gradient` pair rather than any element per line - a dicing grid is 20+ beams
+ * and there are only twelve paintable surfaces in the overlay.
+ *
+ * Sequence: a single ranging beam sweeps the room, the lattice arms behind it, the whole mesh
+ * turns as it bears down and passes through the camera, and the seams flash where it cut. The
+ * cut is implied - the overlay paints above the app and cannot actually dice it - which is the
+ * same trick the equatorial guillotine plays.
+ */
+
+.overlay-animation.laser-lattice {
+    animation: latticeRoom 1.7s linear forwards;
+}
+
+@keyframes latticeRoom {
+    0% {
+        background: rgba(10, 0, 2, 0);
+    }
+    20% {
+        background: rgba(10, 0, 2, 0.34);
+    }
+    /* The pass-through. Everything the beams touched lights at once. */
+    70% {
+        background: rgba(255, 40, 62, 0.62);
+    }
+    78% {
+        background: rgba(255, 226, 230, 0.5);
+    }
+    100% {
+        background: rgba(40, 0, 6, 0);
+    }
+}
+
+/**
+ * Restrained variant, deliberately outside the no-preference block below: with reduced motion the
+ * lattice still arms and still cuts, it just never rushes the camera. The block below overrides
+ * this `::after` wholesale when motion is welcome.
+ */
+.overlay-animation.laser-lattice::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        repeating-linear-gradient(
+            to right,
+            rgba(255, 24, 56, 0) 0,
+            rgba(255, 24, 56, 0) 10.7vmin,
+            rgba(255, 90, 110, 0.85) 10.7vmin,
+            rgba(255, 90, 110, 0.85) 11vmin
+        ),
+        repeating-linear-gradient(
+            to bottom,
+            rgba(255, 24, 56, 0) 0,
+            rgba(255, 24, 56, 0) 10.7vmin,
+            rgba(255, 90, 110, 0.85) 10.7vmin,
+            rgba(255, 90, 110, 0.85) 11vmin
+        );
+    opacity: 0;
+    animation: latticeStatic 1.7s ease-in-out forwards;
+}
+
+@keyframes latticeStatic {
+    0% {
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+    }
+    70% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    /* The ranging beam. One horizontal line crosses the room before the lattice commits -
+       the beat that says "this is a trap that was already armed", not an explosion. */
+    .overlay-animation.laser-lattice::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(
+            to right,
+            rgba(255, 0, 32, 0) 0%,
+            rgba(255, 60, 80, 0.9) 6%,
+            rgba(255, 245, 246, 1) 50%,
+            rgba(255, 60, 80, 0.9) 94%,
+            rgba(255, 0, 32, 0) 100%
+        );
+        box-shadow:
+            0 0 10px rgba(255, 30, 60, 0.95),
+            0 0 34px rgba(255, 0, 40, 0.75);
+        animation: latticeRangingBeam 0.46s cubic-bezier(0.35, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes latticeRangingBeam {
+        0% {
+            transform: translateY(6vh);
+            opacity: 0;
+        }
+        12% {
+            opacity: 1;
+        }
+        85% {
+            transform: translateY(92vh);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(100vh);
+            opacity: 0;
+        }
+    }
+
+    /* The lattice. Oversized and centred so it still covers the viewport once perspective has
+       pushed it into the distance; `translateZ` then walks it through the camera while the whole
+       mesh turns.
+
+       260% rather than a snug 200%: a rotated rectangle only covers the viewport while its
+       half-width clears the viewport's half-diagonal, and at ~40deg on a tall phone 200% leaves
+       a bare corner as the grid swings. */
+    .overlay-animation.laser-lattice::after {
+        content: "";
+        position: absolute;
+        top: -80%;
+        left: -80%;
+        width: 260%;
+        height: 260%;
+        background-image:
+            repeating-linear-gradient(
+                to right,
+                rgba(255, 24, 56, 0) 0,
+                rgba(255, 24, 56, 0) 5.4vmin,
+                rgba(255, 70, 92, 0.85) 5.4vmin,
+                rgba(255, 236, 238, 0.95) 5.7vmin,
+                rgba(255, 70, 92, 0.85) 6vmin,
+                rgba(255, 24, 56, 0) 6vmin
+            ),
+            repeating-linear-gradient(
+                to bottom,
+                rgba(255, 24, 56, 0) 0,
+                rgba(255, 24, 56, 0) 5.4vmin,
+                rgba(255, 70, 92, 0.85) 5.4vmin,
+                rgba(255, 236, 238, 0.95) 5.7vmin,
+                rgba(255, 70, 92, 0.85) 6vmin,
+                rgba(255, 24, 56, 0) 6vmin
+            );
+        filter: drop-shadow(0 0 6px rgba(255, 20, 50, 0.9));
+        transform-origin: 50% 50%;
+        opacity: 0;
+        animation: latticeAdvance 1.02s cubic-bezier(0.5, 0, 0.85, 0.6) 0.34s forwards;
+    }
+
+    /* `perspective()` has to lead the chain - it applies to whatever follows it, so a rotate
+       placed ahead of it would spin a flat mesh instead of a receding one. The turn decelerates
+       as the grid arrives, so it is still moving at the pass-through rather than settling first. */
+    @keyframes latticeAdvance {
+        0% {
+            transform: perspective(760px) translateZ(-760px) rotate(-38deg);
+            opacity: 0;
+        }
+        /* Arming: the mesh snaps on at full brightness rather than fading up. */
+        14% {
+            transform: perspective(760px) translateZ(-660px) rotate(-31deg);
+            opacity: 1;
+        }
+        55% {
+            transform: perspective(760px) translateZ(-180px) rotate(-12deg);
+            opacity: 1;
+        }
+        /* Through the camera. */
+        86% {
+            transform: perspective(760px) translateZ(300px) rotate(1deg);
+            opacity: 0.9;
+        }
+        100% {
+            transform: perspective(760px) translateZ(560px) rotate(6deg);
+            opacity: 0;
+        }
+    }
+
+    /* The seams. Where the lattice passed, a static grid of cuts glows and cools - the
+       afterimage of the mesh burnt onto the room it just left. Held at the angle the mesh had
+       as it went through (the 86% keyframe), so the burn lines up with what cut them; oversized
+       for the same reason the lattice is. */
+    .overlay-animation.laser-lattice .overlay-animation__layer:nth-child(1) {
+        /* Clears base.css's `inset: 0`, which would otherwise pin all four edges and leave the
+           width/height below with nothing to do. Must precede them - it is a shorthand. */
+        inset: auto;
+        top: -80%;
+        left: -80%;
+        width: 260%;
+        height: 260%;
+        transform: rotate(1deg);
+        background-image:
+            repeating-linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0) 0,
+                rgba(255, 255, 255, 0) 11vmin,
+                rgba(255, 190, 196, 0.8) 11vmin,
+                rgba(255, 190, 196, 0.8) 11.25vmin
+            ),
+            repeating-linear-gradient(
+                to bottom,
+                rgba(255, 255, 255, 0) 0,
+                rgba(255, 255, 255, 0) 11vmin,
+                rgba(255, 190, 196, 0.8) 11vmin,
+                rgba(255, 190, 196, 0.8) 11.25vmin
+            );
+        animation: latticeSeams 0.62s ease-out 1.08s forwards;
+    }
+
+    @keyframes latticeSeams {
+        0% {
+            opacity: 0;
+            filter: brightness(2.4);
+        }
+        16% {
+            opacity: 1;
+            filter: brightness(2.4);
+        }
+        100% {
+            opacity: 0;
+            filter: brightness(0.6);
+        }
+    }
+}
