@@ -25,9 +25,9 @@ interface GroupedShoppingListProps {
 
 const HEADER_LABEL_CLASS = "group-header-label group-header-label--aisle";
 
-// Rows carry no extra indent: the checkbox sits in the same 36px column as the header plates,
-// so every row and header shares one left edge (see ShoppingListItem.css).
-const INDENT_LEVEL = 0;
+// Item rows step in 16px under their header (aisle bar or section label), so aisle, section and
+// item read as three levels at a glance rather than one flat column (see ShoppingListItem.css).
+const INDENT_LEVEL = 16;
 const IDEAS_SORT_ORDER = 0;
 const AISLE_SORT_ORDER_OFFSET = 100;
 

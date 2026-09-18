@@ -12,9 +12,10 @@
     font-style: italic;
 }
 
-/* Two-column row grid shared with the group headers (see GroupedItemList.scss): a 36px
-   column holding the checkbox (headers: the aisle plate), a 10px gap, then text at 62px.
-   Ionic gives a start slot 32px of end margin by default, which put text at 74px.
+/* Row grid: a 36px column holding the checkbox, a 10px gap, then the text. The list indents
+   item rows 16px under their headers (INDENT_LEVEL in GroupedShoppingList), so the checkbox
+   centres at x = 50 and item text starts at 78, one step in from the aisle and section text at
+   62. Ionic gives a start slot 32px of end margin by default, which would push text further.
 
    Only the checkbox checks: the column itself is inert, and the hit area is a 32px square
    around the 18px box, centred at y = 24 so it sits beside the name's first line even when a
