@@ -2,7 +2,8 @@
 // Color overrides are applied inline since they come from semantic design tokens.
 //
 // Two registers, so an aisle and a section can never be confused:
-//   - aisle:   display face, uppercase, bold, full text color, in a bar (plus the shield plate)
+//   - aisle:   road-sign face (Overpass), uppercase, extra-bold, full text color, in a bar
+//              (plus the shield plate)
 //   - section: body face, small bold tracked caps, lilac, on its own row with a hairline running
 //              from the label to the edge — always, even for an aisle's only section
 
@@ -26,12 +27,12 @@
 // every label inside an item, and a plain `.group-header-label` rule loses to it silently.
 
 // Aisle names (also Ideas / Checked Items / Uncategorized): free text up to 100 chars, so wrap
-// to two lines, then ellipsize. Condensed, so it can run large without truncating.
+// to two lines, then ellipsize. Set like a road sign, in Overpass extra-bold capitals.
 ion-item-divider .group-header-label.group-header-label--aisle {
-    font-family: var(--app-font-display);
-    font-size: 1.0625rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
+    font-family: var(--app-font-sign);
+    font-size: 0.9375rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     white-space: normal;
 

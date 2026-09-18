@@ -45,6 +45,7 @@
         "@fontsource/barlow-condensed": "^5.3.0",
         "@fontsource/jetbrains-mono": "^5.3.0",
         "@fontsource/noto-emoji": "^5.3.1",
+        "@fontsource/overpass": "^5.3.0",
         "@hookform/resolvers": "^5.2.2",
         "@ionic/core": "^8.7.17",
         "@ionic/react": "^8.4.1",

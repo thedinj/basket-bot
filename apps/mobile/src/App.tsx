@@ -53,6 +53,8 @@ import "@fontsource/barlow-condensed/700.css";
 import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
 import "@fontsource/jetbrains-mono/700.css";
+/* Aisle names: Overpass, a Highway Gothic (US road sign) revival */
+import "@fontsource/overpass/800.css";
 /* Monochrome emoji for aisle plates: one weight; unicode-range chunks load only as used */
 import "@fontsource/noto-emoji/500.css";
 

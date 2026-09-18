@@ -1,9 +1,11 @@
 // "Highway" type system.
 //
 // Barlow is modeled on California highway signage: the body face everywhere (Ionic reads
-// --ion-font-family for every component). Barlow Condensed is the display register — toolbar
-// titles, aisle/section headers, tab labels — where the narrow width buys size without
-// truncation. JetBrains Mono stays the data register (quantities, counts, codes).
+// --ion-font-family for every component), including page titles and the small bold caps of
+// section labels. Overpass (--app-font-sign), a Highway Gothic revival, sets aisle names in the
+// shopping list's header bars. Barlow Condensed (--app-font-display) is kept for tab labels and
+// form field labels. JetBrains Mono is the data register (quantities, counts, codes), and Noto
+// Emoji (--app-font-emoji) draws aisle-plate emoji in one color.
 //
 // Fonts are bundled via @fontsource imports in App.tsx; nothing is fetched at runtime.
 
@@ -11,6 +13,10 @@
     --ion-font-family: "Barlow", system-ui, sans-serif;
     --app-font-display: "Barlow Condensed", "Barlow", system-ui, sans-serif;
     --app-font-mono: "JetBrains Mono", ui-monospace, monospace;
+    // Aisle names in the shopping list's header bars: Overpass, drawn from Highway Gothic, the
+    // lettering on US road signs. Wider than Barlow Condensed, whose narrow capitals ran
+    // together at phone size.
+    --app-font-sign: "Overpass", "Barlow", system-ui, sans-serif;
     // Aisle-plate emoji: single-color line glyphs, so every plate reads as one sign family
     // instead of each color emoji bringing its own palette.
     --app-font-emoji: "Noto Emoji", sans-serif;

@@ -166,6 +166,9 @@ importers:
       '@fontsource/noto-emoji':
         specifier: ^5.3.1
         version: 5.3.1
+      '@fontsource/overpass':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.1(react@19.2.3))
@@ -1021,6 +1024,9 @@ packages:
 
   '@fontsource/noto-emoji@5.3.1':
     resolution: {integrity: sha512-ahoLj7Ekf0IRMVLotQ1aUZpv90NdpAwkZiL3rNIE0hytK3APFAPh6PQHSZUsWfii/+CgXSxrL1D46MRtWP9rSw==}
+
+  '@fontsource/overpass@5.3.0':
+    resolution: {integrity: sha512-601DJ9xb8+8XbxAS05+lkh9cW6wc4TnXL2vhQBUN6PrtE/mQTgxqrqac7rXkthyJO7c3KMHOpl9Tt0sRql1p5Q==}
 
   '@hookform/resolvers@5.2.2':
     resolution: {integrity: sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA==}
@@ -6130,6 +6136,8 @@ snapshots:
   '@fontsource/jetbrains-mono@5.3.0': {}
 
   '@fontsource/noto-emoji@5.3.1': {}
+
+  '@fontsource/overpass@5.3.0': {}
 
   '@hookform/resolvers@5.2.2(react-hook-form@7.71.1(react@19.2.3))':
     dependencies:
