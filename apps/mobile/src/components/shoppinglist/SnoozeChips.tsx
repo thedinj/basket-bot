@@ -1,7 +1,8 @@
 import { IonChip, IonDatetime, IonIcon, IonLabel, IonModal } from "@ionic/react";
-import { closeCircle } from "ionicons/icons";
+import { calendarOutline, closeCircle } from "ionicons/icons";
 import { useMemo, useState } from "react";
 import { formatSnoozeDate, formatSnoozeDateForStorage } from "../../utils/dateUtils";
+import { FormField } from "../shared/FormField";
 import "./SnoozeChips.scss";
 
 /** Preset snooze offsets, in days from today. Shared with the swipe-action surface so
@@ -44,8 +45,7 @@ export const SnoozeChips: React.FC<SnoozeChipsProps> = ({ value, onChange }) => 
     const isCustom = Boolean(value) && !presetDates.some((preset) => preset.date === value);
 
     return (
-        <div className="snooze-chips">
-            <div className="snooze-chips__label">Snooze</div>
+        <FormField label="Snooze">
             <div className="snooze-chips__row">
                 {presetDates.map((preset) => {
                     const isActive = preset.date === value;
@@ -86,9 +86,15 @@ export const SnoozeChips: React.FC<SnoozeChipsProps> = ({ value, onChange }) => 
                         />
                     </IonChip>
                 ) : (
-                    <span className="snooze-chips__link" onClick={() => setShowModal(true)}>
-                        Pick date...
-                    </span>
+                    <IonChip
+                        outline
+                        color="medium"
+                        className="snooze-chips__chip"
+                        onClick={() => setShowModal(true)}
+                    >
+                        <IonIcon icon={calendarOutline} />
+                        <IonLabel>Pick date</IonLabel>
+                    </IonChip>
                 )}
             </div>
 
@@ -111,6 +117,6 @@ export const SnoozeChips: React.FC<SnoozeChipsProps> = ({ value, onChange }) => 
                     }}
                 />
             </IonModal>
-        </div>
+        </FormField>
     );
 };

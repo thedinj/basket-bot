@@ -1,3 +1,4 @@
+import { isSingleEmoji } from "@basket-bot/core";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonAlert,
@@ -7,14 +8,14 @@ import {
     IonHeader,
     IonIcon,
     IonInput,
-    IonItem,
     IonLabel,
     IonModal,
-    IonText,
+    IonSegment,
+    IonSegmentButton,
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { closeOutline, trash } from "ionicons/icons";
+import { closeCircle, closeOutline, trash } from "ionicons/icons";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -27,8 +28,15 @@ import {
     useUpdateAisle,
     useUpdateSection,
 } from "../../db/hooks";
+import { useToast } from "../../hooks/useToast";
+import { canSuggestEmojiFor } from "../../llm/features/aisleEmoji";
+import { useSuggestAisleEmoji } from "../../llm/features/useSuggestAisleEmoji";
+import { LLM_ICON_SRC } from "../../llm/shared/constants";
+import { parseAisleName } from "../../utils/aisleName";
+import { formatErrorMessage } from "../../utils/errorUtils";
 import { ClickableSelectionField } from "../shared/ClickableSelectionField";
 import type { SelectableItem } from "../shared/ClickableSelectionModal";
+import { FormField } from "../shared/FormField";
 import { useStoreManagement } from "./StoreManagementContext";
 
 const entityFormSchema = z
@@ -39,6 +47,11 @@ const entityFormSchema = z
             .transform((val) => val.trim()),
         type: z.enum(["aisle", "section"]),
         aisleId: z.string().optional(),
+        // Aisles only. Blank means none.
+        emoji: z
+            .string()
+            .optional()
+            .refine((val) => !val?.trim() || isSingleEmoji(val), "Use a single emoji"),
     })
     .refine(
         (data) => {
@@ -66,11 +79,15 @@ export const EntityFormModal = () => {
     const deleteSection = useDeleteSection();
     const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 
+    const { suggestForName } = useSuggestAisleEmoji();
+    const { showError } = useToast();
+
     const {
         control,
         handleSubmit,
         reset,
         watch,
+        setValue,
         formState: { errors, isValid },
     } = useForm<EntityFormData>({
         resolver: zodResolver(entityFormSchema),
@@ -83,6 +100,31 @@ export const EntityFormModal = () => {
     });
 
     const entityType = watch("type");
+    // What the plate shows with no emoji, so the field's placeholder describes this aisle:
+    // a numbered aisle falls back to its number, a named one to an empty plate.
+    const aisleName = watch("name") ?? "";
+    const emojiPlaceholder = parseAisleName(aisleName).code
+        ? "None (shows the aisle number)"
+        : "None (plate stays empty)";
+
+    // One-off suggestion for this aisle's current name. Fills the field only; nothing is saved
+    // until Update, and it asks even if an emoji is already set, since the user asked.
+    const [isSuggesting, setIsSuggesting] = useState(false);
+    const handleSuggestEmoji = async () => {
+        setIsSuggesting(true);
+        try {
+            const emoji = await suggestForName(aisleName);
+            if (emoji) {
+                setValue("emoji", emoji, { shouldDirty: true, shouldValidate: true });
+            } else {
+                showError("No emoji fits that name. Pick one from the keyboard.");
+            }
+        } catch (error) {
+            showError(formatErrorMessage(error, "suggest an emoji"));
+        } finally {
+            setIsSuggesting(false);
+        }
+    };
 
     const aisleItems: SelectableItem[] = useMemo(() => {
         return (
@@ -103,23 +145,26 @@ export const EntityFormModal = () => {
                     editingEntity.type === "section"
                         ? editingEntity.aisleId || undefined
                         : undefined,
+                emoji: editingEntity.emoji ?? "",
             });
         } else if (isModalOpen && !editingEntity) {
             const initialType = forcedType || "aisle";
-            reset({ name: "", type: initialType, aisleId: undefined });
+            reset({ name: "", type: initialType, aisleId: undefined, emoji: "" });
         }
     }, [isModalOpen, editingEntity, forcedType, reset]);
 
     const onSubmit = async (data: EntityFormData) => {
         if (data.type === "aisle") {
+            const emoji = data.emoji?.trim() || null;
             if (editingEntity) {
                 await updateAisle.mutateAsync({
                     id: editingEntity.id,
                     name: data.name,
+                    emoji,
                     storeId,
                 });
             } else {
-                await createAisle.mutateAsync({ storeId, name: data.name });
+                await createAisle.mutateAsync({ storeId, name: data.name, emoji });
             }
         } else {
             if (!data.aisleId) {
@@ -201,51 +246,24 @@ export const EntityFormModal = () => {
                 </IonToolbar>
             </IonHeader>
             <IonContent className="ion-padding">
-                <form onSubmit={handleSubmit(onSubmit)}>
+                <form className="editor-form" onSubmit={handleSubmit(onSubmit)}>
                     {showTypeSelector && (
                         <Controller
                             name="type"
                             control={control}
                             render={({ field }) => (
-                                <div style={{ marginBottom: "16px" }}>
-                                    <IonLabel
-                                        style={{
-                                            display: "block",
-                                            marginBottom: "8px",
-                                            fontSize: "14px",
-                                            marginLeft: "16px",
-                                        }}
-                                    >
-                                        Type
-                                    </IonLabel>
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            gap: "8px",
-                                            paddingLeft: "16px",
-                                            paddingRight: "16px",
-                                        }}
-                                    >
-                                        <IonButton
-                                            expand="block"
-                                            fill={field.value === "aisle" ? "solid" : "outline"}
-                                            color="primary"
-                                            onClick={() => field.onChange("aisle")}
-                                            style={{ flex: 1 }}
-                                        >
-                                            Aisle
-                                        </IonButton>
-                                        <IonButton
-                                            expand="block"
-                                            fill={field.value === "section" ? "solid" : "outline"}
-                                            color="primary"
-                                            onClick={() => field.onChange("section")}
-                                            style={{ flex: 1 }}
-                                        >
-                                            Section
-                                        </IonButton>
-                                    </div>
-                                </div>
+                                <IonSegment
+                                    className="editor-mode-switch"
+                                    value={field.value}
+                                    onIonChange={(e) => field.onChange(e.detail.value)}
+                                >
+                                    <IonSegmentButton value="aisle">
+                                        <IonLabel>Aisle</IonLabel>
+                                    </IonSegmentButton>
+                                    <IonSegmentButton value="section">
+                                        <IonLabel>Section</IonLabel>
+                                    </IonSegmentButton>
+                                </IonSegment>
                             )}
                         />
                     )}
@@ -255,17 +273,21 @@ export const EntityFormModal = () => {
                             name="aisleId"
                             control={control}
                             render={({ field }) => (
-                                <ClickableSelectionField
-                                    items={aisleItems}
-                                    value={field.value}
-                                    onSelect={field.onChange}
-                                    label="Aisle"
-                                    placeholder="Select an aisle"
-                                    modalTitle="Select Aisle"
-                                    showSearch={true}
-                                    searchPlaceholder="Search aisles..."
-                                    errorMessage={errors.aisleId?.message}
-                                />
+                                <FormField label="Aisle" error={errors.aisleId?.message}>
+                                    <div className="form-control">
+                                        <ClickableSelectionField
+                                            items={aisleItems}
+                                            value={field.value}
+                                            onSelect={field.onChange}
+                                            placeholder="Select an aisle"
+                                            modalTitle="Select Aisle"
+                                            showSearch={true}
+                                            searchPlaceholder="Search aisles..."
+                                            lines="none"
+                                            showChevron
+                                        />
+                                    </div>
+                                </FormField>
                             )}
                         />
                     )}
@@ -274,28 +296,71 @@ export const EntityFormModal = () => {
                         name="name"
                         control={control}
                         render={({ field }) => (
-                            <IonItem>
-                                <IonLabel position="stacked">Name</IonLabel>
-                                <IonInput
-                                    value={field.value}
-                                    placeholder={`Enter ${
-                                        entityType === "aisle" ? "aisle" : "section"
-                                    } name`}
-                                    onIonInput={(e) => field.onChange(e.detail.value)}
-                                    autocapitalize="sentences"
-                                />
-                            </IonItem>
+                            <FormField label="Name" error={errors.name?.message}>
+                                <div className="form-control">
+                                    <IonInput
+                                        aria-label="Name"
+                                        value={field.value}
+                                        placeholder={`Enter ${
+                                            entityType === "aisle" ? "aisle" : "section"
+                                        } name`}
+                                        onIonInput={(e) => field.onChange(e.detail.value)}
+                                        autocapitalize="sentences"
+                                    />
+                                </div>
+                            </FormField>
                         )}
                     />
-                    {errors.name && (
-                        <IonText color="danger">
-                            <p style={{ fontSize: "12px", marginLeft: "16px" }}>
-                                {errors.name.message}
-                            </p>
-                        </IonText>
+
+                    {entityType === "aisle" && (
+                        <Controller
+                            name="emoji"
+                            control={control}
+                            render={({ field }) => (
+                                <FormField
+                                    label="Emoji"
+                                    error={errors.emoji?.message}
+                                    action={
+                                        <button
+                                            type="button"
+                                            className="form-field__action"
+                                            disabled={
+                                                isSuggesting || !canSuggestEmojiFor(aisleName)
+                                            }
+                                            onClick={handleSuggestEmoji}
+                                            title="Suggest an emoji for this aisle's name"
+                                        >
+                                            <IonIcon src={LLM_ICON_SRC} aria-hidden="true" />
+                                            Suggest
+                                        </button>
+                                    }
+                                >
+                                    <div className="form-control entity-emoji">
+                                        <IonInput
+                                            aria-label="Emoji"
+                                            className="entity-emoji__input"
+                                            value={field.value}
+                                            placeholder={emojiPlaceholder}
+                                            onIonInput={(e) => field.onChange(e.detail.value ?? "")}
+                                        />
+                                        {!!field.value && (
+                                            <button
+                                                type="button"
+                                                className="entity-emoji__clear"
+                                                aria-label="Clear emoji"
+                                                onClick={() => field.onChange("")}
+                                            >
+                                                <IonIcon icon={closeCircle} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </FormField>
+                            )}
+                        />
                     )}
 
                     <IonButton
+                        className="editor-form__submit"
                         expand="block"
                         type="submit"
                         disabled={
@@ -305,7 +370,6 @@ export const EntityFormModal = () => {
                             createSection.isPending ||
                             updateSection.isPending
                         }
-                        style={{ marginTop: "20px" }}
                     >
                         {editingEntity ? "Update" : "Create"}
                     </IonButton>

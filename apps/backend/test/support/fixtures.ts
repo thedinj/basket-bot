@@ -93,19 +93,21 @@ export const seedAisle = (overrides: {
     id?: string;
     storeId: string;
     name?: string;
+    emoji?: string | null;
     sortOrder?: number;
     ownerId: string;
 }): string => {
     const id = overrides.id ?? crypto.randomUUID();
     const name = overrides.name ?? "Test Aisle";
     db.prepare(
-        `INSERT INTO "StoreAisle" (id, storeId, name, nameNorm, sortOrder, createdById, updatedById, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO "StoreAisle" (id, storeId, name, nameNorm, emoji, sortOrder, createdById, updatedById, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
         id,
         overrides.storeId,
         name,
         normalizeItemName(name),
+        overrides.emoji ?? null,
         overrides.sortOrder ?? 0,
         overrides.ownerId,
         overrides.ownerId,

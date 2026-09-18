@@ -12,11 +12,11 @@ import {
 } from "@ionic/react";
 import clsx from "clsx";
 import {
-    arrowRedoOutline,
     checkmarkCircleOutline,
     closeCircleOutline,
     helpCircle,
     helpCircleOutline,
+    storefrontOutline,
 } from "ionicons/icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../auth/useAuth";
@@ -34,6 +34,7 @@ import {
     formatSnoozeDateForStorage,
     isCurrentlySnoozed,
 } from "../../utils/dateUtils";
+import { formatQuantityWithUnit } from "../../utils/quantity";
 import { toUpsertPayload } from "../../utils/shoppingListItemPayload";
 import type { SelectableItem } from "../shared/ClickableSelectionModal";
 import { ClickableSelectionModal } from "../shared/ClickableSelectionModal";
@@ -194,7 +195,8 @@ export const ShoppingListItem = ({
         toast,
     ]);
 
-    const handleMoveIconClick = useCallback(() => {
+    const handleSwipeMove = useCallback(() => {
+        slidingRef.current?.close();
         // Nowhere to move it to.
         if (otherStores.length === 0) return;
 
@@ -239,14 +241,16 @@ export const ShoppingListItem = ({
         setTimeout(() => setJustChecked(false), 350);
     };
 
-    const handleCheckboxClick = (e: React.MouseEvent | React.TouchEvent) => {
-        e.preventDefault();
+    // The checkbox is the only check target; its click must not also reach the row, which
+    // opens the editor.
+    const handleCheckboxClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         handleCheckboxChange(!isChecked);
     };
 
     const titleToUse = item.isIdea ? item.notes : item.itemName;
     const notesToUse = item.isIdea ? "" : item.notes;
+    const quantityText = formatQuantityWithUnit(item.qty, item.unitAbbreviation);
 
     const formattedSnoozeDate = isSnoozed ? formatSnoozeDate(item.snoozedUntil!) : null;
 
@@ -264,6 +268,7 @@ export const ShoppingListItem = ({
     // Swipe actions only make sense on unchecked rows and outside the unsure-review UI,
     // which already has its own explicit confirm/reject buttons.
     const swipeActionsEnabled = !isChecked && !onConfirmUnsure;
+    const canMove = otherStores.length > 0;
 
     return (
         <IonItemSliding ref={slidingRef} disabled={!swipeActionsEnabled}>
@@ -274,9 +279,11 @@ export const ShoppingListItem = ({
                     item.isUnsure && !onConfirmUnsure && "shopping-list-item--unsure",
                     item.isPrivate && "shopping-list-item--private",
                     justChecked && "shopping-list-item--just-checked",
-                    isNewlyLocated && "shopping-list-item--newly-located"
+                    isNewlyLocated && "shopping-list-item--newly-located",
+                    "shopping-list-row"
                 )}
                 button={false}
+                onClick={() => openEditModal(item as ShoppingListItemWithDetails)}
             >
                 {!onConfirmUnsure && (
                     <div
@@ -285,9 +292,20 @@ export const ShoppingListItem = ({
                             "checkbox-container",
                             justChecked && "checkbox-container--bounce"
                         )}
-                        onClick={handleCheckboxClick}
                     >
-                        <IonCheckbox checked={isChecked} style={{ pointerEvents: "none" }} />
+                        <button
+                            type="button"
+                            className="checkbox-hit"
+                            onClick={handleCheckboxClick}
+                            aria-label={isChecked ? `Uncheck ${titleToUse}` : `Check ${titleToUse}`}
+                            aria-pressed={isChecked}
+                        >
+                            <IonCheckbox
+                                checked={isChecked}
+                                aria-hidden="true"
+                                style={{ pointerEvents: "none" }}
+                            />
+                        </button>
                         {showZzz && (
                             <div className="zzz-particles" aria-hidden="true">
                                 <span className="zzz-particle zzz-particle--1">z</span>
@@ -303,17 +321,11 @@ export const ShoppingListItem = ({
                         isChecked && "item-text--checked",
                         isSnoozed && "item-text--snoozed"
                     )}
-                    onClick={() => openEditModal(item as ShoppingListItemWithDetails)}
                 >
                     <>
                         <h2 className={clsx("item-title")}>
                             {titleToUse}{" "}
-                            {(item.qty !== null || item.unitAbbreviation) && (
-                                <span className="item-qty">
-                                    ({item.qty !== null ? item.qty : ""}
-                                    {item.unitAbbreviation && ` ${item.unitAbbreviation}`})
-                                </span>
-                            )}{" "}
+                            {quantityText && <span className="item-qty">{quantityText}</span>}{" "}
                             {item.isSample ? <span className="sample-badge">[sample]</span> : null}
                             {item.isUnsure && !onConfirmUnsure ? (
                                 <IonIcon
@@ -359,12 +371,15 @@ export const ShoppingListItem = ({
                     </>
                 </IonLabel>
 
-                {onConfirmUnsure ? (
+                {onConfirmUnsure && (
                     <>
                         <IonButton
                             slot="end"
                             fill="clear"
-                            onClick={handleRejectIconClick}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleRejectIconClick();
+                            }}
                             disabled={isRejectingUnsure}
                             title="I don't need this — remove it"
                         >
@@ -373,26 +388,16 @@ export const ShoppingListItem = ({
                         <IonButton
                             slot="end"
                             fill="clear"
-                            onClick={onConfirmUnsure}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onConfirmUnsure();
+                            }}
                             disabled={isConfirmingUnsure}
                             title="Confirm — I need this"
                         >
                             <IonIcon icon={checkmarkCircleOutline} color="success" />
                         </IonButton>
                     </>
-                ) : (
-                    stores &&
-                    stores.length > 1 &&
-                    !isChecked && (
-                        <IonButton
-                            slot="end"
-                            fill="clear"
-                            onClick={handleMoveIconClick}
-                            title="Move to another store"
-                        >
-                            <IonIcon icon={arrowRedoOutline} color="medium" />
-                        </IonButton>
-                    )
                 )}
             </IonItem>
 
@@ -424,6 +429,15 @@ export const ShoppingListItem = ({
                                 {preset.days === 1 ? "1d" : "1w"}
                             </IonItemOption>
                         ))
+                    )}
+                    {canMove && (
+                        <IonItemOption
+                            className="swipe-option swipe-option--move"
+                            onClick={handleSwipeMove}
+                        >
+                            <IonIcon slot="top" icon={storefrontOutline} />
+                            Move
+                        </IonItemOption>
                     )}
                 </IonItemOptions>
             )}

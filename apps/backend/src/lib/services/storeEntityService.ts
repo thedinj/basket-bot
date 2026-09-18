@@ -11,6 +11,7 @@ import type {
 import {
     AuthorizationError,
     ConflictError,
+    isSingleEmoji,
     NotFoundError,
     ValidationError,
 } from "@basket-bot/core";
@@ -36,7 +37,25 @@ function verifyStoreAccess(storeId: string, userId: string): void {
 
 // ========== Aisle Operations ==========
 
-export function createAisle(params: { storeId: string; name: string; userId: string }): StoreAisle {
+/**
+ * Normalizes a request's `emoji`: undefined stays undefined (leave unchanged), null or blank
+ * clears it, anything else must be exactly one emoji.
+ */
+function parseAisleEmoji(emoji: unknown): string | null | undefined {
+    if (emoji === undefined) return undefined;
+    if (emoji === null || (typeof emoji === "string" && emoji.trim() === "")) return null;
+    if (typeof emoji !== "string" || !isSingleEmoji(emoji)) {
+        throw new ValidationError("Aisle emoji must be a single emoji");
+    }
+    return emoji.trim();
+}
+
+export function createAisle(params: {
+    storeId: string;
+    name: string;
+    emoji?: unknown;
+    userId: string;
+}): StoreAisle {
     verifyStoreAccess(params.storeId, params.userId);
 
     const nameNorm = normalizeItemName(params.name);
@@ -48,11 +67,13 @@ export function createAisle(params: { storeId: string; name: string; userId: str
         );
     }
 
+    const emoji = parseAisleEmoji(params.emoji);
     const maxOrder = aisleRepo.getMaxSortOrder(params.storeId);
 
     return aisleRepo.createAisle({
         storeId: params.storeId,
         name: params.name,
+        emoji: emoji ?? null,
         sortOrder: maxOrder + 1,
         createdById: params.userId,
     });
@@ -67,6 +88,8 @@ export function updateAisle(params: {
     id: string;
     storeId: string;
     name: string;
+    /** Omitted: unchanged. Null or blank: cleared. */
+    emoji?: unknown;
     userId: string;
 }): StoreAisle | null {
     verifyStoreAccess(params.storeId, params.userId);
@@ -83,6 +106,7 @@ export function updateAisle(params: {
     return aisleRepo.updateAisle({
         id: params.id,
         name: params.name,
+        emoji: parseAisleEmoji(params.emoji),
         updatedById: params.userId,
     });
 }

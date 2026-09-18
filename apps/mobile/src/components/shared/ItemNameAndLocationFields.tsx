@@ -1,4 +1,4 @@
-import { IonInput, IonItem, IonLabel } from "@ionic/react";
+import { IonInput } from "@ionic/react";
 import {
     Control,
     FieldErrors,
@@ -9,6 +9,7 @@ import {
 } from "react-hook-form";
 import { ReactNode } from "react";
 import type { DuplicateMatch } from "../../llm/features/itemDedupe";
+import { FormField } from "./FormField";
 import { LocationSelectors } from "./LocationSelectors";
 
 interface ItemNameAndLocationFieldsProps<T extends FieldValues = FieldValues> {
@@ -41,18 +42,16 @@ export function ItemNameAndLocationFields<T extends FieldValues = FieldValues>({
             {renderNameField ? (
                 renderNameField({ control, errors })
             ) : (
-                <IonItem>
-                    <IonLabel position="stacked">Name</IonLabel>
-                    <IonInput
-                        {...(control.register?.("name" as never) || {})}
-                        aria-label="Item name"
-                        disabled={disabled}
-                        autocapitalize="sentences"
-                    />
-                    {errors.name && (
-                        <IonLabel color="danger">{errors.name.message as string}</IonLabel>
-                    )}
-                </IonItem>
+                <FormField label="Item" error={errors.name?.message as string | undefined}>
+                    <div className="form-control">
+                        <IonInput
+                            {...(control.register?.("name" as never) || {})}
+                            aria-label="Item"
+                            disabled={disabled}
+                            autocapitalize="sentences"
+                        />
+                    </div>
+                </FormField>
             )}
 
             <LocationSelectors<T>

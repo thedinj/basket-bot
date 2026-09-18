@@ -1,0 +1,266 @@
+// Editor form system, shared by the item and store-item editors.
+//
+// Geometry (at the content's 16px gutter, so every edge in a form lands on x = 16 / width - 16):
+//   field ...... label (13px condensed caps) + 8px + control
+//   control .... 48px tall, 10px radius, 12px inner padding, 1px step-200 border, step-50 fill
+//   rhythm ..... 20px between fields; the submit button sits 28px below the last one
+// Everything here is a class so the pieces (FormField, .form-control) compose freely.
+
+.editor-form {
+    display: grid;
+    gap: 20px;
+    padding-top: 4px;
+}
+
+.form-field {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+.form-field__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 16px;
+}
+
+.form-field__label {
+    font-family: var(--app-font-display);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+    color: var(--ion-color-medium);
+}
+
+.form-field__error {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--ion-color-danger);
+}
+
+// The shared box. Ionic inputs inside it drop their own padding and chrome so the box is the
+// only frame; focus lights the frame, not the input.
+.form-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 48px;
+    padding-inline: 12px;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 10px;
+    background: var(--ion-color-step-50);
+    transition:
+        border-color 0.15s ease-out,
+        box-shadow 0.15s ease-out;
+
+    &:focus-within {
+        border-color: var(--ion-color-primary);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--ion-color-primary) 22%, transparent);
+    }
+
+    ion-input,
+    ion-textarea {
+        --padding-start: 0;
+        --padding-end: 0;
+        --padding-top: 12px;
+        --padding-bottom: 12px;
+        --highlight-height: 0;
+        min-height: 46px;
+        font-size: 1rem;
+    }
+
+    // Selection fields (unit) render an ion-item; flatten it into the box.
+    ion-item {
+        flex: 1;
+        min-width: 0;
+        --background: transparent;
+        --padding-start: 0;
+        --inner-padding-end: 0;
+        --min-height: 46px;
+        --border-width: 0;
+        --inner-border-width: 0;
+    }
+}
+
+// A box that is itself the tap target (location), not a text input.
+.form-control--button {
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    text-align: start;
+    cursor: pointer;
+
+    &:disabled {
+        cursor: default;
+        opacity: 0.6;
+    }
+
+    &:focus-visible {
+        outline: none;
+        border-color: var(--ion-color-primary);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--ion-color-primary) 22%, transparent);
+    }
+}
+
+.form-control__value {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 1rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.form-control__placeholder {
+    color: var(--ion-color-medium);
+}
+
+.form-control__trail {
+    flex: none;
+    font-size: 1.125rem;
+    color: var(--ion-color-medium);
+}
+
+// A small action on a field's label line (Auto-Locate). 28px tall, pulled into the label
+// line's space (negative margins) so it doesn't push the control down or crowd it.
+.form-field__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    margin-block: -6px;
+    padding: 0 12px;
+    border: 1px solid currentColor;
+    border-radius: 14px;
+    background: transparent;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--ion-color-secondary);
+    cursor: pointer;
+
+    ion-icon {
+        font-size: 1rem;
+    }
+
+    &:disabled {
+        cursor: default;
+        opacity: 0.4;
+    }
+}
+
+// Primary action at the foot of a form: full gutter width, same radius as the fields.
+.editor-form__submit {
+    height: 48px;
+    margin: 8px 0 0;
+    --border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+}
+
+// Name suggestions: a floating panel in the field system's own frame, just under the box.
+.form-autocomplete {
+    position: relative;
+}
+
+.form-autocomplete__list {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    left: 0;
+    z-index: 1000;
+    max-height: 240px;
+    overflow: auto;
+    padding-block: 0;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 10px;
+    background: var(--ion-color-step-50);
+    box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.55);
+
+    ion-item {
+        --background: transparent;
+        --padding-start: 12px;
+    }
+}
+
+.form-autocomplete__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 4px 4px 12px;
+    border-bottom: 1px solid var(--ion-color-step-200);
+}
+
+.form-autocomplete__dismiss {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 1.125rem;
+    color: var(--ion-color-medium);
+    cursor: pointer;
+}
+
+// Item / Idea switch at the top of the add form: full gutter width, 44px, in the field frame.
+.editor-mode-switch {
+    min-height: 44px;
+    margin-bottom: 20px;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 10px;
+    background: var(--ion-color-step-50);
+
+    ion-segment-button {
+        min-height: 42px;
+        --indicator-color: var(--ion-color-primary);
+        --color-checked: var(--ion-color-primary-contrast);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: none;
+    }
+}
+
+// Aisle emoji field: the value is drawn in the plate's monochrome emoji face, so the editor
+// previews exactly what the shopping list will show.
+.entity-emoji__input {
+    font-family: var(--app-font-emoji);
+    font-size: 1.25rem;
+}
+
+.entity-emoji__clear {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    margin-inline-end: -6px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 1.125rem;
+    color: var(--ion-color-medium);
+    cursor: pointer;
+}
+
+// Suggested aisle emoji in AI review lists (store scan, Suggest emoji), in the plate's
+// monochrome face so the review shows what the list will.
+.scan-aisle-emoji {
+    display: inline-block;
+    min-width: 1.4em;
+    margin-inline-end: 6px;
+    font-family: var(--app-font-emoji);
+    font-weight: 500;
+}
+
+// "Suggest aisle emoji" above the aisles list, on the page gutter.
+.aisle-emoji-suggest {
+    padding: 12px 16px 4px;
+}

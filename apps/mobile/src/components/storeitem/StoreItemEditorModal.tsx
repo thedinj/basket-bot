@@ -11,10 +11,7 @@ import {
     IonHeader,
     IonIcon,
     IonInput,
-    IonItem,
-    IonLabel,
     IonModal,
-    IonText,
     IonTitle,
     IonToolbar,
     useIonAlert,
@@ -24,6 +21,7 @@ import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useCreateItem, useDeleteItem, useUpdateItem } from "../../db/hooks";
 import { useToast } from "../../hooks/useToast";
+import { FormField } from "../shared/FormField";
 import ItemInfoModal from "../shared/ItemInfoModal";
 import { ItemNameAndLocationFields } from "../shared/ItemNameAndLocationFields";
 import { StoreItemEditorProvider } from "./StoreItemEditorProvider";
@@ -181,7 +179,7 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
             </IonHeader>
             <IonContent className="ion-padding">
                 <StoreItemEditorProvider form={form} storeId={storeId}>
-                    <form onSubmit={handleSubmit(onSubmit)}>
+                    <form className="editor-form" onSubmit={handleSubmit(onSubmit)}>
                         <ItemNameAndLocationFields
                             control={control}
                             setValue={form.setValue}
@@ -206,42 +204,31 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
                                     name="name"
                                     control={control}
                                     render={({ field }) => (
-                                        <>
-                                            <IonItem>
-                                                <IonLabel position="stacked">Item Name</IonLabel>
+                                        <FormField label="Item" error={errors.name?.message}>
+                                            <div className="form-control">
                                                 <IonInput
                                                     ref={nameInputRef}
+                                                    aria-label="Item"
                                                     value={field.value}
                                                     placeholder="Enter item name"
+                                                    autocapitalize="sentences"
                                                     onIonInput={(e) =>
                                                         field.onChange(e.detail.value)
                                                     }
                                                     disabled={isPending}
                                                 />
-                                            </IonItem>
-                                            {errors.name && (
-                                                <IonText color="danger">
-                                                    <p
-                                                        style={{
-                                                            fontSize: "12px",
-                                                            marginLeft: "16px",
-                                                        }}
-                                                    >
-                                                        {errors.name.message}
-                                                    </p>
-                                                </IonText>
-                                            )}
-                                        </>
+                                            </div>
+                                        </FormField>
                                     )}
                                 />
                             )}
                         />
 
                         <IonButton
+                            className="editor-form__submit"
                             expand="block"
                             type="submit"
                             disabled={!isValid || isPending}
-                            style={{ marginTop: "20px" }}
                         >
                             {editingItem ? "Update" : "Add"} Item
                         </IonButton>

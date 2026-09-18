@@ -52,7 +52,7 @@ const renderSkeletonRow = () => (
  * renders as a bare list outside Ionic's content-sizing layout instead of filling the page.
  */
 const ShoppingListSkeleton: React.FC = () => (
-    <IonContent fullscreen className="shopping-list-content">
+    <IonContent className="shopping-list-content">
         <GroupedItemList<SkeletonPlaceholder>
             groups={SKELETON_GROUPS}
             getItemKey={getItemKey}

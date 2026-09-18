@@ -42,6 +42,7 @@ const makeItem = (
     sectionName: null,
     sectionSortOrder: null,
     aisleName: null,
+    aisleEmoji: null,
     aisleSortOrder: null,
     checkedByName: null,
     isFavorite: null,

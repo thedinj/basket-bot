@@ -30,8 +30,15 @@ export function useCreateAisle() {
     const queryClient = useQueryClient();
 
     return useTanstackMutation({
-        mutationFn: ({ storeId, name }: { storeId: string; name: string }) =>
-            database.insertAisle(storeId, name),
+        mutationFn: ({
+            storeId,
+            name,
+            emoji,
+        }: {
+            storeId: string;
+            name: string;
+            emoji?: string | null;
+        }) => database.insertAisle(storeId, name, emoji),
         meta: { operation: "create aisle" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
@@ -49,8 +56,18 @@ export function useUpdateAisle() {
     const queryClient = useQueryClient();
 
     return useTanstackMutation({
-        mutationFn: ({ storeId, id, name }: { id: string; name: string; storeId: string }) =>
-            database.updateAisle(storeId, id, name),
+        mutationFn: ({
+            storeId,
+            id,
+            name,
+            emoji,
+        }: {
+            id: string;
+            name: string;
+            /** Omitted: unchanged. Null: cleared. */
+            emoji?: string | null;
+            storeId: string;
+        }) => database.updateAisle(storeId, id, name, emoji),
         meta: { operation: "update aisle" },
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
@@ -59,14 +76,14 @@ export function useUpdateAisle() {
             queryClient.invalidateQueries({
                 queryKey: queryKeys.aisles.detail(variables.id),
             });
-            // Invalidate store items since they display aisle names
+            // Invalidate store items since they display aisle names and emoji
             queryClient.invalidateQueries({
                 queryKey: queryKeys.items.byStore(variables.storeId),
             });
             queryClient.invalidateQueries({
                 queryKey: queryKeys.items.withDetails(variables.storeId),
             });
-            // Invalidate shopping list items since they display aisle names
+            // Invalidate shopping list items since they display aisle names and emoji
             queryClient.invalidateQueries({
                 queryKey: queryKeys.shoppingListItems.byStore(variables.storeId),
             });

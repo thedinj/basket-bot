@@ -46,6 +46,26 @@ export interface GroupHeader {
     label: ReactNode;
 
     /**
+     * Optional short code or icon shown in a plate ahead of the label (e.g. an aisle number).
+     * An empty string reserves the plate's space without drawing it, so labels in a run of
+     * headers line up whether or not each one has a code. Omit it entirely for headers with no
+     * plate column.
+     */
+    badge?: ReactNode;
+
+    /**
+     * How a text `badge` is drawn: `code` (an aisle number, the default), `emoji` (a monochrome
+     * aisle emoji), or `sign` (a number-only aisle: the plate widens to read "AISLE 3" and the
+     * header has no label beside it). Icon badges (ReactNode) ignore this.
+     */
+    badgeKind?: "code" | "emoji" | "sign";
+
+    /**
+     * CSS color for the plate's outline and contents (defaults to the secondary lilac).
+     */
+    badgeColor?: string;
+
+    /**
      * Optional icon to display
      */
     icon?: string;
@@ -56,7 +76,8 @@ export interface GroupHeader {
     color?: string;
 
     /**
-     * Whether header should stick to top when scrolling
+     * Whether header should stick to top when scrolling. It sticks only while its own group
+     * is on screen, and the next group's content pushes it off.
      */
     sticky?: boolean;
 

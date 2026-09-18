@@ -1,29 +1,15 @@
-.snooze-chips {
-    padding: 8px 16px;
-}
-
-.snooze-chips__label {
-    font-size: 0.75rem;
-    color: var(--ion-color-medium);
-    margin-bottom: 6px;
-}
-
 .snooze-chips__row {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
 }
 
+/* 40px pills: a real touch target, and the three options (two presets + Pick date) read as
+   one set rather than two chips and a link. */
 .snooze-chips__chip {
+    height: 40px;
     margin: 0;
-    cursor: pointer;
-}
-
-.snooze-chips__link {
-    display: flex;
-    align-items: center;
-    color: var(--ion-color-primary);
-    text-decoration: underline;
-    font-size: 0.95rem;
+    padding-inline: 16px;
+    border-radius: 20px;
     cursor: pointer;
 }

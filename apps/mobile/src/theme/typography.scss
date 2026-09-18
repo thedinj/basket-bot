@@ -1,0 +1,34 @@
+// "Highway" type system.
+//
+// Barlow is modeled on California highway signage: the body face everywhere (Ionic reads
+// --ion-font-family for every component). Barlow Condensed is the display register — toolbar
+// titles, aisle/section headers, tab labels — where the narrow width buys size without
+// truncation. JetBrains Mono stays the data register (quantities, counts, codes).
+//
+// Fonts are bundled via @fontsource imports in App.tsx; nothing is fetched at runtime.
+
+:root {
+    --ion-font-family: "Barlow", system-ui, sans-serif;
+    --app-font-display: "Barlow Condensed", "Barlow", system-ui, sans-serif;
+    --app-font-mono: "JetBrains Mono", ui-monospace, monospace;
+    // Aisle-plate emoji: single-color line glyphs, so every plate reads as one sign family
+    // instead of each color emoji bringing its own palette.
+    --app-font-emoji: "Noto Emoji", sans-serif;
+}
+
+// Page titles stay quiet, in the body face the store tabs use; the aisle headers are where
+// the display face gets loud.
+ion-title {
+    font-family: var(--ion-font-family);
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+ion-tab-button ion-label {
+    font-family: var(--app-font-display);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}

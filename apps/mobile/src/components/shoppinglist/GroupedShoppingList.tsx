@@ -3,7 +3,7 @@ import { queryKeys } from "@/db/queryKeys";
 import type { ShoppingListItemWithDetails } from "@basket-bot/core";
 import { IonIcon } from "@ionic/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { bulbOutline, nuclear } from "ionicons/icons";
+import { bulbOutline, checkmarkDone, nuclear } from "ionicons/icons";
 import { useCallback, useMemo, useState } from "react";
 import { useStoreAisles, useStoreItems, useStoreSections } from "../../db/hooks";
 import { useToast } from "../../hooks/useToast";
@@ -25,7 +25,9 @@ interface GroupedShoppingListProps {
 
 const HEADER_LABEL_CLASS = "group-header-label group-header-label--aisle";
 
-const INDENT_LEVEL = 16;
+// Rows carry no extra indent: the checkbox sits in the same 36px column as the header plates,
+// so every row and header shares one left edge (see ShoppingListItem.css).
+const INDENT_LEVEL = 0;
 const IDEAS_SORT_ORDER = 0;
 const AISLE_SORT_ORDER_OFFSET = 100;
 
@@ -36,16 +38,24 @@ const createCheckedItemsGroup = (
 ): ItemGroup<ShoppingListItemWithDetails> => ({
     id: "checked-items",
     items,
+    // Done items recede: a muted title with a count, rather than a loud success color.
     header: {
-        label: "Checked Items",
+        label: (
+            <>
+                Checked<span className="group-header-count">· {items.length}</span>
+            </>
+        ),
+        badge: <IonIcon icon={checkmarkDone} aria-hidden="true" />,
+        badgeColor: "var(--ion-color-medium)",
         color: "light",
         sticky: true,
         labelClassName: HEADER_LABEL_CLASS,
-        labelStyle: { color: "var(--ion-color-success)" },
+        labelStyle: { color: "var(--ion-color-medium)" },
         actionSlot: onClearChecked && (
             <ActionSlotButton
                 label="Obliterate"
                 icon={nuclear}
+                color="warning"
                 onClick={onClearChecked}
                 disabled={isClearing}
             />
@@ -61,11 +71,9 @@ const createIdeasGroup = (
     id: "ideas",
     items: ideas,
     header: {
-        label: (
-            <>
-                <IonIcon icon={bulbOutline} style={{ color: "var(--app-color-ideas)" }} /> Ideas
-            </>
-        ),
+        label: "Ideas",
+        badge: <IonIcon icon={bulbOutline} aria-hidden="true" />,
+        badgeColor: "var(--app-color-ideas)",
         color: "light",
         sticky: true,
         labelClassName: HEADER_LABEL_CLASS,
@@ -232,6 +240,7 @@ export const GroupedShoppingList = ({
                 showAisleHeaders: true,
                 showSectionHeaders: true,
                 sortOrderOffset: AISLE_SORT_ORDER_OFFSET,
+                sectionIndentLevel: INDENT_LEVEL,
             });
 
             // Inject auto-categorize button for uncategorized aisle

@@ -26,6 +26,12 @@ interface ActionSlotButtonProps {
      * Whether the button is disabled
      */
     disabled?: boolean;
+
+    /**
+     * Ionic color (defaults to primary). Destructive actions like Obliterate use "warning",
+     * matching the amber hazard register of the Obliterate confirmations.
+     */
+    color?: string;
 }
 
 /**
@@ -38,9 +44,17 @@ const ActionSlotButton: React.FC<ActionSlotButtonProps> = ({
     icon,
     iconSrc,
     disabled = false,
+    color,
 }) => {
     return (
-        <IonButton fill="clear" size="small" onClick={onClick} disabled={disabled}>
+        <IonButton
+            className="action-slot-button"
+            fill="clear"
+            size="small"
+            color={color}
+            onClick={onClick}
+            disabled={disabled}
+        >
             {iconSrc ? (
                 <IonIcon slot="start" src={iconSrc} />
             ) : (

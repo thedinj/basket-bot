@@ -41,8 +41,25 @@ import "@ionic/react/css/text-transformation.css";
 import "@ionic/react/css/palettes/dark.class.css";
 /* import '@ionic/react/css/palettes/dark.system.css'; */
 
+/* Bundled fonts (the "Highway" type system) — self-hosted so they work offline in the APK */
+import "@fontsource/barlow/400.css";
+import "@fontsource/barlow/400-italic.css";
+import "@fontsource/barlow/500.css";
+import "@fontsource/barlow/600.css";
+import "@fontsource/barlow/700.css";
+import "@fontsource/barlow-condensed/500.css";
+import "@fontsource/barlow-condensed/600.css";
+import "@fontsource/barlow-condensed/700.css";
+import "@fontsource/jetbrains-mono/400.css";
+import "@fontsource/jetbrains-mono/500.css";
+import "@fontsource/jetbrains-mono/700.css";
+/* Monochrome emoji for aisle plates: one weight; unicode-range chunks load only as used */
+import "@fontsource/noto-emoji/500.css";
+
 /* Theme variables */
 import "./theme/variables.scss";
+import "./theme/typography.scss";
+import "./theme/forms.scss";
 
 setupIonicReact();
 

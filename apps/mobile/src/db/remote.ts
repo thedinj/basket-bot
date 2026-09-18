@@ -189,7 +189,7 @@ export class RemoteDatabase implements Database {
     }
 
     // ========== StoreAisle Operations ==========
-    async insertAisle(storeId: string, name: string): Promise<StoreAisle> {
+    async insertAisle(storeId: string, name: string, emoji?: string | null): Promise<StoreAisle> {
         return this.executeMutation(
             "insertAisle",
             `/api/stores/${storeId}/aisles`,
@@ -197,11 +197,11 @@ export class RemoteDatabase implements Database {
             async () => {
                 const response = await apiClient.post<{ aisle: StoreAisle }>(
                     `/api/stores/${storeId}/aisles`,
-                    { name }
+                    { name, emoji }
                 );
                 return response.aisle;
             },
-            { name }
+            { name, emoji }
         );
     }
 
@@ -212,7 +212,12 @@ export class RemoteDatabase implements Database {
         return response.aisles;
     }
 
-    async updateAisle(storeId: string, id: string, name: string): Promise<StoreAisle> {
+    async updateAisle(
+        storeId: string,
+        id: string,
+        name: string,
+        emoji?: string | null
+    ): Promise<StoreAisle> {
         return this.executeMutation(
             "updateAisle",
             `/api/stores/${storeId}/aisles/${id}`,
@@ -220,11 +225,11 @@ export class RemoteDatabase implements Database {
             async () => {
                 const response = await apiClient.put<{ aisle: StoreAisle }>(
                     `/api/stores/${storeId}/aisles/${id}`,
-                    { name }
+                    { name, emoji }
                 );
                 return response.aisle;
             },
-            { name }
+            { name, emoji }
         );
     }
 

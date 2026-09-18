@@ -7,6 +7,8 @@ export interface EditingEntity {
     name: string;
     type: EntityType;
     aisleId?: string | null;
+    /** Aisles only: the plate emoji, if any. */
+    emoji?: string | null;
 }
 
 export interface DeleteEntity {
@@ -25,7 +27,7 @@ export interface StoreManagementContextType {
     editingEntity: EditingEntity | null;
     forcedType: EntityType | null;
     openCreateModal: (forceType?: EntityType) => void;
-    openEditAisleModal: (aisle: { id: string; name: string }) => void;
+    openEditAisleModal: (aisle: { id: string; name: string; emoji?: string | null }) => void;
     openEditSectionModal: (section: { id: string; name: string; aisleId: string }) => void;
     closeModal: () => void;
 

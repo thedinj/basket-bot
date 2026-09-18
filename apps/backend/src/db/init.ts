@@ -96,6 +96,7 @@ export function initializeDatabase() {
             "updatedById" TEXT NOT NULL,
             "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "updatedAt" DATETIME NOT NULL,
+            "emoji" TEXT CHECK("emoji" IS NULL OR length("emoji") <= 40),
             FOREIGN KEY ("storeId") REFERENCES "Store" ("id") ON DELETE CASCADE,
             FOREIGN KEY ("createdById") REFERENCES "User" ("id") ON DELETE RESTRICT,
             FOREIGN KEY ("updatedById") REFERENCES "User" ("id") ON DELETE RESTRICT,

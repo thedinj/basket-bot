@@ -14,9 +14,13 @@ import type { StoreTemplateSummary } from "@basket-bot/core";
  * center aisles are subdivided and the small perimeter departments stay flat.
  */
 
-/** An aisle in a template, with the sections nested under it (display order = array order). */
+/**
+ * An aisle in a template, with the sections nested under it (display order = array order) and
+ * the emoji shown on its plate in the shopping list.
+ */
 type TemplateAisle = {
     name: string;
+    emoji?: string;
     sections?: readonly string[];
 };
 
@@ -49,16 +53,26 @@ export type StoreTemplateDefinition = {
  * jelly, snack bars, first aid, light bulbs & batteries).
  */
 const GROCERY_AISLES: readonly TemplateAisle[] = [
-    { name: "Produce", sections: ["Fruit", "Vegetables", "Fresh Herbs", "Salads & Pre-Cut"] },
-    { name: "Bakery", sections: ["Bread", "Buns & Tortillas", "Desserts"] },
-    { name: "Deli", sections: ["Sliced Meat & Cheese", "Prepared Foods"] },
+    {
+        name: "Produce",
+        emoji: "🥬",
+        sections: ["Fruit", "Vegetables", "Fresh Herbs", "Salads & Pre-Cut"],
+    },
+    { name: "Bakery", emoji: "🥖", sections: ["Bread", "Buns & Tortillas", "Desserts"] },
+    { name: "Deli", emoji: "🧀", sections: ["Sliced Meat & Cheese", "Prepared Foods"] },
     {
         name: "Meat & Seafood",
+        emoji: "🥩",
         sections: ["Beef", "Poultry", "Pork", "Bacon & Sausage", "Seafood"],
     },
-    { name: "Dairy & Eggs", sections: ["Milk & Cream", "Cheese", "Yogurt", "Eggs", "Butter"] },
+    {
+        name: "Dairy & Eggs",
+        emoji: "🥛",
+        sections: ["Milk & Cream", "Cheese", "Yogurt", "Eggs", "Butter"],
+    },
     {
         name: "Frozen Foods",
+        emoji: "🧊",
         sections: [
             "Frozen Meals & Pizza",
             "Frozen Vegetables & Fruit",
@@ -68,11 +82,13 @@ const GROCERY_AISLES: readonly TemplateAisle[] = [
     },
     {
         name: "Breakfast & Spreads",
+        emoji: "🥣",
         sections: ["Cereal", "Oatmeal & Grits", "Peanut Butter & Jelly", "Syrup & Honey"],
     },
-    { name: "Coffee & Tea" },
+    { name: "Coffee & Tea", emoji: "☕" },
     {
         name: "Canned & Jarred Goods",
+        emoji: "🥫",
         sections: [
             "Soup & Broth",
             "Canned Vegetables",
@@ -81,17 +97,24 @@ const GROCERY_AISLES: readonly TemplateAisle[] = [
             "Canned Meat & Fish",
         ],
     },
-    { name: "Pasta, Rice & Grains", sections: ["Pasta & Noodles", "Pasta Sauce", "Rice & Grains"] },
+    {
+        name: "Pasta, Rice & Grains",
+        emoji: "🍝",
+        sections: ["Pasta & Noodles", "Pasta Sauce", "Rice & Grains"],
+    },
     {
         name: "Baking & Spices",
+        emoji: "🧂",
         sections: ["Flour & Sugar", "Baking Mixes", "Spices & Seasoning", "Oils & Vinegar"],
     },
     {
         name: "Condiments & Sauces",
+        emoji: "🍯",
         sections: ["Condiments", "Salad Dressing", "Pickles & Olives", "Marinades & Sauces"],
     },
     {
         name: "Snacks",
+        emoji: "🍿",
         sections: [
             "Chips & Pretzels",
             "Crackers",
@@ -102,11 +125,16 @@ const GROCERY_AISLES: readonly TemplateAisle[] = [
             "Nuts & Dried Fruit",
         ],
     },
-    { name: "Beverages", sections: ["Soda", "Water", "Juice", "Sports & Energy Drinks"] },
-    { name: "International" },
-    { name: "Baby", sections: ["Diapers & Wipes", "Baby Food & Formula"] },
+    {
+        name: "Beverages",
+        emoji: "🥤",
+        sections: ["Soda", "Water", "Juice", "Sports & Energy Drinks"],
+    },
+    { name: "International", emoji: "🌮" },
+    { name: "Baby", emoji: "🍼", sections: ["Diapers & Wipes", "Baby Food & Formula"] },
     {
         name: "Health & Beauty",
+        emoji: "💊",
         sections: [
             "Medicine & Vitamins",
             "First Aid",
@@ -117,11 +145,16 @@ const GROCERY_AISLES: readonly TemplateAisle[] = [
     },
     {
         name: "Paper & Cleaning",
+        emoji: "🧻",
         sections: ["Paper Goods", "Cleaning Supplies", "Laundry", "Trash Bags", "Food Storage"],
     },
-    { name: "Household", sections: ["Light Bulbs & Batteries", "Kitchen & Home", "Cards & Party"] },
-    { name: "Pet" },
-    { name: "Wine, Beer & Liquor" },
+    {
+        name: "Household",
+        emoji: "💡",
+        sections: ["Light Bulbs & Batteries", "Kitchen & Home", "Cards & Party"],
+    },
+    { name: "Pet", emoji: "🐾" },
+    { name: "Wine, Beer & Liquor", emoji: "🍷" },
 ] as const;
 
 /**

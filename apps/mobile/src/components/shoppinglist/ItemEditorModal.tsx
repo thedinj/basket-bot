@@ -5,12 +5,13 @@ import {
     IonAlert,
     IonButton,
     IonButtons,
-    IonChip,
     IonContent,
     IonHeader,
     IonIcon,
     IonLabel,
     IonModal,
+    IonSegment,
+    IonSegmentButton,
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
@@ -259,39 +260,23 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                 </IonToolbar>
             </IonHeader>
             <IonContent className="ion-padding">
-                {/* Mode Toggle - only show for new items */}
+                {/* Mode switch - only for new items. A segmented control spanning the form's
+                    width, so it reads as "what kind of thing is this" rather than as two tags. */}
                 {!editingItem && (
-                    <div
-                        style={{
-                            display: "flex",
-                            gap: "8px",
-                            marginBottom: "16px",
-                            justifyContent: "center",
-                        }}
+                    <IonSegment
+                        className="editor-mode-switch"
+                        value={isIdea ? "idea" : "item"}
+                        onIonChange={(e) => handleModeToggle(e.detail.value === "idea")}
                     >
-                        <IonChip
-                            onClick={() => handleModeToggle(false)}
-                            color={!isIdea ? "primary" : "medium"}
-                            style={{
-                                cursor: "pointer",
-                                opacity: !isIdea ? 1 : 0.6,
-                            }}
-                        >
+                        <IonSegmentButton value="item" layout="icon-start">
                             <IonIcon icon={cartOutline} />
                             <IonLabel>Item</IonLabel>
-                        </IonChip>
-                        <IonChip
-                            onClick={() => handleModeToggle(true)}
-                            color={isIdea ? "primary" : "medium"}
-                            style={{
-                                cursor: "pointer",
-                                opacity: isIdea ? 1 : 0.6,
-                            }}
-                        >
+                        </IonSegmentButton>
+                        <IonSegmentButton value="idea" layout="icon-start">
                             <IonIcon icon={bulbOutline} />
                             <IonLabel>Idea</IonLabel>
-                        </IonChip>
-                    </div>
+                        </IonSegmentButton>
+                    </IonSegment>
                 )}
 
                 <ItemEditorProvider
@@ -302,7 +287,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                     watch={watch}
                     nameInputRef={nameInputRef}
                 >
-                    <form onSubmit={handleSubmit(onSubmit)}>
+                    <form className="editor-form" onSubmit={handleSubmit(onSubmit)}>
                         {isIdea ? (
                             // Idea mode - only notes and snooze date
                             <>
@@ -374,10 +359,10 @@ const SaveButton: React.FC<{
     const { editingItem } = useItemEditorContext();
     return (
         <IonButton
+            className="editor-form__submit"
             expand="block"
             type="submit"
             disabled={!isValid || upsertItem.isPending}
-            style={{ marginTop: "20px" }}
         >
             {editingItem ? "Update" : "Add"}
             {isIdea ? " Idea" : " Item"}

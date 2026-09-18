@@ -124,7 +124,7 @@ export function getItemsByStoreWithDetails(storeId: string): StoreItemWithDetail
                 si.usageCount, si.lastUsedAt, si.isHidden, si.isFavorite,
                 si.createdById, si.updatedById, si.createdAt, si.updatedAt,
                 s.name as sectionName, s.sortOrder as sectionSortOrder,
-                a.name as aisleName, a.sortOrder as aisleSortOrder,
+                a.name as aisleName, a.emoji as aisleEmoji, a.sortOrder as aisleSortOrder,
                 creator.name as createdByName,
                 updater.name as updatedByName
              FROM StoreItem si

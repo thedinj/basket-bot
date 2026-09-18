@@ -160,7 +160,7 @@ const ShoppingListBody: React.FC<ShoppingListBodyProps> = ({
     }, [presentAlert, confirmClearChecked, checkedItems.length]);
 
     return (
-        <IonContent fullscreen className="shopping-list-content">
+        <IonContent className="shopping-list-content">
             <PullToRefresh />
             {activeItems.length === 0 &&
                 (wasJustCleared ? (
@@ -360,7 +360,7 @@ const ShoppingListContent: React.FC = () => {
                     title="Shopping List"
                     subToolbar={multipleStores ? <StoreSelector /> : undefined}
                 />
-                <IonContent fullscreen className="shopping-list-content">
+                <IonContent className="shopping-list-content">
                     <TabEmptyState
                         variant="full"
                         icon={storefrontOutline}

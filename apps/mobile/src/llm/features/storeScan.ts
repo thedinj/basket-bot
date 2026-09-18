@@ -2,6 +2,7 @@
  * Store Scan Feature - LLM-powered aisle/section extraction
  */
 
+import { toSingleEmojiOrNull } from "@basket-bot/core";
 import { z } from "zod";
 import { FUZZY_MATCH_THRESHOLD, fuzzyMatch } from "../../utils/stringMatch";
 import { naturalSort } from "../../utils/stringUtils";
@@ -29,6 +30,8 @@ export const storeScanResultSchema = z.object({
     aisles: z.array(
         z.object({
             name: z.string().min(1),
+            /** A named department's plate emoji (🥬 for Produce); null for numbered aisles. */
+            emoji: z.string().nullable().optional(),
             sections: z.array(z.string()),
         })
     ),
@@ -43,6 +46,8 @@ export interface TransformedStoreScanData {
     aisles: Array<{
         id?: string; // Present if matched existing aisle
         name: string;
+        /** Validated single emoji, or null (none suggested, or the model returned junk). */
+        emoji: string | null;
         sortOrder: number;
     }>;
     sections: Array<{
@@ -117,6 +122,7 @@ export function transformStoreScanResult(
         transformed.aisles.push({
             id: matchedAisleId,
             name: trimmedAisleName,
+            emoji: toSingleEmojiOrNull(aisle.emoji),
             sortOrder: aisleIndex,
         });
 

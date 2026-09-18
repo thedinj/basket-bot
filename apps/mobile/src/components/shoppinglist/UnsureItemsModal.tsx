@@ -96,7 +96,7 @@ const UnsureItemsModalContent: React.FC<{ onClose: () => void }> = ({ onClose })
                         </IonButtons>
                     </IonToolbar>
                 </IonHeader>
-                <IonContent fullscreen>
+                <IonContent>
                     <GroupedItemList<ShoppingListItemWithDetails>
                         groups={groups}
                         renderItem={renderItem}
@@ -117,7 +117,7 @@ const LoadingFallback: React.FC = () => (
                 <IonTitle>{MODAL_TITLE}</IonTitle>
             </IonToolbar>
         </IonHeader>
-        <IonContent fullscreen>
+        <IonContent>
             <IonItemDivider>
                 <IonLabel>
                     <IonSkeletonText animated style={{ width: "80px" }} />

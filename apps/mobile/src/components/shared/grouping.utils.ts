@@ -1,3 +1,4 @@
+import { parseAisleName } from "../../utils/aisleName";
 import { ItemGroup } from "./grouping.types";
 
 /**
@@ -8,6 +9,7 @@ interface GroupableItem {
     aisleId: number | string | null;
     sectionId: number | string | null;
     aisleName?: string | null;
+    aisleEmoji?: string | null;
     sectionName?: string | null;
     aisleSortOrder?: number | null;
     sectionSortOrder?: number | null;
@@ -41,6 +43,7 @@ interface AisleSectionGroupConfig {
 interface AisleGroupInternal {
     aisleId: number | string | null;
     aisleName: string;
+    aisleEmoji: string | null;
     aisleSortOrder: number;
     sections: SectionGroupInternal[];
 }
@@ -51,6 +54,28 @@ interface SectionGroupInternal {
     sectionSortOrder: number;
     items: GroupableItem[];
 }
+
+/**
+ * What an aisle header shows in its plate and beside it:
+ *  1. an emoji set on the aisle → the emoji; the full name beside it ("7 – Baking" keeps its
+ *     number, since the plate no longer carries it)
+ *  2. a number and a name ("7 – Baking") → the number, then "Baking"
+ *  3. a number only ("12", "Aisle 3") → a sign plate reading "AISLE 3", nothing beside it
+ *  4. neither (a named aisle without an emoji, or Uncategorized) → an empty, space-holding plate
+ */
+export const aislePlate = (aisle: {
+    aisleId: number | string | null;
+    aisleName: string;
+    aisleEmoji: string | null;
+}): { badge: string; badgeKind: "code" | "emoji" | "sign"; label: string } => {
+    if (aisle.aisleId === null) return { badge: "", badgeKind: "code", label: aisle.aisleName };
+    if (aisle.aisleEmoji) {
+        return { badge: aisle.aisleEmoji, badgeKind: "emoji", label: aisle.aisleName };
+    }
+    const { code, label } = parseAisleName(aisle.aisleName);
+    if (code && !label) return { badge: code, badgeKind: "sign", label: "" };
+    return { badge: code ?? "", badgeKind: "code", label };
+};
 
 /**
  * Converts items grouped by aisle/section into nested ItemGroup structure
@@ -82,6 +107,7 @@ export function createAisleSectionGroups<T extends GroupableItem>(
             aisleGroup = {
                 aisleId: aisleId,
                 aisleName: aisleName,
+                aisleEmoji: aisleId ? (item.aisleEmoji ?? null) : null,
                 aisleSortOrder: aisleSortOrder,
                 sections: [],
             };
@@ -133,10 +159,14 @@ export function createAisleSectionGroups<T extends GroupableItem>(
             children: [],
         };
 
-        // Add aisle header if configured
+        // Add aisle header if configured. Every aisle header gets the plate column, filled or
+        // not, so names line up down the list. See `aislePlate` for what goes in it.
         if (showAisleHeaders) {
+            const plate = aislePlate(aisle);
             aisleGroup.header = {
-                label: aisle.aisleName,
+                label: plate.label,
+                badge: plate.badge,
+                badgeKind: plate.badgeKind,
                 color: "light",
                 sticky: true,
                 labelClassName: "group-header-label group-header-label--aisle",
@@ -152,11 +182,11 @@ export function createAisleSectionGroups<T extends GroupableItem>(
                 indentLevel: showSectionHeaders ? sectionIndentLevel : 0,
             };
 
-            // Add section header if configured and not uncategorized
+            // Every named section gets its own ruled header, even when it's the aisle's only
+            // one; the null section (loose items) never does.
             if (showSectionHeaders && section.sectionId !== null) {
                 sectionGroup.header = {
                     label: section.sectionName,
-                    color: "light",
                     labelClassName: "group-header-label group-header-label--section",
                 };
             }

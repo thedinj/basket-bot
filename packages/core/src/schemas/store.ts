@@ -8,6 +8,7 @@ import {
     MAX_UNIT_CATEGORY_LENGTH,
     MAX_UNIT_NAME_LENGTH,
 } from "../constants/index.js";
+import { isSingleEmoji, MAX_EMOJI_LENGTH } from "../utils/emoji.js";
 import { auditFields, maxLengthString, minMaxLengthString } from "./zodHelpers.js";
 
 // ========== Shared Fields ==========
@@ -132,11 +133,23 @@ const reorderItemsSchema = z.object({
 });
 
 // ========== StoreAisle ==========
+
+/**
+ * An aisle's plate emoji (🥬 for Produce): exactly one emoji. Null means none, in which case the
+ * plate shows the aisle number (or nothing).
+ */
+export const aisleEmojiSchema = z
+    .string()
+    .trim()
+    .max(MAX_EMOJI_LENGTH)
+    .refine(isSingleEmoji, { message: "Must be a single emoji" });
+
 export const storeAisleSchema = z.object({
     id: z.string().uuid(),
     storeId: z.string().uuid(),
     name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
     nameNorm: z.string().min(1).max(MAX_NAME_LENGTH),
+    emoji: z.string().max(MAX_EMOJI_LENGTH).nullable(),
     sortOrder: z.number().int().min(0),
     ...auditFields,
 });
@@ -146,12 +159,15 @@ export type StoreAisle = z.infer<typeof storeAisleSchema>;
 export const createStoreAisleRequestSchema = z.object({
     storeId: z.string().uuid(),
     name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
+    emoji: aisleEmojiSchema.nullable().optional(),
 });
 
 export type CreateStoreAisleRequest = z.infer<typeof createStoreAisleRequestSchema>;
 
+/** `emoji` omitted leaves it unchanged; null clears it. */
 export const updateStoreAisleRequestSchema = z.object({
     name: minMaxLengthString(1, MAX_NAME_LENGTH, "Name"),
+    emoji: aisleEmojiSchema.nullable().optional(),
 });
 
 export type UpdateStoreAisleRequest = z.infer<typeof updateStoreAisleRequestSchema>;
@@ -227,6 +243,7 @@ export const storeItemWithDetailsSchema = storeItemSchema.extend({
     sectionName: z.string().max(MAX_NAME_LENGTH).nullable(),
     sectionSortOrder: z.number().int().nullable(),
     aisleName: z.string().max(MAX_NAME_LENGTH).nullable(),
+    aisleEmoji: z.string().max(MAX_EMOJI_LENGTH).nullable(),
     aisleSortOrder: z.number().int().nullable(),
     createdByName: z.string().max(MAX_NAME_LENGTH).nullable(),
     updatedByName: z.string().max(MAX_NAME_LENGTH).nullable(),
@@ -283,6 +300,7 @@ export const shoppingListItemWithDetailsSchema = shoppingListItemSchema.extend({
     sectionName: z.string().max(MAX_NAME_LENGTH).nullable(),
     sectionSortOrder: z.number().int().nullable(),
     aisleName: z.string().max(MAX_NAME_LENGTH).nullable(),
+    aisleEmoji: z.string().max(MAX_EMOJI_LENGTH).nullable(),
     aisleSortOrder: z.number().int().nullable(),
     checkedByName: z.string().max(MAX_NAME_LENGTH).nullable(),
     isFavorite: z.boolean().nullable(),

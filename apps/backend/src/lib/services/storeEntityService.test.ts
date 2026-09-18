@@ -473,3 +473,67 @@ describe("merging duplicate items", () => {
         ).toThrow(NotFoundError);
     });
 });
+
+describe("aisle emoji", () => {
+    it("stores an emoji given at create time", () => {
+        const aisle = storeEntityService.createAisle({
+            storeId,
+            name: "Produce",
+            emoji: "🥬",
+            userId: owner,
+        });
+
+        expect(aisle.emoji).toBe("🥬");
+    });
+
+    it("defaults to no emoji", () => {
+        const aisle = storeEntityService.createAisle({ storeId, name: "Aisle 3", userId: owner });
+
+        expect(aisle.emoji).toBeNull();
+    });
+
+    it("leaves the emoji alone when an update omits it", () => {
+        const id = seedAisle({ storeId, ownerId: owner, name: "Deli", emoji: "🧀" });
+
+        const updated = storeEntityService.updateAisle({
+            id,
+            storeId,
+            name: "Deli Counter",
+            userId: owner,
+        });
+
+        expect(updated?.name).toBe("Deli Counter");
+        expect(updated?.emoji).toBe("🧀");
+    });
+
+    it("clears the emoji on null or blank", () => {
+        const id = seedAisle({ storeId, ownerId: owner, name: "Deli", emoji: "🧀" });
+
+        expect(
+            storeEntityService.updateAisle({
+                id,
+                storeId,
+                name: "Deli",
+                emoji: null,
+                userId: owner,
+            })?.emoji
+        ).toBeNull();
+
+        storeEntityService.updateAisle({ id, storeId, name: "Deli", emoji: "🧀", userId: owner });
+        expect(
+            storeEntityService.updateAisle({
+                id,
+                storeId,
+                name: "Deli",
+                emoji: "  ",
+                userId: owner,
+            })?.emoji
+        ).toBeNull();
+    });
+
+    it.each(["cheese", "🧀🥖", "7"])("rejects %j as an emoji", (emoji) => {
+        expect(() =>
+            storeEntityService.createAisle({ storeId, name: "Deli", emoji, userId: owner })
+        ).toThrow(ValidationError);
+    });
+});

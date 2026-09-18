@@ -26,7 +26,7 @@ export const StoreManagementProvider = ({ storeId, children }: StoreManagementPr
         setIsModalOpen(true);
     };
 
-    const openEditAisleModal = (aisle: { id: string; name: string }) => {
+    const openEditAisleModal = (aisle: { id: string; name: string; emoji?: string | null }) => {
         setEditingEntity({ ...aisle, type: "aisle" });
         setIsModalOpen(true);
     };

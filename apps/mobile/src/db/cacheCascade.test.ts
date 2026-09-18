@@ -546,8 +546,9 @@ const NON_MUTATION_HOOKS = new Set([
     "usePendingInvitations",
     "useHouseholdInvitations",
     "useNotificationCounts",
-    // Not a useMutation: a useCallback that orchestrates the aisle/section hooks above, each of
-    // which already has its own cascade row.
+    // Not a useMutation: a useCallback that calls the database directly and invalidates at the
+    // end (aisles, sections, items with-details, shopping-list items). Its cascade is documented
+    // by hand in CACHE_KEYS.md; keep the two in step.
     "useBulkApplyAislesAndSections",
 ]);
 

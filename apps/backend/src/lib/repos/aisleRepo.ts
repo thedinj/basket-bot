@@ -10,6 +10,7 @@ import { applySortOrders, readMaxSortOrder } from "./sortOrderQueries";
 export function createAisle(params: {
     storeId: string;
     name: string;
+    emoji?: string | null;
     sortOrder: number;
     createdById: string;
 }): StoreAisle {
@@ -18,13 +19,14 @@ export function createAisle(params: {
     const nameNorm = normalizeItemName(params.name);
 
     db.prepare(
-        `INSERT INTO StoreAisle (id, storeId, name, nameNorm, sortOrder, createdById, updatedById, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO StoreAisle (id, storeId, name, nameNorm, emoji, sortOrder, createdById, updatedById, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
         id,
         params.storeId,
         params.name,
         nameNorm,
+        params.emoji ?? null,
         params.sortOrder,
         params.createdById,
         params.createdById,
@@ -38,7 +40,7 @@ export function createAisle(params: {
 export function getAisleById(id: string): StoreAisle | null {
     const row = db
         .prepare(
-            `SELECT id, storeId, name, nameNorm, sortOrder, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, storeId, name, nameNorm, emoji, sortOrder, createdById, updatedById, createdAt, updatedAt
              FROM StoreAisle
              WHERE id = ?`
         )
@@ -54,7 +56,7 @@ export function findAisleByNameNorm(
 ): StoreAisle | undefined {
     return db
         .prepare(
-            `SELECT id, storeId, name, nameNorm, sortOrder, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, storeId, name, nameNorm, emoji, sortOrder, createdById, updatedById, createdAt, updatedAt
              FROM StoreAisle
              WHERE storeId = ? AND nameNorm = ? AND id != ?`
         )
@@ -64,7 +66,7 @@ export function findAisleByNameNorm(
 export function getAislesByStore(storeId: string): StoreAisle[] {
     return db
         .prepare(
-            `SELECT id, storeId, name, nameNorm, sortOrder, createdById, updatedById, createdAt, updatedAt
+            `SELECT id, storeId, name, nameNorm, emoji, sortOrder, createdById, updatedById, createdAt, updatedAt
              FROM StoreAisle
              WHERE storeId = ?
              ORDER BY sortOrder ASC, name ASC`
@@ -72,21 +74,33 @@ export function getAislesByStore(storeId: string): StoreAisle[] {
         .all(storeId) as StoreAisle[];
 }
 
+/** `emoji` undefined leaves it unchanged; null clears it. */
 export function updateAisle(params: {
     id: string;
     name: string;
+    emoji?: string | null;
     updatedById: string;
 }): StoreAisle | null {
     const now = new Date().toISOString();
     const nameNorm = normalizeItemName(params.name);
+    const setEmoji = params.emoji !== undefined;
 
     const result = db
         .prepare(
             `UPDATE StoreAisle
-             SET name = ?, nameNorm = ?, updatedById = ?, updatedAt = ?
+             SET name = ?, nameNorm = ?, emoji = CASE WHEN ? THEN ? ELSE emoji END,
+                 updatedById = ?, updatedAt = ?
              WHERE id = ?`
         )
-        .run(params.name, nameNorm, params.updatedById, now, params.id);
+        .run(
+            params.name,
+            nameNorm,
+            setEmoji ? 1 : 0,
+            params.emoji ?? null,
+            params.updatedById,
+            now,
+            params.id
+        );
 
     if (result.changes === 0) {
         return null;

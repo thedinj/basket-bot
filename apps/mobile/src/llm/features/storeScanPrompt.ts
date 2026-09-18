@@ -92,6 +92,7 @@ If you classified the store as "grocery" in Step 2, AND any of the following dep
 3. Numbered aisles must be formatted as "Aisle N" (e.g., "Aisle 1", "Aisle 2"), even if the text uses a different format (e.g., "1", "Aisle1", "Aisle-1").
 4. Preserve the exact section/category names as shown in the text for each aisle.
 5. **IMPORTANT:** Expand legible abbreviations to their full names (e.g., "PRD" → "Produce", "BKY" → "Bakery"). Only include abbreviations as-is if you genuinely cannot determine what they mean. Do NOT include duplicates—if both "PRD" and "Produce" appear, use "Produce" only once.
+6. **EMOJI:** Give every named department one "emoji" that depicts it, shown on its sign in the app (e.g., Produce → 🥬, Bakery → 🥖, Deli → 🧀, Meat Department → 🥩, Frozen Foods → 🧊, Dairy → 🥛, Wine, Liquor, and Spirits → 🍷, Pharmacy → 💊). Use null for numbered aisles ("Aisle N"). The value must be exactly one emoji character—no words, no second emoji.
 
 **CRITICAL RULES:**
 1. ONLY extract information that is clearly visible in the text—DO NOT infer, assume, or add anything not shown, except for the mandatory sections above (grocery stores only).
@@ -110,33 +111,33 @@ If you classified the store as "grocery" in Step 2, AND any of the following dep
 
 **Return Format:**
 Provide your response as a JSON object with this exact structure:
-storeType": "grocery",
+{
   "aisles": [
     {
       "name": "Produce",
-      "sections": []
-    },
-    {
-      "name": "Aisle 1",
-      "sections": ["Bread", "Cereal", "Pasta"]
-    },
-    {
-      "name": "Aisle 2",
-      "sections": ["Canned tomatoes", "Soup", "Salad Dressing"]
-    },
-    {
-      "name": "BAK",
+      "emoji": "🥬",
       "sections": []
     },
     {
       "name": "Deli",
+      "emoji": "🧀",
       "sections": ["Sliced Meats", "Cheeses", "Prepared Foods"]
+    },
+    {
+      "name": "Aisle 1",
+      "emoji": null,
+      "sections": ["Bread", "Cereal", "Pasta"]
+    },
+    {
+      "name": "Aisle 2",
+      "emoji": null,
+      "sections": ["Canned tomatoes", "Soup", "Salad Dressing"]
     }
   ]
 }
 
 **Important:**
-- The "storeType" field MUST be one of: "grocery", "wholesale", or "other"
+- The store type from Step 2 only decides the mandatory sections; do NOT include it in the output
 - Expand legible abbreviations to full names (e.g., "PRD" → "Produce", "DLI" → "Deli")
 - Only keep abbreviations as-is if their meaning is genuinely unclear
 - Do NOT include duplicate aisles—if both "PRD" and "Produce" are visible, include "Produce" only once
@@ -148,9 +149,8 @@ storeType": "grocery",
 - Preserve original capitalization and naming EXACTLY as shown for non-numbered aisles and section names.
 - Use complete, readable names (e.g., "Aisle 1" not "A1" unless that's exactly what's shown for non-numbered aisles).
 - Expand recognizable abbreviations to their full names (e.g., "PRD" → "Produce"). Only preserve unclear abbreviations as-is.
-- When in doubt about sections or inferences, leave it out—do not guess or infer, except for the mandatory sections above (grocery stores only)ection names.
-- Use complete, readable names (e.g., "Aisle 1" not "A1" unless that's exactly what's shown for non-numbered aisles).
-- When in doubt, leave it out—do not guess or infer, except for the mandatory sections above.
+- Each aisle must have an "emoji": one emoji for a named department, null for a numbered aisle.
+- When in doubt about sections or inferences, leave it out—do not guess or infer, except for the mandatory sections above (grocery stores only).
 
 Analyze the text carefully and extract all store layout information. Output ONLY the JSON object as specified above.`;
 }

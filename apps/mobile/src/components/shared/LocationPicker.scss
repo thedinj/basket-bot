@@ -3,10 +3,11 @@
 // convention (uppercase, bold, letter-spaced); sections are indented and lighter.
 
 .location-picker__aisle-label {
-    font-size: 0.8rem;
+    font-family: var(--app-font-display);
+    font-size: 0.95rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.6px;
+    letter-spacing: 0.08em;
 }
 
 .location-picker__section-item {

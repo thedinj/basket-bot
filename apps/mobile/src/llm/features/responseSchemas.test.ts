@@ -9,6 +9,7 @@ import { autoCategorizeResultSchema } from "./autoCategorize";
 import { bulkImportResponseSchema } from "./bulkImport";
 import { recipeImportResponseSchema } from "./recipeImport";
 import { storeScanResultSchema } from "./storeScan";
+import { aisleEmojiResultSchema } from "./aisleEmoji";
 
 describe("bulkImportResponseSchema", () => {
     it("accepts items with null quantity, unit and notes", () => {
@@ -117,6 +118,34 @@ describe("storeScanResultSchema", () => {
         const result = storeScanResultSchema.safeParse({
             aisles: [{ name: "1", sections: "Bread" }],
         });
+        expect(result.success).toBe(false);
+    });
+
+    it("accepts an aisle emoji, a null one, or none at all", () => {
+        const result = storeScanResultSchema.safeParse({
+            aisles: [
+                { name: "Produce", emoji: "🥬", sections: [] },
+                { name: "Aisle 1", emoji: null, sections: [] },
+                { name: "Aisle 2", sections: [] },
+            ],
+        });
+        expect(result.success).toBe(true);
+    });
+});
+
+describe("aisleEmojiResultSchema", () => {
+    it("accepts an emoji or null per aisle", () => {
+        const result = aisleEmojiResultSchema.safeParse({
+            aisles: [
+                { name: "Produce", emoji: "🥬" },
+                { name: "Seasonal", emoji: null },
+            ],
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it("requires the emoji field, so the model can't silently skip it", () => {
+        const result = aisleEmojiResultSchema.safeParse({ aisles: [{ name: "Produce" }] });
         expect(result.success).toBe(false);
     });
 });

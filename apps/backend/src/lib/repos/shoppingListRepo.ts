@@ -90,6 +90,7 @@ export function getShoppingListItems(
                 s.name as sectionName,
                 s.sortOrder as sectionSortOrder,
                 a.name as aisleName,
+                a.emoji as aisleEmoji,
                 a.sortOrder as aisleSortOrder,
                 u.name as checkedByName,
                 sli_creator.name as createdByName,

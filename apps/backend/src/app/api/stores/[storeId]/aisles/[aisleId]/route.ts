@@ -40,6 +40,7 @@ async function handlePut(
             id: aisleId,
             storeId,
             name,
+            emoji: body.emoji,
             userId: req.auth.sub,
         });
 

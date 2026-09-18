@@ -9,6 +9,8 @@ interface AnimatedGroupProps<T> {
     getKey: (item: T) => string;
     renderItem: (item: T) => ReactNode;
     mode?: AnimatePresenceProps["mode"];
+    /** Class for each item's wrapper, e.g. to make the wrapper itself sticky. */
+    itemClassName?: string;
 }
 
 /**
@@ -22,6 +24,7 @@ export const AnimatedGroup = <T,>({
     getKey,
     renderItem,
     mode = "popLayout",
+    itemClassName,
 }: AnimatedGroupProps<T>) => {
     const reducedMotion = useReducedMotion();
 
@@ -30,6 +33,7 @@ export const AnimatedGroup = <T,>({
             {items.map((item) => (
                 <motion.div
                     key={getKey(item)}
+                    className={itemClassName}
                     layout={!reducedMotion}
                     initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
                     animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}

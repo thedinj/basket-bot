@@ -109,7 +109,7 @@ export interface EntityDatabase {
     /**
      * Insert a new aisle
      */
-    insertAisle(storeId: string, name: string): Promise<StoreAisle>;
+    insertAisle(storeId: string, name: string, emoji?: string | null): Promise<StoreAisle>;
 
     /**
      * Get all non-deleted aisles for a store (ordered by sortOrder)
@@ -117,9 +117,15 @@ export interface EntityDatabase {
     getAislesByStore(storeId: string): Promise<StoreAisle[]>;
 
     /**
-     * Update an aisle's name
+     * Update an aisle's name, and its plate emoji when `emoji` is given (null clears it;
+     * omitted leaves it unchanged)
      */
-    updateAisle(storeId: string, id: string, name: string): Promise<StoreAisle>;
+    updateAisle(
+        storeId: string,
+        id: string,
+        name: string,
+        emoji?: string | null
+    ): Promise<StoreAisle>;
 
     /**
      * Update an aisle's sort order only

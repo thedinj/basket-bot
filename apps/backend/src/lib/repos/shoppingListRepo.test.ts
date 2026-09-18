@@ -187,3 +187,27 @@ describe("boolean round-trip", () => {
         expect(rows.map((r) => r.notes)).toEqual(["Mine"]);
     });
 });
+
+describe("aisle emoji", () => {
+    it("carries the aisle's emoji onto its list rows", () => {
+        const aisleId = seedAisle({ storeId, ownerId: owner, name: "Produce", emoji: "🥬" });
+        const itemId = seedItem({ storeId, ownerId: owner, name: "Bananas", aisleId });
+        seedListItem({ storeId, ownerId: owner, storeItemId: itemId });
+
+        const [row] = shoppingListRepo.getShoppingListItems(storeId, owner);
+
+        expect(row.aisleEmoji).toBe("🥬");
+    });
+
+    it("is null for an aisle without one, and for uncategorized rows", () => {
+        const aisleId = seedAisle({ storeId, ownerId: owner, name: "Aisle 3" });
+        const inAisle = seedItem({ storeId, ownerId: owner, name: "Nutella", aisleId });
+        const loose = seedItem({ storeId, ownerId: owner, name: "Mystery" });
+        seedListItem({ storeId, ownerId: owner, storeItemId: inAisle });
+        seedListItem({ storeId, ownerId: owner, storeItemId: loose });
+
+        const rows = shoppingListRepo.getShoppingListItems(storeId, owner);
+
+        expect(rows.map((r) => r.aisleEmoji)).toEqual([null, null]);
+    });
+});

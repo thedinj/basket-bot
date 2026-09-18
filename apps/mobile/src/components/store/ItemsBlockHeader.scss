@@ -1,0 +1,48 @@
+// Block header height is fixed so the aisle headers below can pin exactly under it: a headed
+// block publishes that height as --grouped-list-sticky-top (read by GroupedItemList.scss).
+$items-block-header-height: 40px;
+
+.store-items-block--headed {
+    --grouped-list-sticky-top: #{$items-block-header-height};
+}
+
+// Ionic's default list top padding would open a strip between the block header and the first
+// aisle header, which items then show through while both are pinned.
+.store-items-block ion-list {
+    padding-top: 0;
+}
+
+.store-items-block + .store-items-block {
+    margin-top: 16px;
+}
+
+// Sticky within its own block (the block div is its containing block), so the All Items header
+// pushes Favorites off rather than stacking on it. Sits one tier above the aisle headers.
+.items-block-header {
+    --background: var(--ion-color-step-100);
+    --color: var(--ion-text-color);
+    --min-height: #{$items-block-header-height};
+    height: $items-block-header-height;
+    box-sizing: border-box;
+    z-index: 3;
+    border-bottom: 1px solid var(--ion-color-step-200);
+
+    ion-icon[slot="start"] {
+        margin-inline-end: 8px;
+        font-size: 1.1rem;
+    }
+
+    ion-label {
+        margin-block: 0;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+}
+
+.items-block-header__count {
+    margin-inline-end: 16px;
+    font-family: var(--app-font-mono);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ion-color-medium);
+}

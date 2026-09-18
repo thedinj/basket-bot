@@ -1,10 +1,11 @@
 import type { StoreItem } from "@basket-bot/core";
-import { IonIcon, IonInput, IonItem, IonLabel, IonList, IonText } from "@ionic/react";
+import { IonIcon, IonInput, IonItem, IonLabel, IonList } from "@ionic/react";
 import { closeOutline } from "ionicons/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Controller } from "react-hook-form";
 import { useDebounce } from "use-debounce";
 import { useStoreItemAutocomplete } from "../../db/hooks";
+import { FormField } from "../shared/FormField";
 import { useItemEditorContext } from "./useItemEditorContext";
 
 export const NameAutocomplete: React.FC = () => {
@@ -88,82 +89,37 @@ export const NameAutocomplete: React.FC = () => {
             name="name"
             control={control}
             render={() => (
-                <div ref={containerRef} style={{ position: "relative" }}>
-                    <IonItem>
-                        <IonLabel position="stacked">Item</IonLabel>
-                        <IonInput
-                            ref={nameInputRef}
-                            value={searchTerm}
-                            placeholder="Enter item name"
-                            onIonInput={(e) => handleSearchChange(e.detail.value || "")}
-                            onIonFocus={() => {
-                                setDismissed(false);
-                                setShowAutocomplete(searchTerm.length >= 2);
-                            }}
-                            autocapitalize="sentences"
-                        />
-                    </IonItem>
-                    {errors.name && (
-                        <IonText color="danger">
-                            <p
-                                style={{
-                                    fontSize: "12px",
-                                    marginLeft: "16px",
+                <div ref={containerRef} className="form-autocomplete">
+                    <FormField label="Item" error={errors.name?.message}>
+                        <div className="form-control">
+                            <IonInput
+                                ref={nameInputRef}
+                                aria-label="Item"
+                                value={searchTerm}
+                                placeholder="Enter item name"
+                                onIonInput={(e) => handleSearchChange(e.detail.value || "")}
+                                onIonFocus={() => {
+                                    setDismissed(false);
+                                    setShowAutocomplete(searchTerm.length >= 2);
                                 }}
-                            >
-                                {errors.name.message}
-                            </p>
-                        </IonText>
-                    )}
+                                autocapitalize="sentences"
+                            />
+                        </div>
+                    </FormField>
 
                     {/* Autocomplete dropdown */}
                     {showAutocomplete && autocompleteResults && autocompleteResults.length > 0 && (
-                        <IonList
-                            style={{
-                                position: "absolute",
-                                top: "100%",
-                                left: 0,
-                                right: 0,
-                                zIndex: 1000,
-                                maxHeight: "200px",
-                                overflow: "auto",
-                                border: "1px solid var(--ion-color-medium)",
-                                borderRadius: "4px",
-                                backgroundColor: "var(--ion-background-color)",
-                                paddingTop: 0,
-                                paddingBottom: 0,
-                            }}
-                        >
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    padding: "2px 12px",
-                                    borderBottom: "1px solid var(--ion-color-medium)",
-                                }}
-                            >
-                                <span
-                                    style={{ fontSize: "11px", color: "var(--ion-color-medium)" }}
-                                >
-                                    Suggestions
-                                </span>
-                                <span
+                        <IonList className="form-autocomplete__list">
+                            <div className="form-autocomplete__header">
+                                <span className="form-field__label">Suggestions</span>
+                                <button
+                                    type="button"
+                                    className="form-autocomplete__dismiss"
                                     onClick={handleDismiss}
-                                    role="button"
                                     aria-label="Dismiss suggestions"
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        width: "20px",
-                                        height: "20px",
-                                        flexShrink: 0,
-                                        cursor: "pointer",
-                                    }}
                                 >
-                                    <IonIcon icon={closeOutline} style={{ fontSize: "16px" }} />
-                                </span>
+                                    <IonIcon icon={closeOutline} />
+                                </button>
                             </div>
                             {autocompleteResults.map((item) => {
                                 const section = sections?.find((s) => s.id === item.sectionId);

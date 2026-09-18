@@ -1,17 +1,118 @@
-// Shared header label typography for grouped lists.
+// Shared header typography for grouped lists.
 // Color overrides are applied inline since they come from semantic design tokens.
+//
+// Two registers, so an aisle and a section can never be confused:
+//   - aisle:   display face, uppercase, bold, full text color, in a bar (plus the shield plate)
+//   - section: body face, small bold tracked caps, lilac, on its own row with a hairline running
+//              from the label to the edge — always, even for an aisle's only section
 
-.group-header-label {
-    font-size: 0.72rem;
+// A sticky header's containing block is its group (see RenderedGroup), so it pins only while
+// that group is on screen. z-index lifts it over item rows, whose layout animations create
+// their own stacking contexts. --grouped-list-sticky-top lets a page that pins its own header
+// above the list (e.g. Favorites / All Items) stack these beneath it.
+.grouped-list__sticky-header {
+    position: sticky;
+    top: var(--grouped-list-sticky-top, 0px);
+    z-index: 2;
+}
+
+// Group indent, applied inside each row rather than around it (see RenderedGroup).
+.grouped-list__items ion-item {
+    --padding-start: calc(16px + var(--group-indent, 0px));
+}
+
+// Label rules are scoped `ion-item-divider .group-header-label.group-header-label--x`
+// (0,2,1): Ionic's own `.item.sc-ion-label-md-h` (0,2,0) resets font-family and font-size on
+// every label inside an item, and a plain `.group-header-label` rule loses to it silently.
+
+// Aisle names (also Ideas / Checked Items / Uncategorized): free text up to 100 chars, so wrap
+// to two lines, then ellipsize. Condensed, so it can run large without truncating.
+ion-item-divider .group-header-label.group-header-label--aisle {
+    font-family: var(--app-font-display);
+    font-size: 1.0625rem;
     font-weight: 700;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    white-space: normal;
 
-    // Sub-group headers (sections within aisles): slightly smaller and dimmer
-    &--section {
-        font-size: 0.68rem;
-        font-weight: 600;
-        letter-spacing: 0.6px;
-        opacity: 0.75;
+    .group-header-title {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        overflow-wrap: anywhere;
+        line-height: 1.15;
     }
+}
+
+// Section rows: a ruled label. Small tracked caps in the aisle name's column (past the badge
+// plate: 36px + 10px gap), then a hairline to the edge, so a section reads as a divider that
+// encloses the rows below it rather than as one more row. More space above (16px) than below
+// (4px) attaches it to its own items; directly under the aisle bar it needs less (10px).
+// Regular-width Barlow Bold, not the condensed display face: at this size condensed caps have
+// strokes too thin to hold up on a phone screen (the same fix as the aisle-number plates).
+ion-item-divider .group-header-label.group-header-label--section {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    margin-block: 16px 4px;
+    margin-inline-start: 46px;
+    font-family: var(--ion-font-family);
+    font-size: 0.78125rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+    color: var(--ion-color-secondary);
+
+    .group-header-title {
+        flex: 0 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &::after {
+        content: "";
+        flex: 1 0 24px;
+        height: 1px;
+        background: color-mix(in srgb, var(--ion-color-secondary) 30%, transparent);
+    }
+}
+
+.grouped-list__items
+    > .grouped-list__group:first-child
+    ion-item-divider
+    .group-header-label.group-header-label--section {
+    margin-top: 10px;
+}
+
+// A count after a header title ("CHECKED · 4"), in the data register.
+.group-header-count {
+    margin-inline-start: 0.35em;
+    font-family: var(--app-font-mono);
+    font-size: 0.8125rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    opacity: 0.8;
+}
+
+// Section rows sit on the list's own background with no fill of their own, so only aisle
+// headers read as bars.
+ion-item-divider:has(> .group-header-label--section) {
+    --background: transparent;
+    // Ionic colors the label from the divider's --color, so the lilac has to be set here.
+    --color: var(--ion-color-secondary);
+    min-height: 0;
+    border-bottom: 0;
+}
+
+// Header action buttons (Obliterate, Auto-Categorize): Ionic's small clear button is 27px
+// tall; give it a 44px touch target without growing the 41px header bar it sits in.
+.action-slot-button {
+    height: 44px;
+    margin-block: -2px;
 }

@@ -1,0 +1,74 @@
+// "Shield" plate, like a route marker. It sits in the same 36px column as the item
+// checkboxes (ShoppingListItem.css), so plates and boxes share a centre line. An empty plate
+// keeps its footprint so every header title starts in the same column.
+.group-header-badge {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 26px;
+    box-sizing: border-box;
+    margin-inline-end: 10px;
+    border: 1.5px solid var(--badge-color, var(--ion-color-secondary));
+    border-radius: 5px;
+    font-variant-numeric: tabular-nums;
+    color: var(--badge-color, var(--ion-color-secondary));
+
+    // Aisle numbers: a quiet outline around a full-strength digit. When the frame and the
+    // figure were the same lilac, the thin strokes and the border blurred together on a phone
+    // screen; now the number carries the contrast and the frame just marks the plate. Regular-
+    // width Barlow keeps the counters of 3, 6 and 8 open at this size.
+    &--code,
+    &--emoji,
+    &--sign {
+        border-color: color-mix(
+            in srgb,
+            var(--badge-color, var(--ion-color-secondary)) 35%,
+            transparent
+        );
+        font-family: var(--ion-font-family);
+        font-size: 1.0625rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--ion-text-color);
+    }
+
+    // Aisle emoji, drawn monochrome in the digits' color so the plates stay one sign family.
+    &--emoji {
+        font-family: var(--app-font-emoji);
+        font-weight: 500;
+        letter-spacing: 0;
+    }
+
+    // A number-only aisle: the plate widens to read "AISLE 3", like a highway EXIT sign. Its
+    // left edge stays in the plate column, and the header has no label beside it.
+    &--sign {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        width: auto;
+        padding: 0 8px 0 7px;
+    }
+
+    &__word {
+        position: relative;
+        top: 1px;
+        font-size: 0.625rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: color-mix(in srgb, var(--ion-text-color) 72%, transparent);
+    }
+
+    &__num {
+        font-size: 1.0625rem;
+    }
+
+    // Ideas / Checked Items carry an icon instead of a number, in their own color.
+    &--icon ion-icon {
+        font-size: 1rem;
+    }
+
+    &--empty {
+        border-color: transparent;
+    }
+}

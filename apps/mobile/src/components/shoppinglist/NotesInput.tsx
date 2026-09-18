@@ -1,39 +1,31 @@
-import { IonItem, IonLabel, IonText, IonTextarea } from "@ionic/react";
+import { IonTextarea } from "@ionic/react";
 import { Controller, useWatch } from "react-hook-form";
+import { FormField } from "../shared/FormField";
 import { useItemEditorContext } from "./useItemEditorContext";
 
 export const NotesInput = () => {
     const { control, errors } = useItemEditorContext();
     const isIdea = useWatch({ control, name: "isIdea" });
+    const label = isIdea ? "Idea" : "Notes";
 
     return (
         <Controller
             name="notes"
             control={control}
             render={({ field }) => (
-                <IonItem>
-                    <IonLabel position="stacked">{isIdea ? "Idea" : "Notes"}</IonLabel>
-                    <IonTextarea
-                        value={field.value || ""}
-                        autocapitalize="sentences"
-                        autoGrow
-                        rows={1}
-                        placeholder={isIdea ? "Enter your idea" : "Enter notes"}
-                        onIonInput={(e) => field.onChange(e.detail.value || null)}
-                    />
-                    {errors.notes && (
-                        <IonText color="danger">
-                            <p
-                                style={{
-                                    fontSize: "12px",
-                                    marginLeft: "16px",
-                                }}
-                            >
-                                {errors.notes.message}
-                            </p>
-                        </IonText>
-                    )}
-                </IonItem>
+                <FormField label={label} error={errors.notes?.message}>
+                    <div className="form-control">
+                        <IonTextarea
+                            aria-label={label}
+                            value={field.value || ""}
+                            autocapitalize="sentences"
+                            autoGrow
+                            rows={1}
+                            placeholder={isIdea ? "Enter your idea" : "Enter notes"}
+                            onIonInput={(e) => field.onChange(e.detail.value || null)}
+                        />
+                    </div>
+                </FormField>
             )}
         />
     );

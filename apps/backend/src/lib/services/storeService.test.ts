@@ -22,9 +22,15 @@ beforeEach(() => {
 const aislesOf = (storeId: string) =>
     db
         .prepare(
-            `SELECT id, name, nameNorm, sortOrder FROM StoreAisle WHERE storeId = ? ORDER BY sortOrder`
+            `SELECT id, name, nameNorm, emoji, sortOrder FROM StoreAisle WHERE storeId = ? ORDER BY sortOrder`
         )
-        .all(storeId) as Array<{ id: string; name: string; nameNorm: string; sortOrder: number }>;
+        .all(storeId) as Array<{
+        id: string;
+        name: string;
+        nameNorm: string;
+        emoji: string | null;
+        sortOrder: number;
+    }>;
 
 const sectionsOf = (storeId: string) =>
     db
@@ -211,6 +217,7 @@ describe("duplicateStore", () => {
         const copiedAisles = aislesOf(copy.id);
 
         expect(copiedAisles.map((a) => a.name)).toEqual(sourceAisles.map((a) => a.name));
+        expect(copiedAisles.map((a) => a.emoji)).toEqual(sourceAisles.map((a) => a.emoji));
         for (const aisle of copiedAisles) {
             expect(aisle.nameNorm).toBe(normalizeItemName(aisle.name));
         }
@@ -235,5 +242,19 @@ describe("duplicateStore", () => {
         });
 
         expect(sectionsOf(copy.id).map((s) => s.name)).toEqual(["Canned Goods"]);
+    });
+});
+
+describe("template aisle emoji", () => {
+    it("seeds the grocery departments with their emoji", () => {
+        const store = storeService.createStore({
+            name: "Grocer",
+            userId: owner,
+            templateId: "grocery",
+        });
+        const byName = new Map(aislesOf(store.id).map((a) => [a.name, a.emoji]));
+
+        expect(byName.get("Produce")).toBe("🥬");
+        expect(byName.get("Deli")).toBe("🧀");
     });
 });

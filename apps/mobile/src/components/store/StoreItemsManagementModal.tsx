@@ -18,7 +18,16 @@ import {
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
-import { add, closeOutline, nuclear, pricetagsOutline, searchOutline } from "ionicons/icons";
+import clsx from "clsx";
+import {
+    add,
+    closeOutline,
+    nuclear,
+    pricetagsOutline,
+    searchOutline,
+    star,
+    fileTrayFull,
+} from "ionicons/icons";
 import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { useStore, useStoreItemsWithDetails } from "../../db/hooks";
@@ -39,6 +48,7 @@ import { StoreItemEditorModal } from "../storeitem/StoreItemEditorModal";
 import StoreItemRow from "../storeitem/StoreItemRow";
 import { useShoppingListItemMap } from "../storeitem/useShoppingListItemMap";
 import { useStoreItemOperations } from "../storeitem/useStoreItemOperations";
+import { ItemsBlockHeader } from "./ItemsBlockHeader";
 
 interface StoreItemsManagementModalProps {
     isOpen: boolean;
@@ -81,8 +91,8 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
     const closeObliterateModal = useCallback(() => setIsObliterateModalOpen(false), []);
 
     // Filter and split items into favorites and all, then create groups
-    const { favoriteGroups, allGroups } = useMemo(() => {
-        if (!items) return { favoriteGroups: [], allGroups: [] };
+    const { favoriteGroups, allGroups, favoriteCount, allCount } = useMemo(() => {
+        if (!items) return { favoriteGroups: [], allGroups: [], favoriteCount: 0, allCount: 0 };
 
         let filtered = items;
         if (debouncedSearchTerm.trim()) {
@@ -142,7 +152,12 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
             }
         }
 
-        return { favoriteGroups, allGroups };
+        return {
+            favoriteGroups,
+            allGroups,
+            favoriteCount: favorites.length,
+            allCount: all.length,
+        };
     }, [items, debouncedSearchTerm, shoppingListItemMap, openObliterateModal]);
 
     const openCreateModal = useCallback(() => {
@@ -253,7 +268,7 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                         </IonButtons>
                     </IonToolbar>
                 </IonHeader>
-                <IonContent fullscreen>
+                <IonContent>
                     <PullToRefresh />
                     <IonSearchbar
                         value={searchTerm}
@@ -282,38 +297,43 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                     ) : (
                         <>
                             {favoriteGroups.length > 0 && (
-                                <>
-                                    <IonItemDivider sticky>
-                                        <IonLabel>
-                                            <strong>Favorite Items</strong>
-                                        </IonLabel>
-                                    </IonItemDivider>
+                                <div className="store-items-block store-items-block--headed">
+                                    <ItemsBlockHeader
+                                        icon={star}
+                                        label="Favorites"
+                                        count={favoriteCount}
+                                    />
                                     <GroupedItemList<StoreItemWithDetails>
                                         groups={favoriteGroups}
                                         renderItem={renderItem}
                                         getItemKey={getItemKey}
                                     />
-                                </>
+                                </div>
                             )}
 
                             {allGroups.length > 0 && (
-                                <>
+                                <div
+                                    className={clsx(
+                                        "store-items-block",
+                                        favoriteGroups.length > 0 && "store-items-block--headed"
+                                    )}
+                                >
+                                    {/* Only needs a name when there's a Favorites block to tell
+                                        it apart from. */}
                                     {favoriteGroups.length > 0 && (
-                                        <>
-                                            <div style={{ height: "16px" }} />
-                                            <IonItemDivider sticky>
-                                                <IonLabel>
-                                                    <strong>All Items</strong>
-                                                </IonLabel>
-                                            </IonItemDivider>
-                                        </>
+                                        <ItemsBlockHeader
+                                            icon={fileTrayFull}
+                                            iconColor="medium"
+                                            label="All Items"
+                                            count={allCount}
+                                        />
                                     )}
                                     <GroupedItemList<StoreItemWithDetails>
                                         groups={allGroups}
                                         renderItem={renderItem}
                                         getItemKey={getItemKey}
                                     />
-                                </>
+                                </div>
                             )}
                         </>
                     )}
@@ -376,7 +396,7 @@ const LoadingFallback: React.FC = () => (
                 </IonTitle>
             </IonToolbar>
         </IonHeader>
-        <IonContent fullscreen>
+        <IonContent>
             <IonSearchbar disabled value="" placeholder="Search items..." />
             <IonItemDivider>
                 <IonLabel>

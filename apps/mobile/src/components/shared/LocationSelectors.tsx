@@ -1,7 +1,7 @@
 import type { StoreSection } from "@basket-bot/core";
-import { IonAlert, IonChip, IonIcon, IonLabel } from "@ionic/react";
+import { IonAlert, IonIcon } from "@ionic/react";
 import clsx from "clsx";
-import { closeCircle } from "ionicons/icons";
+import { chevronForward, closeCircle } from "ionicons/icons";
 import { Suspense, useEffect, useRef, useState } from "react";
 import {
     Control,
@@ -16,8 +16,9 @@ import { useStoreAisles, useStoreItems, useStoreSections } from "../../db/hooks"
 import { useToast } from "../../hooks/useToast";
 import { SUGGEST_MERGE_CONFIDENCE, type DuplicateMatch } from "../../llm/features/itemDedupe";
 import { useAutoCategorize } from "../../llm/features/useAutoCategorize";
-import { LLM_COLOR, LLM_ICON_SRC } from "../../llm/shared/constants";
+import { LLM_ICON_SRC } from "../../llm/shared/constants";
 import AislesSectionsManagementModal from "../store/AislesSectionsManagementModal";
+import { FormField } from "./FormField";
 import { LocationPicker } from "./LocationPicker";
 import "./LocationSelectors.css";
 
@@ -153,106 +154,77 @@ export function LocationSelectors<T extends FieldValues = FieldValues>(
 
     return (
         <>
-            {/* Location row: chips, with Auto-Locate folded in as one of them */}
-            <div
-                style={{
-                    padding: "8px 16px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "4px",
-                }}
-                onClick={() => !disabled && setIsPickerOpen(true)}
-            >
-                <div style={{ fontSize: "0.75rem", color: "var(--ion-color-medium)" }}>
-                    Location
-                </div>
-                <div
-                    style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        alignItems: "center",
-                        gap: "6px",
-                        cursor: disabled ? "default" : "pointer",
-                    }}
-                >
-                    {!hasLocation ? (
-                        <span
-                            style={{
-                                color: disabled
-                                    ? "var(--ion-color-medium)"
-                                    : "var(--ion-color-primary)",
-                                textDecoration: disabled ? "none" : "underline",
-                                fontSize: "0.95rem",
-                            }}
-                        >
-                            Set location
-                        </span>
-                    ) : (
-                        <>
-                            {currentAisle && (
-                                <IonChip
-                                    disabled={disabled}
-                                    outline
-                                    className={clsx(
-                                        justAutoLocated && "location-chip--newly-located"
-                                    )}
-                                >
-                                    <IonLabel>{currentAisle.name}</IonLabel>
-                                    {!disabled && (
-                                        <IonIcon
-                                            icon={closeCircle}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setLocation(null, null);
-                                            }}
-                                        />
-                                    )}
-                                </IonChip>
-                            )}
-                            {currentSection && (
-                                <IonChip
-                                    disabled={disabled}
-                                    outline
-                                    className={clsx(
-                                        justAutoLocated && "location-chip--newly-located"
-                                    )}
-                                >
-                                    <IonLabel>{currentSection.name}</IonLabel>
-                                    {!disabled && (
-                                        <IonIcon
-                                            icon={closeCircle}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setLocation(currentAisleId ?? null, null);
-                                            }}
-                                        />
-                                    )}
-                                </IonChip>
-                            )}
-                        </>
-                    )}
-
-                    {!hasLocation && (
-                        <IonChip
-                            outline
+            {/* One box, tapped to open the picker: "Aisle › Section" once set, with a clear
+                button; Auto-Locate rides on the label line while nothing is set. */}
+            <FormField
+                label="Location"
+                action={
+                    !hasLocation && (
+                        <button
+                            type="button"
+                            className="form-field__action"
                             disabled={disabled || !itemName || (aisles?.length ?? 0) === 0}
+                            onClick={handleAutoCategorize}
+                            title="Auto-Locate: guess the aisle/section from the item name"
+                        >
+                            <IonIcon src={LLM_ICON_SRC} aria-hidden="true" />
+                            Auto-Locate
+                        </button>
+                    )
+                }
+            >
+                <button
+                    type="button"
+                    className={clsx(
+                        "form-control",
+                        "form-control--button",
+                        justAutoLocated && "location-chip--newly-located"
+                    )}
+                    disabled={disabled}
+                    onClick={() => setIsPickerOpen(true)}
+                >
+                    <span className="form-control__value">
+                        {hasLocation ? (
+                            <>
+                                {currentAisle?.name}
+                                {currentAisle && currentSection && (
+                                    <span className="location-value__sep"> › </span>
+                                )}
+                                {currentSection?.name}
+                            </>
+                        ) : (
+                            <span className="form-control__placeholder">Not set</span>
+                        )}
+                    </span>
+                    {hasLocation && !disabled ? (
+                        <span
+                            role="button"
+                            tabIndex={0}
+                            className="location-value__clear"
+                            aria-label="Clear location"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                handleAutoCategorize();
+                                setLocation(null, null);
                             }}
-                            title="Auto-Locate: guess the aisle/section from the item name"
-                            style={{
-                                "--color": LLM_COLOR,
-                                borderColor: LLM_COLOR,
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setLocation(null, null);
+                                }
                             }}
                         >
-                            <IonIcon src={LLM_ICON_SRC} style={{ fontSize: "16px" }} />
-                            <IonLabel>Auto-Locate</IonLabel>
-                        </IonChip>
+                            <IonIcon icon={closeCircle} />
+                        </span>
+                    ) : (
+                        <IonIcon
+                            icon={chevronForward}
+                            className="form-control__trail"
+                            aria-hidden="true"
+                        />
                     )}
-                </div>
-            </div>
-
+                </button>
+            </FormField>
             <Suspense fallback={null}>
                 <LocationPicker
                     isOpen={isPickerOpen}

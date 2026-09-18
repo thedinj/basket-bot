@@ -30,7 +30,12 @@ async function handlePost(
             throw new ValidationError("Name is required");
         }
 
-        const aisle = storeEntityService.createAisle({ storeId, name, userId: req.auth.sub });
+        const aisle = storeEntityService.createAisle({
+            storeId,
+            name,
+            emoji: body.emoji,
+            userId: req.auth.sub,
+        });
         return NextResponse.json({ aisle }, { status: 201 });
     } catch (error) {
         return toErrorResponse(error, req, { userId: req.auth.sub });

@@ -12,54 +12,98 @@
     font-style: italic;
 }
 
-/* Checkbox container */
+/* Two-column row grid shared with the group headers (see GroupedItemList.scss): a 36px
+   column holding the checkbox (headers: the aisle plate), a 10px gap, then text at 62px.
+   Ionic gives a start slot 32px of end margin by default, which put text at 74px.
+
+   Only the checkbox checks: the column itself is inert, and the hit area is a 32px square
+   around the 18px box, centred at y = 24 so it sits beside the name's first line even when a
+   note wraps below. Every other tap on the row edits. */
 .checkbox-container {
     display: flex;
-    align-items: center;
-    padding-right: 8px;
+    justify-content: center;
+    align-self: flex-start;
+    width: 36px;
+    margin-block: 8px 0;
+    margin-inline: 0 10px;
+}
+
+.checkbox-hit {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.checkbox-hit:focus-visible {
+    outline: 2px solid var(--ion-color-primary);
+    outline-offset: 0;
+}
+
+/* Ionic's checkbox host is 38px tall (room for a label we don't use) and stretches to fill
+   its container, which puts the box off-centre; pin it to the box's own 18px. */
+.checkbox-hit ion-checkbox {
+    width: 18px;
+    height: 18px;
+    min-height: 0;
+}
+
+/* 13px above the title puts its first line's centre at ~24px in every row, one line or
+   several, which is where the checkbox (8px + half its 32px hit area) centres too. */
+ion-item .item-label {
+    margin-top: 13px;
+    margin-bottom: 12px;
+}
+
+/* The whole row (bar the checkbox) opens the editor. */
+.shopping-list-row {
     cursor: pointer;
 }
 
-/* Label */
-.item-label {
-    cursor: pointer;
-}
-
-/* Item title */
-.item-title {
+/* Text rules are scoped under ion-item .item-label: Ionic's own label typography
+   (.sc-ion-label-md-s h2 / p) otherwise outranks a single class and wins silently. */
+ion-item .item-label .item-title {
     margin-top: 0;
     margin-bottom: 0;
+    font-weight: 500;
 }
 
-/* Item notes */
-.item-notes {
-    font-size: 0.8em;
+ion-item .item-label .item-notes {
+    margin-top: 2px;
+    margin-bottom: 0;
+    font-size: 0.8125rem;
     font-style: italic;
-    margin-top: 0;
-    margin-bottom: 0;
     color: var(--ion-color-medium);
 }
 
-/* Snoozed info */
-.item-snoozed-info {
-    font-size: 0.7em;
-    margin-top: 0;
+ion-item .item-label .item-snoozed-info {
+    margin-top: 2px;
     margin-bottom: 0;
+    font-size: 0.75rem;
     color: var(--ion-color-secondary);
 }
 
-/* Checked by info */
-.item-checked-by {
-    font-size: 0.7em;
-    margin-top: 0;
+ion-item .item-label .item-checked-by {
+    margin-top: 2px;
     margin-bottom: 0;
+    font-size: 0.75rem;
     color: var(--ion-color-medium);
 }
 
-/* Quantity value */
-.item-qty {
+/* Quantity: the data register. Never splits across lines ("¼ / cup"). */
+ion-item .item-label .item-qty {
+    margin-left: 2px;
+    font-family: var(--app-font-mono);
+    font-size: 0.8125rem;
+    font-weight: 400;
+    white-space: nowrap;
     color: var(--ion-color-secondary);
-    font-size: 0.9em;
 }
 
 /* Sample badge */
@@ -122,6 +166,10 @@
 
 .swipe-option--snooze {
     --background: color-mix(in srgb, var(--ion-color-secondary) 22%, var(--ion-color-step-100));
+}
+
+.swipe-option--move {
+    --background: var(--ion-color-step-200);
 }
 
 /* Left accent border for idea items (connects visually to the amber Ideas header) */

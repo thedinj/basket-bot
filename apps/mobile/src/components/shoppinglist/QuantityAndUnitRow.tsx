@@ -1,7 +1,8 @@
-import { IonInput, IonText } from "@ionic/react";
+import { IonInput } from "@ionic/react";
 import { Controller } from "react-hook-form";
 import { useUnitItems } from "../../hooks/useUnitItems";
 import { ClickableSelectionField } from "../shared/ClickableSelectionField";
+import { FormField } from "../shared/FormField";
 import "./QuantityAndUnitRow.scss";
 import { useItemEditorContext } from "./useItemEditorContext";
 
@@ -12,26 +13,27 @@ export const QuantityAndUnitRow = () => {
     const { unitItems, isLoading } = useUnitItems();
 
     return (
-        <div className="qty-unit-row">
-            <div className="qty-unit-row__label">Quantity</div>
-            <div className="qty-unit-row__fields">
+        <FormField label="Quantity" error={errors.qty?.message || errors.unitId?.message}>
+            <div className="qty-unit-row">
                 <Controller
                     name="qty"
                     control={control}
                     render={({ field }) => (
-                        <IonInput
-                            className="qty-unit-row__qty"
-                            fill="outline"
-                            value={field.value}
-                            type="number"
-                            min="0"
-                            step="any"
-                            placeholder="Qty"
-                            onIonInput={(e) => {
-                                const val = e.detail.value;
-                                field.onChange(val ? parseFloat(val) : null);
-                            }}
-                        />
+                        <div className="form-control qty-unit-row__qty">
+                            <IonInput
+                                aria-label="Quantity"
+                                value={field.value}
+                                type="number"
+                                inputmode="decimal"
+                                min="0"
+                                step="any"
+                                placeholder="Qty"
+                                onIonInput={(e) => {
+                                    const val = e.detail.value;
+                                    field.onChange(val ? parseFloat(val) : null);
+                                }}
+                            />
+                        </div>
                     )}
                 />
                 {!isLoading && (
@@ -39,7 +41,7 @@ export const QuantityAndUnitRow = () => {
                         name="unitId"
                         control={control}
                         render={({ field: { onChange, value } }) => (
-                            <div className="qty-unit-row__unit">
+                            <div className="form-control qty-unit-row__unit">
                                 <ClickableSelectionField
                                     items={unitItems}
                                     value={value}
@@ -56,13 +58,6 @@ export const QuantityAndUnitRow = () => {
                     />
                 )}
             </div>
-            {(errors.qty || errors.unitId) && (
-                <IonText color="danger">
-                    <p className="qty-unit-row__error">
-                        {errors.qty?.message || errors.unitId?.message}
-                    </p>
-                </IonText>
-            )}
-        </div>
+        </FormField>
     );
 };

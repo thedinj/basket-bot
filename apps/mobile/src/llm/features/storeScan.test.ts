@@ -18,7 +18,9 @@ describe("transformStoreScanResult", () => {
     it("leaves ids undefined when there is nothing to match against", () => {
         const result = transformStoreScanResult(scan([{ name: "Produce", sections: ["Apples"] }]));
 
-        expect(result.aisles).toEqual([{ id: undefined, name: "Produce", sortOrder: 0 }]);
+        expect(result.aisles).toEqual([
+            { id: undefined, name: "Produce", emoji: null, sortOrder: 0 },
+        ]);
         expect(result.sections).toEqual([
             { id: undefined, aisleName: "Produce", name: "Apples", sortOrder: 0 },
         ]);
@@ -127,5 +129,36 @@ describe("transformStoreScanResult", () => {
         );
 
         expect(result.sections[0]).toMatchObject({ id: "section-1", aisleName: "Bakery" });
+    });
+
+    describe("aisle emoji", () => {
+        it("carries a department's emoji through", () => {
+            const result = transformStoreScanResult(
+                scan([{ name: "Produce", emoji: "🥬", sections: [] }])
+            );
+
+            expect(result.aisles[0].emoji).toBe("🥬");
+        });
+
+        it("keeps null for a numbered aisle, and when the field is missing", () => {
+            const result = transformStoreScanResult(
+                scan([
+                    { name: "Aisle 1", emoji: null, sections: [] },
+                    { name: "Aisle 2", sections: [] },
+                ])
+            );
+
+            expect(result.aisles.map((a) => a.emoji)).toEqual([null, null]);
+        });
+
+        // The model sometimes answers with a word or several emoji; drop it rather than fail
+        // the whole scan or store junk on the plate.
+        it.each(["produce", "🥬🥕", "leafy_greens"])("drops %j as not a single emoji", (emoji) => {
+            const result = transformStoreScanResult(
+                scan([{ name: "Produce", emoji, sections: [] }])
+            );
+
+            expect(result.aisles[0].emoji).toBeNull();
+        });
     });
 });

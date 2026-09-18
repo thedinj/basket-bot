@@ -1,3 +1,4 @@
+import { isSingleEmoji } from "@basket-bot/core";
 import { describe, expect, it } from "vitest";
 import {
     BLANK_STORE_TEMPLATE_ID,
@@ -44,6 +45,14 @@ describe("store template catalog", () => {
                 for (const aisle of template.aisles) {
                     const names = (aisle.sections ?? []).map((section) => section.toLowerCase());
                     expect(new Set(names).size).toBe(names.length);
+                }
+            });
+
+            it("gives aisle emoji that are each a single emoji", () => {
+                for (const aisle of template.aisles) {
+                    if (aisle.emoji !== undefined) {
+                        expect(isSingleEmoji(aisle.emoji), aisle.name).toBe(true);
+                    }
                 }
             });
 

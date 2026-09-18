@@ -6,6 +6,7 @@ interface TestItem {
     aisleId: string | null;
     sectionId: string | null;
     aisleName?: string | null;
+    aisleEmoji?: string | null;
     sectionName?: string | null;
     aisleSortOrder?: number | null;
     sectionSortOrder?: number | null;
@@ -144,14 +145,15 @@ describe("createAisleSectionGroups", () => {
     });
 
     it("indents section groups only when section headers are shown", () => {
-        const [withHeaders] = createAisleSectionGroups(
-            [item({ id: "a", aisleId: "A1", sectionId: "S1" })],
-            BOTH_HEADERS
-        );
-        const [withoutHeaders] = createAisleSectionGroups(
-            [item({ id: "a", aisleId: "A1", sectionId: "S1" })],
-            { showAisleHeaders: true, showSectionHeaders: false }
-        );
+        const twoSections = [
+            item({ id: "a", aisleId: "A1", sectionId: "S1" }),
+            item({ id: "b", aisleId: "A1", sectionId: "S2" }),
+        ];
+        const [withHeaders] = createAisleSectionGroups(twoSections, BOTH_HEADERS);
+        const [withoutHeaders] = createAisleSectionGroups(twoSections, {
+            showAisleHeaders: true,
+            showSectionHeaders: false,
+        });
 
         expect(withHeaders.children?.[0].indentLevel).toBe(16);
         expect(withoutHeaders.children?.[0].indentLevel).toBe(0);
@@ -159,7 +161,10 @@ describe("createAisleSectionGroups", () => {
 
     it("honours a custom section indent", () => {
         const groups = createAisleSectionGroups(
-            [item({ id: "a", aisleId: "A1", sectionId: "S1" })],
+            [
+                item({ id: "a", aisleId: "A1", sectionId: "S1" }),
+                item({ id: "b", aisleId: "A1", sectionId: "S2" }),
+            ],
             { ...BOTH_HEADERS, sectionIndentLevel: 32 }
         );
 
@@ -189,6 +194,99 @@ describe("createAisleSectionGroups", () => {
 
         expect(groups.map((g) => g.sortOrder)).toEqual([100, 101]);
         expect(groups[0].children?.[0].sortOrder).toBe(7);
+    });
+
+    describe("aisle number badge", () => {
+        it("moves a number out of the aisle name into the badge", () => {
+            const [group] = createAisleSectionGroups(
+                [item({ id: "a", aisleId: "A1", aisleName: "Aisle 7: Baking" })],
+                BOTH_HEADERS
+            );
+
+            expect(group.header?.badge).toBe("7");
+            expect(group.header?.label).toBe("Baking");
+        });
+
+        // An empty badge still reserves the plate, keeping labels in one column.
+        it("gives unnumbered and uncategorized aisles an empty badge", () => {
+            const groups = createAisleSectionGroups(
+                [
+                    item({ id: "a", aisleId: "A1", aisleName: "Produce" }),
+                    item({ id: "b", aisleId: null }),
+                ],
+                BOTH_HEADERS
+            );
+
+            expect(groups.map((g) => [g.header?.badge, g.header?.label])).toEqual([
+                ["", "Uncategorized"],
+                ["", "Produce"],
+            ]);
+        });
+    });
+
+    describe("aisle plate", () => {
+        const header = (overrides: Partial<TestItem>) =>
+            createAisleSectionGroups(
+                [item({ id: "a", aisleId: "A1", ...overrides })],
+                BOTH_HEADERS
+            )[0].header;
+
+        it("shows the aisle's emoji, with the full name beside it", () => {
+            expect(header({ aisleName: "7 - Baking", aisleEmoji: "🥖" })).toMatchObject({
+                badge: "🥖",
+                badgeKind: "emoji",
+                label: "7 - Baking",
+            });
+        });
+
+        it("shows the number beside a name when there's no emoji", () => {
+            expect(header({ aisleName: "7 - Baking" })).toMatchObject({
+                badge: "7",
+                badgeKind: "code",
+                label: "Baking",
+            });
+        });
+
+        // "Aisle 12" carries nothing but its number: a sign plate reads "AISLE 12" by itself,
+        // rather than a "12" plate beside the word ("twelve aisle").
+        it("gives a number-only aisle a sign plate and no label", () => {
+            expect(header({ aisleName: "Aisle 12" })).toMatchObject({
+                badge: "12",
+                badgeKind: "sign",
+                label: "",
+            });
+        });
+
+        it("keeps an empty plate for a named aisle without an emoji", () => {
+            expect(header({ aisleName: "Produce" })).toMatchObject({
+                badge: "",
+                badgeKind: "code",
+                label: "Produce",
+            });
+        });
+
+        it("never shows an emoji on the uncategorized group", () => {
+            expect(header({ aisleId: null, aisleEmoji: "🥬" })).toMatchObject({
+                badge: "",
+                label: "Uncategorized",
+            });
+        });
+    });
+
+    // A lone section used to fold into the aisle header; it now keeps its own ruled row so
+    // every section reads the same way.
+    it("gives an aisle's only section its own header", () => {
+        const [group] = createAisleSectionGroups(
+            [
+                item({ id: "a", aisleId: "A1", sectionId: "S1", sectionName: "Rubber gloves" }),
+                item({ id: "b", aisleId: "A1", sectionId: "S1", sectionName: "Rubber gloves" }),
+            ],
+            BOTH_HEADERS
+        );
+
+        expect(group.children).toHaveLength(1);
+        expect(group.children?.[0].header?.label).toBe("Rubber gloves");
+        expect(group.children?.[0].items.map((i) => i.id)).toEqual(["a", "b"]);
     });
 
     it("returns nothing for an empty list", () => {

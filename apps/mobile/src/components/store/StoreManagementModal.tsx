@@ -163,6 +163,9 @@ const StoreScanOutputList: React.FC<StoreScanOutputListProps> = ({ result, state
                                 />
                                 <IonLabel>
                                     <h3>
+                                        {aisle.emoji && (
+                                            <span className="scan-aisle-emoji">{aisle.emoji}</span>
+                                        )}
                                         <strong>{aisle.name}</strong>
                                     </h3>
                                 </IonLabel>
@@ -448,6 +451,7 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
                         .filter(({ aisleIdx }) => !state.uncheckedAisles.has(aisleIdx))
                         .map(({ aisle, aisleIdx }) => ({
                             name: aisle.name,
+                            emoji: aisle.emoji,
                             sections: aisle.sections.filter(
                                 (_, sectionIdx) =>
                                     !state.uncheckedSections.has(`${aisleIdx}:${sectionIdx}`)

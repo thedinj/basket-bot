@@ -232,7 +232,14 @@ export function useBulkApplyAislesAndSections() {
             mode,
         }: {
             storeId: string;
-            aisles: Array<{ id?: string; name: string; sortOrder: number }>;
+            aisles: Array<{
+                id?: string;
+                name: string;
+                /** Scanned plate emoji. Applied to new aisles, and to existing ones only if
+                 * they have none, so an emoji the user chose is never overwritten. */
+                emoji?: string | null;
+                sortOrder: number;
+            }>;
             sections: Array<{
                 id?: string;
                 aisleName: string;
@@ -272,12 +279,22 @@ export function useBulkApplyAislesAndSections() {
                         const aisleData = aisles[i];
 
                         if (aisleData.id) {
-                            // Matched existing aisle - update sort order only
+                            // Matched existing aisle - update sort order, and fill in an emoji
+                            // only where it has none (the user's own choice wins)
                             await database.updateAisleSortOrder(
                                 storeId,
                                 aisleData.id,
                                 aisleData.sortOrder
                             );
+                            const existing = existingAisles.find((a) => a.id === aisleData.id);
+                            if (existing && !existing.emoji && aisleData.emoji) {
+                                await database.updateAisle(
+                                    storeId,
+                                    existing.id,
+                                    existing.name,
+                                    aisleData.emoji
+                                );
+                            }
                             aisleNameToId.set(aisleData.name, aisleData.id);
                             processedAisleIds.add(aisleData.id);
                             aisleUpdatedCount++;
@@ -285,7 +302,8 @@ export function useBulkApplyAislesAndSections() {
                             // New aisle - create it
                             const createdAisle = await database.insertAisle(
                                 storeId,
-                                aisleData.name
+                                aisleData.name,
+                                aisleData.emoji ?? null
                             );
                             aisleNameToId.set(aisleData.name, createdAisle.id);
                             processedAisleIds.add(createdAisle.id);
@@ -403,12 +421,19 @@ export function useBulkApplyAislesAndSections() {
                     }
                 }
 
-                // Step 6: Invalidate queries to refresh UI
+                // Step 6: Invalidate queries to refresh UI. The shopping list and the store-items
+                // screen join aisle/section names, order and emoji, so a scan changes them too.
                 queryClient.invalidateQueries({
                     queryKey: queryKeys.aisles.byStore(storeId),
                 });
                 queryClient.invalidateQueries({
                     queryKey: queryKeys.sections.byStore(storeId),
+                });
+                queryClient.invalidateQueries({
+                    queryKey: queryKeys.items.withDetails(storeId),
+                });
+                queryClient.invalidateQueries({
+                    queryKey: queryKeys.shoppingListItems.byStore(storeId),
                 });
 
                 // Show success/error messages
