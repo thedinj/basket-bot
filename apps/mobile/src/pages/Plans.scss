@@ -4,8 +4,8 @@
 
 // ── Plan history ─────────────────────────────────────────────────────────────
 //
-// Cards in the recipe cards' frame (14px radius, step-150 hairline, no shadow) on the 16px
-// gutter, 12px apart. Inside, everything sits on a 12px inset:
+// Cards in the card frame (.surface-card, theme/patterns.scss) on the 16px gutter, 12px apart.
+// Inside, everything sits on a 12px inset:
 //   header ...... date (bold) and time on one baseline, meal count flush right
 //   slots ....... the recipe sheet's step list: a right-aligned lilac numeral in a 1.25rem
 //                 column, 12px to the name, so 9 and 10 line up
@@ -22,11 +22,6 @@
 }
 
 .plan-history-card {
-    overflow: hidden;
-    border: 1px solid var(--ion-color-step-150);
-    border-radius: 14px;
-    background: var(--ion-card-background, var(--ion-item-background, var(--ion-background-color)));
-
     &__header {
         display: flex;
         align-items: baseline;

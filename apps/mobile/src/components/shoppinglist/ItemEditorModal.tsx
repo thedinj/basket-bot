@@ -4,25 +4,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonAlert,
     IonButton,
-    IonButtons,
     IonContent,
-    IonHeader,
     IonIcon,
     IonLabel,
     IonModal,
     IonSegment,
     IonSegmentButton,
-    IonTitle,
-    IonToolbar,
 } from "@ionic/react";
 import { UseMutationResult } from "@tanstack/react-query";
-import {
-    bulbOutline,
-    cartOutline,
-    closeOutline,
-    informationCircleOutline,
-    trash,
-} from "ionicons/icons";
+import { bulbOutline, cartOutline, informationCircleOutline } from "ionicons/icons";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -32,7 +22,9 @@ import {
     useUpsertShoppingListItem,
 } from "../../db/hooks";
 import { isCurrentlySnoozed } from "../../utils/dateUtils";
+import { DestructiveAction } from "../shared/DestructiveAction";
 import ItemInfoModal from "../shared/ItemInfoModal";
+import { ModalHeader } from "../shared/ModalHeader";
 import { ItemEditorProvider } from "./ItemEditorContext";
 import { LocationSelectors } from "./LocationSelectors";
 import { NameAutocomplete } from "./NameAutocomplete";
@@ -228,37 +220,28 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
             onDidDismiss={closeItemModal}
             onDidPresent={() => !editingItem && nameInputRef.current?.setFocus()}
         >
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>
-                        {editingItem
-                            ? isIdea
-                                ? "Edit Idea"
-                                : "Edit Item"
-                            : isIdea
-                              ? "Add Idea"
-                              : "Add Item"}
-                    </IonTitle>
-                    <IonButtons slot="end">
-                        {editingItem && (
-                            <IonButton onClick={() => setIsInfoOpen(true)}>
-                                <IonIcon slot="icon-only" icon={informationCircleOutline} />
-                            </IonButton>
-                        )}
-                        {editingItem && (
-                            <IonButton
-                                onClick={() => setShowDeleteAlert(true)}
-                                disabled={deleteItem.isPending}
-                            >
-                                <IonIcon slot="icon-only" icon={trash} />
-                            </IonButton>
-                        )}
-                        <IonButton onClick={closeItemModal}>
-                            <IonIcon icon={closeOutline} />
+            <ModalHeader
+                title={
+                    editingItem
+                        ? isIdea
+                            ? "Edit Idea"
+                            : "Edit Item"
+                        : isIdea
+                          ? "Add Idea"
+                          : "Add Item"
+                }
+                onClose={closeItemModal}
+                actions={
+                    editingItem && (
+                        <IonButton
+                            onClick={() => setIsInfoOpen(true)}
+                            aria-label={isIdea ? "Idea info" : "Item info"}
+                        >
+                            <IonIcon slot="icon-only" icon={informationCircleOutline} />
                         </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+                    )
+                }
+            />
             <IonContent className="ion-padding">
                 {/* Mode switch - only for new items. A segmented control spanning the form's
                     width, so it reads as "what kind of thing is this" rather than as two tags. */}
@@ -319,10 +302,19 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                     </form>
                 </ItemEditorProvider>
 
+                {editingItem && (
+                    <DestructiveAction
+                        onClick={() => setShowDeleteAlert(true)}
+                        busy={deleteItem.isPending}
+                    >
+                        {isIdea ? "Delete idea" : "Delete item"}
+                    </DestructiveAction>
+                )}
+
                 <IonAlert
                     isOpen={showDeleteAlert}
                     onDidDismiss={() => setShowDeleteAlert(false)}
-                    header={`Remove ${isIdea ? "Idea" : "Item"}`}
+                    header={`Delete ${isIdea ? "Idea" : "Item"}`}
                     message={`Permanently remove "${
                         editingItem?.itemName || editingItem?.notes
                     }" from your store and shopping list?`}
@@ -332,7 +324,7 @@ export const ItemEditorModal = ({ storeId }: ItemEditorModalProps) => {
                             role: "cancel",
                         },
                         {
-                            text: "Remove",
+                            text: "Delete",
                             role: "destructive",
                             handler: handleDelete,
                         },

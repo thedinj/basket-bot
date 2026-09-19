@@ -31,7 +31,19 @@ export const ItemFlagTile = ({
 }: ItemFlagTileProps) => {
     const effectiveDescription = disabled && disabledMessage ? disabledMessage : description;
 
+    const activate = (event: React.MouseEvent | React.KeyboardEvent) => {
+        if (disabled) {
+            // The disabled-tap explainer takes a mouse event; a keypress has nothing to anchor
+            // a popover to, so it only acts on taps.
+            if (event.type === "click") onDisabledTap?.(event as React.MouseEvent);
+            return;
+        }
+        onChange(!checked);
+    };
+
     return (
+        // The tile is the switch: focusable, toggled by tap, Space or Enter. The IonToggle
+        // inside only draws the state, so it is hidden from focus and assistive tech.
         <div
             className={clsx(
                 "item-flag-tile",
@@ -44,12 +56,13 @@ export const ItemFlagTile = ({
             aria-disabled={disabled || undefined}
             aria-label={effectiveDescription}
             title={effectiveDescription}
-            onClick={(event) => {
-                if (disabled) {
-                    onDisabledTap?.(event);
-                    return;
+            tabIndex={0}
+            onClick={activate}
+            onKeyDown={(event) => {
+                if (event.key === " " || event.key === "Enter") {
+                    event.preventDefault();
+                    activate(event);
                 }
-                onChange(!checked);
             }}
         >
             <IonIcon icon={icon} src={src} className="item-flag-tile__icon" />
@@ -59,8 +72,9 @@ export const ItemFlagTile = ({
                 checked={checked}
                 color={tone}
                 disabled={disabled}
-                style={{ pointerEvents: "none" }}
                 className="item-flag-tile__toggle"
+                aria-hidden="true"
+                tabIndex={-1}
             />
         </div>
     );

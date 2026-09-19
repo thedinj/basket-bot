@@ -101,14 +101,16 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
                     {/* ── Sort ──────────────────────────────────────────────────── */}
                     {shows("sort") && (
                         <div className="recipe-filter-sheet__section">
-                            <p className="recipe-filter-sheet__section-label">Sort</p>
+                            <p className="form-field__label recipe-filter-sheet__section-label">
+                                Sort
+                            </p>
                             <div className="recipe-filter-sheet__sort-row">
                                 <div className="recipe-filter-sheet__sort-chips">
                                     {SORT_FIELDS.map((f) => (
                                         <button
                                             key={f.value}
                                             type="button"
-                                            className={`recipe-filter-sheet__sort-chip${effectiveSort.by === f.value ? " active" : ""}`}
+                                            className={`preset-chip${effectiveSort.by === f.value ? " preset-chip--active" : ""}`}
                                             onClick={() => setSortBy(f.value)}
                                         >
                                             {f.label}
@@ -117,7 +119,7 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
                                 </div>
                                 <button
                                     type="button"
-                                    className="recipe-filter-sheet__dir-btn"
+                                    className="preset-chip preset-chip--accent"
                                     onClick={toggleDir}
                                     aria-label={
                                         effectiveSort.dir === "asc"
@@ -134,14 +136,16 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
                     {/* ── Cook time ─────────────────────────────────────────────── */}
                     {shows("time") && (
                         <div className="recipe-filter-sheet__section">
-                            <p className="recipe-filter-sheet__section-label">Max cook time</p>
+                            <p className="form-field__label recipe-filter-sheet__section-label">
+                                Max cook time
+                            </p>
                             <div className="recipe-filter-sheet__time-section">
                                 <div className="recipe-filter-sheet__time-presets">
                                     {TIME_PRESETS.map((t) => (
                                         <button
                                             key={t}
                                             type="button"
-                                            className={`recipe-filter-sheet__time-preset${filters.maxCookingTimeMinutes === t ? " active" : ""}`}
+                                            className={`preset-chip${filters.maxCookingTimeMinutes === t ? " preset-chip--active" : ""}`}
                                             onClick={() =>
                                                 setMaxTime(
                                                     filters.maxCookingTimeMinutes === t ? null : t
@@ -161,11 +165,11 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
                                         </button>
                                     )}
                                 </div>
-                                <div className="recipe-filter-sheet__time-custom-row">
+                                <label className="recipe-filter-sheet__time-custom-row">
                                     <span className="recipe-filter-sheet__time-label">
                                         Custom max
                                     </span>
-                                    <div className="recipe-filter-sheet__time-input-wrap">
+                                    <span className="recipe-filter-sheet__time-input-wrap">
                                         <input
                                             type="number"
                                             className="recipe-filter-sheet__time-input"
@@ -185,8 +189,8 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
                                             min={1}
                                         />
                                         <span className="recipe-filter-sheet__time-unit">min</span>
-                                    </div>
-                                </div>
+                                    </span>
+                                </label>
                             </div>
                         </div>
                     )}
@@ -195,23 +199,29 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
                     {shows("tags") && (
                         <div className="recipe-filter-sheet__section">
                             <div className="recipe-filter-sheet__tags-header">
-                                <p className="recipe-filter-sheet__section-label">
+                                <p className="form-field__label recipe-filter-sheet__section-label">
                                     {/* With the any/all control hidden the mode is fixed, so
                                         say which one is in force rather than leaving it implied. */}
                                     {shows("tagMode") ? "Tags" : `Tags · match ${filters.tagMode}`}
                                 </p>
                                 {allTags.length > 0 && shows("tagMode") && (
-                                    <div className="recipe-filter-sheet__tag-mode">
+                                    <div
+                                        className="recipe-filter-sheet__tag-mode"
+                                        role="group"
+                                        aria-label="Tag match mode"
+                                    >
                                         <button
                                             type="button"
-                                            className={`recipe-filter-sheet__mode-btn${filters.tagMode === "any" ? " active" : ""}`}
+                                            className="recipe-filter-sheet__mode-btn"
+                                            aria-pressed={filters.tagMode === "any"}
                                             onClick={() => setTagMode("any")}
                                         >
                                             Match any
                                         </button>
                                         <button
                                             type="button"
-                                            className={`recipe-filter-sheet__mode-btn${filters.tagMode === "all" ? " active" : ""}`}
+                                            className="recipe-filter-sheet__mode-btn"
+                                            aria-pressed={filters.tagMode === "all"}
                                             onClick={() => setTagMode("all")}
                                         >
                                             Match all
@@ -250,15 +260,20 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
                     {/* ── Pool filter ───────────────────────────────────────────── */}
                     {shows("pool") && hasPoolExcludedRecipes && (
                         <div className="recipe-filter-sheet__section">
-                            <p className="recipe-filter-sheet__section-label">Randomizer pool</p>
+                            <p className="form-field__label recipe-filter-sheet__section-label">
+                                Randomizer pool
+                            </p>
                             <div className="recipe-filter-sheet__toggle-row">
-                                <span className="recipe-filter-sheet__toggle-label">
-                                    In-pool recipes only
-                                </span>
-                                <IonToggle
-                                    checked={filters.inPoolOnly}
-                                    onIonChange={(e) => setInPool(e.detail.checked)}
-                                />
+                                <div className="form-control">
+                                    <IonToggle
+                                        labelPlacement="start"
+                                        justify="space-between"
+                                        checked={filters.inPoolOnly}
+                                        onIonChange={(e) => setInPool(e.detail.checked)}
+                                    >
+                                        In-pool recipes only
+                                    </IonToggle>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -266,15 +281,20 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
                     {/* ── Has steps ─────────────────────────────────────────────── */}
                     {shows("steps") && (
                         <div className="recipe-filter-sheet__section">
-                            <p className="recipe-filter-sheet__section-label">Instructions</p>
+                            <p className="form-field__label recipe-filter-sheet__section-label">
+                                Instructions
+                            </p>
                             <div className="recipe-filter-sheet__toggle-row">
-                                <span className="recipe-filter-sheet__toggle-label">
-                                    Has cooking instructions
-                                </span>
-                                <IonToggle
-                                    checked={filters.hasSteps}
-                                    onIonChange={(e) => setHasSteps(e.detail.checked)}
-                                />
+                                <div className="form-control">
+                                    <IonToggle
+                                        labelPlacement="start"
+                                        justify="space-between"
+                                        checked={filters.hasSteps}
+                                        onIonChange={(e) => setHasSteps(e.detail.checked)}
+                                    >
+                                        Recipes with instructions only
+                                    </IonToggle>
+                                </div>
                             </div>
                         </div>
                     )}

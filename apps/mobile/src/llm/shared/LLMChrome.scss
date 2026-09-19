@@ -1,0 +1,174 @@
+// Shared AI chrome: the generic AI sheet (LLMModal) and the robot triggers (LLMButton, LLMItem,
+// LLMFabButton). On the shared form system (theme/forms.scss) and the Highway geometry.
+//
+// The AI accent is the lilac information accent (--ion-color-secondary), tinted with
+// color-mix, so light and dark both follow the theme. Selected-chip recipe: ~15% lilac fill,
+// 45% lilac border, lilac text.
+
+// ── Sheet ────────────────────────────────────────────────────────────────────
+//
+// Layout contract for renderOutput: the IonContent keeps `ion-padding` (16px), and the result
+// renders as a direct child with no wrapper, so renderers lay themselves out flush on the
+// 16px gutter.
+
+.llm-sheet__instructions {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.45;
+    color: var(--ion-color-medium);
+}
+
+// Provider not configured: the system's error colour in the field frame.
+.llm-sheet__notice {
+    margin: 0 0 20px;
+    padding: 11px 12px;
+    border: 1px solid color-mix(in srgb, var(--ion-color-danger) 45%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--ion-color-danger) 10%, transparent);
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.45;
+    color: var(--ion-color-danger);
+}
+
+.llm-sheet__actions {
+    display: flex;
+    gap: 8px;
+}
+
+// Attached photos: one row per file in the field frame, name on the 12px inset, a 32px remove
+// button pulled onto the inset at the end.
+.llm-sheet__attachments {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.llm-sheet__attachment-icon {
+    flex: none;
+    font-size: 1.125rem;
+    color: var(--ion-color-secondary);
+}
+
+.llm-sheet__file-input {
+    display: none;
+}
+
+// Running: the robot centred in the remaining space, its aside as a terminal line below.
+.llm-sheet__running {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding-block: 48px 24px;
+}
+
+.llm-sheet__robot {
+    display: grid;
+    place-items: center;
+}
+
+// The terminal line (<RobotLine>) spans the sheet's width under the centred robot.
+.llm-sheet__robot-line {
+    align-self: stretch;
+}
+
+// ── LLMButton ────────────────────────────────────────────────────────────────
+// 48px in the field geometry, wearing the selected-chip lilac.
+
+ion-button.llm-button {
+    height: 48px;
+    margin: 0;
+    --border-radius: 10px;
+    --border-width: 1px;
+    --border-color: color-mix(in srgb, var(--ion-color-secondary) 45%, transparent);
+    --background: color-mix(in srgb, var(--ion-color-secondary) 10%, transparent);
+    --background-hover: color-mix(in srgb, var(--ion-color-secondary) 18%, transparent);
+    --background-activated: color-mix(in srgb, var(--ion-color-secondary) 24%, transparent);
+    --background-focused: color-mix(in srgb, var(--ion-color-secondary) 24%, transparent);
+    --color: var(--ion-color-secondary);
+    --box-shadow: none;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: none;
+
+    ion-icon[slot="start"] {
+        margin-inline-end: 8px;
+        font-size: 1.25rem;
+    }
+}
+
+ion-button.llm-button--icon {
+    width: 48px;
+    min-width: 48px;
+    --padding-start: 0;
+    --padding-end: 0;
+
+    ion-icon {
+        font-size: 1.75rem;
+    }
+}
+
+// ── LLMItem ──────────────────────────────────────────────────────────────────
+// A list row on the gutter: robot glyph at x = 16, label 14px after it, hairline dividers.
+
+ion-item.llm-item {
+    --background: transparent;
+    --padding-start: 16px;
+    --padding-end: 16px;
+    --inner-padding-end: 0;
+    --min-height: 56px;
+    --border-color: var(--ion-color-step-150);
+    --color: var(--ion-color-secondary);
+
+    &:last-child {
+        --inner-border-width: 0;
+    }
+
+    ion-icon[slot="start"] {
+        margin: 0 14px 0 0;
+        font-size: 1.25rem;
+        color: var(--ion-color-secondary);
+    }
+
+    ion-label {
+        font-weight: 600;
+        color: var(--ion-color-secondary);
+    }
+}
+
+// ── LLMFabButton ─────────────────────────────────────────────────────────────
+// The secondary FAB beside the primary one: an opaque lilac wash with a lilac glyph, so it
+// reads as the AI accent without competing with the solid primary "add" FAB.
+
+ion-fab-button.llm-fab-button {
+    --background: color-mix(in srgb, var(--ion-color-secondary) 22%, var(--ion-background-color));
+    --background-hover: color-mix(
+        in srgb,
+        var(--ion-color-secondary) 30%,
+        var(--ion-background-color)
+    );
+    --background-activated: color-mix(
+        in srgb,
+        var(--ion-color-secondary) 38%,
+        var(--ion-background-color)
+    );
+    --background-focused: color-mix(
+        in srgb,
+        var(--ion-color-secondary) 38%,
+        var(--ion-background-color)
+    );
+    --color: var(--ion-color-secondary);
+    --border-width: 1px;
+    --border-style: solid;
+    --border-color: color-mix(in srgb, var(--ion-color-secondary) 45%, transparent);
+
+    ion-icon {
+        font-size: 1.75rem;
+    }
+}

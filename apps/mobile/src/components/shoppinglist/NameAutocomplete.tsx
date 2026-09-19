@@ -114,7 +114,7 @@ export const NameAutocomplete: React.FC = () => {
                                 <span className="form-field__label">Suggestions</span>
                                 <button
                                     type="button"
-                                    className="form-autocomplete__dismiss"
+                                    className="form-control__icon-button"
                                     onClick={handleDismiss}
                                     aria-label="Dismiss suggestions"
                                 >

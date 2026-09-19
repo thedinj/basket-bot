@@ -4,27 +4,17 @@ import {
     type StoreItemWithDetails,
 } from "@basket-bot/core";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonInput,
-    IonModal,
-    IonTitle,
-    IonToolbar,
-    useIonAlert,
-} from "@ionic/react";
-import { closeOutline, informationCircleOutline, trash } from "ionicons/icons";
+import { IonButton, IonContent, IonIcon, IonInput, IonModal, useIonAlert } from "@ionic/react";
+import { informationCircleOutline } from "ionicons/icons";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useCreateItem, useDeleteItem, useUpdateItem } from "../../db/hooks";
 import { useToast } from "../../hooks/useToast";
+import { DestructiveAction } from "../shared/DestructiveAction";
 import { FormField } from "../shared/FormField";
 import ItemInfoModal from "../shared/ItemInfoModal";
 import { ItemNameAndLocationFields } from "../shared/ItemNameAndLocationFields";
-import { StoreItemEditorProvider } from "./StoreItemEditorProvider";
+import { ModalHeader } from "../shared/ModalHeader";
 
 interface StoreItemEditorModalProps {
     isOpen: boolean;
@@ -122,6 +112,26 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
         onDismissed?.();
     };
 
+    const confirmDelete = () => {
+        presentAlert({
+            header: "Delete Item",
+            message: `Are you sure you want to delete "${editingItem?.name}"? This will remove it from all shopping lists.`,
+            buttons: [
+                { text: "Cancel", role: "cancel" },
+                {
+                    text: "Delete",
+                    role: "destructive",
+                    handler: async () => {
+                        if (editingItem) {
+                            await deleteItem.mutateAsync({ id: editingItem.id, storeId });
+                            onClose();
+                        }
+                    },
+                },
+            ],
+        });
+    };
+
     const isPending = createItem.isPending || updateItem.isPending || deleteItem.isPending;
 
     return (
@@ -130,110 +140,81 @@ export const StoreItemEditorModal: React.FC<StoreItemEditorModalProps> = ({
             onDidDismiss={handleDismiss}
             onDidPresent={() => !editingItem && nameInputRef.current?.setFocus()}
         >
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>{editingItem ? "Edit Item" : "Add Item"}</IonTitle>
-                    <IonButtons slot="end">
-                        {editingItem && (
-                            <IonButton onClick={() => setIsInfoOpen(true)} disabled={isPending}>
-                                <IonIcon slot="icon-only" icon={informationCircleOutline} />
-                            </IonButton>
-                        )}
-                        {editingItem && (
-                            <IonButton
-                                onClick={() => {
-                                    presentAlert({
-                                        header: "Delete Item",
-                                        message: `Are you sure you want to delete "${editingItem?.name}"? This will remove it from all shopping lists.`,
-                                        buttons: [
-                                            {
-                                                text: "Cancel",
-                                                role: "cancel",
-                                            },
-                                            {
-                                                text: "Delete",
-                                                role: "destructive",
-                                                handler: async () => {
-                                                    if (editingItem) {
-                                                        await deleteItem.mutateAsync({
-                                                            id: editingItem.id,
-                                                            storeId,
-                                                        });
-                                                        onClose();
-                                                    }
-                                                },
-                                            },
-                                        ],
-                                    });
-                                }}
-                                disabled={isPending}
-                            >
-                                <IonIcon slot="icon-only" icon={trash} />
-                            </IonButton>
-                        )}
-                        <IonButton onClick={handleClose} disabled={isPending}>
-                            <IonIcon icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
-            <IonContent className="ion-padding">
-                <StoreItemEditorProvider form={form} storeId={storeId}>
-                    <form className="editor-form" onSubmit={handleSubmit(onSubmit)}>
-                        <ItemNameAndLocationFields
-                            control={control}
-                            setValue={form.setValue}
-                            watch={form.watch}
-                            errors={errors}
-                            storeId={storeId}
-                            disabled={isPending}
-                            // Only in create mode: this form's create path is `useCreateItem`,
-                            // which rejects a colliding name rather than merging, so the default
-                            // rename-onto-the-existing-name would dead-end in a conflict. Editing
-                            // saves through `useUpdateItem`, which merges, so it keeps the default.
-                            onUseExistingItem={
-                                editingItem
-                                    ? undefined
-                                    : (match) => {
-                                          showSuccess(`"${match.existing.name}" is already here`);
-                                          onClose();
-                                      }
-                            }
-                            renderNameField={({ control }) => (
-                                <Controller
-                                    name="name"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <FormField label="Item" error={errors.name?.message}>
-                                            <div className="form-control">
-                                                <IonInput
-                                                    ref={nameInputRef}
-                                                    aria-label="Item"
-                                                    value={field.value}
-                                                    placeholder="Enter item name"
-                                                    autocapitalize="sentences"
-                                                    onIonInput={(e) =>
-                                                        field.onChange(e.detail.value)
-                                                    }
-                                                    disabled={isPending}
-                                                />
-                                            </div>
-                                        </FormField>
-                                    )}
-                                />
-                            )}
-                        />
-
+            <ModalHeader
+                title={editingItem ? "Edit Item" : "Add Item"}
+                onClose={handleClose}
+                closeDisabled={isPending}
+                actions={
+                    editingItem && (
                         <IonButton
-                            className="editor-form__submit"
-                            expand="block"
-                            type="submit"
-                            disabled={!isValid || isPending}
+                            onClick={() => setIsInfoOpen(true)}
+                            disabled={isPending}
+                            aria-label="Item info"
                         >
-                            {editingItem ? "Update" : "Add"} Item
+                            <IonIcon slot="icon-only" icon={informationCircleOutline} />
                         </IonButton>
-                    </form>
-                </StoreItemEditorProvider>
+                    )
+                }
+            />
+            <IonContent className="ion-padding">
+                <form className="editor-form" onSubmit={handleSubmit(onSubmit)}>
+                    <ItemNameAndLocationFields
+                        control={control}
+                        setValue={form.setValue}
+                        watch={form.watch}
+                        errors={errors}
+                        storeId={storeId}
+                        disabled={isPending}
+                        // Only in create mode: this form's create path is `useCreateItem`,
+                        // which rejects a colliding name rather than merging, so the default
+                        // rename-onto-the-existing-name would dead-end in a conflict. Editing
+                        // saves through `useUpdateItem`, which merges, so it keeps the default.
+                        onUseExistingItem={
+                            editingItem
+                                ? undefined
+                                : (match) => {
+                                      showSuccess(`"${match.existing.name}" is already here`);
+                                      onClose();
+                                  }
+                        }
+                        renderNameField={({ control }) => (
+                            <Controller
+                                name="name"
+                                control={control}
+                                render={({ field }) => (
+                                    <FormField label="Item" error={errors.name?.message}>
+                                        <div className="form-control">
+                                            <IonInput
+                                                ref={nameInputRef}
+                                                aria-label="Item"
+                                                value={field.value}
+                                                placeholder="Enter item name"
+                                                autocapitalize="sentences"
+                                                onIonInput={(e) => field.onChange(e.detail.value)}
+                                                disabled={isPending}
+                                            />
+                                        </div>
+                                    </FormField>
+                                )}
+                            />
+                        )}
+                    />
+
+                    <IonButton
+                        className="editor-form__submit"
+                        expand="block"
+                        type="submit"
+                        disabled={!isValid || isPending}
+                    >
+                        {editingItem ? "Update" : "Add"} Item
+                    </IonButton>
+                </form>
+
+                {editingItem && (
+                    <DestructiveAction onClick={confirmDelete} disabled={isPending}>
+                        Delete item
+                    </DestructiveAction>
+                )}
             </IonContent>
             {editingItem !== null && (
                 <ItemInfoModal

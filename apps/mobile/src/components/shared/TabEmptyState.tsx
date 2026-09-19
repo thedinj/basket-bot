@@ -1,4 +1,4 @@
-import { IonIcon, IonText } from "@ionic/react";
+import { IonIcon } from "@ionic/react";
 
 import "./TabEmptyState.scss";
 
@@ -34,15 +34,15 @@ const TabEmptyState: React.FC<TabEmptyStateProps> = ({
 }) => (
     <div className={`tab-empty tab-empty--${variant}`}>
         {icon && (
-            <div className="tab-empty-icon">
+            <div className="tab-empty-icon" aria-hidden="true">
                 <IonIcon icon={icon} />
             </div>
         )}
-        <IonText>
+        <div className="tab-empty-copy">
             {title && <h2 className="tab-empty-title">{title}</h2>}
             <p className="tab-empty-body">{body}</p>
-        </IonText>
-        {action}
+        </div>
+        {action && <div className="tab-empty-action">{action}</div>}
     </div>
 );
 

@@ -1,7 +1,16 @@
-// Fades the doomed rows out under the detonation flash, so they are not still
-// sitting there when the screen clears. Same two-rule approach as
-// components/shoppinglist/CheckedItems.scss, which solves the identical problem
-// for the laser.
+// Obliterate Unused: a disposal manifest rather than a confirm dialog.
+//
+// Geometry, on the 16px gutter:
+//   manifest ... the munition as a ruled label (amber: the detonation's own palette, so the warning
+//                and the blast read as one event), the platform's terminal line, the hazard rule
+//   targets .... numbered rows: a bare lilac numeral right-aligned in a 1.25rem column (as wide as
+//                the widest number, via subgrid), 12px, then the name; hairlines between
+//   footer ..... Abort in the field frame, then the strike filling the rest. Danger red is spent
+//                on that one button and nowhere else.
+
+// Fades the doomed rows out under the detonation flash, so they are not still sitting there
+// when the screen clears. Same two-rule approach as components/shoppinglist/CheckedItems.scss,
+// which solves the identical problem for the laser.
 .obliterate-sheet-content {
     transition: opacity 0.4s ease-out;
 }
@@ -10,66 +19,104 @@
     opacity: 0;
 }
 
-// The sheet reads as a disposal manifest rather than a confirm dialog. Amber is
-// borrowed from the detonation's own palette so the warning and the blast are
-// visibly the same event; purple stays the brand accent everywhere else.
 .obliterate-manifest {
-    padding: 18px 16px 12px;
+    display: grid;
+    gap: 12px;
+    padding: 20px 16px 16px;
 }
 
-.obliterate-manifest-label {
-    display: flex;
+// Compound with .ruled-label, which sets its own color and loads later.
+.ruled-label.obliterate-manifest__label {
+    color: var(--ion-color-warning);
+
+    &::after {
+        background: color-mix(in srgb, var(--ion-color-warning) 30%, transparent);
+    }
+}
+
+// EQUATORIAL GUILLOTINE plus a target count does not fit one line on a narrow phone: the name
+// wraps, the count and the rule keep their place.
+.obliterate-manifest__munition {
+    min-width: 0;
+    line-height: 1.2;
+}
+
+.obliterate-manifest__label .ruled-label__count {
+    flex: none;
+    white-space: nowrap;
+}
+
+.obliterate-targets {
+    display: grid;
+    grid-template-columns: minmax(1.25rem, auto) minmax(0, 1fr);
+    column-gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.obliterate-target {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
     align-items: baseline;
-    // EQUATORIAL GUILLOTINE plus a target count is the longest line the pool can produce, and
-    // it does not fit one row on a narrow phone.
-    flex-wrap: wrap;
-    gap: 8px;
-    // Monospace is the data register here (see .impeccable.md), not decoration.
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ion-color-warning, #ffc409);
+    padding-block: 12px;
+    border-bottom: 1px solid var(--ion-color-step-150);
+
+    &:last-child {
+        border-bottom: 0;
+    }
 }
 
-.obliterate-manifest-note {
-    margin: 10px 0 0;
-    max-width: 62ch;
-    font-size: 13px;
-    line-height: 1.55;
-    color: var(--ion-color-step-500, #a0aec0);
-}
-
-// Manifest line numbers. Also the reason no row needs a colored accent bar.
-.obliterate-row-index {
-    min-width: 3ch;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
+.obliterate-target__num {
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
     text-align: right;
-    color: var(--ion-color-step-450, #8b93a7);
+    color: var(--ion-color-secondary);
 }
 
-.obliterate-scanning {
-    padding: 18px 16px 6px;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ion-color-step-450, #8b93a7);
+.obliterate-target__name {
+    min-width: 0;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .obliterate-scanning {
-        animation: obliterateScanPulse 1.4s ease-in-out infinite;
+.obliterate-target__skeleton {
+    align-self: center;
+    height: 0.875rem;
+    margin: 0;
+}
+
+// The way out, in the field frame, in an <EditorFooter> row ahead of the strike (which the row
+// stretches); it fills the row alone when there is nothing to strike.
+.obliterate-footer__abort {
+    flex: none;
+    box-sizing: border-box;
+    height: 48px;
+    padding: 0 20px;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 10px;
+    background: var(--ion-color-step-50);
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ion-text-color);
+    cursor: pointer;
+
+    &:only-child {
+        flex: 1;
     }
 
-    @keyframes obliterateScanPulse {
-        0%,
-        100% {
-            opacity: 0.45;
-        }
-        50% {
-            opacity: 1;
-        }
+    &:disabled {
+        cursor: default;
+        opacity: 0.4;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ion-color-primary);
+        outline-offset: 2px;
     }
 }

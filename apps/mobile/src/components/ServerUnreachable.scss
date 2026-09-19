@@ -1,3 +1,5 @@
+// One centered column on the 16px gutter: robot, copy, the robot's retry line, then the
+// buttons, each capped at 22rem so the column reads as a block on a wide screen.
 .server-unreachable {
     display: flex;
     flex-direction: column;
@@ -6,43 +8,75 @@
     /* 100% (not 100vh) for the same reason as .loading-fallback: this renders inside
        ion-app, whose height already excludes the status bar. */
     height: 100%;
-    gap: 1.5rem;
-    padding: 1.5rem;
+    gap: 20px;
+    padding: 24px 16px;
     box-sizing: border-box;
+    background: var(--ion-background-color);
 }
 
 .server-unreachable-copy {
-    text-align: center;
+    display: grid;
+    gap: 6px;
+    width: 100%;
     max-width: 22rem;
-
-    h2 {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin: 0 0 0.75rem;
-    }
-
-    p {
-        margin: 0 0 0.5rem;
-        font-size: 0.9375rem;
-        /* Ionic's reset leaves these paragraphs at a line-height tight enough that wrapped
-           copy collides with itself. */
-        line-height: 1.45;
-        color: var(--ion-color-medium);
-    }
+    text-align: center;
 }
 
+.server-unreachable-title {
+    margin: 0 0 2px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ion-text-color);
+}
+
+.server-unreachable-body {
+    margin: 0;
+    font-size: 0.9375rem;
+    /* Ionic's reset leaves paragraphs at a line-height tight enough that wrapped copy
+       collides with itself. */
+    line-height: 1.45;
+    color: var(--ion-color-medium);
+}
+
+// The configured host: secondary text. The URL can be a long user-configured host, so it
+// wraps anywhere rather than overflowing the column.
 .server-unreachable-host {
-    font-family: monospace;
-    /* The URL can be a long user-configured host; wrap it rather than overflow the card. */
-    word-break: break-all;
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+    color: var(--ion-color-medium);
 }
 
+// The robot's aside (<RobotLine>). Two lines are reserved (1.6em each, plus padding and
+// border) so "Attempting contact." and the longer countdown swap without reflowing the column.
 .server-unreachable-retry {
-    /* Reserve the line height so the countdown ticking down doesn't reflow the block. */
-    min-height: 1.4em;
+    width: 100%;
+    max-width: 22rem;
+    min-height: calc(3.2em + 24px);
+    font-variant-numeric: tabular-nums;
 }
 
 .server-unreachable-actions {
+    display: grid;
+    gap: 4px;
     width: 100%;
     max-width: 22rem;
+
+    ion-button {
+        margin: 0;
+        --border-radius: 10px;
+        font-weight: 600;
+    }
+
+    &__retry {
+        height: 48px;
+        letter-spacing: 0.06em;
+    }
+
+    &__signout {
+        height: 44px;
+    }
 }

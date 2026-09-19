@@ -1,14 +1,18 @@
+import { IonAlert, IonFabButton, IonIcon } from "@ionic/react";
+import clsx from "clsx";
 import React, { ComponentProps, useState } from "react";
-import { IonFabButton, IonIcon, IonAlert } from "@ionic/react";
 import { useLLMConfig } from "../config/useLLMConfig";
-import { LLM_ICON_SRC, LLM_COLOR, LLM_COLOR_ACTIVATED } from "./constants";
+import { LLM_ICON_SRC } from "./constants";
+import "./LLMChrome.scss";
 
 /**
- * FAB button for LLM features with distinctive styling
- * Shows alert if clicked without API key configured
+ * FAB for LLM features: the robot glyph on a lilac wash (styles in LLMChrome.scss), so it reads
+ * as the AI accent beside the solid primary FAB. Pass a specific `aria-label` ("Import recipe").
+ * Shows an alert if clicked without an API key configured.
  */
 export const LLMFabButton: React.FC<ComponentProps<typeof IonFabButton>> = ({
     onClick,
+    className,
     ...props
 }) => {
     const { provider, isReady } = useLLMConfig();
@@ -26,14 +30,11 @@ export const LLMFabButton: React.FC<ComponentProps<typeof IonFabButton>> = ({
         <>
             <IonFabButton
                 onClick={handleClick}
-                style={{
-                    "--background": LLM_COLOR,
-                    "--background-activated": LLM_COLOR_ACTIVATED,
-                    "--background-hover": LLM_COLOR_ACTIVATED,
-                }}
+                className={clsx("llm-fab-button", className)}
+                aria-label="AI import"
                 {...props}
             >
-                <IonIcon src={LLM_ICON_SRC} />
+                <IonIcon src={LLM_ICON_SRC} aria-hidden="true" />
             </IonFabButton>
 
             <IonAlert

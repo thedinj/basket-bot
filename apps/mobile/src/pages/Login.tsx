@@ -1,26 +1,17 @@
 import pluralize from "pluralize";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-    IonButton,
-    IonCard,
-    IonCardContent,
-    IonCardHeader,
-    IonCardTitle,
-    IonContent,
-    IonPage,
-    IonText,
-} from "@ionic/react";
+import { IonButton, IonContent, IonPage } from "@ionic/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useAuth } from "../auth/useAuth";
-import { FormPasswordInput } from "../components/form/FormPasswordInput";
-import { FormTextInput } from "../components/form/FormTextInput";
+import { PasswordField } from "../components/form/PasswordField";
+import { TextField } from "../components/form/TextField";
 import { ApiError, RateLimitErrorDetails } from "../lib/api/client";
 import "./AuthPages.scss";
 
 const loginSchema = z.object({
-    email: z.string().email("Please enter a valid email"),
+    email: z.string().trim().email("Please enter a valid email"),
     password: z.string().min(1, "Password is required"),
 });
 
@@ -78,57 +69,61 @@ const Login: React.FC = () => {
 
     return (
         <IonPage>
-            <IonContent className="ion-padding auth-page-content">
-                <div className="auth-card-container">
-                    <IonCard className="auth-card">
-                        <IonCardHeader>
-                            <IonCardTitle>Sign In</IonCardTitle>
-                        </IonCardHeader>
-                        <IonCardContent>
-                            <form onSubmit={handleSubmit(onSubmit)}>
-                                <FormTextInput
-                                    name="email"
-                                    control={control}
-                                    label="Email"
-                                    type="email"
-                                    placeholder="your@email.com"
-                                    disabled={isSubmitting}
-                                />
+            <IonContent className="auth-page-content">
+                <div className="auth-page">
+                    <section className="auth-panel" aria-labelledby="login-title">
+                        <p className="auth-panel__overline">Basket Bot</p>
+                        <h1 id="login-title" className="auth-panel__title">
+                            Sign In
+                        </h1>
 
-                                <FormPasswordInput
-                                    name="password"
-                                    control={control}
-                                    label="Password"
-                                    placeholder="Enter your password"
-                                    disabled={isSubmitting}
-                                />
+                        <form className="editor-form" onSubmit={handleSubmit(onSubmit)} noValidate>
+                            <TextField
+                                name="email"
+                                control={control}
+                                label="Email"
+                                type="email"
+                                placeholder="your@email.com"
+                                autocomplete="username"
+                                disabled={isSubmitting}
+                            />
 
-                                {error && (
-                                    <IonText color="danger">
-                                        <p style={{ marginTop: "1rem" }}>{error}</p>
-                                    </IonText>
-                                )}
+                            <PasswordField
+                                name="password"
+                                control={control}
+                                label="Password"
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                                disabled={isSubmitting}
+                            />
 
-                                <IonButton
-                                    expand="block"
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                    style={{ marginTop: "1.5rem" }}
-                                >
-                                    {isSubmitting ? "Signing in..." : "Sign In"}
-                                </IonButton>
+                            {error && (
+                                <p className="form-field__error" role="alert">
+                                    {error}
+                                </p>
+                            )}
 
-                                <IonButton
-                                    expand="block"
-                                    fill="clear"
-                                    routerLink="/register"
-                                    disabled={isSubmitting}
-                                >
-                                    Don't have an account? Sign up
-                                </IonButton>
-                            </form>
-                        </IonCardContent>
-                    </IonCard>
+                            <IonButton
+                                className="editor-form__submit"
+                                expand="block"
+                                type="submit"
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? "Signing in..." : "Sign In"}
+                            </IonButton>
+                        </form>
+
+                        <IonButton
+                            className="auth-panel__switch"
+                            expand="block"
+                            fill="clear"
+                            routerLink="/register"
+                            disabled={isSubmitting}
+                        >
+                            Don't have an account?
+                            <span className="auth-panel__switch-action">Sign up</span>
+                        </IonButton>
+                    </section>
                 </div>
             </IonContent>
         </IonPage>

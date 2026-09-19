@@ -1,0 +1,49 @@
+// "Suggest aisle emoji" review sheet. Each suggestion sits on the aisle's own plate in the
+// shopping list's plate column (16px gutter, 36px plate, 10px), so names start at 62px as they
+// do in the list; the checkbox closes the row on the right gutter. The whole row toggles.
+
+.emoji-review {
+    --padding-top: 20px;
+    --padding-bottom: 16px;
+}
+
+.ruled-label.emoji-review__label {
+    margin: 0 16px 4px;
+}
+
+.emoji-review__list {
+    margin: 0;
+    padding: 0 16px;
+    list-style: none;
+}
+
+.emoji-review__row + .emoji-review__row {
+    border-top: 1px solid var(--ion-color-step-150);
+}
+
+ion-checkbox.emoji-review__check {
+    display: block;
+    width: 100%;
+    padding-block: 10px;
+
+    &::part(label) {
+        min-width: 0;
+        margin-inline-end: 12px;
+    }
+}
+
+.emoji-review__aisle {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.emoji-review__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.2;
+}

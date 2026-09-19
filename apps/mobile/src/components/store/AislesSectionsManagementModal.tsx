@@ -1,16 +1,5 @@
-import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonFab,
-    IonFabButton,
-    IonHeader,
-    IonIcon,
-    IonModal,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
-import { add, closeOutline } from "ionicons/icons";
+import { IonContent, IonFab, IonFabButton, IonIcon, IonModal } from "@ionic/react";
+import { add } from "ionicons/icons";
 import React, { useCallback, useState } from "react";
 import { useStore, useStoreAisles, useUpdateAisle } from "../../db/hooks";
 import { queryKeys } from "../../db/queryKeys";
@@ -22,6 +11,7 @@ import { LLMButton } from "../../llm/shared";
 import { formatErrorMessage } from "../../utils/errorUtils";
 import { GlobalActions } from "../layout/GlobalActions";
 import { FabSpacer } from "../shared/FabSpacer";
+import { ModalHeader } from "../shared/ModalHeader";
 import PullToRefresh from "../shared/PullToRefresh";
 import { AisleEmojiReviewSheet } from "./AisleEmojiReviewSheet";
 import AisleSectionList from "./AisleSectionList";
@@ -109,17 +99,11 @@ const AislesSectionsManagementModalContent: React.FC<AislesSectionsManagementMod
                 queryKeys.sections.byStore(storeId),
             ]}
         >
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>{store?.name || "Store"} Aisles & Sections</IonTitle>
-                    <IonButtons slot="end">
-                        <GlobalActions />
-                        <IonButton onClick={onClose}>
-                            <IonIcon icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+            <ModalHeader
+                title={`${store?.name || "Store"} Aisles & Sections`}
+                onClose={onClose}
+                actions={<GlobalActions />}
+            />
             <IonContent fullscreen>
                 <PullToRefresh />
                 <div className="aisle-emoji-suggest">
@@ -128,7 +112,10 @@ const AislesSectionsManagementModalContent: React.FC<AislesSectionsManagementMod
                 <AisleSectionList />
                 <FabSpacer />
                 <IonFab slot="fixed" vertical="bottom" horizontal="end">
-                    <IonFabButton onClick={handleFabClick}>
+                    <IonFabButton
+                        onClick={handleFabClick}
+                        aria-label={mode === "aisles" ? "Add aisle" : "Add aisle or section"}
+                    >
                         <IonIcon icon={add} />
                     </IonFabButton>
                 </IonFab>

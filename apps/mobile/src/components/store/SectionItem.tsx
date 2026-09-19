@@ -1,6 +1,6 @@
 import type { StoreSection } from "@basket-bot/core";
-import { IonButton, IonIcon, IonItem, IonLabel, IonReorder } from "@ionic/react";
-import { create } from "ionicons/icons";
+import { IonIcon, IonReorder } from "@ionic/react";
+import { createOutline, reorderThree } from "ionicons/icons";
 import { useStoreManagement } from "./StoreManagementContext";
 
 interface SectionItemProps {
@@ -8,36 +8,29 @@ interface SectionItemProps {
     showReorderHandle?: boolean;
 }
 
-export const SectionItem = ({ section, showReorderHandle = true }: SectionItemProps) => {
+export const SectionItem: React.FC<SectionItemProps> = ({ section, showReorderHandle = true }) => {
     const { openEditSectionModal } = useStoreManagement();
 
     return (
-        <IonItem className="section-item" lines="none">
-            <IonLabel style={{ paddingLeft: 16 }}>
-                <p>{section.name}</p>
-            </IonLabel>
-            <IonButton
-                slot="end"
-                fill="clear"
+        <div className="aisle-row aisle-row--section">
+            <button
+                type="button"
+                className="row-button aisle-row__main"
                 onClick={() => openEditSectionModal(section)}
                 aria-label={`Edit section ${section.name}`}
-                style={{ marginRight: 0 }}
             >
-                <IonIcon icon={create} />
-            </IonButton>
+                <span className="ruled-label aisle-row__section">
+                    <span className="aisle-row__section-name">{section.name}</span>
+                </span>
+                <IonIcon className="aisle-row__edit" icon={createOutline} aria-hidden="true" />
+            </button>
             {showReorderHandle ? (
-                <IonReorder slot="end" />
+                <IonReorder className="aisle-row__handle">
+                    <IonIcon icon={reorderThree} aria-hidden="true" />
+                </IonReorder>
             ) : (
-                <div
-                    slot="end"
-                    style={{
-                        width: 32,
-                        minWidth: 32,
-                        height: 24,
-                        display: "inline-block",
-                    }}
-                />
+                <span className="aisle-row__handle" aria-hidden="true" />
             )}
-        </IonItem>
+        </div>
     );
 };

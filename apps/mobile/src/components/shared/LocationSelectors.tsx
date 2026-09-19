@@ -200,7 +200,7 @@ export function LocationSelectors<T extends FieldValues = FieldValues>(
                         <span
                             role="button"
                             tabIndex={0}
-                            className="location-value__clear"
+                            className="form-control__icon-button form-control__icon-button--end"
                             aria-label="Clear location"
                             onClick={(e) => {
                                 e.stopPropagation();

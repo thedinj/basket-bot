@@ -1,31 +1,24 @@
 import {
     IonAlert,
     IonButton,
-    IonButtons,
     IonContent,
-    IonFooter,
-    IonHeader,
     IonIcon,
     IonInput,
     IonModal,
     IonSpinner,
     IonTextarea,
-    IonTitle,
     IonToggle,
-    IonToolbar,
 } from "@ionic/react";
 import { ClickableSelectionModal } from "../shared/ClickableSelectionModal";
+import { DestructiveAction } from "../shared/DestructiveAction";
+import { EditorFooter } from "../shared/EditorFooter";
 import { FormField } from "../shared/FormField";
+import { ModalHeader } from "../shared/ModalHeader";
 import IncludeToggleButton from "../shared/IncludeToggleButton";
 import RobotLoadingContent from "../shared/RobotLoadingContent";
+import { RowRemoveButton } from "../shared/RowRemoveButton";
 import UnsureToggleButton from "../shared/UnsureToggleButton";
-import {
-    addOutline,
-    chevronDown,
-    closeOutline,
-    pricetagOutline,
-    trashOutline,
-} from "ionicons/icons";
+import { addOutline, chevronDown, closeOutline, pricetagOutline } from "ionicons/icons";
 import { useEffect, useRef, useState } from "react";
 import { useUnitItems } from "../../hooks/useUnitItems";
 import {
@@ -491,21 +484,11 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
             onDidDismiss={() => onDismiss()}
             onDidPresent={() => isNew && nameInputRef.current?.setFocus()}
         >
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>{isNew ? "New Recipe" : "Edit Recipe"}</IonTitle>
-                    <IonButtons slot="end">
-                        {!isNew && (
-                            <IonButton onClick={() => setShowDeleteAlert(true)} disabled={saving}>
-                                <IonIcon slot="icon-only" icon={trashOutline} />
-                            </IonButton>
-                        )}
-                        <IonButton onClick={() => onDismiss()} disabled={saving}>
-                            <IonIcon slot="icon-only" icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+            <ModalHeader
+                title={isNew ? "New Recipe" : "Edit Recipe"}
+                onClose={() => onDismiss()}
+                closeDisabled={saving}
+            />
 
             <IonContent className="ion-padding">
                 {isLoadingEdit ? (
@@ -559,13 +542,12 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                             <FormField label="Randomizer">
                                 <div className="form-control">
                                     <IonToggle
-                                        className="recipe-editor__toggle"
                                         labelPlacement="start"
                                         justify="space-between"
                                         checked={!isPoolExcluded}
                                         onIonChange={(e) => setIsPoolExcluded(!e.detail.checked)}
                                     >
-                                        {isPoolExcluded ? "Left out" : "In pool"}
+                                        Include in pool
                                     </IonToggle>
                                 </div>
                             </FormField>
@@ -608,7 +590,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                         </FormField>
 
                         <FormField label="Ingredients">
-                            <div className="recipe-ing-list">
+                            <div className="boxed-list">
                                 {ingredients.map((row) => (
                                     <div
                                         key={row.rowKey}
@@ -639,15 +621,14 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                                     active={row.isUnsure}
                                                     onClick={() => toggleRowIsUnsure(row.rowKey)}
                                                 />
-                                                <IonButton
-                                                    fill="clear"
-                                                    size="small"
-                                                    color="medium"
+                                                <RowRemoveButton
                                                     onClick={() => removeRow(row.rowKey)}
-                                                    aria-label="Remove ingredient"
-                                                >
-                                                    <IonIcon slot="icon-only" icon={closeOutline} />
-                                                </IonButton>
+                                                    label={
+                                                        row.name
+                                                            ? `Remove ${row.name}`
+                                                            : "Remove ingredient"
+                                                    }
+                                                />
                                             </div>
                                         </div>
                                         <div className="recipe-ing__amounts">
@@ -734,7 +715,7 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                 ))}
                                 <button
                                     type="button"
-                                    className="recipe-ing-add"
+                                    className="row-button recipe-ing-add"
                                     onClick={() => setIngredients((prev) => [...prev, emptyRow()])}
                                 >
                                     <IonIcon icon={addOutline} aria-hidden="true" />
@@ -768,28 +749,29 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                 />
                             </div>
                         </FormField>
+
+                        {!isNew && (
+                            <DestructiveAction
+                                onClick={() => setShowDeleteAlert(true)}
+                                disabled={saving}
+                            >
+                                Delete recipe
+                            </DestructiveAction>
+                        )}
                     </div>
                 )}
             </IonContent>
 
-            <IonFooter className="recipe-editor__footer">
-                <IonToolbar>
-                    <IonButton
-                        expand="block"
-                        onClick={handleSave}
-                        disabled={saving || !name.trim()}
-                        className="editor-form__submit"
-                    >
-                        {saving ? (
-                            <IonSpinner name="dots" />
-                        ) : isNew ? (
-                            "Add Recipe"
-                        ) : (
-                            "Save Changes"
-                        )}
-                    </IonButton>
-                </IonToolbar>
-            </IonFooter>
+            <EditorFooter>
+                <IonButton
+                    expand="block"
+                    onClick={handleSave}
+                    disabled={saving || !name.trim()}
+                    className="editor-form__submit"
+                >
+                    {saving ? <IonSpinner name="dots" /> : isNew ? "Add Recipe" : "Save Changes"}
+                </IonButton>
+            </EditorFooter>
 
             <ClickableSelectionModal
                 isOpen={unitPickerState !== null}

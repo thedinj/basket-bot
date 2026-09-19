@@ -1,3 +1,7 @@
+/* A flag on the item (Unsure, Incognito) as a field box: 48px, 10px radius, step-200 border,
+   step-50 fill, content on the 12px inset. A 20px glyph, the fixed label naming what "on"
+   does, then the switch ending on the inset. The whole tile is the tap target, so the switch
+   itself ignores the pointer. */
 .item-flag-tile {
     display: flex;
     align-items: center;
@@ -9,16 +13,24 @@
     padding: 0 12px;
     border-radius: 10px;
     background: var(--ion-color-step-50);
-    border: 1px solid var(--ion-color-step-150);
+    border: 1px solid var(--ion-color-step-200);
     cursor: pointer;
     transition:
         background-color 0.15s ease-out,
         border-color 0.15s ease-out;
 }
 
+/* Keyboard focus lights the frame, like a field box. */
+.item-flag-tile:focus-visible {
+    outline: none;
+    border-color: var(--ion-color-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ion-color-primary) 22%, transparent);
+}
+
 .item-flag-tile__icon {
+    display: block;
     flex-shrink: 0;
-    font-size: 1.15em;
+    font-size: 1.25rem;
     color: var(--ion-color-step-400);
     transition: color 0.15s ease-out;
 }
@@ -26,7 +38,7 @@
 .item-flag-tile__label {
     flex: 1;
     min-width: 0;
-    font-size: 0.9em;
+    font-size: 0.9375rem;
     /* Tall enough that overflow:hidden below doesn't clip descenders (e.g. the "g" in "Incognito") */
     line-height: 1.4;
     color: var(--ion-color-step-500);
@@ -42,6 +54,7 @@
     --height: 20px;
     transform: scale(0.85);
     transform-origin: right center;
+    pointer-events: none;
 }
 
 .item-flag-tile--warning.item-flag-tile--active {
@@ -84,7 +97,28 @@
 }
 
 .item-flag-tile__lock-icon {
+    display: block;
     flex-shrink: 0;
-    font-size: 0.85em;
+    font-size: 0.875rem;
     color: var(--ion-color-step-400);
+}
+
+/* Why a disabled tile can't be changed (PrivateToggle's popover). */
+ion-popover.item-flag-popover {
+    --width: 240px;
+}
+
+.item-flag-popover__text {
+    margin: 0;
+    padding: 16px;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .item-flag-tile,
+    .item-flag-tile__icon,
+    .item-flag-tile__label {
+        transition: none;
+    }
 }

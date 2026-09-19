@@ -1,19 +1,94 @@
+/*
+ * ConfirmModal on the Highway system: a centred dialog in the card frame (14px radius, step-150
+ * hairline, card surface, no shadow beyond Ionic's backdrop), 16px from the screen edges.
+ * Inside, everything sits on a 16px gutter: title, message, then a row of equal 48px buttons
+ * (10px radius, 12px apart), as in the editor footers.
+ */
 .confirm-modal {
+    --width: calc(100% - 32px);
+    --max-width: 420px;
     --height: auto;
     --max-height: 80vh;
-    --border-radius: 12px;
+    --border-radius: 14px;
+    --border-width: 1px;
+    --border-style: solid;
+    --border-color: var(--ion-color-step-150);
+    --background: var(
+        --ion-card-background,
+        var(--ion-item-background, var(--ion-background-color))
+    );
+    --box-shadow: none;
     align-items: center;
+    justify-content: center;
 }
 
-.confirm-modal ion-card {
+.confirm-modal__panel {
     display: flex;
     flex-direction: column;
-    max-height: calc(80vh - 32px);
+    gap: 12px;
+    box-sizing: border-box;
+    max-height: 80vh;
+    padding: 20px 16px 16px;
+}
+
+.confirm-modal__title {
+    flex: none;
     margin: 0;
-    overflow: hidden;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ion-text-color);
 }
 
 .confirm-modal__message {
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
-    max-height: calc(80vh - 32px - 56px - 48px); /* modal - card margin - header - buttons */
+    font-size: 0.9375rem;
+    line-height: 1.45;
+    color: var(--ion-text-color);
+}
+
+.confirm-modal__message p {
+    margin: 0;
+}
+
+.confirm-modal__message p + p {
+    margin-top: 8px;
+}
+
+/* Rich content with its own rows (ItemInfoModal's IonList): let the rows run to the dialog's
+   edges so their 16px start padding lands on the gutter. */
+.confirm-modal__message > ion-list {
+    margin-inline: -16px;
+    padding-block: 0;
+    background: transparent;
+}
+
+.confirm-modal__message > ion-list ion-item {
+    --background: transparent;
+}
+
+.confirm-modal__actions {
+    display: grid;
+    flex: none;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: 12px;
+    padding-top: 8px;
+}
+
+.confirm-modal__button {
+    height: 48px;
+    margin: 0;
+    --border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+}
+
+/* Cancel in the field frame: step-200 outline, body-colour text, so the confirm button leads. */
+.confirm-modal__button--cancel {
+    --border-width: 1px;
+    --border-color: var(--ion-color-step-200);
+    --color: var(--ion-text-color);
 }

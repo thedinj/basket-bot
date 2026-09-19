@@ -42,6 +42,16 @@
     color: var(--ion-color-danger);
 }
 
+// Secondary text under a field's box (FormField `hint`): what the field does, or what its
+// current setting means. FormField hides it while an error shows.
+.form-field__hint {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--ion-color-medium);
+}
+
 // The shared box. Ionic inputs inside it drop their own padding and chrome so the box is the
 // only frame; focus lights the frame, not the input.
 .form-control {
@@ -75,16 +85,22 @@
         font-size: 1rem;
     }
 
-    // Selection fields (unit) render an ion-item; flatten it into the box.
-    ion-item {
+    // An action-sheet select fills the box, its text on the box's 12px inset.
+    ion-select {
         flex: 1;
         min-width: 0;
-        --background: transparent;
+        min-height: 46px;
         --padding-start: 0;
-        --inner-padding-end: 0;
-        --min-height: 46px;
-        --border-width: 0;
-        --inner-border-width: 0;
+        --padding-end: 0;
+        font-size: 1rem;
+    }
+
+    // A toggle whose label names what "on" does, filling the box so the whole box toggles.
+    ion-toggle {
+        flex: 1;
+        min-width: 0;
+        min-height: 46px;
+        font-size: 1rem;
     }
 }
 
@@ -98,6 +114,14 @@
         min-width: 0;
         line-height: 1.5;
     }
+}
+
+// A value that can't be edited here (a profile's email): the box's outline without its fill,
+// so it reads as information rather than an input.
+.form-control--readonly {
+    border-color: var(--ion-color-step-150);
+    background: transparent;
+    color: var(--ion-color-medium);
 }
 
 // A box that is itself the tap target (location), not a text input.
@@ -167,6 +191,12 @@
     }
 }
 
+// The same pill standing on a line of its own (a toolbar row, a list header), not pulled into
+// a field label's space.
+.form-field__action--standalone {
+    margin-block: 0;
+}
+
 // Primary action at the foot of a form: full gutter width, same radius as the fields.
 .editor-form__submit {
     height: 48px;
@@ -174,6 +204,75 @@
     --border-radius: 10px;
     font-weight: 600;
     letter-spacing: 0.06em;
+}
+
+// Deleting (or leaving) the thing a sheet is about (render it with <DestructiveAction>): a
+// full-width 48px outlined danger button at the foot of the content, 32px below the form.
+// Consecutive ones stack 12px apart.
+.destructive-action {
+    height: 48px;
+    margin: 32px 0 0;
+    --border-radius: 10px;
+    --border-width: 1px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+
+    & + & {
+        margin-top: 12px;
+    }
+}
+
+// Inside .editor-form the grid's 20px gap already separates it; 12px more keeps the zone 32px.
+.editor-form > .destructive-action {
+    margin-top: 12px;
+}
+
+// A modal's footer (render it with <EditorFooter>): the toolbar on the 16px gutter with 8px
+// above and below, holding an optional 48px back square in the field frame, 12px, then the
+// primary action(s) filling the rest.
+.editor-footer ion-toolbar {
+    --padding-start: 16px;
+    --padding-end: 16px;
+    --padding-top: 8px;
+    --padding-bottom: 8px;
+}
+
+.editor-footer__row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    > ion-button {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+    }
+}
+
+.editor-footer__back {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 10px;
+    background: var(--ion-color-step-50);
+    color: var(--ion-text-color);
+    font-size: 1.375rem;
+    cursor: pointer;
+
+    &:disabled {
+        cursor: default;
+        opacity: 0.4;
+    }
+
+    &:focus-visible {
+        outline: none;
+        border-color: var(--ion-color-primary);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--ion-color-primary) 22%, transparent);
+    }
 }
 
 // Name suggestions: a floating panel in the field system's own frame, just under the box.
@@ -209,31 +308,61 @@
     border-bottom: 1px solid var(--ion-color-step-200);
 }
 
-.form-autocomplete__dismiss {
+// A small icon button inside a field box or a panel header (clear the emoji, clear the location,
+// remove a photo, dismiss suggestions): 32px, an 18px glyph in medium. `--end` pulls it 6px
+// right when it is the last thing in a box, so its glyph sits on the box's 12px inset. Works on
+// a <span role="button"> too, where it has to live inside another button.
+.form-control__icon-button {
     display: grid;
+    flex: none;
     place-items: center;
     width: 32px;
     height: 32px;
+    margin: 0;
+    padding: 0;
     border: 0;
     border-radius: 8px;
     background: transparent;
     font-size: 1.125rem;
     color: var(--ion-color-medium);
     cursor: pointer;
+
+    &--end {
+        margin-inline-end: -6px;
+    }
+
+    &:disabled {
+        cursor: default;
+        opacity: 0.4;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ion-color-primary);
+        outline-offset: -2px;
+    }
 }
 
-// Item / Idea switch at the top of the add form: full gutter width, 44px, in the field frame.
+// Item / Idea (and aisle / section, theme) switch: full gutter width, 44px, in the field frame.
+// The chosen segment wears the selected-chip look: a lilac tint behind lilac text. It used to be
+// contrast-colored text on the indicator, but the md indicator is only a 2px underline, so in
+// light mode the chosen label was white on near-white and vanished.
 .editor-mode-switch {
     min-height: 44px;
     margin-bottom: 20px;
+    padding: 3px;
     border: 1px solid var(--ion-color-step-200);
     border-radius: 10px;
     background: var(--ion-color-step-50);
 
     ion-segment-button {
-        min-height: 42px;
-        --indicator-color: var(--ion-color-primary);
-        --color-checked: var(--ion-color-primary-contrast);
+        min-height: 36px;
+        margin: 0;
+        --border-radius: 7px;
+        --indicator-color: transparent;
+        --indicator-box-shadow: none;
+        --background-checked: color-mix(in srgb, var(--ion-color-secondary) 18%, transparent);
+        --color: var(--ion-color-medium);
+        --color-checked: var(--ion-color-secondary);
         font-weight: 600;
         letter-spacing: 0.04em;
         text-transform: none;
@@ -245,21 +374,6 @@
 .entity-emoji__input {
     font-family: var(--app-font-emoji);
     font-size: 1.25rem;
-}
-
-.entity-emoji__clear {
-    display: grid;
-    flex: none;
-    place-items: center;
-    width: 32px;
-    height: 32px;
-    margin-inline-end: -6px;
-    border: 0;
-    border-radius: 8px;
-    background: transparent;
-    font-size: 1.125rem;
-    color: var(--ion-color-medium);
-    cursor: pointer;
 }
 
 // Suggested aisle emoji in AI review lists (store scan, Suggest emoji), in the plate's

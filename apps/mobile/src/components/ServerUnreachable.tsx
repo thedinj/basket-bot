@@ -1,7 +1,8 @@
-import { IonButton, IonText } from "@ionic/react";
+import { IonButton } from "@ionic/react";
 import { useState } from "react";
 import { useRetryCountdown, useServerReachability } from "../hooks/useServerReachability";
 import { apiClient } from "../lib/api/client";
+import { RobotLine } from "./shared/RobotLine";
 import RobotLoadingContent from "./shared/RobotLoadingContent";
 import "./ServerUnreachable.scss";
 
@@ -44,19 +45,38 @@ const ServerUnreachable: React.FC<ServerUnreachableProps> = ({ onSignOut }) => {
         <div className="server-unreachable">
             <RobotLoadingContent message={null} />
 
-            <IonText className="server-unreachable-copy">
-                <h2>The server is not answering.</h2>
+            <div className="server-unreachable-copy" role="alert">
+                <h2 className="server-unreachable-title">The server is not answering.</h2>
                 <p className="server-unreachable-host">{apiClient.getBaseUrl()}</p>
-                <p>Your session is intact. This is the server's failing, not yours.</p>
-                <p className="server-unreachable-retry">{retryLine}</p>
-            </IonText>
+                <p className="server-unreachable-body">
+                    Your session is intact. This is the server's failing, not yours.
+                </p>
+            </div>
+
+            {/* The robot's aside, as a terminal line. Not a live region: it ticks every second. */}
+            {/* No cursor: this line counts down every second, and a blinking cursor beside
+                changing text reads as jitter. */}
+            <RobotLine className="server-unreachable-retry" cursor={false}>
+                {retryLine}
+            </RobotLine>
 
             <div className="server-unreachable-actions">
-                <IonButton expand="block" onClick={handleRetry} disabled={isProbing}>
+                <IonButton
+                    expand="block"
+                    className="server-unreachable-actions__retry"
+                    onClick={handleRetry}
+                    disabled={isProbing}
+                >
                     {isProbing ? "Checking..." : "Retry now"}
                 </IonButton>
                 {onSignOut && (
-                    <IonButton expand="block" fill="clear" color="medium" onClick={onSignOut}>
+                    <IonButton
+                        expand="block"
+                        fill="clear"
+                        color="medium"
+                        className="server-unreachable-actions__signout"
+                        onClick={onSignOut}
+                    >
                         Sign out
                     </IonButton>
                 )}

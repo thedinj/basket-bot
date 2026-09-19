@@ -1,0 +1,14 @@
+// Item Info sheet: ruled lilac sections on the 16px gutter, each holding a label / value
+// .tally (theme/patterns.scss) of who added and last changed the record, and when.
+
+.item-info {
+    --padding-bottom: 24px;
+}
+
+.item-info__section {
+    padding: 20px 16px 0;
+
+    > .ruled-label {
+        margin-bottom: 4px;
+    }
+}

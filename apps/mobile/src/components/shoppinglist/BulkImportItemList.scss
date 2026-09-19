@@ -1,23 +1,20 @@
-.bulk-import-item-list {
-    h4 {
-        margin-top: 0;
-        margin-bottom: 12px;
-        font-size: 16px;
-        font-weight: 600;
-    }
+// Bulk import review list, rendered inside LLMModal's 16px-padded content, so it sits flush on
+// that gutter and adds no side padding of its own.
+//
+// Geometry:
+//   label ...... ruled lilac "Items" with its count, then a medium meta line
+//   rows ....... the shared .review-list / .review-row (theme/patterns.scss): a 36px cart toggle
+//                (glyph pulled onto the gutter), the name with its .qty, notes under it
 
-    &__items {
-        padding: 0;
-        margin: 0;
-    }
+.bulk-import {
+    display: grid;
+    gap: 8px;
+}
 
-    &__item {
-        --padding-start: 0;
-        --inner-padding-end: 0;
-        font-size: 14px;
-
-        ion-checkbox {
-            margin-right: 12px;
-        }
-    }
+.bulk-import__meta {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--ion-color-medium);
 }

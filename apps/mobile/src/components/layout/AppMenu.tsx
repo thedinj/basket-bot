@@ -5,14 +5,10 @@ import ProfileEditorModal from "@/components/settings/ProfileEditorModal";
 import SettingsModal from "@/components/settings/SettingsModal";
 import StoreListModal from "@/components/store/StoreListModal";
 import {
-    IonBadge,
     IonButton,
     IonContent,
     IonHeader,
     IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
     IonMenu,
     IonMenuToggle,
     IonTitle,
@@ -23,28 +19,59 @@ import {
     homeOutline,
     informationCircleOutline,
     keyOutline,
-    logOut,
-    person,
-    settings,
+    logOutOutline,
+    personOutline,
+    settingsOutline,
 } from "ionicons/icons";
-import { useCallback } from "react";
 import { useAuth } from "../../auth/useAuth";
 import { usePendingInvitations } from "../../db/hooks";
+import { EditorFooter } from "../shared/EditorFooter";
 import { UnsureItemsModal } from "../shoppinglist/UnsureItemsModal";
+import type { ModalName } from "./AppHeaderContext";
 import { useAppHeader } from "./useAppHeader";
+import "./AppMenu.scss";
+
+type MenuRowProps = {
+    label: string;
+    modal: ModalName;
+    icon?: string;
+    iconSrc?: string;
+    /** Pending count shown as a pill at the row's end; hidden when zero. */
+    count?: number;
+    countLabel?: string;
+};
+
+/** One menu row: glyph on the gutter, label, optional count pill on the right gutter. */
+const MenuRow: React.FC<MenuRowProps> = ({ label, modal, icon, iconSrc, count, countLabel }) => {
+    const { openModal } = useAppHeader();
+    return (
+        <IonMenuToggle autoHide={false} className="app-menu__toggle">
+            <button
+                type="button"
+                className="row-button app-menu__row"
+                onClick={() => openModal(modal)}
+            >
+                <IonIcon className="app-menu__icon" icon={icon} src={iconSrc} aria-hidden="true" />
+                <span className="app-menu__label">{label}</span>
+                {count ? (
+                    <>
+                        <span className="app-menu__badge" aria-hidden="true">
+                            {count}
+                        </span>
+                        <span className="sr-only">
+                            , {count} {countLabel}
+                        </span>
+                    </>
+                ) : null}
+            </button>
+        </IonMenuToggle>
+    );
+};
 
 export const AppMenu: React.FC = () => {
-    const { openModal } = useAppHeader();
     const { user, logout } = useAuth();
     const { data: pendingInvitations } = usePendingInvitations();
-
-    const handleOpenSettings = useCallback(() => openModal("settings"), [openModal]);
-    const handleOpenProfile = useCallback(() => openModal("profile"), [openModal]);
-    const handleOpenPassword = useCallback(() => openModal("password"), [openModal]);
-    const handleOpenHouseholds = useCallback(() => openModal("households"), [openModal]);
-    const handleOpenStores = useCallback(() => openModal("stores"), [openModal]);
-    const handleOpenUnsureItems = useCallback(() => openModal("unsureItems"), [openModal]);
-    const handleOpenAbout = useCallback(() => openModal("about"), [openModal]);
+    const invitationCount = pendingInvitations?.length ?? 0;
 
     const handleLogout = async () => {
         try {
@@ -61,106 +88,69 @@ export const AppMenu: React.FC = () => {
 
     return (
         <>
-            <IonMenu contentId="main-content" type="overlay">
+            <IonMenu contentId="main-content" type="overlay" className="app-menu">
                 <IonHeader>
                     <IonToolbar>
-                        <IonTitle>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "12px",
-                                }}
-                            >
-                                <img
-                                    src="/img/icon.png"
-                                    alt="Basket Bot"
-                                    style={{
-                                        width: "32px",
-                                        height: "32px",
-                                        borderRadius: "50%",
-                                        objectFit: "cover",
-                                    }}
-                                />
-                                <span>Basket Bot</span>
-                            </div>
+                        <IonTitle className="app-menu__title">
+                            <span className="app-menu__brand">
+                                <img className="app-menu__logo" src="/img/icon.png" alt="" />
+                                Basket Bot
+                            </span>
                         </IonTitle>
                     </IonToolbar>
                 </IonHeader>
                 <IonContent>
                     {user && (
-                        <div
-                            style={{
-                                padding: "20px 16px",
-                                borderBottom: "1px solid var(--ion-color-light)",
-                            }}
-                        >
-                            <div
-                                style={{ fontSize: "18px", fontWeight: "600", marginBottom: "4px" }}
-                            >
-                                {user.name}
-                            </div>
-                            <div style={{ fontSize: "14px", color: "var(--ion-color-medium)" }}>
-                                {user.email}
-                            </div>
+                        <div className="app-menu__user">
+                            <p className="app-menu__user-name">{user.name}</p>
+                            <p className="app-menu__user-email">{user.email}</p>
                         </div>
                     )}
-                    <IonList>
-                        <IonMenuToggle autoHide={false}>
-                            <IonItem button onClick={handleOpenSettings} lines="none">
-                                <IonIcon icon={settings} slot="start" />
-                                <IonLabel>Settings</IonLabel>
-                            </IonItem>
-                        </IonMenuToggle>
-                        <IonMenuToggle autoHide={false}>
-                            <IonItem button onClick={handleOpenProfile} lines="none">
-                                <IonIcon icon={person} slot="start" />
-                                <IonLabel>Profile</IonLabel>
-                            </IonItem>
-                        </IonMenuToggle>
-                        <IonMenuToggle autoHide={false}>
-                            <IonItem button onClick={handleOpenPassword} lines="none">
-                                <IonIcon icon={keyOutline} slot="start" />
-                                <IonLabel>Change Password</IonLabel>
-                            </IonItem>
-                        </IonMenuToggle>
-                        <IonMenuToggle autoHide={false}>
-                            <IonItem button onClick={handleOpenHouseholds} lines="none">
-                                <IonIcon icon={homeOutline} slot="start" />
-                                <IonLabel>Households</IonLabel>
-                                {pendingInvitations && pendingInvitations.length > 0 ? (
-                                    <IonBadge color="primary" slot="end">
-                                        {pendingInvitations.length}
-                                    </IonBadge>
-                                ) : null}
-                            </IonItem>
-                        </IonMenuToggle>
-                        <IonMenuToggle autoHide={false}>
-                            <IonItem button onClick={handleOpenStores} lines="none">
-                                <IonIcon src={"/img/Store.svg"} slot="start" />
-                                <IonLabel>Stores</IonLabel>
-                            </IonItem>
-                        </IonMenuToggle>
-                        <IonMenuToggle autoHide={false}>
-                            <IonItem button onClick={handleOpenUnsureItems} lines="none">
-                                <IonIcon icon={helpCircleOutline} slot="start" />
-                                <IonLabel>Review Unsure Items</IonLabel>
-                            </IonItem>
-                        </IonMenuToggle>
-                        <IonMenuToggle autoHide={false}>
-                            <IonItem button onClick={handleOpenAbout} lines="none">
-                                <IonIcon icon={informationCircleOutline} slot="start" />
-                                <IonLabel>About</IonLabel>
-                            </IonItem>
-                        </IonMenuToggle>
-                    </IonList>
-                    <div style={{ padding: "16px", marginTop: "auto" }}>
-                        <IonButton expand="block" color="danger" onClick={handleLogout}>
-                            <IonIcon icon={logOut} slot="start" />
-                            Log Out
-                        </IonButton>
-                    </div>
+                    <nav className="app-menu__nav" aria-label="Main menu">
+                        <section className="app-menu__group">
+                            <h2 className="ruled-label app-menu__group-label">Account</h2>
+                            <MenuRow label="Profile" modal="profile" icon={personOutline} />
+                            <MenuRow label="Change Password" modal="password" icon={keyOutline} />
+                        </section>
+                        <section className="app-menu__group">
+                            <h2 className="ruled-label app-menu__group-label">Shopping</h2>
+                            <MenuRow label="Stores" modal="stores" iconSrc="/img/Store.svg" />
+                            <MenuRow
+                                label="Households"
+                                modal="households"
+                                icon={homeOutline}
+                                count={invitationCount}
+                                countLabel={
+                                    invitationCount === 1
+                                        ? "pending invitation"
+                                        : "pending invitations"
+                                }
+                            />
+                            <MenuRow
+                                label="Review Unsure Items"
+                                modal="unsureItems"
+                                icon={helpCircleOutline}
+                            />
+                        </section>
+                        <section className="app-menu__group">
+                            <h2 className="ruled-label app-menu__group-label">System</h2>
+                            <MenuRow label="Settings" modal="settings" icon={settingsOutline} />
+                            <MenuRow label="About" modal="about" icon={informationCircleOutline} />
+                        </section>
+                    </nav>
                 </IonContent>
+                <EditorFooter>
+                    <IonButton
+                        className="editor-form__submit app-menu__logout"
+                        expand="block"
+                        fill="outline"
+                        color="danger"
+                        onClick={handleLogout}
+                    >
+                        <IonIcon icon={logOutOutline} slot="start" aria-hidden="true" />
+                        Log Out
+                    </IonButton>
+                </EditorFooter>
             </IonMenu>
             <SettingsModal />
             <ProfileEditorModal />

@@ -89,14 +89,9 @@
     }
 }
 
-// Same register as a shopping-list quantity: Barlow semibold, tabular digits, lilac.
+// A .qty (theme/patterns.scss), right-aligned against its name.
 .recipe-detail__amount {
-    font-size: 0.90625rem;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
     text-align: right;
-    white-space: nowrap;
-    color: var(--ion-color-secondary);
 }
 
 .recipe-detail__ingredient-name {

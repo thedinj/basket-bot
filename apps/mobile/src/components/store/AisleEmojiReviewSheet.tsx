@@ -1,17 +1,10 @@
-import {
-    IonButton,
-    IonCheckbox,
-    IonContent,
-    IonHeader,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonModal,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
+import { IonButton, IonCheckbox, IonContent, IonModal } from "@ionic/react";
 import React, { useEffect, useState } from "react";
 import type { AisleEmojiSuggestion } from "../../llm/features/aisleEmoji";
+import { AislePlate } from "../shared/AislePlate";
+import { EditorFooter } from "../shared/EditorFooter";
+import { ModalHeader } from "../shared/ModalHeader";
+import "./AisleEmojiReviewSheet.scss";
 
 type AisleEmojiReviewSheetProps = {
     suggestions: AisleEmojiSuggestion[];
@@ -23,7 +16,7 @@ type AisleEmojiReviewSheetProps = {
 
 /**
  * Review step for "Suggest emoji": every suggestion starts checked; untick any to skip it.
- * Suggestions are drawn in the plate's monochrome face, so the review shows what the list will.
+ * Each suggestion is drawn on the aisle's own plate, so the review shows what the list will.
  */
 export const AisleEmojiReviewSheet: React.FC<AisleEmojiReviewSheetProps> = ({
     suggestions,
@@ -55,28 +48,35 @@ export const AisleEmojiReviewSheet: React.FC<AisleEmojiReviewSheetProps> = ({
             initialBreakpoint={0.75}
             breakpoints={[0, 0.75, 1]}
         >
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>Suggested emoji</IonTitle>
-                </IonToolbar>
-            </IonHeader>
-            <IonContent className="ion-padding">
-                <IonList>
+            <ModalHeader title="Suggested emoji" onClose={onDismiss} />
+            <IonContent className="emoji-review">
+                <h2 className="ruled-label emoji-review__label">
+                    Aisles
+                    <span className="ruled-label__count">
+                        {accepted.length}/{suggestions.length}
+                    </span>
+                </h2>
+                <ul className="emoji-review__list">
                     {suggestions.map((s) => (
-                        <IonItem key={s.aisleId} lines="none">
+                        <li key={s.aisleId} className="emoji-review__row">
                             <IonCheckbox
-                                slot="start"
+                                className="emoji-review__check"
+                                labelPlacement="start"
+                                justify="space-between"
                                 checked={!skipped.has(s.aisleId)}
                                 onIonChange={(e) => toggle(s.aisleId, e.detail.checked)}
                                 aria-label={`Use ${s.emoji} for ${s.name}`}
-                            />
-                            <IonLabel>
-                                <span className="scan-aisle-emoji">{s.emoji}</span>
-                                {s.name}
-                            </IonLabel>
-                        </IonItem>
+                            >
+                                <span className="emoji-review__aisle">
+                                    <AislePlate badge={s.emoji} kind="emoji" />
+                                    <span className="emoji-review__name">{s.name}</span>
+                                </span>
+                            </IonCheckbox>
+                        </li>
                     ))}
-                </IonList>
+                </ul>
+            </IonContent>
+            <EditorFooter>
                 <IonButton
                     className="editor-form__submit"
                     expand="block"
@@ -85,7 +85,7 @@ export const AisleEmojiReviewSheet: React.FC<AisleEmojiReviewSheetProps> = ({
                 >
                     Apply {accepted.length} emoji
                 </IonButton>
-            </IonContent>
+            </EditorFooter>
         </IonModal>
     );
 };

@@ -1,0 +1,153 @@
+// Households sheets (the side menu's Households item), on the Highway system.
+//
+// Geometry, at the modal content's 16px gutter:
+//   sheet ....... sections 28px apart; a .ruled-label heads each, 12px above its list
+//   list ........ a .boxed-list (theme/patterns.scss), rows divided by hairlines
+//   row ......... text on the box's 12px inset; the trailing glyph (chevron, or a 36px icon
+//                 button pulled 8px onto the line) ends on the same 12px inset. A tappable row
+//                 is a .row-button carrying this geometry.
+//   invitation .. a .surface-card: name and meta on a 12px inset, then a 40px bar of equal actions
+//   footer ...... <EditorFooter> (theme/forms.scss)
+
+.household-sheet {
+    display: grid;
+    gap: 28px;
+    padding-top: 4px;
+}
+
+.household-section {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+
+// ── Rows ─────────────────────────────────────────────────────────────────────
+
+// Compound for the button rows: .row-button (patterns.scss) loads later and resets display and
+// padding.
+.household-row,
+.row-button.household-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 52px;
+    padding: 8px 12px;
+}
+
+.household-row__text {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.household-row__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.household-row__name {
+    overflow: hidden;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--ion-text-color);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.household-row__meta {
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.25;
+    color: var(--ion-color-medium);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+// A static trailing glyph (chevron): 20px, ending on the row's 12px inset.
+.household-row__trail {
+    display: block;
+    font-size: 20px;
+    color: var(--ion-color-medium);
+}
+
+// The trailing × (<RowRemoveButton>: remove a member, retract an invitation), pulled 8px right so
+// the 20px glyph, not the button's invisible edge, lands on the row's 12px inset.
+.household-row > .row-remove {
+    margin: -4px -8px -4px 0;
+}
+
+// ── Invitations to me: cards with an action bar ──────────────────────────────
+
+.household-invites {
+    display: grid;
+    gap: 12px;
+}
+
+// The frame is .surface-card.
+.household-invite {
+    &__body {
+        display: grid;
+        gap: 4px;
+        padding: 14px 12px 12px;
+    }
+
+    &__name {
+        margin: 0;
+        overflow: hidden;
+        font-size: 1rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--ion-text-color);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__meta {
+        margin: 0;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        line-height: 1.25;
+        color: var(--ion-color-medium);
+    }
+
+    // Decline / Accept: the shared .card-actions bar (theme/patterns.scss).
+}
+
+// ── States ───────────────────────────────────────────────────────────────────
+
+.household-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    min-height: 50vh;
+    padding: 32px 0;
+}
+
+.household-error {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--ion-color-danger);
+}
+
+// ── Detail sheet ─────────────────────────────────────────────────────────────
+
+// Leave / Delete (<DestructiveAction>) at the foot of the sheet. The sheet's 28px grid gap plus
+// 4px keeps the zone 32px below the last section.
+.household-danger {
+    margin-top: 4px;
+
+    > .destructive-action:first-child {
+        margin-top: 0;
+    }
+}

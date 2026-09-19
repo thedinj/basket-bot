@@ -1,5 +1,5 @@
 import type { RecipeWithDetails } from "@basket-bot/core";
-import { IonCard, IonIcon } from "@ionic/react";
+import { IonIcon } from "@ionic/react";
 import { cartOutline, createOutline, listOutline, timeOutline } from "ionicons/icons";
 import { motion, useReducedMotion } from "motion/react";
 import pluralize from "pluralize";
@@ -26,8 +26,9 @@ const RecipeCard = forwardRef<HTMLDivElement, RecipeCardProps>(
         const reducedMotion = useReducedMotion();
         const firstTagKey = recipe.tags[0]?.colorKey ?? null;
 
+        // The first tag's wash over the card surface (.surface-card's own background).
         const cardBg = firstTagKey
-            ? `linear-gradient(150deg, var(--tag-${firstTagKey}-bg) 0%, var(--ion-card-background, #1a1a2e) 65%)`
+            ? `linear-gradient(150deg, var(--tag-${firstTagKey}-bg) 0%, var(--ion-card-background, var(--ion-item-background, var(--ion-background-color))) 65%)`
             : undefined;
 
         const ingredientCount = recipe.ingredients.length;
@@ -48,9 +49,9 @@ const RecipeCard = forwardRef<HTMLDivElement, RecipeCardProps>(
                 }
                 className="recipe-card-motion"
             >
-                <IonCard
-                    className="recipe-card"
-                    style={cardBg ? ({ "--background": cardBg } as React.CSSProperties) : undefined}
+                <article
+                    className="surface-card recipe-card"
+                    style={cardBg ? { background: cardBg } : undefined}
                 >
                     <button type="button" className="recipe-card__body" onClick={onClick}>
                         <span className="recipe-card__title">{recipe.name}</span>
@@ -72,7 +73,7 @@ const RecipeCard = forwardRef<HTMLDivElement, RecipeCardProps>(
                                     <span className="recipe-card__meta-item">
                                         <IonIcon icon={listOutline} aria-hidden="true" />
                                         {ingredientCount}
-                                        <span className="recipe-card__sr">
+                                        <span className="sr-only">
                                             {" "}
                                             {pluralize("ingredient", ingredientCount)}
                                         </span>
@@ -82,11 +83,11 @@ const RecipeCard = forwardRef<HTMLDivElement, RecipeCardProps>(
                         )}
                     </button>
                     {(onEdit || onAddToList) && (
-                        <div className="recipe-card__footer">
+                        <div className="card-actions">
                             {onEdit && (
                                 <button
                                     type="button"
-                                    className="recipe-card__action"
+                                    className="card-actions__btn"
                                     onClick={onEdit}
                                     aria-label={`Edit ${recipe.name}`}
                                 >
@@ -96,7 +97,7 @@ const RecipeCard = forwardRef<HTMLDivElement, RecipeCardProps>(
                             {onAddToList && (
                                 <button
                                     type="button"
-                                    className="recipe-card__action"
+                                    className="card-actions__btn"
                                     onClick={onAddToList}
                                     aria-label={`Add ${recipe.name} to shopping list`}
                                 >
@@ -105,7 +106,7 @@ const RecipeCard = forwardRef<HTMLDivElement, RecipeCardProps>(
                             )}
                         </div>
                     )}
-                </IonCard>
+                </article>
             </motion.div>
         );
     }

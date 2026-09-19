@@ -1,7 +1,6 @@
 import type { ShoppingListItemWithDetails, Store } from "@basket-bot/core";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
 import {
-    IonButton,
     IonCheckbox,
     IonIcon,
     IonItem,
@@ -12,8 +11,8 @@ import {
 } from "@ionic/react";
 import clsx from "clsx";
 import {
-    checkmarkCircleOutline,
-    closeCircleOutline,
+    checkmarkOutline,
+    closeOutline,
     helpCircle,
     helpCircleOutline,
     storefrontOutline,
@@ -372,32 +371,40 @@ export const ShoppingListItem = ({
                 </IonLabel>
 
                 {onConfirmUnsure && (
-                    <>
-                        <IonButton
-                            slot="end"
-                            fill="clear"
+                    // One segmented control in the field frame: Drop (quiet) | Keep (lilac).
+                    <div
+                        slot="end"
+                        className="unsure-decision"
+                        role="group"
+                        aria-label={`Decide on ${titleToUse}`}
+                    >
+                        <button
+                            type="button"
+                            className="unsure-decision__btn unsure-decision__btn--drop"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 handleRejectIconClick();
                             }}
                             disabled={isRejectingUnsure}
-                            title="I don't need this — remove it"
+                            aria-label={`Drop ${titleToUse}: not needed, remove it`}
                         >
-                            <IonIcon icon={closeCircleOutline} color="danger" />
-                        </IonButton>
-                        <IonButton
-                            slot="end"
-                            fill="clear"
+                            <IonIcon icon={closeOutline} aria-hidden="true" />
+                            Drop
+                        </button>
+                        <button
+                            type="button"
+                            className="unsure-decision__btn unsure-decision__btn--keep"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onConfirmUnsure();
                             }}
                             disabled={isConfirmingUnsure}
-                            title="Confirm — I need this"
+                            aria-label={`Keep ${titleToUse}: needed`}
                         >
-                            <IonIcon icon={checkmarkCircleOutline} color="success" />
-                        </IonButton>
-                    </>
+                            <IonIcon icon={checkmarkOutline} aria-hidden="true" />
+                            Keep
+                        </button>
+                    </div>
                 )}
             </IonItem>
 

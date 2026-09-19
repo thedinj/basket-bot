@@ -3,19 +3,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonAlert,
     IonButton,
-    IonButtons,
     IonContent,
-    IonHeader,
     IonIcon,
     IonInput,
     IonLabel,
     IonModal,
     IonSegment,
     IonSegmentButton,
-    IonTitle,
-    IonToolbar,
 } from "@ionic/react";
-import { closeCircle, closeOutline, trash } from "ionicons/icons";
+import { closeCircle } from "ionicons/icons";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -36,7 +32,9 @@ import { parseAisleName } from "../../utils/aisleName";
 import { formatErrorMessage } from "../../utils/errorUtils";
 import { ClickableSelectionField } from "../shared/ClickableSelectionField";
 import type { SelectableItem } from "../shared/ClickableSelectionModal";
+import { DestructiveAction } from "../shared/DestructiveAction";
 import { FormField } from "../shared/FormField";
+import { ModalHeader } from "../shared/ModalHeader";
 import { useStoreManagement } from "./StoreManagementContext";
 
 const entityFormSchema = z
@@ -227,24 +225,7 @@ export const EntityFormModal = () => {
 
     return (
         <IonModal isOpen={isModalOpen} onDidDismiss={closeModal}>
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>{getModalTitle()}</IonTitle>
-                    <IonButtons slot="end">
-                        {editingEntity && (
-                            <IonButton
-                                onClick={() => setShowDeleteAlert(true)}
-                                disabled={deleteAisle.isPending || deleteSection.isPending}
-                            >
-                                <IonIcon slot="icon-only" icon={trash} />
-                            </IonButton>
-                        )}
-                        <IonButton onClick={closeModal}>
-                            <IonIcon icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+            <ModalHeader title={getModalTitle()} onClose={closeModal} />
             <IonContent className="ion-padding">
                 <form className="editor-form" onSubmit={handleSubmit(onSubmit)}>
                     {showTypeSelector && (
@@ -274,19 +255,16 @@ export const EntityFormModal = () => {
                             control={control}
                             render={({ field }) => (
                                 <FormField label="Aisle" error={errors.aisleId?.message}>
-                                    <div className="form-control">
-                                        <ClickableSelectionField
-                                            items={aisleItems}
-                                            value={field.value}
-                                            onSelect={field.onChange}
-                                            placeholder="Select an aisle"
-                                            modalTitle="Select Aisle"
-                                            showSearch={true}
-                                            searchPlaceholder="Search aisles..."
-                                            lines="none"
-                                            showChevron
-                                        />
-                                    </div>
+                                    <ClickableSelectionField
+                                        items={aisleItems}
+                                        value={field.value}
+                                        onSelect={field.onChange}
+                                        placeholder="Select an aisle"
+                                        modalTitle="Select Aisle"
+                                        showSearch={true}
+                                        searchPlaceholder="Search aisles..."
+                                        showChevron
+                                    />
                                 </FormField>
                             )}
                         />
@@ -346,7 +324,7 @@ export const EntityFormModal = () => {
                                         {!!field.value && (
                                             <button
                                                 type="button"
-                                                className="entity-emoji__clear"
+                                                className="form-control__icon-button form-control__icon-button--end"
                                                 aria-label="Clear emoji"
                                                 onClick={() => field.onChange("")}
                                             >
@@ -374,6 +352,15 @@ export const EntityFormModal = () => {
                         {editingEntity ? "Update" : "Create"}
                     </IonButton>
                 </form>
+
+                {editingEntity && (
+                    <DestructiveAction
+                        onClick={() => setShowDeleteAlert(true)}
+                        busy={deleteAisle.isPending || deleteSection.isPending}
+                    >
+                        {editingEntity.type === "aisle" ? "Delete aisle" : "Delete section"}
+                    </DestructiveAction>
+                )}
 
                 <IonAlert
                     isOpen={showDeleteAlert}

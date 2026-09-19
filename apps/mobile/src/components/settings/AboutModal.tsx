@@ -1,70 +1,27 @@
-import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonModal,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
-import { closeOutline } from "ionicons/icons";
+import { IonContent, IonModal } from "@ionic/react";
 import { useAppHeader } from "../layout/useAppHeader";
+import { ModalHeader } from "../shared/ModalHeader";
 import AboutSection from "./AboutSection";
+
+import "./AboutModal.scss";
 
 const AboutModal: React.FC = () => {
     const { isModalOpen, closeModal } = useAppHeader();
 
     return (
         <IonModal isOpen={isModalOpen("about")} onDidDismiss={closeModal}>
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>About</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={closeModal}>
-                            <IonIcon icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
-            <IonContent className="ion-padding">
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: "12px",
-                        padding: "24px 16px",
-                    }}
-                >
-                    <img
-                        src="/img/icon.png"
-                        alt="Basket Bot"
-                        style={{
-                            width: "72px",
-                            height: "72px",
-                            borderRadius: "50%",
-                            objectFit: "cover",
-                        }}
-                    />
-                    <div style={{ fontSize: "20px", fontWeight: "600" }}>Basket Bot</div>
-                    <div style={{ fontSize: "14px", color: "var(--ion-color-medium)" }}>
-                        I'll be back. With the milk.
+            <ModalHeader title="About" onClose={closeModal} />
+            <IonContent className="about-content">
+                <header className="about-hero">
+                    {/* The name sits right beside it, so the mark itself is decorative. */}
+                    <img className="about-hero__icon" src="/img/icon.png" alt="" />
+                    <div className="about-hero__text">
+                        <h1 className="about-hero__name">Basket Bot</h1>
+                        <p className="about-hero__tagline">I&apos;ll be back. With the milk.</p>
                     </div>
-                </div>
+                </header>
 
                 <AboutSection />
-
-                <div
-                    style={{
-                        textAlign: "center",
-                        padding: "24px 16px",
-                        fontSize: "13px",
-                        color: "var(--ion-color-medium)",
-                    }}
-                >
-                    Created by thedinj@gmail.com
-                </div>
             </IonContent>
         </IonModal>
     );

@@ -322,6 +322,10 @@ this list is a summary of it.
 
 - Backend admin portal: **Mantine UI only** — no other component libraries
 - Mobile: **Ionic components** for all interactive UI elements
+- Mobile visual style ("Highway": Barlow type, lilac ruled section labels, the shared form
+  system, 16px gutter alignment) is documented in
+  [`apps/mobile/docs/DESIGN_SYSTEM.md`](apps/mobile/docs/DESIGN_SYSTEM.md). Read it before
+  building or restyling any mobile screen, and follow its checklist.
 - No multi-form modals; use separate pages/sheets for complex forms
 
 ### Anti-patterns to avoid

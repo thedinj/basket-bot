@@ -30,7 +30,7 @@ const ScaleFactorControl: React.FC<ScaleFactorControlProps> = ({ label, factor, 
                     <button
                         key={p}
                         type="button"
-                        className={`sfc-preset${factor === p ? " sfc-preset--active" : ""}`}
+                        className="preset-chip"
                         onClick={() => onChange(p)}
                         aria-pressed={factor === p}
                     >
@@ -55,7 +55,7 @@ const ScaleFactorControl: React.FC<ScaleFactorControlProps> = ({ label, factor, 
     if (!label) {
         return (
             <div className="sfc-root sfc-root--inline">
-                <span className="sfc-static-label">Scale</span>
+                <span className="form-field__label sfc-static-label">Scale</span>
                 {controls}
             </div>
         );

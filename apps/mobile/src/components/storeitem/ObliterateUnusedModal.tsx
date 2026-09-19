@@ -1,22 +1,13 @@
 import {
     IonButton,
-    IonButtons,
     IonContent,
-    IonFooter,
-    IonHeader,
     IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
     IonModal,
-    IonNote,
     IonSkeletonText,
     IonSpinner,
-    IonTitle,
-    IonToolbar,
 } from "@ionic/react";
 import clsx from "clsx";
-import { closeOutline, nuclear, shieldCheckmarkOutline } from "ionicons/icons";
+import { nuclear, shieldCheckmarkOutline } from "ionicons/icons";
 import pluralize from "pluralize";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { type AnimationEffect, pickStrike } from "../../animations/effects";
@@ -24,8 +15,11 @@ import { preloadStrikeSound } from "../../animations/strikeAudio";
 import { useDeleteOrphanItems, useOrphanItems } from "../../db/itemHooks";
 import { useOverlayAnimation } from "../../hooks/useOverlayAnimation";
 import { useToast } from "../../hooks/useToast";
+import { EditorFooter } from "../shared/EditorFooter";
 import { HazardRule } from "../shared/HazardRule";
+import { ModalHeader } from "../shared/ModalHeader";
 import { OverlayAnimation } from "../shared/OverlayAnimation";
+import { RobotLine } from "../shared/RobotLine";
 import TabEmptyState from "../shared/TabEmptyState";
 
 import "./ObliterateUnusedModal.scss";
@@ -44,18 +38,21 @@ interface ObliterateUnusedModalProps {
 }
 
 const LoadingRows: React.FC = () => (
-    <>
-        <div className="obliterate-scanning">Designating targets</div>
-        <IonList>
-            {[1, 2, 3, 4, 5].map((i) => (
-                <IonItem key={i}>
-                    <IonLabel>
-                        <IonSkeletonText animated style={{ width: "60%" }} />
-                    </IonLabel>
-                </IonItem>
+    <div className="obliterate-manifest">
+        <RobotLine>Designating targets</RobotLine>
+        <ol className="obliterate-targets" aria-hidden="true">
+            {[60, 45, 70, 50, 38].map((width, i) => (
+                <li key={i} className="obliterate-target">
+                    <span className="obliterate-target__num">{i + 1}</span>
+                    <IonSkeletonText
+                        animated
+                        className="obliterate-target__skeleton"
+                        style={{ width: `${width}%` }}
+                    />
+                </li>
             ))}
-        </IonList>
-    </>
+        </ol>
+    </div>
 );
 
 /**
@@ -155,22 +152,7 @@ const ObliterateUnusedModal: React.FC<ObliterateUnusedModalProps> = ({
         // Dismissing mid-request would leave the user unsure whether the delete landed, so the
         // backdrop is locked while it is in flight — matching the disabled close button.
         <IonModal isOpen={isOpen} onDidDismiss={onClose} backdropDismiss={!isWorking}>
-            <IonHeader>
-                <IonToolbar>
-                    <IonIcon
-                        slot="start"
-                        icon={nuclear}
-                        color="warning"
-                        style={{ marginInlineStart: "12px", fontSize: "20px" }}
-                    />
-                    <IonTitle>Obliterate Unused</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={onClose} disabled={isWorking}>
-                            <IonIcon slot="icon-only" icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+            <ModalHeader title="Obliterate Unused" onClose={onClose} closeDisabled={isWorking} />
 
             <IonContent
                 className={clsx(
@@ -188,62 +170,66 @@ const ObliterateUnusedModal: React.FC<ObliterateUnusedModalProps> = ({
                         variant="full"
                     />
                 ) : (
-                    <>
-                        <div className="obliterate-manifest">
-                            <div className="obliterate-manifest-label">
-                                <span>{munition.label}</span>
-                                <span aria-hidden="true">&middot;</span>
-                                <span>
-                                    {count} {pluralize("target", count)}
-                                </span>
-                            </div>
-                            <p className="obliterate-manifest-note">
-                                Coordinates locked. Nothing below is favorited, listed, or spoken
-                                for &mdash; and nobody will file a complaint, because nobody
-                                remembers creating them.
-                            </p>
-                        </div>
+                    <div className="obliterate-manifest">
+                        <h2 className="ruled-label obliterate-manifest__label">
+                            <span className="obliterate-manifest__munition">{munition.label}</span>
+                            <span className="ruled-label__count">
+                                {count} {pluralize("target", count)}
+                            </span>
+                        </h2>
+                        <RobotLine>
+                            Coordinates locked. Nothing below is favorited, listed, or spoken for
+                            &mdash; and nobody will file a complaint, because nobody remembers
+                            creating them.
+                        </RobotLine>
                         <HazardRule />
-                        <IonList>
+                        <ol className="obliterate-targets">
                             {orphans?.map((item, index) => (
-                                <IonItem key={item.id}>
-                                    <IonNote slot="start" className="obliterate-row-index">
-                                        {String(index + 1).padStart(2, "0")}
-                                    </IonNote>
-                                    <IonLabel className="ion-text-wrap">{item.name}</IonLabel>
-                                </IonItem>
+                                <li key={item.id} className="obliterate-target">
+                                    <span className="obliterate-target__num" aria-hidden="true">
+                                        {index + 1}
+                                    </span>
+                                    <span className="obliterate-target__name">{item.name}</span>
+                                </li>
                             ))}
-                        </IonList>
-                    </>
+                        </ol>
+                    </div>
                 )}
             </IonContent>
 
-            <IonFooter>
-                <IonToolbar>
-                    <IonButtons slot="start">
-                        <IonButton onClick={onClose} disabled={isWorking}>
-                            {count === 0 ? "Close" : "Abort"}
-                        </IonButton>
-                    </IonButtons>
-                    {count > 0 && (
-                        <IonButtons slot="end">
-                            <IonButton color="danger" onClick={handleConfirm} disabled={isWorking}>
-                                {isWorking ? (
-                                    <>
-                                        <IonSpinner name="dots" />
-                                        <span style={{ marginInlineStart: "8px" }}>Launching</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <IonIcon slot="start" icon={nuclear} />
-                                        Authorize strike
-                                    </>
-                                )}
-                            </IonButton>
-                        </IonButtons>
-                    )}
-                </IonToolbar>
-            </IonFooter>
+            {/* A worded Abort rather than EditorFooter's back arrow: it fills the row alone when
+                there is nothing to strike. */}
+            <EditorFooter>
+                <button
+                    type="button"
+                    className="obliterate-footer__abort"
+                    onClick={onClose}
+                    disabled={isWorking}
+                >
+                    {count === 0 ? "Close" : "Abort"}
+                </button>
+                {count > 0 && (
+                    <IonButton
+                        color="danger"
+                        expand="block"
+                        className="editor-form__submit"
+                        onClick={handleConfirm}
+                        disabled={isWorking}
+                    >
+                        {isWorking ? (
+                            <>
+                                <IonSpinner slot="start" name="dots" />
+                                Launching
+                            </>
+                        ) : (
+                            <>
+                                <IonIcon slot="start" icon={nuclear} />
+                                Authorize strike
+                            </>
+                        )}
+                    </IonButton>
+                )}
+            </EditorFooter>
 
             {/* Rendered inside this sheet on purpose: it is an IonModal nested above the
                 store-items modal, so an overlay rendered in the parent would paint behind

@@ -110,6 +110,74 @@ ion-item .item-label .item-qty {
     color: var(--ion-color-secondary);
 }
 
+/* Review Unsure Items: Drop | Keep as one 32px segmented control in the field frame (8px
+   radius, step-200 border, step-50 fill, a hairline between the halves). Drop is quiet and
+   only reddens while pressed; Keep wears the selected-chip lilac. Its right edge sits on the
+   row's end inset, top-aligned with the name's first line. */
+.unsure-decision {
+    display: flex;
+    flex: none;
+    align-self: flex-start;
+    margin-block: 8px 0;
+    margin-inline: 12px 0;
+    overflow: hidden;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 8px;
+    background: var(--ion-color-step-50);
+}
+
+.unsure-decision__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 32px;
+    margin: 0;
+    padding: 0 10px 0 8px;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--ion-color-medium);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+        color 0.12s ease-out,
+        background-color 0.12s ease-out;
+}
+
+.unsure-decision__btn ion-icon {
+    font-size: 1rem;
+}
+
+.unsure-decision__btn + .unsure-decision__btn {
+    border-inline-start: 1px solid var(--ion-color-step-200);
+}
+
+.unsure-decision__btn--keep {
+    background: color-mix(in srgb, var(--ion-color-secondary) 15%, transparent);
+    color: var(--ion-color-secondary);
+}
+
+.unsure-decision__btn--drop:active:not(:disabled) {
+    background: color-mix(in srgb, var(--ion-color-danger) 14%, transparent);
+    color: var(--ion-color-danger);
+}
+
+.unsure-decision__btn--keep:active:not(:disabled) {
+    background: color-mix(in srgb, var(--ion-color-secondary) 28%, transparent);
+}
+
+.unsure-decision__btn:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
+.unsure-decision__btn:focus-visible {
+    outline: 2px solid var(--ion-color-primary);
+    outline-offset: -2px;
+}
+
 /* Sample badge */
 .sample-badge {
     font-size: 0.6em;
@@ -215,7 +283,7 @@ ion-item .item-label .item-qty {
 
     @keyframes checkFlash {
         0% {
-            background-color: rgba(46, 213, 115, 0.14);
+            background-color: color-mix(in srgb, var(--ion-color-success) 14%, transparent);
         }
         100% {
             background-color: transparent;

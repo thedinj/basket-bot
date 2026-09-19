@@ -68,40 +68,15 @@
     }
 }
 
-// The robot's aside, in the field frame (10px radius, step-200 hairline, step-50 fill, 12px
-// inset). Mono on purpose: it is a terminal readout, with a lilac prompt and a blinking cursor.
-.wizard-robot-line {
+// The robot's aside (<RobotLine>, theme/patterns.scss) placed on the gutter, 20px below what
+// precedes it. Compound: .robot-line sets margin: 0 and loads later.
+.robot-line.wizard-robot-line {
     margin: 20px 16px 0;
-    padding: 11px 12px;
-    border: 1px solid var(--ion-color-step-200);
-    border-radius: 10px;
-    background: var(--ion-color-step-50);
-    font-family: var(--app-font-mono);
-    font-size: 0.75rem;
-    line-height: 1.6;
-    color: var(--ion-color-medium);
-
-    &__prompt {
-        margin-inline-end: 1ch;
-        font-weight: 700;
-        color: var(--ion-color-secondary);
-    }
-
-    &::after {
-        content: " ▊";
-        animation: cursor-blink 1.1s step-end infinite;
-        color: var(--ion-color-primary);
-    }
 }
 
-@keyframes cursor-blink {
-    0%,
-    100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0;
-    }
+// Inside a section the section's own padding already puts it on the gutter.
+.wizard-section > .robot-line.wizard-robot-line {
+    margin-inline: 0;
 }
 
 // ── Step 1: Pool ─────────────────────────────────────────────────────────────
@@ -193,11 +168,6 @@
         font-variant-numeric: tabular-nums;
         color: var(--ion-color-medium);
     }
-
-    // A label-line action (forms.scss) standing on its own line: no pull into a label's space.
-    &__action {
-        margin: 0;
-    }
 }
 
 .wizard-slots {
@@ -206,17 +176,14 @@
     padding: 8px 16px 0;
 }
 
-// Slot cards, in the recipe cards' frame. Body on a 12px inset, then a 40px bar of four
-// equal actions: always four columns, so bars line up from card to card.
+// Slot cards, in the card frame (.surface-card). Body on a 12px inset, then the shared 40px
+// .card-actions bar: always four columns, so bars line up from card to card.
 .wizard-slot {
     position: relative;
-    overflow: hidden;
-    border: 1px solid var(--ion-color-step-150);
-    border-radius: 14px;
-    background: var(--wizard-card-bg);
     user-select: none;
 
-    &--pinned {
+    // Compound: .surface-card's border shorthand loads later and would win.
+    &.wizard-slot--pinned {
         border-color: color-mix(in srgb, var(--ion-color-secondary) 55%, transparent);
     }
 
@@ -338,84 +305,6 @@
             display: none;
         }
     }
-
-    // Time limit and pool count: pills the size of a small tag chip (20px, 12px text).
-    &__pill {
-        display: inline-flex;
-        align-items: center;
-        box-sizing: border-box;
-        height: 20px;
-        padding: 0 8px;
-        border: 1px solid var(--ion-color-step-200);
-        border-radius: 10px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
-        line-height: 1;
-        color: var(--ion-color-medium);
-        white-space: nowrap;
-
-        &--warn {
-            border-color: color-mix(in srgb, var(--ion-color-warning) 45%, transparent);
-            background: color-mix(in srgb, var(--ion-color-warning) 10%, transparent);
-            color: var(--ion-color-warning);
-        }
-    }
-
-    &__actions {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        border-top: 1px solid var(--ion-color-step-150);
-    }
-
-    &__action {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        height: 40px;
-        margin: 0;
-        padding: 0;
-        border: 0;
-        background: transparent;
-        font: inherit;
-        font-size: 0.8125rem;
-        font-weight: 600;
-        color: var(--ion-color-medium);
-        cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-        transition:
-            color 0.12s ease-out,
-            background-color 0.12s ease-out;
-
-        & + & {
-            border-inline-start: 1px solid var(--ion-color-step-150);
-        }
-
-        ion-icon {
-            flex: none;
-            font-size: 1rem;
-        }
-
-        &--on {
-            color: var(--ion-color-secondary);
-        }
-
-        &:active:not(:disabled) {
-            color: var(--ion-color-primary);
-            background: color-mix(in srgb, var(--ion-color-primary) 12%, transparent);
-        }
-
-        &:disabled {
-            cursor: default;
-            opacity: 0.35;
-        }
-
-        &:focus-visible {
-            outline: 2px solid var(--ion-color-primary);
-            outline-offset: -2px;
-        }
-    }
 }
 
 @keyframes wizard-slot-enter {
@@ -469,47 +358,7 @@
 }
 
 // ── Step 4: Send ─────────────────────────────────────────────────────────────
-
-// Label left, figure right-aligned in tabular digits, one hairline per row.
-.wizard-tally {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    margin: 0;
-
-    dt,
-    dd {
-        margin: 0;
-        padding: 10px 0;
-        border-bottom: 1px solid var(--ion-color-step-150);
-        font-size: 0.9375rem;
-        line-height: 1.3;
-    }
-
-    dt {
-        overflow: hidden;
-        color: var(--ion-text-color);
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    dd {
-        padding-left: 12px;
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
-        text-align: right;
-        color: var(--ion-text-color);
-    }
-
-    dt:last-of-type,
-    dd:last-of-type {
-        border-bottom: 0;
-    }
-
-    &__quiet,
-    dd.wizard-tally__quiet {
-        color: var(--ion-color-medium);
-    }
-}
+// The tallies are .tally (theme/patterns.scss); the scale factors are .qty.
 
 .wizard-cook-list {
     display: grid;
@@ -560,64 +409,6 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-
-    // Scale factors: the shopping list's quantity style.
-    &__scale {
-        font-size: 0.90625rem;
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
-        color: var(--ion-color-secondary);
-    }
-}
-
-// ── Footer ───────────────────────────────────────────────────────────────────
-//
-// On the gutter: a 48px back square in the field frame, 12px, then the step's primary action
-// (the editors' submit button) filling the rest. Shared by the add-to-list sheet.
-
-.wizard-footer ion-toolbar {
-    --padding-start: 16px;
-    --padding-end: 16px;
-    --padding-top: 8px;
-    --padding-bottom: 8px;
-}
-
-.wizard-footer__row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.wizard-footer__back {
-    display: grid;
-    flex: none;
-    place-items: center;
-    width: 48px;
-    height: 48px;
-    padding: 0;
-    border: 1px solid var(--ion-color-step-200);
-    border-radius: 10px;
-    background: var(--ion-color-step-50);
-    color: var(--ion-text-color);
-    font-size: 1.375rem;
-    cursor: pointer;
-
-    &:disabled {
-        cursor: default;
-        opacity: 0.4;
-    }
-
-    &:focus-visible {
-        outline: none;
-        border-color: var(--ion-color-primary);
-        box-shadow: 0 0 0 3px color-mix(in srgb, var(--ion-color-primary) 22%, transparent);
-    }
-}
-
-.wizard-footer .wizard-footer__primary {
-    flex: 1;
-    min-width: 0;
-    margin: 0;
 }
 
 // ── Reduced motion ───────────────────────────────────────────────────────────
@@ -626,8 +417,7 @@
     .wizard-slot--enter,
     .wizard-slot__name,
     .wizard-slot--scanning::after,
-    .wizard-slot--scanning .wizard-slot__num,
-    .wizard-robot-line::after {
+    .wizard-slot--scanning .wizard-slot__num {
         animation: none;
     }
 }

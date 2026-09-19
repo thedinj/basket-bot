@@ -8,5 +8,7 @@
        full device viewport, which is taller than those when a header/tab-bar/status-bar is
        also on screen, and pushes the centered content below the true visual center. */
     height: 100%;
-    gap: 1.5rem;
+    /* The 16px gutter, so a long status line wraps short of the screen edge. */
+    padding-inline: 16px;
+    box-sizing: border-box;
 }

@@ -3,22 +3,20 @@ import { TAG_PALETTE_KEYS } from "@basket-bot/core";
 import {
     IonAlert,
     IonButton,
-    IonButtons,
     IonContent,
-    IonHeader,
     IonIcon,
     IonInput,
-    IonItem,
-    IonLabel,
-    IonList,
     IonModal,
     IonSpinner,
-    IonTitle,
-    IonToolbar,
 } from "@ionic/react";
-import { checkmarkOutline, closeOutline, createOutline, trashOutline } from "ionicons/icons";
-import { useRef, useState } from "react";
+import { checkmarkOutline, createOutline } from "ionicons/icons";
+import { useState } from "react";
 import { useCreateTag, useDeleteTag, useTags, useUpdateTag } from "../../db/mealsHooks";
+import { EditorFooter } from "../shared/EditorFooter";
+import { FormField } from "../shared/FormField";
+import { ModalHeader } from "../shared/ModalHeader";
+import { RobotLine } from "../shared/RobotLine";
+import { RowRemoveButton } from "../shared/RowRemoveButton";
 import TagChip from "./TagChip";
 
 import "./TagManagerModal.scss";
@@ -28,6 +26,8 @@ interface TagManagerModalProps {
     onDismiss: () => void;
     householdId: string | null;
 }
+
+const swatchName = (key: TagPaletteKey): string => key.charAt(0).toUpperCase() + key.slice(1);
 
 const TagManagerModal: React.FC<TagManagerModalProps> = ({ isOpen, onDismiss, householdId }) => {
     const { data: tags = [] } = useTags(householdId);
@@ -45,8 +45,6 @@ const TagManagerModal: React.FC<TagManagerModalProps> = ({ isOpen, onDismiss, ho
     } | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
-    const newInputRef = useRef<HTMLIonInputElement>(null);
-
     const handleCreate = async () => {
         const name = newName.trim();
         if (!name || !householdId) return;
@@ -62,6 +60,8 @@ const TagManagerModal: React.FC<TagManagerModalProps> = ({ isOpen, onDismiss, ho
     const handleDelete = async () => {
         if (!deleteTarget) return;
         await deleteTag.mutateAsync(deleteTarget.id);
+        // Don't leave the editor open on a tag that no longer exists.
+        setEditingTag((t) => (t?.id === deleteTarget.id ? null : t));
         setDeleteTarget(null);
     };
 
@@ -82,129 +82,170 @@ const TagManagerModal: React.FC<TagManagerModalProps> = ({ isOpen, onDismiss, ho
 
     return (
         <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>Manage Tags</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={onDismiss}>
-                            <IonIcon slot="icon-only" icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+            <ModalHeader title="Manage Tags" onClose={onDismiss} />
 
             <IonContent className="ion-padding">
-                {tags.length > 0 && (
-                    <IonList className="tag-manager-list">
-                        {tags.map((tag) => (
-                            <IonItem key={tag.id} className="tag-manager-item" lines="full">
-                                <TagChip tag={tag} size="md" />
-                                <IonButtons slot="end">
-                                    <IonButton
-                                        fill="clear"
-                                        size="small"
-                                        color="medium"
-                                        onClick={() => openEdit(tag.id, tag.name, tag.colorKey)}
-                                    >
-                                        <IonIcon slot="icon-only" icon={createOutline} />
-                                    </IonButton>
-                                    <IonButton
-                                        fill="clear"
-                                        size="small"
-                                        color="medium"
-                                        onClick={() =>
-                                            setDeleteTarget({ id: tag.id, name: tag.name })
+                <div className="tag-manager">
+                    <section className="tag-manager__section">
+                        <h2 className="ruled-label">
+                            Tags <span className="ruled-label__count">{tags.length}</span>
+                        </h2>
+                        {tags.length > 0 ? (
+                            <ul className="boxed-list">
+                                {tags.map((tag) => {
+                                    const isEditing = editingTag?.id === tag.id;
+                                    return (
+                                        <li
+                                            key={tag.id}
+                                            className={`tag-manager-row${isEditing ? " tag-manager-row--editing" : ""}`}
+                                        >
+                                            <div className="tag-manager-row__chip">
+                                                <TagChip tag={tag} size="md" />
+                                            </div>
+                                            <div className="tag-manager-row__actions">
+                                                <button
+                                                    type="button"
+                                                    className="tag-manager-row__edit"
+                                                    onClick={() =>
+                                                        openEdit(tag.id, tag.name, tag.colorKey)
+                                                    }
+                                                    aria-pressed={isEditing}
+                                                    aria-label={`Edit tag ${tag.name}`}
+                                                >
+                                                    <IonIcon
+                                                        icon={createOutline}
+                                                        aria-hidden="true"
+                                                    />
+                                                </button>
+                                                <RowRemoveButton
+                                                    onClick={() =>
+                                                        setDeleteTarget({
+                                                            id: tag.id,
+                                                            name: tag.name,
+                                                        })
+                                                    }
+                                                    label={`Delete tag ${tag.name}`}
+                                                />
+                                            </div>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        ) : (
+                            <RobotLine>
+                                No tags yet. Create one below to start categorising recipes.
+                            </RobotLine>
+                        )}
+                    </section>
+
+                    {editingTag ? (
+                        <div className="editor-form">
+                            <FormField label="Rename tag">
+                                <div className="form-control">
+                                    <IonInput
+                                        value={editingTag.name}
+                                        onIonInput={(e) =>
+                                            setEditingTag((t) =>
+                                                t ? { ...t, name: e.detail.value ?? "" } : null
+                                            )
                                         }
-                                    >
-                                        <IonIcon slot="icon-only" icon={trashOutline} />
-                                    </IonButton>
-                                </IonButtons>
-                            </IonItem>
-                        ))}
-                    </IonList>
-                )}
-
-                {tags.length === 0 && (
-                    <p className="tag-manager-empty">
-                        No tags yet. Create one below to start categorising recipes.
-                    </p>
-                )}
-
-                {editingTag ? (
-                    <div className="tag-manager-edit">
-                        <IonItem>
-                            <IonLabel position="stacked">Rename tag</IonLabel>
-                            <IonInput
-                                value={editingTag.name}
-                                onIonInput={(e) =>
-                                    setEditingTag((t) =>
-                                        t ? { ...t, name: e.detail.value ?? "" } : null
-                                    )
-                                }
-                                onKeyUp={(e) => {
-                                    if (e.key === "Enter") handleSaveEdit();
-                                }}
-                                autoFocus
-                            />
-                        </IonItem>
-                        <div className="tag-manager-palette">
-                            {TAG_PALETTE_KEYS.map((key) => (
-                                <button
-                                    key={key}
-                                    className={`tag-palette-swatch${editingTag.colorKey === key ? " selected" : ""}`}
-                                    style={
-                                        {
-                                            "--swatch-bg": `var(--tag-${key}-bg)`,
-                                            "--swatch-border": `var(--tag-${key}-border)`,
-                                            "--swatch-text": `var(--tag-${key}-text)`,
-                                        } as React.CSSProperties
-                                    }
-                                    onClick={() =>
-                                        setEditingTag((t) => (t ? { ...t, colorKey: key } : null))
-                                    }
-                                    aria-label={key}
-                                />
-                            ))}
+                                        onKeyUp={(e) => {
+                                            if (e.key === "Enter") handleSaveEdit();
+                                        }}
+                                        aria-label="Tag name"
+                                        autocapitalize="sentences"
+                                        autoFocus
+                                    />
+                                </div>
+                            </FormField>
+                            <FormField label="Colour">
+                                <div className="tag-manager-palette">
+                                    {TAG_PALETTE_KEYS.map((key) => {
+                                        const isSelected = editingTag.colorKey === key;
+                                        return (
+                                            <button
+                                                key={key}
+                                                type="button"
+                                                className="tag-palette-swatch"
+                                                style={
+                                                    {
+                                                        "--swatch-bg": `var(--tag-${key}-bg)`,
+                                                        "--swatch-border": `var(--tag-${key}-border)`,
+                                                        "--swatch-text": `var(--tag-${key}-text)`,
+                                                    } as React.CSSProperties
+                                                }
+                                                onClick={() =>
+                                                    setEditingTag((t) =>
+                                                        t ? { ...t, colorKey: key } : null
+                                                    )
+                                                }
+                                                aria-pressed={isSelected}
+                                                aria-label={swatchName(key)}
+                                            >
+                                                {isSelected && (
+                                                    <IonIcon
+                                                        icon={checkmarkOutline}
+                                                        aria-hidden="true"
+                                                    />
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </FormField>
                         </div>
-                        <div className="tag-manager-edit-actions">
-                            <IonButton
-                                fill="clear"
-                                color="medium"
-                                onClick={() => setEditingTag(null)}
-                            >
-                                Cancel
-                            </IonButton>
-                            <IonButton onClick={handleSaveEdit} disabled={!editingTag.name.trim()}>
+                    ) : (
+                        <div className="editor-form">
+                            <FormField label="New tag">
+                                <div className="form-control">
+                                    <IonInput
+                                        value={newName}
+                                        onIonInput={(e) => setNewName(e.detail.value ?? "")}
+                                        placeholder="Enter tag name"
+                                        onKeyUp={(e) => {
+                                            if (e.key === "Enter") handleCreate();
+                                        }}
+                                        aria-label="New tag name"
+                                        autocapitalize="sentences"
+                                    />
+                                </div>
+                            </FormField>
+                        </div>
+                    )}
+                </div>
+            </IonContent>
+
+            <EditorFooter
+                onBack={editingTag ? () => setEditingTag(null) : undefined}
+                backLabel="Cancel edit"
+            >
+                {editingTag ? (
+                    <IonButton
+                        className="editor-form__submit"
+                        expand="block"
+                        onClick={handleSaveEdit}
+                        disabled={!editingTag.name.trim() || updateTag.isPending}
+                    >
+                        {updateTag.isPending ? (
+                            <IonSpinner name="dots" />
+                        ) : (
+                            <>
                                 <IonIcon slot="start" icon={checkmarkOutline} />
                                 Save
-                            </IonButton>
-                        </div>
-                    </div>
+                            </>
+                        )}
+                    </IonButton>
                 ) : (
-                    <div className="tag-manager-new">
-                        <IonItem>
-                            <IonLabel position="stacked">New tag</IonLabel>
-                            <IonInput
-                                ref={newInputRef}
-                                value={newName}
-                                onIonInput={(e) => setNewName(e.detail.value ?? "")}
-                                placeholder="Enter tag name"
-                                onKeyUp={(e) => {
-                                    if (e.key === "Enter") handleCreate();
-                                }}
-                            />
-                        </IonItem>
-                        <IonButton
-                            expand="block"
-                            onClick={handleCreate}
-                            disabled={!newName.trim() || creating}
-                            style={{ marginTop: "12px" }}
-                        >
-                            {creating ? <IonSpinner name="dots" /> : "Create Tag"}
-                        </IonButton>
-                    </div>
+                    <IonButton
+                        className="editor-form__submit"
+                        expand="block"
+                        onClick={handleCreate}
+                        disabled={!newName.trim() || creating}
+                    >
+                        {creating ? <IonSpinner name="dots" /> : "Create Tag"}
+                    </IonButton>
                 )}
-            </IonContent>
+            </EditorFooter>
 
             {/* Delete confirm */}
             <IonAlert

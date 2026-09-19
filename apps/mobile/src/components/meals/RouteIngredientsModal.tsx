@@ -1,18 +1,6 @@
 import type { Store } from "@basket-bot/core";
 import pluralize from "pluralize";
-import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonFooter,
-    IonHeader,
-    IonIcon,
-    IonModal,
-    IonSpinner,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
-import { closeOutline } from "ionicons/icons";
+import { IonButton, IonContent, IonModal, IonSpinner } from "@ionic/react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouteIngredients } from "../../hooks/useRouteIngredients";
 import {
@@ -22,6 +10,8 @@ import {
     type RawIngredient,
 } from "../../utils/ingredientRouting";
 import { filterVisibleStores } from "../../utils/storeVisibility";
+import { EditorFooter } from "../shared/EditorFooter";
+import { ModalHeader } from "../shared/ModalHeader";
 import ScaleFactorControl from "./ScaleFactorControl";
 import RouteIngredientsContent from "./RouteIngredientsContent";
 
@@ -126,16 +116,11 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
         // with no idea whether the add landed. Deliberately not `canDismiss`, which would
         // also block the programmatic dismiss that closes the sheet on success.
         <IonModal isOpen={isOpen} onDidDismiss={onDismiss} backdropDismiss={!isWorking}>
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>Add to shopping list</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={onDismiss} disabled={isWorking} aria-label="Close">
-                            <IonIcon slot="icon-only" icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+            <ModalHeader
+                title="Add to shopping list"
+                onClose={onDismiss}
+                closeDisabled={isWorking}
+            />
 
             <div className="route-modal-scale-row">
                 <ScaleFactorControl factor={factor} onChange={setFactor} />
@@ -157,24 +142,20 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
                 />
             </IonContent>
 
-            <IonFooter className="wizard-footer">
-                <IonToolbar>
-                    <div className="wizard-footer__row">
-                        <IonButton
-                            expand="block"
-                            className="editor-form__submit wizard-footer__primary"
-                            onClick={handleConfirm}
-                            disabled={isWorking || includedCount === 0}
-                        >
-                            {isWorking ? (
-                                <IonSpinner name="dots" />
-                            ) : (
-                                `Add ${includedCount} to ${pluralize("list", includedCount)}`
-                            )}
-                        </IonButton>
-                    </div>
-                </IonToolbar>
-            </IonFooter>
+            <EditorFooter>
+                <IonButton
+                    expand="block"
+                    className="editor-form__submit"
+                    onClick={handleConfirm}
+                    disabled={isWorking || includedCount === 0}
+                >
+                    {isWorking ? (
+                        <IonSpinner name="dots" />
+                    ) : (
+                        `Add ${includedCount} to ${pluralize("list", includedCount)}`
+                    )}
+                </IonButton>
+            </EditorFooter>
         </IonModal>
     );
 };

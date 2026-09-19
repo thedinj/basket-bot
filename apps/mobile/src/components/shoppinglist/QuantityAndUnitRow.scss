@@ -9,9 +9,9 @@
     flex: 0 0 96px;
 }
 
-.qty-unit-row__unit {
+// The unit picker is its own field box; it takes the rest of the row. Compound selector:
+// forms.scss (.form-control--button, width 100%) loads after this file.
+.form-control.qty-unit-row__unit {
     flex: 1;
     min-width: 0;
-    // The picker's own ion-item supplies the inner padding (flattened to 0 in forms.scss)
-    // and its chevron; keep the box's padding for both edges.
 }

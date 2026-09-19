@@ -46,11 +46,9 @@ export const PrivateToggle = () => {
                 onDidDismiss={() => setShowPopover(false)}
                 side="top"
                 alignment="center"
-                style={{ "--width": "240px" } as React.CSSProperties}
+                className="item-flag-popover"
             >
-                <div className="ion-padding">
-                    <p style={{ margin: 0, fontSize: "0.85em" }}>{disabledMessage}</p>
-                </div>
+                <p className="item-flag-popover__text">{disabledMessage}</p>
             </IonPopover>
         </>
     );

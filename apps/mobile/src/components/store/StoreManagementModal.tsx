@@ -1,35 +1,30 @@
+import { toSingleEmojiOrNull } from "@basket-bot/core";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonButton,
-    IonButtons,
     IonCheckbox,
     IonContent,
     IonHeader,
     IonIcon,
     IonInput,
-    IonItem,
-    IonLabel,
-    IonList,
     IonModal,
     IonSkeletonText,
-    IonText,
     IonTitle,
     IonToggle,
     IonToolbar,
     useIonAlert,
 } from "@ionic/react";
 import {
-    closeOutline,
-    copy,
-    create,
+    chevronForward,
+    copyOutline,
+    createOutline,
     eyeOffOutline,
     eyeOutline,
     gridOutline,
     homeOutline,
     listOutline,
-    trash,
 } from "ionicons/icons";
-import React, { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import React, { ReactNode, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -54,11 +49,20 @@ import {
     generateStoreScanPrompt,
     type ExistingStoreLayout,
 } from "../../llm/features/storeScanPrompt";
-import { LLMItem, useLLMModal } from "../../llm/shared";
+import { useLLMModal } from "../../llm/shared";
+import { LLM_ICON_SRC } from "../../llm/shared/constants";
+import { AislePlate } from "../shared/AislePlate";
+import { DestructiveAction } from "../shared/DestructiveAction";
+import { EditorFooter } from "../shared/EditorFooter";
+import { FormField } from "../shared/FormField";
+import { aislePlate } from "../shared/grouping.utils";
+import { ModalHeader } from "../shared/ModalHeader";
 import { useShield } from "../shield/useShield";
 import AislesSectionsManagementModal from "./AislesSectionsManagementModal";
 import StoreHouseholdSharingModal from "./StoreHouseholdSharingModal";
 import StoreItemsManagementModal from "./StoreItemsManagementModal";
+
+import "./StoreSheets.scss";
 
 // Zod schemas
 const storeFormSchema = z.object({
@@ -136,74 +140,133 @@ const StoreScanOutputList: React.FC<StoreScanOutputListProps> = ({ result, state
     };
 
     return (
-        <div>
-            <IonItem lines="none">
-                <IonLabel>Replace all aisles &amp; sections</IonLabel>
-                <IonToggle
-                    slot="end"
-                    checked={state.mode === "replace"}
-                    onIonChange={(e) =>
-                        setState((prev) => ({
-                            ...prev,
-                            mode: e.detail.checked ? "replace" : "append",
-                        }))
-                    }
-                />
-            </IonItem>
-            <IonList>
-                {result.aisles.map((aisle, aisleIdx) => {
-                    const aisleChecked = !state.uncheckedAisles.has(aisleIdx);
-                    return (
-                        <div key={aisleIdx}>
-                            <IonItem lines="none">
+        <div className="store-scan">
+            <FormField
+                label="Existing layout"
+                hint={
+                    state.mode === "replace"
+                        ? "The current aisles and sections are deleted first."
+                        : "Found aisles and sections are added to the current ones."
+                }
+            >
+                <div className="form-control">
+                    <IonToggle
+                        labelPlacement="start"
+                        justify="space-between"
+                        checked={state.mode === "replace"}
+                        onIonChange={(e) =>
+                            setState((prev) => ({
+                                ...prev,
+                                mode: e.detail.checked ? "replace" : "append",
+                            }))
+                        }
+                    >
+                        Replace existing aisles & sections
+                    </IonToggle>
+                </div>
+            </FormField>
+
+            <section>
+                <h2 className="ruled-label">
+                    Aisles <span className="ruled-label__count">{result.aisles.length}</span>
+                </h2>
+                <ul className="store-scan__aisles">
+                    {result.aisles.map((aisle, aisleIdx) => {
+                        const aisleChecked = !state.uncheckedAisles.has(aisleIdx);
+                        // The plate the shopping list will draw for this aisle once it's saved
+                        // (the same emoji validation the save applies).
+                        const plate = aislePlate({
+                            aisleId: aisleIdx,
+                            aisleName: aisle.name,
+                            aisleEmoji: toSingleEmojiOrNull(aisle.emoji),
+                        });
+                        return (
+                            <li key={aisleIdx} className="store-scan__aisle">
                                 <IonCheckbox
-                                    slot="start"
+                                    className="store-scan__check"
+                                    labelPlacement="end"
+                                    justify="start"
                                     checked={aisleChecked}
+                                    aria-label={aisle.name}
                                     onIonChange={(e) => toggleAisle(aisleIdx, e.detail.checked)}
-                                />
-                                <IonLabel>
-                                    <h3>
-                                        {aisle.emoji && (
-                                            <span className="scan-aisle-emoji">{aisle.emoji}</span>
+                                >
+                                    <span className="store-scan__aisle-label">
+                                        <AislePlate badge={plate.badge} kind={plate.badgeKind} />
+                                        {plate.label && (
+                                            <span className="store-scan__aisle-name">
+                                                {plate.label}
+                                            </span>
                                         )}
-                                        <strong>{aisle.name}</strong>
-                                    </h3>
-                                </IonLabel>
-                            </IonItem>
-                            {aisle.sections.map((section, sectionIdx) => {
-                                const sectionKey = `${aisleIdx}:${sectionIdx}`;
-                                const sectionChecked = !state.uncheckedSections.has(sectionKey);
-                                return (
-                                    <IonItem
-                                        key={sectionKey}
-                                        lines="none"
-                                        style={{ "--padding-start": "48px" } as React.CSSProperties}
-                                    >
-                                        <IonCheckbox
-                                            slot="start"
-                                            checked={sectionChecked}
-                                            disabled={!aisleChecked}
-                                            onIonChange={(e) =>
-                                                toggleSection(
-                                                    aisleIdx,
-                                                    sectionIdx,
-                                                    e.detail.checked
-                                                )
-                                            }
-                                        />
-                                        <IonLabel>
-                                            <p>{section}</p>
-                                        </IonLabel>
-                                    </IonItem>
-                                );
-                            })}
-                        </div>
-                    );
-                })}
-            </IonList>
+                                    </span>
+                                </IonCheckbox>
+                                {aisle.sections.length > 0 && (
+                                    <ul className="store-scan__sections">
+                                        {aisle.sections.map((section, sectionIdx) => {
+                                            const sectionKey = `${aisleIdx}:${sectionIdx}`;
+                                            return (
+                                                <li key={sectionKey}>
+                                                    <IonCheckbox
+                                                        className="store-scan__check store-scan__check--section"
+                                                        labelPlacement="end"
+                                                        justify="start"
+                                                        checked={
+                                                            !state.uncheckedSections.has(sectionKey)
+                                                        }
+                                                        disabled={!aisleChecked}
+                                                        onIonChange={(e) =>
+                                                            toggleSection(
+                                                                aisleIdx,
+                                                                sectionIdx,
+                                                                e.detail.checked
+                                                            )
+                                                        }
+                                                    >
+                                                        <span className="store-scan__section-name">
+                                                            {section}
+                                                        </span>
+                                                    </IonCheckbox>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                )}
+                            </li>
+                        );
+                    })}
+                </ul>
+            </section>
         </div>
     );
 };
+
+type HubRowProps = {
+    icon: ReactNode;
+    title: string;
+    description: string;
+    onClick: () => void;
+    disabled?: boolean;
+};
+
+/** One action in the store hub: glyph on the gutter, title and a line of explanation. */
+const HubRow: React.FC<HubRowProps> = ({ icon, title, description, onClick, disabled }) => (
+    <button
+        type="button"
+        className="row-button store-hub-row"
+        onClick={onClick}
+        disabled={disabled}
+    >
+        {icon}
+        <span className="store-hub-row__text">
+            <span className="store-hub-row__title">{title}</span>
+            <span className="store-hub-row__desc">{description}</span>
+        </span>
+        <IonIcon className="store-hub-row__chevron" icon={chevronForward} aria-hidden="true" />
+    </button>
+);
+
+const hubIcon = (icon: string) => (
+    <IonIcon className="store-hub-row__icon" icon={icon} aria-hidden="true" />
+);
 
 const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = ({
     storeId,
@@ -488,212 +551,198 @@ const StoreManagementModalContent: React.FC<StoreManagementModalContentProps> = 
 
     return (
         <>
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>{store.name}</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={handleDeleteStore} disabled={deleteStore.isPending}>
-                            <IonIcon slot="icon-only" icon={trash} />
-                        </IonButton>
-                        <IonButton onClick={openRenameModal}>
-                            <IonIcon slot="icon-only" icon={create} />
-                        </IonButton>
-                        <IonButton onClick={handleClose}>
-                            <IonIcon icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
-            <IonContent fullscreen>
-                <IonList>
-                    <LLMItem button detail={true} onClick={handleAutoScan} requireApiKey={false}>
-                        <IonLabel>
-                            <h2>Auto-Scan Aisles/Sections</h2>
-                            <p>Import from store directory photo</p>
-                        </IonLabel>
-                    </LLMItem>
-
-                    <IonItem button detail={true} onClick={handleOpenHouseholdSharingModal}>
-                        <IonIcon icon={homeOutline} slot="start" />
-                        <IonLabel>
-                            <h2>Share with Household</h2>
-                            <p>
-                                Determine if this store is available to everyone in your household
-                                or only you.
-                            </p>
-                        </IonLabel>
-                    </IonItem>
-
-                    <IonItem>
-                        <IonIcon icon={store.isHidden ? eyeOffOutline : eyeOutline} slot="start" />
-                        <IonLabel>
-                            <h2>Hidden from Store Lists</h2>
-                            <p>Hides this store from dropdowns.</p>
-                        </IonLabel>
-                        <IonToggle
-                            slot="end"
-                            checked={store.isHidden}
-                            onIonChange={(e) => handleToggleVisibility(e.detail.checked)}
-                            disabled={updateStoreVisibility.isPending}
+            <ModalHeader title={store.name} onClose={handleClose} />
+            <IonContent className="store-hub">
+                <section className="store-hub__group">
+                    <h2 className="ruled-label store-hub__label">Layout</h2>
+                    <div className="store-hub__rows">
+                        <HubRow
+                            icon={hubIcon(gridOutline)}
+                            title="Edit Aisles/Sections"
+                            description="Organize store layout"
+                            onClick={handleOpenAislesModal}
                         />
-                    </IonItem>
+                        <HubRow
+                            icon={hubIcon(listOutline)}
+                            title="Edit Store Items"
+                            description="Manage products and their locations"
+                            onClick={handleOpenItemsModal}
+                        />
+                        <HubRow
+                            icon={
+                                <IonIcon
+                                    className="store-hub-row__icon store-hub-row__icon--llm"
+                                    src={LLM_ICON_SRC}
+                                    aria-hidden="true"
+                                />
+                            }
+                            title="Auto-Scan Aisles/Sections"
+                            description="Import from store directory photo"
+                            onClick={handleAutoScan}
+                        />
+                    </div>
+                </section>
 
-                    <IonItem button detail={true} onClick={openDuplicateModal}>
-                        <IonIcon icon={copy} slot="start" />
-                        <IonLabel>
-                            <h2>Duplicate Store</h2>
-                            <p>Copy layout and optionally items</p>
-                        </IonLabel>
-                    </IonItem>
-                    <IonItem button detail={true} onClick={handleOpenAislesModal}>
-                        <IonIcon icon={gridOutline} slot="start" />
-                        <IonLabel>
-                            <h2>Edit Aisles/Sections</h2>
-                            <p>Organize store layout</p>
-                        </IonLabel>
-                    </IonItem>
-                    <IonItem button detail={true} onClick={handleOpenItemsModal}>
-                        <IonIcon icon={listOutline} slot="start" />
-                        <IonLabel>
-                            <h2>Edit Store Items</h2>
-                            <p>Manage products and their locations</p>
-                        </IonLabel>
-                    </IonItem>
-                </IonList>
+                <section className="store-hub__group">
+                    <h2 className="ruled-label store-hub__label">Access</h2>
+                    <div className="store-hub__rows">
+                        <HubRow
+                            icon={hubIcon(homeOutline)}
+                            title="Share with Household"
+                            description="Everyone in your household, or only you."
+                            onClick={handleOpenHouseholdSharingModal}
+                        />
+                        {/* On means shown: the label names what the switch turns on, and
+                            the line under it reports the current state. */}
+                        <IonToggle
+                            className="store-hub-row"
+                            labelPlacement="start"
+                            justify="space-between"
+                            checked={!store.isHidden}
+                            onIonChange={(e) => handleToggleVisibility(!e.detail.checked)}
+                            disabled={updateStoreVisibility.isPending}
+                        >
+                            <span className="store-hub-row__label">
+                                {hubIcon(store.isHidden ? eyeOffOutline : eyeOutline)}
+                                <span className="store-hub-row__text">
+                                    <span className="store-hub-row__title">
+                                        Show in store lists
+                                    </span>
+                                    <span className="store-hub-row__desc">
+                                        {store.isHidden
+                                            ? "Hidden. Left out of store dropdowns."
+                                            : "Listed in store dropdowns."}
+                                    </span>
+                                </span>
+                            </span>
+                        </IonToggle>
+                    </div>
+                </section>
+
+                <section className="store-hub__group">
+                    <h2 className="ruled-label store-hub__label">Store</h2>
+                    <div className="store-hub__rows">
+                        <HubRow
+                            icon={hubIcon(createOutline)}
+                            title="Rename Store"
+                            description="Change the name on its tab"
+                            onClick={openRenameModal}
+                        />
+                        <HubRow
+                            icon={hubIcon(copyOutline)}
+                            title="Duplicate Store"
+                            description="Copy layout and optionally items"
+                            onClick={openDuplicateModal}
+                        />
+                    </div>
+                </section>
+
+                <div className="store-hub__danger">
+                    <DestructiveAction onClick={handleDeleteStore} busy={deleteStore.isPending}>
+                        Delete store
+                    </DestructiveAction>
+                </div>
 
                 {/* Rename Store Modal */}
                 <IonModal isOpen={isRenameModalOpen} onDidDismiss={closeRenameModal}>
-                    <IonHeader>
-                        <IonToolbar>
-                            <IonTitle>Rename Store</IonTitle>
-                            <IonButtons slot="end">
-                                <IonButton onClick={closeRenameModal}>
-                                    <IonIcon icon={closeOutline} />
-                                </IonButton>
-                            </IonButtons>
-                        </IonToolbar>
-                    </IonHeader>
+                    <ModalHeader title="Rename Store" onClose={closeRenameModal} />
                     <IonContent className="ion-padding">
-                        <form onSubmit={handleSubmit(onSubmitRename)}>
+                        <form className="editor-form" onSubmit={handleSubmit(onSubmitRename)}>
                             <Controller
                                 name="name"
                                 control={control}
                                 render={({ field }) => (
-                                    <IonItem>
-                                        <IonLabel position="stacked">Store Name</IonLabel>
-                                        <IonInput
-                                            value={field.value}
-                                            placeholder="Enter store name"
-                                            onIonInput={(e) => field.onChange(e.detail.value)}
-                                            autocapitalize="sentences"
-                                        />
-                                    </IonItem>
+                                    <FormField label="Name" error={errors.name?.message}>
+                                        <div className="form-control">
+                                            <IonInput
+                                                aria-label="Store name"
+                                                value={field.value}
+                                                placeholder="Enter store name"
+                                                onIonInput={(e) => field.onChange(e.detail.value)}
+                                                autocapitalize="sentences"
+                                            />
+                                        </div>
+                                    </FormField>
                                 )}
                             />
-                            {errors.name && (
-                                <IonText color="danger">
-                                    <p
-                                        style={{
-                                            fontSize: "12px",
-                                            marginLeft: "16px",
-                                        }}
-                                    >
-                                        {errors.name.message}
-                                    </p>
-                                </IonText>
-                            )}
-
-                            <IonButton
-                                expand="block"
-                                type="submit"
-                                disabled={!isValid || updateStore.isPending}
-                                style={{ marginTop: "20px" }}
-                            >
-                                Update
-                            </IonButton>
                         </form>
                     </IonContent>
+                    <EditorFooter>
+                        <IonButton
+                            className="editor-form__submit"
+                            expand="block"
+                            onClick={handleSubmit(onSubmitRename)}
+                            disabled={!isValid || updateStore.isPending}
+                        >
+                            Update
+                        </IonButton>
+                    </EditorFooter>
                 </IonModal>
 
                 {/* Duplicate Store Modal */}
                 <IonModal isOpen={isDuplicateModalOpen} onDidDismiss={closeDuplicateModal}>
-                    <IonHeader>
-                        <IonToolbar>
-                            <IonTitle>Duplicate Store</IonTitle>
-                            <IonButtons slot="end">
-                                <IonButton onClick={closeDuplicateModal}>
-                                    <IonIcon icon={closeOutline} />
-                                </IonButton>
-                            </IonButtons>
-                        </IonToolbar>
-                    </IonHeader>
+                    <ModalHeader title="Duplicate Store" onClose={closeDuplicateModal} />
                     <IonContent className="ion-padding">
-                        <form onSubmit={handleDuplicateSubmit(onSubmitDuplicate)}>
+                        <form
+                            className="editor-form"
+                            onSubmit={handleDuplicateSubmit(onSubmitDuplicate)}
+                        >
                             <Controller
                                 name="name"
                                 control={duplicateControl}
                                 render={({ field }) => (
-                                    <IonItem>
-                                        <IonLabel position="stacked">New Store Name</IonLabel>
-                                        <IonInput
-                                            value={field.value}
-                                            placeholder="Enter store name"
-                                            onIonInput={(e) => field.onChange(e.detail.value)}
-                                            autocapitalize="sentences"
-                                        />
-                                    </IonItem>
+                                    <FormField
+                                        label="New store name"
+                                        error={duplicateErrors.name?.message}
+                                    >
+                                        <div className="form-control">
+                                            <IonInput
+                                                aria-label="New store name"
+                                                value={field.value}
+                                                placeholder="Enter store name"
+                                                onIonInput={(e) => field.onChange(e.detail.value)}
+                                                autocapitalize="sentences"
+                                            />
+                                        </div>
+                                    </FormField>
                                 )}
                             />
-                            {duplicateErrors.name && (
-                                <IonText color="danger">
-                                    <p
-                                        style={{
-                                            fontSize: "12px",
-                                            marginLeft: "16px",
-                                        }}
-                                    >
-                                        {duplicateErrors.name.message}
-                                    </p>
-                                </IonText>
-                            )}
 
                             <Controller
                                 name="includeItems"
                                 control={duplicateControl}
                                 render={({ field }) => (
-                                    <IonItem style={{ marginTop: "16px" }}>
-                                        <IonCheckbox
-                                            checked={field.value}
-                                            onIonChange={(e) => field.onChange(e.detail.checked)}
-                                        >
-                                            Include store items
-                                        </IonCheckbox>
-                                    </IonItem>
+                                    <FormField
+                                        label="Store items"
+                                        hint="Copies the product catalog with aisle/section locations. Shopping list items are never copied."
+                                    >
+                                        <div className="form-control">
+                                            <IonToggle
+                                                labelPlacement="start"
+                                                justify="space-between"
+                                                checked={field.value}
+                                                onIonChange={(e) =>
+                                                    field.onChange(e.detail.checked)
+                                                }
+                                            >
+                                                Copy store items
+                                            </IonToggle>
+                                        </div>
+                                    </FormField>
                                 )}
                             />
-                            <IonText color="medium">
-                                <p
-                                    style={{
-                                        fontSize: "12px",
-                                        marginLeft: "16px",
-                                        marginTop: "8px",
-                                    }}
-                                >
-                                    Copies the product catalog with aisle/section locations.
-                                    Shopping list items are never copied.
-                                </p>
-                            </IonText>
-
-                            <IonButton
-                                expand="block"
-                                type="submit"
-                                disabled={!isDuplicateValid || duplicateStore.isPending}
-                                style={{ marginTop: "20px" }}
-                            >
-                                Duplicate
-                            </IonButton>
                         </form>
                     </IonContent>
+                    <EditorFooter>
+                        <IonButton
+                            className="editor-form__submit"
+                            expand="block"
+                            onClick={handleDuplicateSubmit(onSubmitDuplicate)}
+                            disabled={!isDuplicateValid || duplicateStore.isPending}
+                        >
+                            Duplicate
+                        </IonButton>
+                    </EditorFooter>
                 </IonModal>
 
                 {/* Household Sharing Modal */}
@@ -728,18 +777,20 @@ const LoadingFallback: React.FC = () => (
                 </IonTitle>
             </IonToolbar>
         </IonHeader>
-        <IonContent fullscreen>
-            <IonList>
-                {[1, 2, 3, 4].map((i) => (
-                    <IonItem key={i}>
-                        <IonIcon icon={listOutline} slot="start" />
-                        <IonLabel>
-                            <IonSkeletonText animated style={{ width: "60%" }} />
-                            <IonSkeletonText animated style={{ width: "80%" }} />
-                        </IonLabel>
-                    </IonItem>
-                ))}
-            </IonList>
+        <IonContent className="store-hub">
+            <section className="store-hub__group" aria-hidden="true">
+                <div className="store-hub__rows">
+                    {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="store-hub-row">
+                            {hubIcon(listOutline)}
+                            <span className="store-hub-row__text">
+                                <IonSkeletonText animated className="store-hub__skeleton" />
+                                <IonSkeletonText animated className="store-hub__skeleton" />
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </section>
         </IonContent>
     </>
 );

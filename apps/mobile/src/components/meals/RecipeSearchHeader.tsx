@@ -64,6 +64,7 @@ const RecipeSearchHeader: React.FC<RecipeSearchHeaderProps> = ({
         <div className="meals-search-header">
             <div className="meals-filter-bar">
                 <IonSearchbar
+                    className="search-field"
                     value={query}
                     onIonInput={(e) => onQueryChange(e.detail.value ?? "")}
                     placeholder={placeholder}

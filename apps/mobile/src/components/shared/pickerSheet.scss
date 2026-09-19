@@ -1,0 +1,77 @@
+// Picker sheets (ClickableSelectionModal, LocationPicker): the search field and any mode switch
+// pinned in the header under the title bar, then the options as whole-row buttons on the 16px
+// gutter. The chosen option wears the selected-chip lilac: a faint tint behind lilac text and a
+// lilac check in a 20px end column, so checks line up down the list.
+//
+//   .picker-header ...... pinned header content (search, mode switch), 8px apart
+//   .picker-list ........ a .gutter-rows list (theme/patterns.scss) with 8px below the last row
+//   .picker-option ...... a .row-button row: text, then the check column
+//   .picker-empty ....... "no matches" line on the gutter
+
+.picker-header {
+    display: grid;
+    gap: 8px;
+    padding: 0 16px 8px;
+    background: var(--ion-toolbar-background, var(--ion-background-color));
+}
+
+// Compound: .gutter-rows sets padding: 0 and loads later.
+.gutter-rows.picker-list {
+    padding-bottom: 8px;
+}
+
+// Compound: .row-button loads after this file and would otherwise reset the geometry.
+.picker-option.row-button {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 20px;
+    align-items: center;
+    column-gap: 12px;
+    min-height: 48px;
+    padding: 10px 16px;
+}
+
+.picker-option.row-button[aria-selected="true"] {
+    background: color-mix(in srgb, var(--ion-color-secondary) 10%, transparent);
+}
+
+.picker-option__text {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.picker-option__label {
+    font-size: 1rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.25;
+    color: var(--ion-text-color);
+    overflow-wrap: anywhere;
+}
+
+.picker-option__subtitle {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+    color: var(--ion-color-medium);
+}
+
+.picker-option[aria-selected="true"] .picker-option__label {
+    font-weight: 600;
+    color: var(--ion-color-secondary);
+}
+
+.picker-option__check {
+    justify-self: end;
+    font-size: 1.25rem;
+    color: var(--ion-color-secondary);
+}
+
+.picker-empty {
+    margin: 0;
+    padding: 16px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--ion-color-medium);
+}

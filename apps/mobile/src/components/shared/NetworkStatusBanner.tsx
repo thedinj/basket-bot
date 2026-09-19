@@ -1,4 +1,5 @@
-import { IonText } from "@ionic/react";
+import { IonIcon } from "@ionic/react";
+import { chevronForward } from "ionicons/icons";
 import { useEffect, useState } from "react";
 import { useMutationQueue } from "../../hooks/useMutationQueue";
 import { useNetworkStatus } from "../../hooks/useNetworkStatus";
@@ -45,7 +46,7 @@ export const NetworkStatusBanner: React.FC = () => {
     // One short phrase, no counts and no countdown: this is a status strip on a phone, and
     // the detail belongs in the queue review modal a tap away.
     let message: string;
-    let colorClass: string;
+    let colorClass: "warning" | "primary";
 
     if (isOffline) {
         message = "Network down. Not my doing.";
@@ -68,18 +69,36 @@ export const NetworkStatusBanner: React.FC = () => {
     // Tapping reviews the queue when there is one, otherwise re-probes an unreachable server.
     const isClickable = queueSize > 0 || isUnreachable;
 
+    const className = `network-status-banner network-status-banner--${colorClass}`;
+    const content = (
+        <>
+            <span className="network-status-banner__message">{message}</span>
+            {queueSize > 0 && (
+                <IonIcon
+                    className="network-status-banner__trail"
+                    icon={chevronForward}
+                    aria-hidden="true"
+                />
+            )}
+        </>
+    );
+
     return (
         <>
-            <div
-                className={`network-status-banner network-status-banner--${colorClass} ${
-                    isClickable ? "network-status-banner--clickable" : ""
-                }`}
-                onClick={handleClick}
-            >
-                <IonText color={colorClass}>
-                    <small>{message}</small>
-                </IonText>
-            </div>
+            {isClickable ? (
+                <button
+                    type="button"
+                    className={`${className} network-status-banner--clickable`}
+                    onClick={handleClick}
+                    aria-live="polite"
+                >
+                    {content}
+                </button>
+            ) : (
+                <div className={className} role="status" aria-live="polite">
+                    {content}
+                </div>
+            )}
             <QueueReviewModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
         </>
     );

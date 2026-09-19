@@ -1,4 +1,4 @@
-import { IonInput, IonItem, IonLabel, IonSelect, IonSelectOption, IonText } from "@ionic/react";
+import { IonInput, IonSelect, IonSelectOption } from "@ionic/react";
 import { useState } from "react";
 import { Control, Controller, FieldValues, Path } from "react-hook-form";
 
@@ -16,7 +16,6 @@ interface FormModelSelectProps<T extends FieldValues> {
     label: string;
     options: readonly ModelSelectOption[];
     placeholder?: string;
-    helperText?: string;
     disabled?: boolean;
     /** Wording for the escape-hatch entry. */
     customLabel?: string;
@@ -27,7 +26,7 @@ interface FormModelSelectProps<T extends FieldValues> {
  * fallback, bound to react-hook-form.
  *
  * Knows nothing about LLMs or providers: it takes options, so it sits alongside
- * `FormTextInput` / `FormPasswordInput` as a generic control. That matters here because the
+ * `TextField` / `PasswordField` as a generic control. That matters here because the
  * options come from a server-served catalogue that will list models this build has never
  * heard of, and users point the app at private servers running models no catalogue lists —
  * so a closed dropdown would be wrong, and a bare text field would make everyone type an
@@ -35,6 +34,11 @@ interface FormModelSelectProps<T extends FieldValues> {
  *
  * The field value stays a plain string, so callers treat it exactly like a text input; the
  * custom/listed distinction is presentation only and never reaches storage.
+ *
+ * Renders bare `.form-control` boxes (select, then the custom-name box under it) and an error
+ * line, so it drops into a caller's `FormField`, which owns the visible label and any hint.
+ * The boxes need no styles of their own: theme/forms.scss sizes selects and inputs inside
+ * `.form-control`.
  */
 export function FormModelSelect<T extends FieldValues>({
     name,
@@ -42,7 +46,6 @@ export function FormModelSelect<T extends FieldValues>({
     label,
     options,
     placeholder,
-    helperText,
     disabled = false,
     customLabel = "Custom…",
 }: FormModelSelectProps<T>) {
@@ -55,7 +58,6 @@ export function FormModelSelect<T extends FieldValues>({
                     label={label}
                     options={options}
                     placeholder={placeholder}
-                    helperText={helperText}
                     disabled={disabled}
                     customLabel={customLabel}
                     value={(field.value as string | undefined) ?? ""}
@@ -71,7 +73,6 @@ interface FieldProps {
     label: string;
     options: readonly ModelSelectOption[];
     placeholder?: string;
-    helperText?: string;
     disabled: boolean;
     customLabel: string;
     value: string;
@@ -87,7 +88,6 @@ const FormModelSelectField: React.FC<FieldProps> = ({
     label,
     options,
     placeholder,
-    helperText,
     disabled,
     customLabel,
     value,
@@ -117,9 +117,9 @@ const FormModelSelectField: React.FC<FieldProps> = ({
     return (
         <>
             {showSelect && (
-                <IonItem>
-                    <IonLabel position="stacked">{label}</IonLabel>
+                <div className="form-control">
                     <IonSelect
+                        aria-label={label}
                         value={isCustom || !isListed ? CUSTOM_VALUE : value}
                         placeholder={placeholder}
                         onIonChange={(e) => handleSelect(e.detail.value as string)}
@@ -133,41 +133,27 @@ const FormModelSelectField: React.FC<FieldProps> = ({
                         ))}
                         <IonSelectOption value={CUSTOM_VALUE}>{customLabel}</IonSelectOption>
                     </IonSelect>
-                </IonItem>
+                </div>
             )}
 
             {showInput && (
-                <IonItem>
-                    <IonLabel position="stacked">{showSelect ? "Model name" : label}</IonLabel>
+                <div className="form-control">
                     <IonInput
+                        aria-label={showSelect ? `${label} name` : label}
                         value={value}
                         type="text"
-                        placeholder={placeholder}
+                        autocapitalize="off"
+                        placeholder={showSelect ? "Model name" : placeholder}
                         disabled={disabled}
                         onIonInput={(e) => onChange(e.detail.value?.trim() ?? "")}
                     />
-                </IonItem>
+                </div>
             )}
 
-            {helperText && !errorMessage && (
-                <IonText color="medium">
-                    <p
-                        className="ion-padding-start ion-padding-end"
-                        style={{ fontSize: "0.875rem", marginTop: "0.25rem" }}
-                    >
-                        {helperText}
-                    </p>
-                </IonText>
-            )}
             {errorMessage && (
-                <IonText color="danger">
-                    <p
-                        className="ion-padding-start ion-padding-end"
-                        style={{ fontSize: "0.875rem", marginTop: "0.25rem" }}
-                    >
-                        {errorMessage}
-                    </p>
-                </IonText>
+                <p className="form-field__error" role="alert">
+                    {errorMessage}
+                </p>
             )}
         </>
     );

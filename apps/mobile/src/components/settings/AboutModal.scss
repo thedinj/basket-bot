@@ -1,0 +1,157 @@
+// About (app menu > About), plus the developer tools it unlocks. Every edge on the 16px gutter:
+// the mark and name as a masthead, then ruled lilac sections holding a label/value .tally and,
+// once unlocked, a list of tool rows.
+
+.about-content {
+    --padding-bottom: 24px;
+}
+
+// ── Masthead ─────────────────────────────────────────────────────────────────
+
+.about-hero {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    align-items: center;
+    column-gap: 12px;
+    padding: 24px 16px 0;
+
+    &__icon {
+        display: block;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    &__text {
+        min-width: 0;
+    }
+
+    &__name {
+        margin: 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        line-height: 1.1;
+        color: var(--ion-text-color);
+    }
+
+    &__tagline {
+        margin: 4px 0 0;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        line-height: 1.3;
+        color: var(--ion-color-medium);
+    }
+}
+
+// ── Sections ─────────────────────────────────────────────────────────────────
+
+.about-section {
+    padding: 24px 16px 0;
+
+    > .ruled-label {
+        margin-bottom: 4px;
+    }
+}
+
+// The label/value table is the shared .tally (theme/patterns.scss). Only the build row is ours:
+// it answers taps anywhere along it (the 7-tap developer unlock), with the button's hit area
+// stretched from screen edge to screen edge like a list row's. Its dt/dd are wrapped so the
+// stretch has a row to measure against; the wrapper spans the tally's two columns as a subgrid
+// and draws the row's hairline itself (inside it, .tally drops its dt/dd rule as "last").
+.about-tally {
+    &__tap-row {
+        position: relative;
+        display: grid;
+        grid-column: 1 / -1;
+        grid-template-columns: subgrid;
+        border-bottom: 1px solid var(--ion-color-step-150);
+    }
+
+    &__tap {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+
+        &::after {
+            content: "";
+            position: absolute;
+            inset: 0 -16px;
+            transition: background-color 0.12s ease-out;
+        }
+
+        &:active::after {
+            background: color-mix(in srgb, var(--ion-text-color) 6%, transparent);
+        }
+
+        &:focus-visible {
+            outline: none;
+        }
+
+        &:focus-visible::after {
+            outline: 2px solid var(--ion-color-primary);
+            outline-offset: -2px;
+        }
+    }
+}
+
+// ── Developer tools ──────────────────────────────────────────────────────────
+//
+// A .gutter-rows list of .row-button rows, pulled out to the screen edges: glyph on the
+// gutter, name and hint 12px past it, a chevron on the far gutter.
+
+.about-tools {
+    margin-inline: -16px;
+
+    // Compound: .row-button loads after this file and would otherwise reset the geometry.
+    &__row.row-button {
+        display: grid;
+        grid-template-columns: 20px minmax(0, 1fr) auto;
+        align-items: center;
+        column-gap: 12px;
+        min-height: 44px;
+        padding: 10px 16px;
+    }
+
+    &__icon {
+        font-size: 1.25rem;
+        color: var(--ion-color-warning);
+    }
+
+    &__text {
+        display: grid;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    &__name {
+        font-size: 1rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--ion-text-color);
+    }
+
+    &__hint {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        line-height: 1.3;
+        color: var(--ion-color-medium);
+    }
+
+    &__chevron {
+        font-size: 1.125rem;
+        color: var(--ion-color-medium);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .about-tally__tap::after {
+        transition: none;
+    }
+}

@@ -1,0 +1,32 @@
+// Store items sheet. The search row sits in the IonHeader under the title bar, so it stays put
+// while the list scrolls and the Favorites / All Items headers pin to the content's own top.
+// Both edges on the 16px gutter; the field itself is the shared .search-field
+// (theme/patterns.scss).
+
+.store-items-search {
+    padding: 0 16px 8px;
+    background: var(--ion-toolbar-background, var(--ion-background-color));
+}
+
+// Loading placeholders, sized to what they stand in for.
+.store-items-skeleton__title {
+    width: 140px;
+}
+
+.store-items-skeleton__aisle {
+    width: 96px;
+    height: 1rem;
+    margin: 0;
+}
+
+.store-items-skeleton__star {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    border-radius: 50%;
+}
+
+.store-items-skeleton__name {
+    width: 60%;
+    margin: 0;
+}

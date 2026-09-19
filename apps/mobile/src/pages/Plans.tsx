@@ -94,7 +94,7 @@ const PlansHistory: React.FC<{ householdId: string | null }> = ({ householdId })
                 const dispatched = plan.dispatchedAt ? new Date(plan.dispatchedAt) : null;
 
                 return (
-                    <article key={plan.id} className="plan-history-card">
+                    <article key={plan.id} className="surface-card plan-history-card">
                         <header className="plan-history-card__header">
                             <span className="plan-history-card__date">
                                 {dispatched

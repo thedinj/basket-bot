@@ -31,7 +31,9 @@ export const Shield: React.FC = () => {
     }
 
     const shieldElement = (
-        <div className={`shield-overlay ${showContent ? "show-content" : ""}`}>
+        // aria-busy marks the blocked state from the first frame; the robot's status line (inside
+        // .shield-content) is the live region that says what is happening.
+        <div className={`shield-overlay ${showContent ? "show-content" : ""}`} aria-busy="true">
             <div className="shield-content">
                 <RobotLoadingContent message={currentMessage} />
             </div>

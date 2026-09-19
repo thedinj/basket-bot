@@ -1,22 +1,11 @@
-import {
-    IonButton,
-    IonButtons,
-    IonCheckbox,
-    IonContent,
-    IonFooter,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonModal,
-    IonSearchbar,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
-import { closeOutline } from "ionicons/icons";
+import { IonButton, IonContent, IonIcon, IonModal, IonSearchbar } from "@ionic/react";
+import { checkmark } from "ionicons/icons";
 import React, { useCallback, useRef, useMemo, useState } from "react";
 import { normalizeForSearch } from "../../utils/stringUtils";
+import { EditorFooter } from "./EditorFooter";
+import { ModalHeader } from "./ModalHeader";
+
+import "./pickerSheet.scss";
 
 export interface SelectableItem {
     id: string;
@@ -55,7 +44,7 @@ interface ClickableSelectionModalProps {
  * Features:
  * - Click an item to select it and automatically close the modal
  * - Optional search/filter functionality
- * - Checkbox indicator for currently selected item
+ * - The currently selected item tinted lilac, with a check
  * - Optional clear button to set value back to null
  * - Clean, simple UX replacing IonSelect + OK/Cancel patterns
  */
@@ -153,63 +142,75 @@ export const ClickableSelectionModal: React.FC<ClickableSelectionModalProps> = (
             onDidPresent={() => showSearch && searchbarRef.current?.setFocus()}
             breakpoints={size === "small" ? [0, 0.5] : undefined}
             initialBreakpoint={size === "small" ? 0.5 : undefined}
-            className={size === "small" ? "small-modal" : undefined}
         >
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>{title}</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={handleDismiss}>
-                            <IonIcon icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
+            <ModalHeader title={title} onClose={handleDismiss}>
                 {showSearch && (
-                    <IonToolbar>
+                    <div className="picker-header">
                         <IonSearchbar
                             ref={searchbarRef}
+                            className="search-field"
                             value={searchText}
                             onIonInput={handleSearchInput}
                             placeholder={searchPlaceholder}
                             debounce={300}
                         />
-                    </IonToolbar>
+                    </div>
                 )}
-            </IonHeader>
+            </ModalHeader>
             <IonContent>
-                <IonList>
-                    {filteredItems.length === 0 ? (
-                        <IonItem>
-                            <IonLabel color="medium">
-                                {searchText ? "No matching items found" : "No items available"}
-                            </IonLabel>
-                        </IonItem>
-                    ) : (
-                        filteredItems.map((item) => (
-                            <IonItem
-                                key={item.id}
-                                button
-                                onClick={() => handleItemClick(item.id)}
-                                detail={false}
-                            >
-                                <IonLabel>
-                                    {item.label}
-                                    {item.subtitle && <p>{item.subtitle}</p>}
-                                </IonLabel>
-                                {value === item.id && <IonCheckbox slot="end" checked disabled />}
-                            </IonItem>
-                        ))
-                    )}
-                </IonList>
+                {filteredItems.length === 0 ? (
+                    <p className="picker-empty">
+                        {searchText ? "No matching items found" : "No items available"}
+                    </p>
+                ) : (
+                    <ul className="gutter-rows picker-list" role="listbox" aria-label={title}>
+                        {filteredItems.map((item) => {
+                            const selected = value === item.id;
+                            return (
+                                <li key={item.id} role="presentation">
+                                    <button
+                                        type="button"
+                                        role="option"
+                                        aria-selected={selected}
+                                        className="row-button picker-option"
+                                        onClick={() => handleItemClick(item.id)}
+                                    >
+                                        <span className="picker-option__text">
+                                            <span className="picker-option__label">
+                                                {item.label}
+                                            </span>
+                                            {item.subtitle && (
+                                                <span className="picker-option__subtitle">
+                                                    {item.subtitle}
+                                                </span>
+                                            )}
+                                        </span>
+                                        {selected && (
+                                            <IonIcon
+                                                className="picker-option__check"
+                                                icon={checkmark}
+                                                aria-hidden="true"
+                                            />
+                                        )}
+                                    </button>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
             </IonContent>
             {allowClear && value && (
-                <IonFooter>
-                    <IonToolbar>
-                        <IonButton expand="block" fill="clear" color="medium" onClick={handleClear}>
-                            Clear Selection
-                        </IonButton>
-                    </IonToolbar>
-                </IonFooter>
+                <EditorFooter>
+                    <IonButton
+                        expand="block"
+                        fill="outline"
+                        color="medium"
+                        className="editor-form__submit"
+                        onClick={handleClear}
+                    >
+                        Clear selection
+                    </IonButton>
+                </EditorFooter>
             )}
         </IonModal>
     );

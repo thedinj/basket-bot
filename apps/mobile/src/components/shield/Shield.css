@@ -8,10 +8,7 @@
  */
 .shield-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
+    inset: 0;
     z-index: 15000;
     pointer-events: auto; /* Block all interactions */
     cursor: progress;
@@ -19,27 +16,36 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(var(--ion-background-color-rgb), 0.35);
+    padding-inline: 16px;
+    box-sizing: border-box;
+    background: color-mix(in srgb, var(--ion-background-color) 35%, transparent);
     transition:
         background 300ms ease-in-out,
         backdrop-filter 300ms ease-in-out;
 }
 
 .shield-overlay.show-content {
-    background: rgba(var(--ion-background-color-rgb), 0.95);
+    background: color-mix(in srgb, var(--ion-background-color) 95%, transparent);
     backdrop-filter: blur(10px);
 }
 
+/* RobotLoadingContent spaces the robot and its line; this only fades the pair in. */
 .shield-content {
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
-    gap: 16px;
+    width: 100%;
     opacity: 0;
     transition: opacity 300ms ease-in-out;
 }
 
 .shield-overlay.show-content .shield-content {
     opacity: 1;
+}
+
+/* Still escalates after 500ms (the delay is in Shield.tsx), just without the fades. */
+@media (prefers-reduced-motion: reduce) {
+    .shield-overlay,
+    .shield-content {
+        transition: none;
+    }
 }

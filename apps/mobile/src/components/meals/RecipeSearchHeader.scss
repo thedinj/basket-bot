@@ -1,6 +1,6 @@
 // Search + filter header, pinned over the recipe grid. Both edges sit on the 16px gutter, like
-// the grid below. The search field and the filter button are the same 44px height, radius, fill
-// and hairline as the editor fields (theme/forms.scss), so the two read as one control row.
+// the grid below. The search field (.search-field, theme/patterns.scss) and the filter button
+// are the same 44px height, radius, fill and hairline, so the two read as one control row.
 
 .meals-search-header {
     position: sticky;
@@ -14,51 +14,6 @@
     display: flex;
     align-items: center;
     gap: 8px;
-
-    // Nested under the bar (and on Ionic's own scoping classes) so these beat Ionic's md
-    // searchbar: 8px padding, a 42px input, the icon at 16px and the text at 55px.
-    ion-searchbar {
-        flex: 1;
-        min-width: 0;
-        height: 44px;
-        min-height: 44px;
-        padding: 0;
-        --background: var(--ion-color-step-50);
-        --border-radius: 10px;
-        // The hairline is an inset shadow on the input, so it keeps the input's radius and
-        // takes no layout space.
-        --box-shadow: inset 0 0 0 1px var(--ion-color-step-200);
-        --color: var(--ion-text-color);
-        --placeholder-color: var(--ion-color-medium);
-        --placeholder-opacity: 1;
-        --icon-color: var(--ion-color-medium);
-        --clear-button-color: var(--ion-color-medium);
-
-        .searchbar-input-container {
-            height: 44px;
-        }
-
-        // Icon at the fields' 12px inset; text 8px after the 20px icon, at 40px.
-        .searchbar-input.sc-ion-searchbar-md {
-            box-sizing: border-box;
-            height: 44px;
-            padding-block: 0;
-            padding-inline: 40px 44px;
-            font-size: 1rem;
-            line-height: normal;
-        }
-
-        .searchbar-search-icon.sc-ion-searchbar-md {
-            top: 12px;
-            left: 12px;
-            width: 20px;
-            height: 20px;
-        }
-
-        .searchbar-input-container:focus-within .searchbar-input {
-            box-shadow: inset 0 0 0 1px var(--ion-color-primary);
-        }
-    }
 }
 
 .meals-filter-btn {

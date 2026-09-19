@@ -41,19 +41,17 @@ export const QuantityAndUnitRow = () => {
                         name="unitId"
                         control={control}
                         render={({ field: { onChange, value } }) => (
-                            <div className="form-control qty-unit-row__unit">
-                                <ClickableSelectionField
-                                    items={unitItems}
-                                    value={value}
-                                    onSelect={onChange}
-                                    placeholder="No unit"
-                                    modalTitle="Select Unit"
-                                    showSearch={true}
-                                    searchPlaceholder="Search units..."
-                                    lines="none"
-                                    showChevron
-                                />
-                            </div>
+                            <ClickableSelectionField
+                                className="qty-unit-row__unit"
+                                items={unitItems}
+                                value={value}
+                                onSelect={onChange}
+                                placeholder="No unit"
+                                modalTitle="Select Unit"
+                                showSearch={true}
+                                searchPlaceholder="Search units..."
+                                showChevron
+                            />
                         )}
                     />
                 )}

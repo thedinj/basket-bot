@@ -1,25 +1,19 @@
 import {
     IonButton,
-    IonButtons,
     IonContent,
-    IonHeader,
     IonIcon,
-    IonItem,
+    IonInput,
+    IonInputPasswordToggle,
     IonLabel,
-    IonList,
-    IonListHeader,
     IonModal,
-    IonNote,
     IonSegment,
     IonSegmentButton,
     IonSelect,
     IonSelectOption,
-    IonTitle,
-    IonToolbar,
+    IonSpinner,
 } from "@ionic/react";
 import {
     addOutline,
-    closeOutline,
     moonOutline,
     phonePortraitOutline,
     removeOutline,
@@ -32,14 +26,22 @@ import { LLM_TIERS } from "@basket-bot/core";
 import { configForProvider } from "../../llm/config/llmConfig";
 import { MODEL_FIELDS } from "../../settings/llmSettings";
 import { getProviderOrDefault, listProviders } from "../../llm/providers/registry";
-import { LLM_COLOR, LLM_ICON_SRC } from "../../llm/shared";
+import { LLM_ICON_SRC } from "../../llm/shared";
 import type { SettingsFormData } from "../../settings/settingsSchema";
 import { useSettingsForm } from "../../settings/useSettingsForm";
 import { applyTheme } from "../../theme/applyTheme";
-import { FormPasswordInput } from "../form/FormPasswordInput";
-import { FormTextInput } from "../form/FormTextInput";
+import { EditorFooter } from "../shared/EditorFooter";
+import { FormField } from "../shared/FormField";
+import { ModalHeader } from "../shared/ModalHeader";
 import { useAppHeader } from "../layout/useAppHeader";
 import { ModelTierField } from "./ModelTierField";
+
+import "./SettingsModal.scss";
+
+const FORM_ID = "settings-form";
+const MIN_MEALS = 1;
+const MAX_MEALS = 12;
+const DEFAULT_MEALS = 4;
 
 const SettingsModal: React.FC = () => {
     const { form, performSave, isSubmitting, catalog, isCatalogLoading } = useSettingsForm();
@@ -98,228 +100,285 @@ const SettingsModal: React.FC = () => {
 
     return (
         <IonModal isOpen={isModalOpen("settings")} onDidDismiss={handleDismiss}>
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>Settings</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={closeModal}>
-                            <IonIcon icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+            <ModalHeader title="Settings" onClose={closeModal} />
             <IonContent className="ion-padding">
-                <form onSubmit={handleFormSubmit}>
-                    {/* Appearance Section */}
-                    <IonList>
-                        <IonListHeader>
-                            <h2>Appearance</h2>
-                        </IonListHeader>
-
-                        <div className="ion-padding-horizontal ion-padding-bottom">
+                <form id={FORM_ID} className="settings" onSubmit={handleFormSubmit}>
+                    <section className="settings__section" aria-labelledby="settings-appearance">
+                        <h2 id="settings-appearance" className="ruled-label">
+                            Appearance
+                        </h2>
+                        <div className="editor-form">
                             <Controller
                                 name="themeMode"
                                 control={form.control}
                                 render={({ field }) => (
-                                    <IonSegment
-                                        value={field.value ?? "system"}
-                                        onIonChange={(e) => {
-                                            const newMode = e.detail.value as string;
-                                            field.onChange(newMode);
-                                            applyTheme(newMode);
-                                        }}
-                                    >
-                                        <IonSegmentButton value="system">
-                                            <IonIcon icon={phonePortraitOutline} />
-                                            <IonLabel>System</IonLabel>
-                                        </IonSegmentButton>
-                                        <IonSegmentButton value="light">
-                                            <IonIcon icon={sunnyOutline} />
-                                            <IonLabel>Light</IonLabel>
-                                        </IonSegmentButton>
-                                        <IonSegmentButton value="dark">
-                                            <IonIcon icon={moonOutline} />
-                                            <IonLabel>Dark</IonLabel>
-                                        </IonSegmentButton>
-                                    </IonSegment>
-                                )}
-                            />
-                        </div>
-                    </IonList>
-
-                    {/* Meal Planning Section */}
-                    <IonList>
-                        <IonListHeader>
-                            <h2>Meal Planning</h2>
-                        </IonListHeader>
-
-                        <Controller
-                            name="defaultMealPlanSlots"
-                            control={form.control}
-                            render={({ field, fieldState: { error } }) => (
-                                <IonItem>
-                                    <IonLabel>Default meal count</IonLabel>
-                                    <div
-                                        slot="end"
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "8px",
-                                        }}
-                                    >
-                                        <IonButton
-                                            fill="clear"
-                                            size="small"
-                                            disabled={isSubmitting || (field.value ?? 4) <= 1}
-                                            onClick={() =>
-                                                field.onChange(Math.max(1, (field.value ?? 4) - 1))
-                                            }
-                                        >
-                                            <IonIcon icon={removeOutline} slot="icon-only" />
-                                        </IonButton>
-                                        <IonNote
-                                            style={{
-                                                minWidth: "24px",
-                                                textAlign: "center",
-                                                fontSize: "1.1rem",
-                                                fontWeight: 600,
+                                    <FormField label="Theme">
+                                        <IonSegment
+                                            className="editor-mode-switch settings__theme"
+                                            aria-label="Theme"
+                                            value={field.value ?? "system"}
+                                            onIonChange={(e) => {
+                                                const newMode = e.detail.value as string;
+                                                field.onChange(newMode);
+                                                applyTheme(newMode);
                                             }}
                                         >
-                                            {field.value ?? 4}
-                                        </IonNote>
-                                        <IonButton
-                                            fill="clear"
-                                            size="small"
-                                            disabled={isSubmitting || (field.value ?? 4) >= 12}
-                                            onClick={() =>
-                                                field.onChange(Math.min(12, (field.value ?? 4) + 1))
-                                            }
-                                        >
-                                            <IonIcon icon={addOutline} slot="icon-only" />
-                                        </IonButton>
-                                    </div>
-                                    {error && (
-                                        <IonNote color="danger" slot="helper">
-                                            {error.message}
-                                        </IonNote>
-                                    )}
-                                </IonItem>
-                            )}
-                        />
-                        {visibleStores.length > 0 && (
-                            <Controller
-                                name="defaultMealPlanStore"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <IonItem>
-                                        <IonLabel>Default store</IonLabel>
-                                        <IonSelect
-                                            value={field.value ?? ""}
-                                            onIonChange={(e) =>
-                                                field.onChange(e.detail.value || undefined)
-                                            }
-                                            interface="action-sheet"
-                                            placeholder="Select a store"
-                                            disabled={isSubmitting}
-                                        >
-                                            <IonSelectOption value="">(none)</IonSelectOption>
-                                            {visibleStores.map((s) => (
-                                                <IonSelectOption key={s.id} value={s.id}>
-                                                    {s.name}
-                                                </IonSelectOption>
-                                            ))}
-                                        </IonSelect>
-                                    </IonItem>
+                                            <IonSegmentButton value="system" layout="icon-start">
+                                                <IonIcon
+                                                    icon={phonePortraitOutline}
+                                                    aria-hidden="true"
+                                                />
+                                                <IonLabel>System</IonLabel>
+                                            </IonSegmentButton>
+                                            <IonSegmentButton value="light" layout="icon-start">
+                                                <IonIcon icon={sunnyOutline} aria-hidden="true" />
+                                                <IonLabel>Light</IonLabel>
+                                            </IonSegmentButton>
+                                            <IonSegmentButton value="dark" layout="icon-start">
+                                                <IonIcon icon={moonOutline} aria-hidden="true" />
+                                                <IonLabel>Dark</IonLabel>
+                                            </IonSegmentButton>
+                                        </IonSegment>
+                                    </FormField>
                                 )}
                             />
-                        )}
-                    </IonList>
-
-                    {/* API Settings Section */}
-                    <IonList>
-                        <IonListHeader>
-                            <h2>
-                                <span style={{ color: LLM_COLOR }}>
-                                    <IonIcon
-                                        src={LLM_ICON_SRC}
-                                        style={{
-                                            position: "relative",
-                                            top: "3px",
-                                        }}
-                                    />
-                                </span>{" "}
-                                API Configuration
-                            </h2>
-                        </IonListHeader>
-
-                        <Controller
-                            name="llmProviderId"
-                            control={form.control}
-                            render={({ field }) => (
-                                <IonItem>
-                                    <IonLabel>Provider</IonLabel>
-                                    <IonSelect
-                                        value={field.value ?? selectedProvider.id}
-                                        onIonChange={(e) => handleProviderChange(e.detail.value)}
-                                        interface="action-sheet"
-                                        disabled={isSubmitting}
-                                    >
-                                        {listProviders().map((option) => (
-                                            <IonSelectOption key={option.id} value={option.id}>
-                                                {option.label}
-                                            </IonSelectOption>
-                                        ))}
-                                    </IonSelect>
-                                </IonItem>
-                            )}
-                        />
-                        <IonItem lines="none">
-                            <IonNote>{selectedProvider.hint}</IonNote>
-                        </IonItem>
-
-                        {selectedProvider.baseUrlEditable && (
-                            <FormTextInput
-                                name="llmBaseUrl"
-                                control={form.control}
-                                label="Base URL"
-                                placeholder={selectedProvider.defaultBaseUrl}
-                                helperText="The OpenAI-compatible endpoint, including any /v1 suffix"
-                                disabled={isSubmitting}
-                            />
-                        )}
-
-                        {selectedProvider.requiresApiKey && (
-                            <FormPasswordInput
-                                name="llmApiKey"
-                                control={form.control}
-                                label={`${selectedProvider.label} API Key`}
-                                placeholder={selectedProvider.apiKeyPlaceholder}
-                                helperText={`Enter your ${selectedProvider.label} API key for AI-powered features`}
-                                disabled={isSubmitting}
-                            />
-                        )}
-
-                        {LLM_TIERS.map((tier) => (
-                            <ModelTierField
-                                key={tier}
-                                tier={tier}
-                                control={form.control}
-                                setValue={form.setValue}
-                                providerId={selectedProvider.id}
-                                catalog={catalog}
-                                isCatalogLoading={isCatalogLoading}
-                                disabled={isSubmitting}
-                            />
-                        ))}
-
-                        <div className="ion-padding">
-                            <IonButton expand="block" type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? "Saving..." : "Save Settings"}
-                            </IonButton>
                         </div>
-                    </IonList>
+                    </section>
+
+                    <section className="settings__section" aria-labelledby="settings-meals">
+                        <h2 id="settings-meals" className="ruled-label">
+                            Meal planning
+                        </h2>
+                        <div className="editor-form">
+                            <Controller
+                                name="defaultMealPlanSlots"
+                                control={form.control}
+                                render={({ field, fieldState: { error } }) => {
+                                    const count = field.value ?? DEFAULT_MEALS;
+                                    return (
+                                        <FormField
+                                            label="Default meal count"
+                                            error={error?.message}
+                                        >
+                                            <div
+                                                className="form-control settings__stepper"
+                                                role="group"
+                                                aria-label="Default meal count"
+                                            >
+                                                <button
+                                                    type="button"
+                                                    className="settings__stepper-btn"
+                                                    aria-label="Fewer meals"
+                                                    disabled={isSubmitting || count <= MIN_MEALS}
+                                                    onClick={() =>
+                                                        field.onChange(
+                                                            Math.max(MIN_MEALS, count - 1)
+                                                        )
+                                                    }
+                                                >
+                                                    <IonIcon
+                                                        icon={removeOutline}
+                                                        aria-hidden="true"
+                                                    />
+                                                </button>
+                                                <output
+                                                    className="settings__stepper-value"
+                                                    aria-live="polite"
+                                                >
+                                                    <span className="settings__stepper-num">
+                                                        {count}
+                                                    </span>
+                                                    <span className="settings__stepper-unit">
+                                                        {count === 1 ? "meal" : "meals"}
+                                                    </span>
+                                                </output>
+                                                <button
+                                                    type="button"
+                                                    className="settings__stepper-btn"
+                                                    aria-label="More meals"
+                                                    disabled={isSubmitting || count >= MAX_MEALS}
+                                                    onClick={() =>
+                                                        field.onChange(
+                                                            Math.min(MAX_MEALS, count + 1)
+                                                        )
+                                                    }
+                                                >
+                                                    <IonIcon icon={addOutline} aria-hidden="true" />
+                                                </button>
+                                            </div>
+                                        </FormField>
+                                    );
+                                }}
+                            />
+
+                            {visibleStores.length > 0 && (
+                                <Controller
+                                    name="defaultMealPlanStore"
+                                    control={form.control}
+                                    render={({ field }) => (
+                                        <FormField label="Default store">
+                                            <div className="form-control">
+                                                <IonSelect
+                                                    aria-label="Default store"
+                                                    value={field.value ?? ""}
+                                                    onIonChange={(e) =>
+                                                        field.onChange(e.detail.value || undefined)
+                                                    }
+                                                    interface="action-sheet"
+                                                    placeholder="None"
+                                                    disabled={isSubmitting}
+                                                >
+                                                    <IonSelectOption value="">None</IonSelectOption>
+                                                    {visibleStores.map((s) => (
+                                                        <IonSelectOption key={s.id} value={s.id}>
+                                                            {s.name}
+                                                        </IonSelectOption>
+                                                    ))}
+                                                </IonSelect>
+                                            </div>
+                                        </FormField>
+                                    )}
+                                />
+                            )}
+                        </div>
+                    </section>
+
+                    <section className="settings__section" aria-labelledby="settings-ai">
+                        <h2 id="settings-ai" className="ruled-label">
+                            <span className="settings__heading-text">
+                                <IonIcon src={LLM_ICON_SRC} aria-hidden="true" />
+                                AI provider
+                            </span>
+                        </h2>
+                        <div className="editor-form">
+                            <Controller
+                                name="llmProviderId"
+                                control={form.control}
+                                render={({ field }) => (
+                                    <FormField label="Provider" hint={selectedProvider.hint}>
+                                        <div className="form-control">
+                                            <IonSelect
+                                                aria-label="Provider"
+                                                value={field.value ?? selectedProvider.id}
+                                                onIonChange={(e) =>
+                                                    handleProviderChange(e.detail.value)
+                                                }
+                                                interface="action-sheet"
+                                                disabled={isSubmitting}
+                                            >
+                                                {listProviders().map((option) => (
+                                                    <IonSelectOption
+                                                        key={option.id}
+                                                        value={option.id}
+                                                    >
+                                                        {option.label}
+                                                    </IonSelectOption>
+                                                ))}
+                                            </IonSelect>
+                                        </div>
+                                    </FormField>
+                                )}
+                            />
+
+                            {selectedProvider.baseUrlEditable && (
+                                <Controller
+                                    name="llmBaseUrl"
+                                    control={form.control}
+                                    render={({ field, fieldState: { error } }) => (
+                                        <FormField
+                                            label="Base URL"
+                                            error={error?.message}
+                                            hint="The OpenAI-compatible endpoint, including any /v1 suffix."
+                                        >
+                                            <div className="form-control">
+                                                <IonInput
+                                                    aria-label="Base URL"
+                                                    type="url"
+                                                    inputmode="url"
+                                                    autocapitalize="off"
+                                                    value={field.value ?? ""}
+                                                    placeholder={selectedProvider.defaultBaseUrl}
+                                                    disabled={isSubmitting}
+                                                    onIonInput={(e) =>
+                                                        field.onChange(e.detail.value?.trim() ?? "")
+                                                    }
+                                                    onIonBlur={field.onBlur}
+                                                />
+                                            </div>
+                                        </FormField>
+                                    )}
+                                />
+                            )}
+
+                            {selectedProvider.requiresApiKey && (
+                                <Controller
+                                    name="llmApiKey"
+                                    control={form.control}
+                                    render={({ field, fieldState: { error } }) => (
+                                        <FormField
+                                            label={`${selectedProvider.label} API key`}
+                                            error={error?.message}
+                                            hint="Required for AI features. Kept in this device's secure storage."
+                                        >
+                                            <div className="form-control">
+                                                <IonInput
+                                                    aria-label={`${selectedProvider.label} API key`}
+                                                    type="password"
+                                                    autocapitalize="off"
+                                                    value={field.value ?? ""}
+                                                    placeholder={selectedProvider.apiKeyPlaceholder}
+                                                    disabled={isSubmitting}
+                                                    onIonInput={(e) =>
+                                                        field.onChange(e.detail.value?.trim() ?? "")
+                                                    }
+                                                    onIonBlur={field.onBlur}
+                                                >
+                                                    <IonInputPasswordToggle
+                                                        slot="end"
+                                                        color="medium"
+                                                    />
+                                                </IonInput>
+                                            </div>
+                                        </FormField>
+                                    )}
+                                />
+                            )}
+                        </div>
+                    </section>
+
+                    <section className="settings__section" aria-labelledby="settings-models">
+                        <h2 id="settings-models" className="ruled-label">
+                            Models
+                        </h2>
+                        <div className="editor-form">
+                            {LLM_TIERS.map((tier) => (
+                                <ModelTierField
+                                    key={tier}
+                                    tier={tier}
+                                    control={form.control}
+                                    setValue={form.setValue}
+                                    providerId={selectedProvider.id}
+                                    catalog={catalog}
+                                    isCatalogLoading={isCatalogLoading}
+                                    disabled={isSubmitting}
+                                />
+                            ))}
+                        </div>
+                    </section>
                 </form>
             </IonContent>
+
+            <EditorFooter>
+                <IonButton
+                    className="editor-form__submit"
+                    expand="block"
+                    type="submit"
+                    form={FORM_ID}
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? <IonSpinner name="dots" /> : "Save settings"}
+                </IonButton>
+            </EditorFooter>
         </IonModal>
     );
 };

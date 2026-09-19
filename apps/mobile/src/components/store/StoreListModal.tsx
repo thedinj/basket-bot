@@ -1,28 +1,23 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     IonButton,
-    IonButtons,
     IonContent,
-    IonHeader,
     IonIcon,
     IonInput,
     IonItem,
-    IonLabel,
     IonList,
     IonModal,
     IonReorder,
     IonReorderGroup,
     IonSkeletonText,
-    IonText,
-    IonTitle,
-    IonToolbar,
     type ItemReorderCustomEvent,
 } from "@ionic/react";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
+import clsx from "clsx";
 import {
     add,
     checkmarkOutline,
-    closeOutline,
+    chevronForward,
     eyeOffOutline,
     reorderThreeOutline,
     storefrontOutline,
@@ -34,11 +29,16 @@ import { z } from "zod";
 import { useCreateStore, useReorderStores, useStores } from "../../db/hooks";
 import { sortStoresByPreference } from "../../utils/storeSort";
 import { useAppHeader } from "../layout/useAppHeader";
+import { EditorFooter } from "../shared/EditorFooter";
+import { FormField } from "../shared/FormField";
+import { ModalHeader } from "../shared/ModalHeader";
 import TabEmptyState from "../shared/TabEmptyState";
 import StoreManagementModal from "./StoreManagementModal";
 import StoreTemplatePicker from "./StoreTemplatePicker";
 
-import "./StoreListModal.scss";
+import "./StoreSheets.scss";
+
+const STORE_GLYPH_SRC = "/img/Store.svg";
 
 const storeFormSchema = z.object({
     name: z
@@ -133,43 +133,38 @@ const StoreListModal: React.FC = () => {
         [sortedStores, reorderStores]
     );
 
+    const hasStores = !isLoading && !!stores?.length;
+
     return (
         <>
             <IonModal isOpen={isOpen} onDidDismiss={handleModalDismiss}>
-                <IonHeader>
-                    <IonToolbar>
-                        {stores && stores.length > 1 && (
-                            <IonButtons slot="start">
-                                <IonButton
-                                    onClick={() => setReorderMode((prev) => !prev)}
-                                    color={reorderMode ? "primary" : undefined}
-                                    aria-label={reorderMode ? "Done reordering" : "Reorder stores"}
-                                    aria-pressed={reorderMode}
-                                >
-                                    <IonIcon
-                                        slot="icon-only"
-                                        icon={reorderMode ? checkmarkOutline : swapVerticalOutline}
-                                    />
-                                </IonButton>
-                            </IonButtons>
-                        )}
-                        <IonTitle>Stores</IonTitle>
-                        <IonButtons slot="end">
-                            <IonButton onClick={handleCloseButton}>
-                                <IonIcon icon={closeOutline} />
+                <ModalHeader
+                    title="Stores"
+                    onClose={handleCloseButton}
+                    start={
+                        stores &&
+                        stores.length > 1 && (
+                            <IonButton
+                                onClick={() => setReorderMode((prev) => !prev)}
+                                color={reorderMode ? "primary" : undefined}
+                                aria-label={reorderMode ? "Done reordering" : "Reorder stores"}
+                                aria-pressed={reorderMode}
+                            >
+                                <IonIcon
+                                    slot="icon-only"
+                                    icon={reorderMode ? checkmarkOutline : swapVerticalOutline}
+                                />
                             </IonButton>
-                        </IonButtons>
-                    </IonToolbar>
-                </IonHeader>
+                        )
+                    }
+                />
                 <IonContent>
                     {isLoading ? (
-                        <IonList>
+                        <IonList className="store-list" aria-hidden="true">
                             {[1, 2, 3].map((i) => (
-                                <IonItem key={i}>
-                                    <IonIcon src={"/img/Store.svg"} slot="start" />
-                                    <IonLabel>
-                                        <IonSkeletonText animated style={{ width: "60%" }} />
-                                    </IonLabel>
+                                <IonItem key={i} className="store-row" lines="inset">
+                                    <IonIcon src={STORE_GLYPH_SRC} slot="start" />
+                                    <IonSkeletonText animated className="store-list__skeleton" />
                                 </IonItem>
                             ))}
                         </IonList>
@@ -189,12 +184,12 @@ const StoreListModal: React.FC = () => {
                     ) : (
                         <>
                             {reorderMode && (
-                                <div className="store-reorder-hint">
+                                <p className="store-reorder-hint">
                                     <IonIcon icon={reorderThreeOutline} aria-hidden="true" />
                                     <span>Drag the handles to set your tab order</span>
-                                </div>
+                                </p>
                             )}
-                            <IonList>
+                            <IonList className="store-list">
                                 <IonReorderGroup
                                     disabled={!reorderMode}
                                     onIonItemReorder={handleReorder}
@@ -202,6 +197,11 @@ const StoreListModal: React.FC = () => {
                                     {sortedStores.map((store) => (
                                         <IonItem
                                             key={store.id}
+                                            className={clsx(
+                                                "store-row",
+                                                store.isHidden && "store-row--hidden"
+                                            )}
+                                            lines="inset"
                                             button={!reorderMode}
                                             detail={false}
                                             onClick={
@@ -210,85 +210,74 @@ const StoreListModal: React.FC = () => {
                                                     : () => handleManageStore(store.id)
                                             }
                                         >
-                                            <IonIcon src="/img/Store.svg" slot="start" />
-                                            <IonLabel
-                                                style={{
-                                                    opacity: store.isHidden ? 0.5 : 1,
-                                                }}
-                                            >
-                                                <h2>
-                                                    {store.name}
-                                                    {store.isHidden && (
-                                                        <IonIcon
-                                                            icon={eyeOffOutline}
-                                                            style={{
-                                                                fontSize: "16px",
-                                                                marginLeft: "8px",
-                                                                verticalAlign: "middle",
-                                                            }}
-                                                        />
-                                                    )}
-                                                </h2>
-                                            </IonLabel>
-                                            {reorderMode && <IonReorder slot="end" />}
+                                            <IonIcon
+                                                src={STORE_GLYPH_SRC}
+                                                slot="start"
+                                                aria-hidden="true"
+                                            />
+                                            <span className="store-row__name">{store.name}</span>
+                                            {store.isHidden && (
+                                                <span className="info-pill store-row__pill">
+                                                    <IonIcon
+                                                        icon={eyeOffOutline}
+                                                        aria-hidden="true"
+                                                    />
+                                                    Hidden
+                                                </span>
+                                            )}
+                                            {reorderMode ? (
+                                                <IonReorder slot="end" />
+                                            ) : (
+                                                <IonIcon
+                                                    icon={chevronForward}
+                                                    slot="end"
+                                                    aria-hidden="true"
+                                                />
+                                            )}
                                         </IonItem>
                                     ))}
                                 </IonReorderGroup>
                             </IonList>
-                            {!reorderMode && (
-                                <div style={{ padding: "16px" }}>
-                                    <IonButton expand="block" onClick={openCreateModal}>
-                                        <IonIcon icon={add} slot="start" />
-                                        Create Store
-                                    </IonButton>
-                                </div>
-                            )}
                         </>
                     )}
                 </IonContent>
+                {hasStores && !reorderMode && (
+                    <EditorFooter>
+                        <IonButton
+                            className="editor-form__submit"
+                            expand="block"
+                            onClick={openCreateModal}
+                        >
+                            <IonIcon icon={add} slot="start" />
+                            Create Store
+                        </IonButton>
+                    </EditorFooter>
+                )}
             </IonModal>
 
             {/* Create Store Modal */}
             <IonModal isOpen={isCreateModalOpen} onDidDismiss={closeCreateModal}>
-                <IonHeader>
-                    <IonToolbar>
-                        <IonTitle>New Store</IonTitle>
-                        <IonButtons slot="end">
-                            <IonButton onClick={closeCreateModal}>
-                                <IonIcon icon={closeOutline} />
-                            </IonButton>
-                        </IonButtons>
-                    </IonToolbar>
-                </IonHeader>
+                <ModalHeader title="New Store" onClose={closeCreateModal} />
                 <IonContent className="ion-padding">
-                    <form onSubmit={handleSubmit(onSubmit)}>
+                    <form className="editor-form" onSubmit={handleSubmit(onSubmit)}>
                         <Controller
                             name="name"
                             control={control}
                             render={({ field }) => (
-                                <IonItem>
-                                    <IonLabel position="stacked">Store Name</IonLabel>
-                                    <IonInput
-                                        {...field}
-                                        placeholder="Enter store name"
-                                        autocapitalize="sentences"
-                                        onIonInput={(e) => field.onChange(e.detail.value)}
-                                    />
-                                </IonItem>
+                                <FormField label="Name" error={errors.name?.message}>
+                                    <div className="form-control">
+                                        <IonInput
+                                            aria-label="Store name"
+                                            value={field.value}
+                                            placeholder="Enter store name"
+                                            autocapitalize="sentences"
+                                            onIonInput={(e) => field.onChange(e.detail.value)}
+                                            onIonBlur={field.onBlur}
+                                        />
+                                    </div>
+                                </FormField>
                             )}
                         />
-                        {errors.name && (
-                            <IonText color="danger">
-                                <p
-                                    style={{
-                                        fontSize: "12px",
-                                        marginLeft: "16px",
-                                    }}
-                                >
-                                    {errors.name.message}
-                                </p>
-                            </IonText>
-                        )}
 
                         <Controller
                             name="templateId"
@@ -300,17 +289,18 @@ const StoreListModal: React.FC = () => {
                                 />
                             )}
                         />
-
-                        <IonButton
-                            expand="block"
-                            type="submit"
-                            disabled={!isValid || createStore.isPending}
-                            style={{ marginTop: "20px" }}
-                        >
-                            Create
-                        </IonButton>
                     </form>
                 </IonContent>
+                <EditorFooter>
+                    <IonButton
+                        className="editor-form__submit"
+                        expand="block"
+                        onClick={handleSubmit(onSubmit)}
+                        disabled={!isValid || createStore.isPending}
+                    >
+                        Create
+                    </IonButton>
+                </EditorFooter>
             </IonModal>
 
             {/* Store Management Modal */}

@@ -1,5 +1,5 @@
 import { ItemReorderEventDetail } from "@ionic/core";
-import { IonLabel, IonList, IonReorderGroup, IonSegment, IonSegmentButton } from "@ionic/react";
+import { IonLabel, IonReorderGroup, IonSegment, IonSegmentButton } from "@ionic/react";
 import { fileTrayStackedOutline } from "ionicons/icons";
 import React from "react";
 import {
@@ -17,6 +17,7 @@ import { DeleteConfirmationAlert } from "./DeleteConfirmationAlert";
 import { EntityFormModal } from "./EntityFormModal";
 import { SectionItem } from "./SectionItem";
 import { ReorderMode, useStoreManagement } from "./StoreManagementContext";
+import "./AisleSectionList.scss";
 
 const AisleSectionList: React.FC = () => {
     const { storeId, mode, setMode } = useStoreManagement();
@@ -175,7 +176,7 @@ const AisleSectionList: React.FC = () => {
 
     return (
         <>
-            <div style={{ padding: "16px", paddingBottom: "8px" }}>
+            <div className="aisle-section-list__modes">
                 <IonSegment
                     value={mode}
                     onIonChange={(e) => setMode(e.detail.value as ReorderMode)}
@@ -189,7 +190,7 @@ const AisleSectionList: React.FC = () => {
                 </IonSegment>
             </div>
 
-            <IonList>
+            <div>
                 {mode === "aisles" ? (
                     <IonReorderGroup disabled={false} onIonReorderEnd={handleAisleReorder}>
                         {aisles.map((aisle) => (
@@ -215,7 +216,7 @@ const AisleSectionList: React.FC = () => {
                         })}
                     </IonReorderGroup>
                 )}
-            </IonList>
+            </div>
 
             <EntityFormModal />
             <DeleteConfirmationAlert />

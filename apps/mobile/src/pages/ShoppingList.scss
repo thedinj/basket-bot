@@ -30,8 +30,8 @@
     font-size: 0.85rem;
     font-weight: 600;
     text-align: center;
-    color: var(--ion-color-primary-contrast, #fff);
-    background: var(--ion-color-primary, #3880ff);
+    color: var(--ion-color-primary-contrast);
+    background: var(--ion-color-primary);
 }
 
 // Obliterate confirmation alert.
@@ -62,8 +62,8 @@
             height: 6px;
             background: repeating-linear-gradient(
                 135deg,
-                var(--ion-color-warning, #ed8936) 0 10px,
-                var(--ion-background-color, #0f0f23) 10px 20px
+                var(--ion-color-warning) 0 10px,
+                var(--ion-background-color) 10px 20px
             );
             opacity: 0.8;
         }
@@ -72,11 +72,11 @@
     // The loaded munition, in the data register used everywhere else in this feature.
     .alert-sub-title {
         margin-top: 6px;
-        font-family: "JetBrains Mono", monospace;
-        font-size: 11px;
+        font-family: var(--app-font-mono);
+        font-size: 0.6875rem;
         letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: var(--ion-color-warning, #ed8936);
+        color: var(--ion-color-warning);
     }
 
     .alert-message {
@@ -88,6 +88,6 @@
 // Amber rather than the default destructive red: the strike is the fun part, and the sheet
 // already treats amber as this action's colour.
 .obliterate-alert-confirm {
-    color: var(--ion-color-warning, #ed8936) !important;
+    color: var(--ion-color-warning) !important;
     font-weight: 600;
 }

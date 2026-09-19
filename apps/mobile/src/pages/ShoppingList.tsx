@@ -216,7 +216,7 @@ const ShoppingListBody: React.FC<ShoppingListBodyProps> = ({
 
             {/* Bulk Import FAB */}
             <IonFab vertical="bottom" horizontal="end" slot="fixed" className="bulk-import-fab">
-                <LLMFabButton onClick={openBulkImport} />
+                <LLMFabButton aria-label="Import list" onClick={openBulkImport} />
             </IonFab>
 
             <ItemEditorModal storeId={storeId} />

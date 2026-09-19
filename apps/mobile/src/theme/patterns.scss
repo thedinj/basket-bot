@@ -1,0 +1,547 @@
+// Shared UI patterns: the small pieces every screen was building its own copy of. Each one is
+// lifted from the implementation that set the standard (named per block), so adopting it is
+// meant to be visually a no-op. See docs/DESIGN_SYSTEM.md §4 for when to reach for which.
+//
+// Form-system pieces (fields, footers, hints, selects, toggles) live in forms.scss; the
+// .ruled-label heading lives in typography.scss.
+
+// ── Visually hidden text ─────────────────────────────────────────────────────
+// Read by screen readers, never drawn. (aria-label on a plain span is ignored; use this.)
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+// ── Row button ───────────────────────────────────────────────────────────────
+// A <button> that is a whole row (menu entries, hub actions, log entries): the native button
+// chrome removed, a pressed tint, and a focus ring inside its own edge. Geometry (grid,
+// padding, height) stays with the caller.
+.row-button {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.12s ease-out;
+
+    &:active:not(:disabled) {
+        background: color-mix(in srgb, var(--ion-color-primary) 10%, transparent);
+    }
+
+    &:disabled {
+        cursor: default;
+        opacity: 0.4;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ion-color-primary);
+        outline-offset: -2px;
+    }
+}
+
+// ── Row remove ───────────────────────────────────────────────────────────────
+// A quiet × that removes one row from a list (<RowRemoveButton>): 36px, a 20px glyph in medium,
+// danger only while pressed. The caller pulls it onto the row's end inset.
+.row-remove {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ion-color-medium);
+    font-size: 20px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+        color 0.12s ease-out,
+        background-color 0.12s ease-out;
+
+    &:active:not(:disabled) {
+        background: color-mix(in srgb, var(--ion-color-danger) 12%, transparent);
+        color: var(--ion-color-danger);
+    }
+
+    &:disabled {
+        cursor: default;
+        opacity: 0.4;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ion-color-primary);
+        outline-offset: -2px;
+    }
+}
+
+// ── Surface card ─────────────────────────────────────────────────────────────
+// The card frame (recipe cards, plan cards, slot cards): 14px radius, step-150 hairline, the
+// card surface, no shadow. Inner inset (12px) and any footer bar are the caller's.
+.surface-card {
+    overflow: hidden;
+    border: 1px solid var(--ion-color-step-150);
+    border-radius: 14px;
+    background: var(--ion-card-background, var(--ion-item-background, var(--ion-background-color)));
+}
+
+// ── Card actions ─────────────────────────────────────────────────────────────
+// A card's footer bar: equal columns, 40px, a hairline above and between. Keep every column
+// present (disable rather than remove) so bars line up card to card. A button holds an icon,
+// or an icon and a short label. From RecipeCard and the wizard's slot cards.
+.card-actions {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    flex: none;
+    border-top: 1px solid var(--ion-color-step-150);
+}
+
+.card-actions__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 40px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--ion-color-medium);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+        color 0.12s ease-out,
+        background-color 0.12s ease-out;
+
+    & + & {
+        border-inline-start: 1px solid var(--ion-color-step-150);
+    }
+
+    ion-icon {
+        flex: none;
+        font-size: 1rem;
+    }
+
+    // Icon-only buttons carry a slightly larger glyph.
+    ion-icon:only-child {
+        font-size: 1.125rem;
+    }
+
+    // A toggled action that is on (Pinned).
+    &--on {
+        color: var(--ion-color-secondary);
+    }
+
+    // The card's main action (Accept).
+    &--primary {
+        color: var(--ion-color-primary);
+    }
+
+    &:active:not(:disabled) {
+        color: var(--ion-color-primary);
+        background: color-mix(in srgb, var(--ion-color-primary) 12%, transparent);
+    }
+
+    &:disabled {
+        cursor: default;
+        opacity: 0.35;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ion-color-primary);
+        outline-offset: -2px;
+    }
+}
+
+// ── Preset chip ──────────────────────────────────────────────────────────────
+// A 32px choice chip (sort fields, time presets, scale factors): 8px radius, a faint fill, a
+// step-200 hairline; the chosen one (`--active` or aria-pressed) in the selected-chip lilac.
+// `--accent` is an action chip that is always lilac (the sort direction).
+.preset-chip {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-width: 44px;
+    height: 32px;
+    margin: 0;
+    padding: 0 12px;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--ion-text-color) 5%, transparent);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: var(--ion-color-medium);
+    white-space: nowrap;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+        background-color 0.12s,
+        border-color 0.12s,
+        color 0.12s;
+
+    &--active,
+    &[aria-pressed="true"],
+    &--accent {
+        border-color: color-mix(in srgb, var(--ion-color-secondary) 45%, transparent);
+        background: color-mix(in srgb, var(--ion-color-secondary) 15%, transparent);
+        color: var(--ion-color-secondary);
+    }
+
+    &:active:not(:disabled) {
+        background: color-mix(in srgb, var(--ion-color-secondary) 24%, transparent);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ion-color-primary);
+        outline-offset: 1px;
+    }
+}
+
+// ── Gutter rows ──────────────────────────────────────────────────────────────
+// A list of whole-row buttons (.row-button) that run edge to edge, so the pressed tint and the
+// focus ring span the screen, with the hairlines between rows held on the 16px gutter. Each row
+// puts its own content on the gutter (padding-inline: 16px); a list inside gutter padding pulls
+// itself out to the edges with margin-inline: -16px. `--ruled` adds a hairline above the first
+// row too. From the developer tools' lists and the picker sheets.
+.gutter-rows {
+    margin-block: 0;
+    padding: 0;
+    list-style: none;
+
+    > li {
+        position: relative;
+    }
+
+    > li + li::before,
+    &--ruled > li:first-child::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 16px;
+        left: 16px;
+        height: 1px;
+        background: var(--ion-color-step-150);
+        pointer-events: none;
+    }
+}
+
+// ── Boxed list ───────────────────────────────────────────────────────────────
+// A list drawn as one field box (step-200 border, 10px radius, step-50 fill) with step-150
+// hairlines between its rows; row content starts on the box's 12px inset. The recipe editor's
+// ingredients, household members and store choices use it.
+.boxed-list {
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 10px;
+    background: var(--ion-color-step-50);
+    list-style: none;
+
+    > * + * {
+        border-top: 1px solid var(--ion-color-step-150);
+    }
+}
+
+// ── Info pill ────────────────────────────────────────────────────────────────
+// A quiet 20px status tag the size of a small tag chip ("≤ 30 min", "12 in pool", "You",
+// "Pending", "Hidden"). From .wizard-slot__pill.
+.info-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-sizing: border-box;
+    height: 20px;
+    padding: 0 8px;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: var(--ion-color-medium);
+    white-space: nowrap;
+
+    ion-icon {
+        font-size: 0.875rem;
+    }
+
+    &--accent {
+        border-color: color-mix(in srgb, var(--ion-color-secondary) 45%, transparent);
+        background: color-mix(in srgb, var(--ion-color-secondary) 12%, transparent);
+        color: var(--ion-color-secondary);
+    }
+
+    &--warn {
+        border-color: color-mix(in srgb, var(--ion-color-warning) 45%, transparent);
+        background: color-mix(in srgb, var(--ion-color-warning) 10%, transparent);
+        color: var(--ion-color-warning);
+    }
+}
+
+// ── Robot line ───────────────────────────────────────────────────────────────
+// The robot's aside, as a terminal readout in the field frame: mono 12px, a lilac prompt, a
+// blinking cursor. Render it with <RobotLine>. No outer margin; the caller places it. From
+// .wizard-robot-line.
+.robot-line {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 11px 12px;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 10px;
+    background: var(--ion-color-step-50);
+    font-family: var(--app-font-mono);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--ion-color-medium);
+    text-align: start;
+
+    &__prompt {
+        margin-inline-end: 1ch;
+        font-weight: 700;
+        color: var(--ion-color-secondary);
+    }
+
+    &--cursor::after {
+        content: " ▊";
+        animation: robot-line-cursor 1.1s step-end infinite;
+        color: var(--ion-color-primary);
+    }
+}
+
+@keyframes robot-line-cursor {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+}
+
+// ── Tally ────────────────────────────────────────────────────────────────────
+// A label / value table: label left, figure right in tabular digits, a hairline per row. Use
+// on a <dl> of alternating <dt>/<dd>. From .wizard-tally.
+.tally {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    margin: 0;
+
+    dt,
+    dd {
+        margin: 0;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--ion-color-step-150);
+        font-size: 0.9375rem;
+        line-height: 1.3;
+    }
+
+    dt {
+        overflow: hidden;
+        color: var(--ion-text-color);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    dd {
+        padding-left: 12px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        color: var(--ion-text-color);
+    }
+
+    dt:last-of-type,
+    dd:last-of-type {
+        border-bottom: 0;
+    }
+
+    .tally__quiet {
+        color: var(--ion-color-medium);
+    }
+}
+
+// ── Quantity ─────────────────────────────────────────────────────────────────
+// The shopping list's amount: Barlow semibold, tabular, lilac, never split across lines.
+.qty {
+    font-family: var(--ion-font-family);
+    font-size: 0.90625rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--ion-color-secondary);
+
+    // The unscaled amount before a scaled one ("1 → 2 cup").
+    &__from {
+        color: var(--ion-color-medium);
+    }
+}
+
+// ── Review row ───────────────────────────────────────────────────────────────
+// An ingredient / item row with Include and Unsure toggles: the route list, the recipe-import
+// preview and the bulk-import review. On the 16px gutter, 52px minimum, a step-150 hairline
+// between rows:
+//   __toggles ... two 36px icon buttons (20px glyphs), the first glyph pulled onto the gutter
+//   __text ...... name, amount and badges on one baseline, 6px apart; wraps
+//   __end ....... optional right-hand control (a store picker)
+// From RouteIngredientsContent.
+.review-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.review-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    min-height: 52px;
+    border-bottom: 1px solid var(--ion-color-step-150);
+
+    &:last-child {
+        border-bottom: 0;
+    }
+
+    &__toggles {
+        display: flex;
+        margin-inline-start: -8px;
+
+        ion-button {
+            width: 36px;
+            height: 36px;
+            margin: 0;
+            --padding-start: 0;
+            --padding-end: 0;
+
+            ion-icon {
+                font-size: 20px;
+            }
+        }
+    }
+
+    &__text {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        column-gap: 6px;
+        min-width: 0;
+        margin: 0;
+        padding: 8px 0;
+        font-size: 1rem;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+
+        .skipped-badge {
+            margin-left: 0;
+        }
+    }
+
+    &__name {
+        font-weight: 500;
+        color: var(--ion-text-color);
+    }
+
+    // The optional right-hand control (a store picker), ending on the gutter.
+    &__end {
+        justify-self: end;
+        min-width: 0;
+    }
+
+    // A second line under the name (notes, a shopping-name override): full width of the text
+    // column, quiet.
+    &__note {
+        flex-basis: 100%;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--ion-color-medium);
+    }
+
+    // Not going on a list: the cart says so, the name steps back to agree with it.
+    &--off &__name {
+        color: var(--ion-color-medium);
+    }
+}
+
+// ── Search field ─────────────────────────────────────────────────────────────
+// An IonSearchbar as a 44px field box: step-50 fill, 10px radius, a step-200 hairline (an inset
+// shadow, so it takes no layout), the icon on the 12px inset and the text 8px after it. Scoped
+// on Ionic's own classes so it beats the md searchbar's padding and offsets. From
+// RecipeSearchHeader.
+ion-searchbar.search-field {
+    flex: 1;
+    min-width: 0;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    --background: var(--ion-color-step-50);
+    --border-radius: 10px;
+    --box-shadow: inset 0 0 0 1px var(--ion-color-step-200);
+    --color: var(--ion-text-color);
+    --placeholder-color: var(--ion-color-medium);
+    --placeholder-opacity: 1;
+    --icon-color: var(--ion-color-medium);
+    --clear-button-color: var(--ion-color-medium);
+
+    .searchbar-input-container {
+        height: 44px;
+    }
+
+    .searchbar-input.sc-ion-searchbar-md,
+    .searchbar-input.sc-ion-searchbar-ios {
+        box-sizing: border-box;
+        height: 44px;
+        padding-block: 0;
+        padding-inline: 40px 44px;
+        font-size: 1rem;
+        line-height: normal;
+    }
+
+    .searchbar-search-icon.sc-ion-searchbar-md,
+    .searchbar-search-icon.sc-ion-searchbar-ios {
+        top: 12px;
+        left: 12px;
+        width: 20px;
+        height: 20px;
+    }
+
+    .searchbar-input-container:focus-within .searchbar-input {
+        box-shadow: inset 0 0 0 1px var(--ion-color-primary);
+    }
+}
+
+// ── Reduced motion ───────────────────────────────────────────────────────────
+@media (prefers-reduced-motion: reduce) {
+    .robot-line--cursor::after {
+        animation: none;
+    }
+
+    .row-button,
+    .row-remove,
+    .card-actions__btn,
+    .preset-chip {
+        transition: none;
+    }
+}

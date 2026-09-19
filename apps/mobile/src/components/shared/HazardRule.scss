@@ -1,10 +1,10 @@
-// Cheap by design: a repeating gradient, no assets.
+// Cheap by design: a repeating gradient, no assets. The gaps are transparent, so the stripe
+// reads on whatever surface it sits on (page, sheet or card) in light and dark alike.
 .hazard-rule {
     height: 6px;
     background: repeating-linear-gradient(
         135deg,
-        var(--ion-color-warning, #ed8936) 0 10px,
-        var(--ion-background-color, #0f0f23) 10px 20px
+        color-mix(in srgb, var(--ion-color-warning) 80%, transparent) 0 10px,
+        transparent 10px 20px
     );
-    opacity: 0.8;
 }

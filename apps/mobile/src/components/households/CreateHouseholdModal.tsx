@@ -1,21 +1,12 @@
-import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonInput,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonModal,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
-import { closeOutline } from "ionicons/icons";
-import React, { useState } from "react";
+import { IonButton, IonContent, IonInput, IonModal } from "@ionic/react";
+import React, { useRef, useState } from "react";
 import { useCreateHousehold } from "../../db/hooks";
 import { useHousehold } from "../../households/useHousehold";
+import { EditorFooter } from "../shared/EditorFooter";
+import { FormField } from "../shared/FormField";
+import { ModalHeader } from "../shared/ModalHeader";
+
+import "./Households.scss";
 
 interface CreateHouseholdModalProps {
     isOpen: boolean;
@@ -24,12 +15,15 @@ interface CreateHouseholdModalProps {
 
 const CreateHouseholdModal: React.FC<CreateHouseholdModalProps> = ({ isOpen, onClose }) => {
     const [name, setName] = useState("");
+    const nameInputRef = useRef<HTMLIonInputElement>(null);
     const createHousehold = useCreateHousehold();
     const { refreshHouseholds } = useHousehold();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!name.trim()) return;
+    const canSubmit = !!name.trim() && !createHousehold.isPending;
+
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
+        if (!canSubmit) return;
 
         await createHousehold.mutateAsync(name.trim());
         await refreshHouseholds();
@@ -43,43 +37,41 @@ const CreateHouseholdModal: React.FC<CreateHouseholdModalProps> = ({ isOpen, onC
     };
 
     return (
-        <IonModal isOpen={isOpen} onDidDismiss={handleClose}>
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>Create Household</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={handleClose}>
-                            <IonIcon icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+        <IonModal
+            isOpen={isOpen}
+            onDidDismiss={handleClose}
+            onDidPresent={() => nameInputRef.current?.setFocus()}
+        >
+            <ModalHeader title="New Household" onClose={handleClose} />
             <IonContent className="ion-padding">
-                <form onSubmit={handleSubmit}>
-                    <IonList>
-                        <IonItem>
-                            <IonLabel position="stacked">Household Name</IonLabel>
+                <form className="editor-form" onSubmit={handleSubmit}>
+                    <FormField label="Name">
+                        <div className="form-control">
                             <IonInput
+                                ref={nameInputRef}
+                                aria-label="Household name"
                                 value={name}
                                 onIonInput={(e) => setName(e.detail.value || "")}
-                                placeholder="e.g., Family, Roommates"
+                                placeholder="e.g. Family, Roommates"
+                                autocapitalize="words"
+                                enterkeyhint="done"
                                 required
                                 disabled={createHousehold.isPending}
                             />
-                        </IonItem>
-                    </IonList>
-
-                    <div className="ion-padding">
-                        <IonButton
-                            expand="block"
-                            type="submit"
-                            disabled={!name.trim() || createHousehold.isPending}
-                        >
-                            {createHousehold.isPending ? "Creating..." : "Create"}
-                        </IonButton>
-                    </div>
+                        </div>
+                    </FormField>
                 </form>
             </IonContent>
+            <EditorFooter>
+                <IonButton
+                    className="editor-form__submit"
+                    expand="block"
+                    onClick={() => handleSubmit()}
+                    disabled={!canSubmit}
+                >
+                    {createHousehold.isPending ? "Creating..." : "Create Household"}
+                </IonButton>
+            </EditorFooter>
         </IonModal>
     );
 };

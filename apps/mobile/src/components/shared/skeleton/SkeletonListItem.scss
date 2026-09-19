@@ -1,0 +1,38 @@
+// Placeholder row on the real row's grid (see ShoppingListItem.css): the start column is 36px
+// wide with a 10px gap before the text (replacing Ionic's 32px start-slot margin), and its
+// content centres on a 32px box 8px down, at y = 24, where the title bar also centres.
+.skeleton-row__start {
+    display: grid;
+    place-items: center;
+    align-self: flex-start;
+    width: 36px;
+    height: 32px;
+    margin-block: 8px 0;
+    margin-inline: 0 10px;
+}
+
+// Scoped under ion-item: Ionic's label margins outrank a single class.
+ion-item.skeleton-row .skeleton-row__label {
+    margin-block: 13px 12px;
+}
+
+// The title line box is ~19px (1rem type); a 10px bar 5px down centres in it.
+.skeleton-row__title {
+    height: 10px;
+    margin-block: 5px 4px;
+    --border-radius: 4px;
+}
+
+// Notes / meta lines: smaller type, 2px below the line above.
+.skeleton-row__meta {
+    height: 8px;
+    margin-block: 6px 4px;
+    --border-radius: 4px;
+}
+
+// Ionic's shimmer runs on the host, so an outer rule can stop it.
+@media (prefers-reduced-motion: reduce) {
+    .skeleton-row ion-skeleton-text {
+        animation: none;
+    }
+}

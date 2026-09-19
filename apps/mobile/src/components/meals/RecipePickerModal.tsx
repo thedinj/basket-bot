@@ -1,18 +1,5 @@
 import type { RecipeTag, RecipeWithDetails } from "@basket-bot/core";
-import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonModal,
-    IonIcon,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
-import { closeOutline } from "ionicons/icons";
+import { IonContent, IonItem, IonLabel, IonList, IonModal } from "@ionic/react";
 import pluralize from "pluralize";
 import { useMemo, useState } from "react";
 import {
@@ -23,6 +10,7 @@ import {
     type RecipeFilters,
     type RecipeSort,
 } from "../../utils/recipeSearch";
+import { ModalHeader } from "../shared/ModalHeader";
 import RecipeBrowser from "./RecipeBrowser";
 import RecipeFilterSheet from "./RecipeFilterSheet";
 import TagChipList from "./TagChipList";
@@ -121,16 +109,7 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
 
     return (
         <IonModal isOpen={isOpen} onWillPresent={handleWillPresent} onDidDismiss={handleDismiss}>
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>{title}</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={handleDismiss} aria-label="Close">
-                            <IonIcon slot="icon-only" icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+            <ModalHeader title={title} onClose={handleDismiss} />
 
             <IonContent>
                 <RecipeBrowser

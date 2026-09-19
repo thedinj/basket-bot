@@ -1,56 +1,107 @@
 // Borrows the mono/amber data register from ObliterateUnusedModal rather than inventing a second
-// developer-tool look - this is the same weapons platform, just with the panel open.
-.strike-range-header {
-    padding: 18px 16px 14px;
+// developer-tool look - this is the same weapons platform, just with the panel open. The chrome
+// (label, note, Roll, rows) sits on the system's gutter and rhythm; only the ink is amber.
+
+// Toolbars start their content 4px in; 12px more puts the glyph on the 16px gutter.
+.strike-range-title-icon {
+    margin-inline-start: 12px;
+    font-size: 1.25rem;
+    color: var(--ion-color-warning);
 }
 
-.strike-range-label {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ion-color-warning, #ed8936);
+.strike-range {
+    padding: 20px 16px 12px;
 }
 
-.strike-range-note {
-    margin: 10px 0 12px;
+// A ruled label in amber: the hairline follows the ink.
+.ruled-label.strike-range__label {
+    color: var(--ion-color-warning);
+
+    &::after {
+        background: color-mix(in srgb, var(--ion-color-warning) 30%, transparent);
+    }
+}
+
+.strike-range__note {
     max-width: 62ch;
-    font-size: 13px;
-    line-height: 1.55;
-    color: var(--ion-color-step-500, #a0aec0);
+    margin: 12px 0 0;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--ion-color-medium);
 }
 
-.strike-range-rolled {
-    margin-top: 10px;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ion-color-step-450, #8b93a7);
+// Last roll on the left, Roll on the gutter's far edge.
+.strike-range__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    margin-top: 4px;
 }
 
-.strike-range-row-name {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 13px;
+.strike-range__rolled {
+    min-width: 0;
+    overflow: hidden;
+    font-family: var(--app-font-mono);
+    font-size: 0.75rem;
     letter-spacing: 0.08em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ion-color-medium);
 }
 
-.strike-range-row-data {
-    display: block;
-    margin-top: 2px;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-    color: var(--ion-color-step-450, #8b93a7);
+// A standalone label-line pill (forms.scss), in the range's amber.
+.form-field__action.strike-range__roll {
+    flex: none;
+    color: var(--ion-color-warning);
+}
+
+// The munitions: a .gutter-rows list (hairlines on the gutter) of .row-button rows, so the
+// pressed and firing tints run edge to edge. While a munition plays every row is disabled and
+// .row-button fades them; the one firing stays at full strength. Compound: .row-button loads
+// after this file.
+.strike-range__row.row-button {
+    display: grid;
+    gap: 4px;
+    padding: 12px 16px;
+}
+
+.strike-range__name {
+    font-family: var(--app-font-mono);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.3;
+    color: var(--ion-text-color);
+}
+
+.strike-range__data {
+    font-family: var(--app-font-mono);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.4;
+    color: var(--ion-color-medium);
+    overflow-wrap: anywhere;
 }
 
 // Marks which row you are currently watching, since the overlay covers the list while it plays.
-.strike-range-row--firing {
-    --background: rgba(237, 137, 54, 0.14);
+.strike-range__row--firing.row-button {
+    background: color-mix(in srgb, var(--ion-color-warning) 14%, transparent);
 
-    .strike-range-row-name {
-        color: var(--ion-color-warning, #ed8936);
+    &:disabled {
+        opacity: 1;
+    }
+
+    .strike-range__name {
+        color: var(--ion-color-warning);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .strike-range__row.row-button {
+        transition: none;
     }
 }

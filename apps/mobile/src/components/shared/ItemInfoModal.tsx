@@ -1,6 +1,8 @@
 import type { ShoppingListItemWithDetails, StoreItemWithDetails } from "@basket-bot/core";
-import { IonItem, IonLabel, IonList, IonListHeader, IonNote } from "@ionic/react";
-import ConfirmModal from "./ConfirmModal";
+import { IonContent, IonModal } from "@ionic/react";
+import { ModalHeader } from "./ModalHeader";
+
+import "./ItemInfoModal.scss";
 
 type ItemInfoModalProps =
     | {
@@ -24,82 +26,60 @@ const formatDate = (isoString: string | null | undefined): string => {
     });
 };
 
-const ItemInfoModal: React.FC<ItemInfoModalProps> = ({ isOpen, onClose, mode, item }) => {
-    const content =
-        mode === "shoppingListItem" ? (
-            <>
-                <IonList>
-                    <IonListHeader>
-                        <IonLabel>Shopping List Entry</IonLabel>
-                    </IonListHeader>
-                    <IonItem>
-                        <IonLabel>
-                            <h3>Added by</h3>
-                            <p>{item.createdByName ?? "Unknown"}</p>
-                        </IonLabel>
-                        <IonNote slot="end">{formatDate(item.createdAt)}</IonNote>
-                    </IonItem>
-                    <IonItem>
-                        <IonLabel>
-                            <h3>Last updated by</h3>
-                            <p>{item.updatedByName ?? "Unknown"}</p>
-                        </IonLabel>
-                        <IonNote slot="end">{formatDate(item.updatedAt)}</IonNote>
-                    </IonItem>
-                </IonList>
-
-                {item.storeItemId !== null && (
-                    <IonList>
-                        <IonListHeader>
-                            <IonLabel>Store Item Entry</IonLabel>
-                        </IonListHeader>
-                        <IonItem>
-                            <IonLabel>
-                                <h3>Added by</h3>
-                                <p>{item.storeItemCreatedByName ?? "Unknown"}</p>
-                            </IonLabel>
-                            <IonNote slot="end">{formatDate(item.storeItemCreatedAt)}</IonNote>
-                        </IonItem>
-                        <IonItem>
-                            <IonLabel>
-                                <h3>Last updated by</h3>
-                                <p>{item.storeItemUpdatedByName ?? "Unknown"}</p>
-                            </IonLabel>
-                            <IonNote slot="end">{formatDate(item.storeItemUpdatedAt)}</IonNote>
-                        </IonItem>
-                    </IonList>
-                )}
-            </>
-        ) : (
-            <IonList>
-                <IonItem>
-                    <IonLabel>
-                        <h3>Added by</h3>
-                        <p>{item.createdByName ?? "Unknown"}</p>
-                    </IonLabel>
-                    <IonNote slot="end">{formatDate(item.createdAt)}</IonNote>
-                </IonItem>
-                <IonItem>
-                    <IonLabel>
-                        <h3>Last updated by</h3>
-                        <p>{item.updatedByName ?? "Unknown"}</p>
-                    </IonLabel>
-                    <IonNote slot="end">{formatDate(item.updatedAt)}</IonNote>
-                </IonItem>
-            </IonList>
-        );
-
-    return (
-        <ConfirmModal
-            isOpen={isOpen}
-            onDidDismiss={onClose}
-            title="Item Info"
-            message={content}
-            showCancel={false}
-            confirmText="Close"
-            onConfirm={onClose}
-        />
-    );
+/** A record's provenance, named as a store item names it; any of it may be unknown. */
+type RecordFacts = {
+    [K in "createdByName" | "createdAt" | "updatedByName" | "updatedAt"]:
+        | StoreItemWithDetails[K]
+        | null;
 };
+
+/** Who touched a record and when, as one ruled section holding a label / value tally. */
+const RecordSection: React.FC<{ heading: string; facts: RecordFacts }> = ({ heading, facts }) => (
+    <section className="item-info__section">
+        <h2 className="ruled-label">{heading}</h2>
+        <dl className="tally">
+            <dt className="tally__quiet">Added by</dt>
+            <dd>{facts.createdByName ?? "Unknown"}</dd>
+            <dt className="tally__quiet">Added</dt>
+            <dd>{formatDate(facts.createdAt)}</dd>
+            <dt className="tally__quiet">Last updated by</dt>
+            <dd>{facts.updatedByName ?? "Unknown"}</dd>
+            <dt className="tally__quiet">Last updated</dt>
+            <dd>{formatDate(facts.updatedAt)}</dd>
+        </dl>
+    </section>
+);
+
+/** Read-only provenance for an item: who added and last changed it, and when. */
+const ItemInfoModal: React.FC<ItemInfoModalProps> = ({ isOpen, onClose, mode, item }) => (
+    <IonModal
+        isOpen={isOpen}
+        onDidDismiss={onClose}
+        breakpoints={[0, 0.6, 1]}
+        initialBreakpoint={0.6}
+    >
+        <ModalHeader title="Item Info" onClose={onClose} />
+        <IonContent className="item-info">
+            {mode === "shoppingListItem" ? (
+                <>
+                    <RecordSection heading="Shopping list entry" facts={item} />
+                    {item.storeItemId !== null && (
+                        <RecordSection
+                            heading="Store item entry"
+                            facts={{
+                                createdByName: item.storeItemCreatedByName,
+                                createdAt: item.storeItemCreatedAt,
+                                updatedByName: item.storeItemUpdatedByName,
+                                updatedAt: item.storeItemUpdatedAt,
+                            }}
+                        />
+                    )}
+                </>
+            ) : (
+                <RecordSection heading="Store item entry" facts={item} />
+            )}
+        </IonContent>
+    </IonModal>
+);
 
 export default ItemInfoModal;

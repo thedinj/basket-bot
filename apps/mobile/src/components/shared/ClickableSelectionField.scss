@@ -1,0 +1,8 @@
+// The picker field is its own .form-control--button box (theme/forms.scss); only its optional
+// start glyph needs a rule here.
+
+.selection-field__icon {
+    flex: none;
+    font-size: 1.25rem;
+    color: var(--ion-color-medium);
+}

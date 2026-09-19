@@ -1,24 +1,12 @@
-import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonModal,
-    IonNote,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
+import { IonContent, IonIcon, IonModal } from "@ionic/react";
 import clsx from "clsx";
-import { closeOutline, diceOutline, nuclear } from "ionicons/icons";
+import { diceOutline, nuclear } from "ionicons/icons";
 import { useCallback, useEffect, useState } from "react";
 import { type AnimationEffect, pickStrike, STRIKE_POOL } from "../../animations/effects";
 import { preloadStrikeSounds } from "../../animations/strikeAudio";
 import { useOverlayAnimation } from "../../hooks/useOverlayAnimation";
 import { HazardRule } from "../shared/HazardRule";
+import { ModalHeader } from "../shared/ModalHeader";
 import { OverlayAnimation } from "../shared/OverlayAnimation";
 
 import "./StrikeRangeModal.scss";
@@ -54,71 +42,68 @@ const StrikeRangeModal: React.FC<StrikeRangeModalProps> = ({ isOpen, onClose }) 
 
     return (
         <IonModal isOpen={isOpen} onDidDismiss={onClose}>
-            <IonHeader>
-                <IonToolbar>
+            <ModalHeader
+                title="Strike Range"
+                onClose={onClose}
+                closeDisabled={isActive}
+                start={
                     <IonIcon
-                        slot="start"
+                        className="strike-range-title-icon"
                         icon={nuclear}
-                        color="warning"
-                        style={{ marginInlineStart: "12px", fontSize: "20px" }}
+                        aria-hidden="true"
                     />
-                    <IonTitle>Strike Range</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={onClose} disabled={isActive}>
-                            <IonIcon slot="icon-only" icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+                }
+            />
 
             <IonContent>
-                <div className="strike-range-header">
-                    <div className="strike-range-label">
-                        <span>Ordnance inventory</span>
-                        <span aria-hidden="true">&middot;</span>
-                        <span>{STRIKE_POOL.length} loaded</span>
-                    </div>
-                    <p className="strike-range-note">
+                <section className="strike-range">
+                    <h2 className="ruled-label strike-range__label">
+                        Ordnance inventory
+                        <span className="ruled-label__count">{STRIKE_POOL.length} loaded</span>
+                    </h2>
+                    <p className="strike-range__note">
                         Fire any munition directly, or roll for one the way the Obliterate actions
                         do. A roll never returns the same munition twice running.
                     </p>
-                    <IonButton
-                        size="small"
-                        fill="outline"
-                        color="warning"
-                        onClick={handleRoll}
-                        disabled={isActive}
-                    >
-                        <IonIcon slot="start" icon={diceOutline} />
-                        Roll
-                    </IonButton>
-                    {lastRolled && (
-                        <div className="strike-range-rolled">Last roll: {lastRolled.label}</div>
-                    )}
-                </div>
+                    <div className="strike-range__toolbar">
+                        <span className="strike-range__rolled">
+                            Last roll: {lastRolled?.label ?? "none"}
+                        </span>
+                        <button
+                            type="button"
+                            className="form-field__action form-field__action--standalone strike-range__roll"
+                            onClick={handleRoll}
+                            disabled={isActive}
+                        >
+                            <IonIcon icon={diceOutline} aria-hidden="true" />
+                            Roll
+                        </button>
+                    </div>
+                </section>
                 <HazardRule />
 
-                <IonList>
+                <ul className="gutter-rows">
                     {STRIKE_POOL.map((effect) => (
-                        <IonItem
-                            key={effect.cssClass}
-                            button
-                            detail={false}
-                            disabled={isActive}
-                            className={clsx(activeEffect === effect && "strike-range-row--firing")}
-                            onClick={() => void trigger(effect)}
-                        >
-                            <IonLabel className="ion-text-wrap">
-                                <h3 className="strike-range-row-name">{effect.label}</h3>
-                                <IonNote className="strike-range-row-data">
+                        <li key={effect.cssClass}>
+                            <button
+                                type="button"
+                                className={clsx(
+                                    "row-button strike-range__row",
+                                    activeEffect === effect && "strike-range__row--firing"
+                                )}
+                                disabled={isActive}
+                                onClick={() => void trigger(effect)}
+                            >
+                                <span className="strike-range__name">{effect.label}</span>
+                                <span className="strike-range__data">
                                     {effect.cssClass} &middot; {effect.duration}ms &middot; impact{" "}
                                     {effect.impactAtMs}ms &middot;{" "}
                                     {effect.soundPath?.split("/").pop() ?? "silent"}
-                                </IonNote>
-                            </IonLabel>
-                        </IonItem>
+                                </span>
+                            </button>
+                        </li>
                     ))}
-                </IonList>
+                </ul>
             </IonContent>
 
             {/* Inside the modal on purpose: this is an IonModal stacked above the About modal, so

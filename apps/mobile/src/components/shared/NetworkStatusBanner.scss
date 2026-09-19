@@ -18,7 +18,17 @@ body.has-status-banner ion-app > ion-router-outlet {
     height: calc(100% - #{$offset});
 }
 
+/*
+ * The strip itself, on the Highway system: the message centred in Barlow 600 on the 16px gutter,
+ * in the tint register (a token mixed into the page background, so the strip stays opaque over
+ * the content it pins above), with a 45% hairline of the same token beneath. Warning (amber) for
+ * anything that didn't reach the server; primary while the queue drains. When there is a queue to
+ * review, a chevron on the gutter says the strip opens something. The clickable strip is a
+ * <button>, so it carries its own reset, pressed tint and focus ring.
+ */
 .network-status-banner {
+    --banner-accent: var(--ion-color-warning);
+
     position: fixed;
     top: 0;
     left: 0;
@@ -29,49 +39,59 @@ body.has-status-banner ion-app > ion-router-outlet {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 16px;
-    padding-top: calc(8px + var(--ion-safe-area-top, 0px));
-    text-align: center;
-    border-bottom: 1px solid var(--ion-color-light-shade);
+    gap: 6px;
+    width: 100%;
     min-height: calc(var(--status-banner-height) + var(--ion-safe-area-top, 0px));
+    margin: 0;
+    padding: calc(8px + var(--ion-safe-area-top, 0px)) 16px 8px;
+    border: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--banner-accent) 45%, transparent);
+    background: color-mix(in srgb, var(--banner-accent) 14%, var(--ion-background-color));
+    color: var(--banner-accent);
+    font: inherit;
+    text-align: center;
+    -webkit-tap-highlight-color: transparent;
     transition: background-color 0.3s ease;
+
+    &--warning {
+        --banner-accent: var(--ion-color-warning);
+    }
+
+    &--primary {
+        --banner-accent: var(--ion-color-primary);
+    }
 
     &--clickable {
         cursor: pointer;
 
-        &:hover {
-            opacity: 0.8;
-        }
-
         &:active {
-            opacity: 0.6;
+            background: color-mix(in srgb, var(--banner-accent) 24%, var(--ion-background-color));
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ion-color-primary);
+            outline-offset: -2px;
         }
     }
+}
 
-    /* Each variant sets its own text colour. The `ion-text` inside is tinted by the same
-       colour name as the background, which rendered warning-on-warning — legible only
-       because nothing could see the banner at all. */
-    &--warning {
-        background-color: var(--ion-color-warning-tint);
-        color: var(--ion-color-warning-contrast);
-    }
+.network-status-banner__message {
+    min-width: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
 
-    &--primary {
-        background-color: var(--ion-color-primary-tint);
-        color: var(--ion-color-primary-contrast);
-    }
+/* Pinned to the gutter so the message stays centred on the screen. */
+.network-status-banner__trail {
+    position: absolute;
+    right: 16px;
+    bottom: calc((var(--status-banner-height) - 1.125rem) / 2);
+    font-size: 1.125rem;
+}
 
-    &--medium {
-        background-color: var(--ion-color-light);
-        color: var(--ion-color-light-contrast);
-    }
-
-    ion-text {
-        color: inherit;
-    }
-
-    small {
-        font-weight: 500;
-        font-size: 0.875rem;
+@media (prefers-reduced-motion: reduce) {
+    .network-status-banner {
+        transition: none;
     }
 }

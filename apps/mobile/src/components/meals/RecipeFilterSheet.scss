@@ -19,23 +19,16 @@
     }
 
     // ── Section wrapper ────────────────────────────────────────────────────────
-    // Each major section (sort, time, tags, toggles) gets a top divider except the first.
+    // Each major section (sort, time, tags, toggles) gets a top hairline except the first.
     &__section {
         & + & {
-            border-top: 1px solid var(--ion-border-color, #2d3748);
+            border-top: 1px solid var(--ion-color-step-150);
         }
     }
 
     // ── Section labels ─────────────────────────────────────────────────────────
-    // The editor's field label (theme/forms.scss .form-field__label): condensed caps, 13px.
+    // A .form-field__label (theme/forms.scss: condensed caps, 13px) on the gutter.
     &__section-label {
-        font-family: var(--app-font-display);
-        font-size: 0.8125rem;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        line-height: 1;
-        text-transform: uppercase;
-        color: var(--ion-color-medium);
         padding: 18px 16px 10px;
         margin: 0;
     }
@@ -55,60 +48,6 @@
         flex: 1;
     }
 
-    &__sort-chip {
-        all: unset;
-        cursor: pointer;
-        box-sizing: border-box;
-        display: inline-flex;
-        align-items: center;
-        height: 32px;
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: var(--ion-color-medium);
-        background: color-mix(in srgb, var(--ion-text-color) 5%, transparent);
-        border: 1px solid var(--ion-border-color, #2d3748);
-        border-radius: 8px;
-        padding: 0 12px;
-        transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
-        line-height: 1;
-
-        &.active {
-            background: rgba(124, 58, 237, 0.15);
-            border-color: rgba(124, 58, 237, 0.45);
-            color: var(--ion-color-primary, #7c3aed);
-            font-weight: 600;
-        }
-
-        &:active {
-            transform: scale(0.95);
-        }
-    }
-
-    &__dir-btn {
-        all: unset;
-        cursor: pointer;
-        flex: 0 0 auto;
-        box-sizing: border-box;
-        display: inline-flex;
-        align-items: center;
-        height: 32px;
-        font-size: 0.875rem;
-        font-weight: 600;
-        color: var(--ion-color-secondary);
-        background: rgba(124, 58, 237, 0.1);
-        border: 1px solid rgba(124, 58, 237, 0.3);
-        border-radius: 8px;
-        padding: 0 12px;
-        line-height: 1;
-        transition: background 0.12s, transform 0.08s;
-        white-space: nowrap;
-
-        &:active {
-            background: rgba(124, 58, 237, 0.22);
-            transform: scale(0.95);
-        }
-    }
-
     // ── Cook time ──────────────────────────────────────────────────────────────
     &__time-section {
         padding: 0 16px 14px;
@@ -122,35 +61,6 @@
         flex-wrap: wrap;
     }
 
-    &__time-preset {
-        all: unset;
-        cursor: pointer;
-        box-sizing: border-box;
-        display: inline-flex;
-        align-items: center;
-        height: 32px;
-        font-size: 0.875rem;
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
-        color: var(--ion-color-medium);
-        background: color-mix(in srgb, var(--ion-text-color) 5%, transparent);
-        border: 1px solid var(--ion-border-color, #2d3748);
-        border-radius: 8px;
-        padding: 0 12px;
-        line-height: 1;
-        transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
-
-        &.active {
-            background: rgba(124, 58, 237, 0.15);
-            border-color: rgba(124, 58, 237, 0.45);
-            color: var(--ion-color-primary, #7c3aed);
-        }
-
-        &:active {
-            transform: scale(0.95);
-        }
-    }
-
     &__time-clear {
         all: unset;
         cursor: pointer;
@@ -162,40 +72,64 @@
         &:active {
             color: var(--ion-text-color);
         }
+
+        &:focus-visible {
+            outline: 2px solid var(--ion-color-primary);
+            outline-offset: 2px;
+        }
     }
 
+    // "Custom max" on the gutter, the minutes box ending on it. The box is a compact input in
+    // the preset chips' frame (32px, 8px radius, step-200 hairline, step-50 fill), lit like a
+    // field box on focus. The whole row is a <label>, so tapping the words focuses the input.
     &__time-custom-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        border-top: 1px solid var(--ion-border-color, #2d3748);
-        padding-top: 10px;
+        gap: 12px;
+        border-top: 1px solid var(--ion-color-step-150);
+        padding-top: 12px;
     }
 
     &__time-label {
-        font-size: 13px;
-        color: var(--ion-color-step-500, #a0aec0);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--ion-color-medium);
     }
 
     &__time-input-wrap {
         display: flex;
         align-items: center;
         gap: 6px;
+        box-sizing: border-box;
+        height: 32px;
+        padding: 0 10px;
+        border: 1px solid var(--ion-color-step-200);
+        border-radius: 8px;
+        background: var(--ion-color-step-50);
+        transition:
+            border-color 0.15s ease-out,
+            box-shadow 0.15s ease-out;
+
+        &:focus-within {
+            border-color: var(--ion-color-primary);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--ion-color-primary) 22%, transparent);
+        }
     }
 
     &__time-input {
         all: unset;
-        width: 44px;
+        width: 3ch;
         text-align: right;
-        font-size: 1rem;
+        font-size: 0.9375rem;
         font-weight: 600;
         font-variant-numeric: tabular-nums;
         color: var(--ion-text-color);
 
         &::placeholder {
-            color: var(--ion-color-step-400, #718096);
+            color: var(--ion-color-medium);
             font-weight: 400;
-            font-size: 14px;
+            font-size: 0.875rem;
         }
 
         &::-webkit-inner-spin-button,
@@ -207,8 +141,9 @@
     }
 
     &__time-unit {
-        font-size: 0.875rem;
-        color: var(--ion-color-step-500, #a0aec0);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--ion-color-medium);
     }
 
     // ── Tags ───────────────────────────────────────────────────────────────────
@@ -226,35 +161,51 @@
         }
     }
 
+    // Match any / Match all: the editor mode switch (theme/forms.scss .editor-mode-switch)
+    // scaled to a 28px pill row. One field-frame track, 2px inset; the pressed half wears the
+    // selected-chip lilac.
     &__tag-mode {
         display: flex;
-        gap: 4px;
+        box-sizing: border-box;
+        height: 28px;
         margin-block: -8px;
+        padding: 2px;
+        border: 1px solid var(--ion-color-step-200);
+        border-radius: 8px;
+        background: var(--ion-color-step-50);
     }
 
     &__mode-btn {
-        all: unset;
-        cursor: pointer;
-        box-sizing: border-box;
         display: inline-flex;
         align-items: center;
-        height: 28px;
+        margin: 0;
+        padding: 0 10px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        font: inherit;
         font-size: 0.8125rem;
         font-weight: 600;
+        line-height: 1;
         color: var(--ion-color-medium);
-        border: 1px solid var(--ion-border-color, #2d3748);
-        border-radius: 6px;
-        padding: 0 10px;
-        transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition:
+            background-color 0.12s,
+            color 0.12s;
 
-        &.active {
-            background: rgba(124, 58, 237, 0.15);
-            border-color: rgba(124, 58, 237, 0.45);
-            color: var(--ion-color-primary, #7c3aed);
+        &[aria-pressed="true"] {
+            background: color-mix(in srgb, var(--ion-color-secondary) 18%, transparent);
+            color: var(--ion-color-secondary);
         }
 
-        &:active {
-            transform: scale(0.95);
+        &:active:not([aria-pressed="true"]) {
+            background: color-mix(in srgb, var(--ion-color-secondary) 10%, transparent);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ion-color-primary);
+            outline-offset: -2px;
         }
     }
 
@@ -283,7 +234,7 @@
     }
 
     &__tags-empty {
-        font-size: 13px;
+        font-size: 0.8125rem;
         color: var(--ion-color-medium);
         padding: 0 16px 10px;
         margin: 0;
@@ -291,22 +242,10 @@
     }
 
     // ── Toggle rows ────────────────────────────────────────────────────────────
+    // A .form-control box holding an IonToggle whose fixed label names what "on" does
+    // (theme/forms.scss styles the toggle), on the gutter.
     &__toggle-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 2px 16px 14px;
-
-        ion-toggle {
-            --track-background: var(--ion-color-step-200, #2d3748);
-            --track-background-checked: var(--ion-color-primary, #7c3aed);
-            padding: 0;
-        }
-    }
-
-    &__toggle-label {
-        font-size: 15px;
-        color: var(--ion-text-color);
+        padding: 0 16px 14px;
     }
 
     // ── Footer ─────────────────────────────────────────────────────────────────
@@ -335,6 +274,13 @@
 // Force the footer toolbar to match the sheet background
 .recipe-filter-sheet-footer ion-toolbar {
     --background: var(--ion-background-color);
-    --border-color: var(--ion-border-color, #2d3748);
+    --border-color: var(--ion-color-step-150);
     --padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .recipe-filter-sheet__time-input-wrap,
+    .recipe-filter-sheet__mode-btn {
+        transition: none;
+    }
 }

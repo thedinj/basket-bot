@@ -1,27 +1,17 @@
 import { useProfileForm } from "@/components/settings/useProfileForm";
 import { type UpdateProfileRequest } from "@basket-bot/core";
-import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonInput,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonListHeader,
-    IonModal,
-    IonText,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
-import { closeOutline } from "ionicons/icons";
+import { IonButton, IonContent, IonIcon, IonModal } from "@ionic/react";
+import { lockClosedOutline } from "ionicons/icons";
 import { useEffect } from "react";
 import { useAuth } from "../../auth/useAuth";
 import { useToast } from "../../hooks/useToast";
-import { FormTextInput } from "../form/FormTextInput";
+import { TextField } from "../form/TextField";
 import { useAppHeader } from "../layout/useAppHeader";
+import { EditorFooter } from "../shared/EditorFooter";
+import { FormField } from "../shared/FormField";
+import { ModalHeader } from "../shared/ModalHeader";
+
+const PROFILE_FORM_ID = "profile-editor-form";
 
 const ProfileEditorModal: React.FC = () => {
     const { isModalOpen, closeModal } = useAppHeader();
@@ -37,7 +27,7 @@ const ProfileEditorModal: React.FC = () => {
     }, [isModalOpen, profileForm]);
 
     const handleProfileSubmit = profileForm.handleSubmit(async (data: UpdateProfileRequest) => {
-        const success = await onSubmitProfile(data);
+        const success = await onSubmitProfile({ ...data, name: data.name.trim() });
         if (success) {
             showSuccess("Profile updated successfully");
         }
@@ -45,57 +35,47 @@ const ProfileEditorModal: React.FC = () => {
 
     return (
         <IonModal isOpen={isModalOpen("profile")} onDidDismiss={closeModal}>
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>Edit Profile</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={closeModal}>
-                            <IonIcon icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+            <ModalHeader title="Edit Profile" onClose={closeModal} />
             <IonContent className="ion-padding">
-                <form onSubmit={handleProfileSubmit}>
-                    <IonList>
-                        <IonListHeader>
-                            <h2>Basic Information</h2>
-                        </IonListHeader>
+                <form
+                    id={PROFILE_FORM_ID}
+                    className="editor-form"
+                    onSubmit={handleProfileSubmit}
+                    noValidate
+                >
+                    <TextField
+                        name="name"
+                        control={profileForm.control}
+                        label="Name"
+                        placeholder="Your name"
+                        autocapitalize="words"
+                        autocomplete="name"
+                        disabled={isSubmittingProfile}
+                    />
 
-                        {/* Email (read-only) */}
-                        <IonItem>
-                            <IonLabel position="stacked">Email</IonLabel>
-                            <IonInput value={user?.email} disabled={true} />
-                        </IonItem>
-                        <IonText color="medium">
-                            <p
-                                className="ion-padding-start ion-padding-end"
-                                style={{
-                                    fontSize: "0.875rem",
-                                    marginTop: "0.25rem",
-                                }}
-                            >
-                                Email address cannot be changed
-                            </p>
-                        </IonText>
-
-                        {/* Name (editable) */}
-                        <FormTextInput
-                            name="name"
-                            control={profileForm.control}
-                            label="Name"
-                            placeholder="Your name"
-                            disabled={isSubmittingProfile}
-                        />
-
-                        <div className="ion-padding">
-                            <IonButton expand="block" type="submit" disabled={isSubmittingProfile}>
-                                {isSubmittingProfile ? "Saving..." : "Save Profile"}
-                            </IonButton>
+                    <FormField label="Email" hint="Email address cannot be changed.">
+                        <div className="form-control form-control--readonly">
+                            <span className="form-control__value">{user?.email}</span>
+                            <IonIcon
+                                className="form-control__trail"
+                                icon={lockClosedOutline}
+                                aria-hidden="true"
+                            />
                         </div>
-                    </IonList>
+                    </FormField>
                 </form>
             </IonContent>
+            <EditorFooter>
+                <IonButton
+                    className="editor-form__submit"
+                    expand="block"
+                    type="submit"
+                    form={PROFILE_FORM_ID}
+                    disabled={isSubmittingProfile}
+                >
+                    {isSubmittingProfile ? "Saving..." : "Save Profile"}
+                </IonButton>
+            </EditorFooter>
         </IonModal>
     );
 };

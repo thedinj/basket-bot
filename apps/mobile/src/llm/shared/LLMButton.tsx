@@ -1,22 +1,23 @@
 import { IonAlert, IonButton, IonIcon } from "@ionic/react";
+import clsx from "clsx";
 import React, { ComponentProps, useState } from "react";
 import { useLLMConfig } from "../config/useLLMConfig";
-import { LLM_COLOR, LLM_ICON_SRC } from "./constants";
+import { LLM_ICON_SRC } from "./constants";
+import "./LLMChrome.scss";
 
 interface LLMButtonProps extends ComponentProps<typeof IonButton> {
-    /** Icon-only mode (no text, just the robot icon) */
+    /** Icon-only mode (no text, just the robot icon). Pass an `aria-label`. */
     iconOnly?: boolean;
 }
 
 /**
- * Reusable button for triggering LLM features
- * Distinctive styling: purple border, robot icon, robotic font
- * Shows alert if clicked without API key configured
+ * Reusable button for triggering LLM features: the robot glyph on a 48px lilac-tinted button
+ * (styles in LLMChrome.scss). Shows an alert if clicked without an API key configured.
  */
 export const LLMButton: React.FC<LLMButtonProps> = ({
     children,
     expand = "block",
-    style,
+    className,
     onClick,
     iconOnly = false,
     ...props
@@ -38,33 +39,15 @@ export const LLMButton: React.FC<LLMButtonProps> = ({
                 fill="outline"
                 expand={iconOnly ? undefined : expand}
                 onClick={handleClick}
-                style={{
-                    "--border-color": LLM_COLOR,
-                    "--border-width": "2px",
-                    "--color": LLM_COLOR,
-                    letterSpacing: "0.5px",
-                    textTransform: "none",
-                    ...(iconOnly && {
-                        width: "56px",
-                        minWidth: "56px",
-                        alignSelf: "stretch",
-                        "--padding-start": "0",
-                        "--padding-end": "0",
-                    }),
-                    ...style,
-                }}
+                className={clsx("llm-button", iconOnly && "llm-button--icon", className)}
+                aria-label={iconOnly ? "AI assist" : undefined}
                 {...props}
             >
                 {iconOnly ? (
-                    <IonIcon
-                        src={LLM_ICON_SRC}
-                        style={{
-                            fontSize: "28px",
-                        }}
-                    />
+                    <IonIcon slot="icon-only" src={LLM_ICON_SRC} aria-hidden="true" />
                 ) : (
                     <>
-                        <IonIcon src={LLM_ICON_SRC} slot="start" />
+                        <IonIcon src={LLM_ICON_SRC} slot="start" aria-hidden="true" />
                         {children}
                     </>
                 )}

@@ -1,0 +1,39 @@
+// Placeholder shapes for ShoppingListSkeleton, sized to what they stand in for. Row geometry
+// (checkbox column, label inset) lives in SkeletonListItem.scss; header geometry comes from the
+// real GroupedItemList / AislePlate classes the skeleton renders through.
+
+// Fills the 36x28 plate, over its (transparent) 1.5px border, with the plate's 5px corners.
+.shopping-skeleton__plate {
+    width: calc(100% + 3px);
+    height: calc(100% + 3px);
+    margin: -1.5px;
+    --border-radius: 5px;
+}
+
+// An aisle name: Overpass capitals at 1rem are ~12px tall.
+.shopping-skeleton__aisle {
+    height: 12px;
+    margin: 0;
+    --border-radius: 3px;
+}
+
+// A section label: 0.78rem caps, sitting on the ruled line's centre.
+.shopping-skeleton__section {
+    height: 8px;
+    margin: 2px 0;
+    --border-radius: 3px;
+}
+
+// The 18px checkbox, at the real box's size and corner.
+.shopping-skeleton__checkbox {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    --border-radius: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .shopping-skeleton ion-skeleton-text {
+        animation: none;
+    }
+}

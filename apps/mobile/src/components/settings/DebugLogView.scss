@@ -1,0 +1,66 @@
+// The Black Box's error register. Chrome on the system (ruled label with a count, a meta line
+// with a Clear pill on the gutter's far edge); entries are log lines: a meta line, the message,
+// then the code and requestId in the data register, since those get read back character by
+// character to an admin.
+
+.debug-log {
+    padding: 20px 16px 0;
+}
+
+.debug-log__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    padding-top: 4px;
+}
+
+.debug-log__meta {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--ion-color-medium);
+}
+
+// Clear: a standalone label-line pill (forms.scss) on the gutter's far edge.
+.debug-log__clear {
+    flex: none;
+}
+
+// A ruled .gutter-rows list pulled out to the screen edges, so each entry's pressed tint runs
+// edge to edge like a list row's.
+.debug-log__entries {
+    margin-inline: -16px;
+}
+
+// Each entry copies itself on tap. Compound: .row-button loads after this file.
+.debug-log__entry.row-button {
+    display: grid;
+    gap: 4px;
+    padding: 10px 16px;
+}
+
+.debug-log__when {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+    color: var(--ion-color-medium);
+}
+
+.debug-log__message {
+    font-size: 0.9375rem;
+    line-height: 1.35;
+    color: var(--ion-text-color);
+    overflow-wrap: anywhere;
+}
+
+.debug-log__codes {
+    font-family: var(--app-font-mono);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--ion-color-medium);
+    overflow-wrap: anywhere;
+}

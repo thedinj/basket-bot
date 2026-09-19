@@ -9,10 +9,11 @@
 export const LLM_ICON_SRC = "/img/basket-bot.svg";
 
 /**
- * The purple color used for LLM UI elements
+ * The AI accent, as theme tokens so light and dark both follow the palette. Prefer the classes
+ * in LLMChrome.scss; these exist for the few places that need a colour string in JS.
  */
-export const LLM_COLOR = "rgb(124, 58, 237)";
-export const LLM_COLOR_ACTIVATED = "#7c3aed"; //TODO: match theme
+export const LLM_COLOR = "var(--ion-color-secondary)";
+export const LLM_COLOR_ACTIVATED = "var(--ion-color-primary)";
 
 /**
  * Sardonic loading messages in the construct's voice register.

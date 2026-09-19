@@ -1,0 +1,139 @@
+// Side menu, on the design system's 16px gutter.
+//
+// Geometry: the brand mark, the user block, the group labels, each row's glyph and the Log Out
+// button all start at x = 16. Rows are 48px; the 20px glyph sits on the gutter and the label
+// starts 16px after it (x = 52), which is also where the hairline between rows starts. The
+// invitations pill ends on the right gutter.
+
+.app-menu ion-header ion-toolbar {
+    --padding-start: 0;
+    --padding-end: 0;
+}
+
+// Ionic insets the title 20px (md) or centres it (ios); pin it to the gutter on both.
+ion-title.app-menu__title {
+    padding-inline: 16px;
+    text-align: start;
+}
+
+.app-menu__brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.app-menu__logo {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+// ── User ─────────────────────────────────────────────────────────────────────
+
+.app-menu__user {
+    display: grid;
+    gap: 4px;
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid var(--ion-color-step-150);
+}
+
+.app-menu__user-name {
+    margin: 0;
+    overflow: hidden;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.app-menu__user-email {
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--ion-color-medium);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+// ── Rows ─────────────────────────────────────────────────────────────────────
+
+.app-menu__nav {
+    padding-bottom: 8px;
+}
+
+.ruled-label.app-menu__group-label {
+    margin: 24px 16px 4px;
+}
+
+ion-menu-toggle.app-menu__toggle {
+    display: block;
+}
+
+// A .row-button (reset, pressed tint, focus ring) with the menu's geometry. Compound: .row-button
+// loads after this file and would otherwise reset it.
+.app-menu__row.row-button {
+    position: relative;
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 16px;
+    min-height: 48px;
+    padding: 0 16px;
+    color: var(--ion-text-color);
+
+    // Hairline under the label column, ending on the right gutter.
+    &::after {
+        content: "";
+        position: absolute;
+        right: 16px;
+        bottom: 0;
+        left: 52px;
+        height: 1px;
+        background: var(--ion-color-step-150);
+    }
+}
+
+.app-menu__toggle:last-child .app-menu__row::after {
+    content: none;
+}
+
+.app-menu__icon {
+    font-size: 20px;
+    color: var(--ion-color-medium);
+}
+
+.app-menu__label {
+    overflow: hidden;
+    font-size: 1rem;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+// Pending count: a 20px primary pill.
+.app-menu__badge {
+    box-sizing: border-box;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: var(--ion-color-primary);
+    color: var(--ion-color-primary-contrast);
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 20px;
+    text-align: center;
+}
+
+// ── Footer ───────────────────────────────────────────────────────────────────
+// Log Out is the editors' footer button (EditorFooter + .editor-form__submit), outlined in
+// danger with a hairline-weight border.
+
+ion-button.app-menu__logout {
+    --border-width: 1px;
+}

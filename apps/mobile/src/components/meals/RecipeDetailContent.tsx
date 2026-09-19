@@ -57,7 +57,7 @@ const RecipeDetailContent: React.FC<RecipeDetailContentProps> = ({ recipe, unitM
                     <ul className="recipe-detail__ingredients">
                         {recipe.ingredients.map((ing) => (
                             <li key={ing.id} className="recipe-detail__ingredient">
-                                <span className="recipe-detail__amount">
+                                <span className="qty recipe-detail__amount">
                                     {formatIngredientAmount(ing.qty, ing.unitId, unitMap)}
                                 </span>
                                 <span className="recipe-detail__ingredient-name">

@@ -1,55 +1,78 @@
-.queue-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px;
-    border-bottom: 1px solid var(--ion-color-light-shade);
+// Pending Changes (the status banner's queue review), on the Highway system.
+//
+// Geometry, at the modal content's 16px gutter:
+//   list ........ a .ruled-label with the count, 12px above plain rows on the gutter, a step-150
+//                 hairline between them
+//   row ......... operation, then a meta line (timestamp · retries), then the last error in the
+//                 form error style; the × (<RowRemoveButton>) pulled 8px onto the gutter
+//   foot ........ "Discard all changes" (<DestructiveAction>) 32px below the list
 
-    p {
-        margin: 0;
-        font-size: 0.9rem;
+.queue-review {
+    display: grid;
+    padding-top: 4px;
+}
+
+.queue-review__section {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+
+.queue-review__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.queue-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--ion-color-step-150);
+
+    &:last-child {
+        border-bottom: 0;
+    }
+
+    > .row-remove {
+        margin: -4px -8px -4px 0;
     }
 }
 
-.queue-item {
-    --padding-start: 16px;
-    --padding-end: 8px;
+.queue-row__text {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
 
-    .queue-item-content {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        gap: 8px;
+.queue-row__operation {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--ion-text-color);
+    overflow-wrap: anywhere;
+}
 
-        ion-label {
-            flex: 1;
-        }
-    }
+.queue-row__meta {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.25;
+    color: var(--ion-color-medium);
+}
 
-    h3 {
-        margin: 0 0 4px 0;
-        font-weight: 600;
-        font-size: 0.95rem;
-    }
+.queue-row__retry {
+    color: var(--ion-color-warning);
+}
 
-    .queue-item-detail {
-        margin: 2px 0;
-        font-size: 0.85rem;
-        color: var(--ion-color-medium);
-    }
-
-    .queue-item-retry {
-        margin: 2px 0;
-        font-size: 0.85rem;
-        color: var(--ion-color-warning);
-        font-weight: 500;
-    }
-
-    .queue-item-error {
-        margin: 4px 0 0 0;
-        font-size: 0.8rem;
-        color: var(--ion-color-danger);
-        font-style: italic;
-    }
+// The form system's error line (.form-field__error), under the meta.
+.queue-row__error {
+    margin: 2px 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    color: var(--ion-color-danger);
+    overflow-wrap: anywhere;
 }

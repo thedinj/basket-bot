@@ -1,20 +1,11 @@
-import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonInput,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonModal,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
-import { closeOutline } from "ionicons/icons";
-import React, { useState } from "react";
+import { IonButton, IonContent, IonInput, IonModal } from "@ionic/react";
+import React, { useRef, useState } from "react";
 import { useInviteMember } from "../../db/hooks";
+import { EditorFooter } from "../shared/EditorFooter";
+import { FormField } from "../shared/FormField";
+import { ModalHeader } from "../shared/ModalHeader";
+
+import "./Households.scss";
 
 interface InviteMemberModalProps {
     householdId: string | null;
@@ -24,11 +15,14 @@ interface InviteMemberModalProps {
 
 const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ householdId, isOpen, onClose }) => {
     const [email, setEmail] = useState("");
+    const emailInputRef = useRef<HTMLIonInputElement>(null);
     const inviteMember = useInviteMember();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!householdId || !email.trim()) return;
+    const canSubmit = !!householdId && !!email.trim() && !inviteMember.isPending;
+
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
+        if (!householdId || !canSubmit) return;
 
         await inviteMember.mutateAsync({ householdId, email: email.trim() });
         setEmail("");
@@ -41,44 +35,43 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ householdId, isOp
     };
 
     return (
-        <IonModal isOpen={isOpen} onDidDismiss={handleClose}>
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>Invite Member</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={handleClose}>
-                            <IonIcon icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+        <IonModal
+            isOpen={isOpen}
+            onDidDismiss={handleClose}
+            onDidPresent={() => emailInputRef.current?.setFocus()}
+        >
+            <ModalHeader title="Invite Member" onClose={handleClose} />
             <IonContent className="ion-padding">
-                <form onSubmit={handleSubmit}>
-                    <IonList>
-                        <IonItem>
-                            <IonLabel position="stacked">Email</IonLabel>
+                <form className="editor-form" onSubmit={handleSubmit}>
+                    <FormField label="Email">
+                        <div className="form-control">
                             <IonInput
+                                ref={emailInputRef}
+                                aria-label="Email"
                                 type="email"
+                                inputmode="email"
+                                autocomplete="email"
+                                enterkeyhint="send"
                                 value={email}
                                 onIonInput={(e) => setEmail(e.detail.value || "")}
                                 placeholder="member@example.com"
                                 required
                                 disabled={inviteMember.isPending}
                             />
-                        </IonItem>
-                    </IonList>
-
-                    <div className="ion-padding">
-                        <IonButton
-                            expand="block"
-                            type="submit"
-                            disabled={!householdId || !email.trim() || inviteMember.isPending}
-                        >
-                            {inviteMember.isPending ? "Sending..." : "Send Invitation"}
-                        </IonButton>
-                    </div>
+                        </div>
+                    </FormField>
                 </form>
             </IonContent>
+            <EditorFooter>
+                <IonButton
+                    className="editor-form__submit"
+                    expand="block"
+                    onClick={() => handleSubmit()}
+                    disabled={!canSubmit}
+                >
+                    {inviteMember.isPending ? "Sending..." : "Send Invitation"}
+                </IonButton>
+            </EditorFooter>
         </IonModal>
     );
 };

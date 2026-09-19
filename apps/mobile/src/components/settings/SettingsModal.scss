@@ -1,0 +1,152 @@
+// Settings, on the shared form system (theme/forms.scss): ruled lilac section labels, then
+// condensed-caps field labels over 48px boxes, every edge on the 16px gutter (the content's
+// ion-padding) and every box's text on its 12px inset.
+//
+//   form ....... sections 32px apart
+//   section .... ruled label, 16px, then an .editor-form (fields 20px apart)
+//   field hint . FormField `hint`, 8px under its box (the field's own gap)
+//   footer ..... EditorFooter: the save button across the same gutters
+//
+// Selects and toggles need no rules here: forms.scss sizes them inside .form-control.
+
+.settings {
+    display: grid;
+    gap: 32px;
+    padding-bottom: 8px;
+}
+
+// Ruled label, 12px, then the fields; .editor-form adds its own 4px on top.
+.settings__section {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+
+// The robot glyph rides inside the label, in the label's lilac, 6px from its words.
+.settings__heading-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    ion-icon {
+        flex: none;
+        font-size: 1rem;
+    }
+}
+
+// ── Theme ───────────────────────────────────────────────────────────────────
+// The editors' mode switch (forms.scss), icon beside its word so the bar stays 44px.
+// Compound: .editor-mode-switch carries a 20px bottom margin meant for the top of a form.
+
+.editor-mode-switch.settings__theme {
+    margin-bottom: 0;
+
+    ion-segment-button {
+        --padding-start: 8px;
+        --padding-end: 8px;
+    }
+
+    ion-icon {
+        margin-inline-end: 6px;
+        font-size: 1.125rem;
+    }
+}
+
+// ── Stepper (default meal count) ────────────────────────────────────────────
+// Minus, count, plus inside one box. The 36px buttons are pulled 8px outward so their 20px
+// glyphs land on the box's 12px inset, like every other box's text.
+
+.settings__stepper {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) 36px;
+    gap: 0;
+}
+
+.settings__stepper-btn {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ion-text-color);
+    font-size: 20px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    &:first-child {
+        margin-inline-start: -8px;
+    }
+
+    &:last-child {
+        margin-inline-end: -8px;
+    }
+
+    &:active:not(:disabled) {
+        background: color-mix(in srgb, var(--ion-color-primary) 14%, transparent);
+    }
+
+    &:disabled {
+        cursor: default;
+        opacity: 0.35;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ion-color-primary);
+        outline-offset: -2px;
+    }
+}
+
+.settings__stepper-value {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.settings__stepper-num {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--ion-text-color);
+}
+
+.settings__stepper-unit {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--ion-color-medium);
+}
+
+// ── Model tiers ─────────────────────────────────────────────────────────────
+// "Use default" as a boxed toggle whose label is its state: the default model it follows, or
+// "Custom" when a name is pinned (the picker then appears under it).
+
+.settings__toggle-label {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+}
+
+.settings__toggle-model {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--ion-color-medium);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+// Loading placeholder in the box's own geometry, so the field doesn't jump when it resolves.
+ion-skeleton-text.settings__skeleton {
+    width: 55%;
+    height: 14px;
+    margin: 0;
+    border-radius: 4px;
+}

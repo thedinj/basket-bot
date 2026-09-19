@@ -1,28 +1,26 @@
 import type { StoreAisle, StoreSection } from "@basket-bot/core";
 import {
-    IonAccordion,
-    IonAccordionGroup,
     IonButton,
-    IonButtons,
     IonContent,
-    IonFooter,
-    IonHeader,
     IonIcon,
-    IonItem,
     IonLabel,
-    IonList,
     IonModal,
     IonSearchbar,
     IonSegment,
     IonSegmentButton,
-    IonTitle,
-    IonToolbar,
 } from "@ionic/react";
-import { checkmarkOutline, chevronDownOutline, closeOutline, mapOutline } from "ionicons/icons";
+import clsx from "clsx";
+import { checkmark, chevronDownOutline, chevronForward, mapOutline } from "ionicons/icons";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AisleSortMode, useAisleSortMode } from "../../hooks/useAisleSortMode";
 import { naturalSort, normalizeForSearch } from "../../utils/stringUtils";
+import { AislePlate } from "./AislePlate";
+import { EditorFooter } from "./EditorFooter";
+import { aislePlate } from "./grouping.utils";
+import { ModalHeader } from "./ModalHeader";
 import TabEmptyState from "./TabEmptyState";
+
+import "./pickerSheet.scss";
 import "./LocationPicker.scss";
 
 interface LocationPickerProps {
@@ -70,6 +68,78 @@ const STORE_ORDER_AISLE_SCALE = 100_000;
 // Same numeric-aware collator as naturalSort, so "Aisle 2" sorts before "Aisle 10"
 // in search results just like it does in the browse view.
 const compareLabelsNaturally = naturalSort((entry: SearchEntry) => entry.label);
+
+/** The lilac check that marks the location currently set. */
+const SelectedCheck: React.FC = () => (
+    <IonIcon className="location-picker__check" icon={checkmark} aria-hidden="true" />
+);
+
+/**
+ * An aisle row's face: the shopping list's own plate and sign-face name ("[AISLE 3]" alone,
+ * "[7] Baking", "[🥬] Produce"), then the check and a chevron when there is more inside.
+ */
+const AisleRowFace: React.FC<{
+    aisle: StoreAisle;
+    selected: boolean;
+    trail?: "expand" | "collapse" | "drill";
+}> = ({ aisle, selected, trail }) => {
+    const plate = aislePlate({ aisleId: aisle.id, aisleName: aisle.name, aisleEmoji: aisle.emoji });
+    return (
+        <>
+            <AislePlate badge={plate.badge} kind={plate.badgeKind} />
+            <span className="location-picker__aisle-name">{plate.label}</span>
+            <span className="location-picker__marks">
+                {selected && <SelectedCheck />}
+                {trail && (
+                    <IonIcon
+                        className={clsx(
+                            "location-picker__chevron",
+                            trail === "collapse" && "location-picker__chevron--open"
+                        )}
+                        icon={trail === "drill" ? chevronForward : chevronDownOutline}
+                        aria-hidden="true"
+                    />
+                )}
+            </span>
+        </>
+    );
+};
+
+/**
+ * A section option, set in the shopping list's section register: lilac ruled caps in the aisle
+ * name's column, the rule running to the check column. A search result names its aisle below.
+ */
+const SectionOption: React.FC<{
+    name: string;
+    selected: boolean;
+    onSelect: () => void;
+    /** The aisle it sits in, for a search result read out of context. */
+    aisleName?: string;
+    /** The "no section" choice: the same row, quiet. */
+    none?: boolean;
+}> = ({ name, selected, onSelect, aisleName, none }) => (
+    <button
+        type="button"
+        role="option"
+        aria-selected={selected}
+        className="row-button location-picker__section"
+        onClick={onSelect}
+    >
+        <span className="location-picker__section-text">
+            <span
+                className={clsx(
+                    "ruled-label",
+                    "location-picker__section-label",
+                    none && "location-picker__section-label--none"
+                )}
+            >
+                <span className="location-picker__section-name">{name}</span>
+            </span>
+            {aisleName && <span className="location-picker__section-aisle">In {aisleName}</span>}
+        </span>
+        <span className="location-picker__marks">{selected && <SelectedCheck />}</span>
+    </button>
+);
 
 /**
  * Combined aisle + section picker. Aisles with sections expand accordion-style;
@@ -229,9 +299,13 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
         return rankSearchEntries(entries, searchText, compareSearchEntries);
     }, [searchText, sortedAisles, sections, aisles, compareSearchEntries]);
 
-    const handleAccordionChange = (e: CustomEvent<{ value: string | string[] | undefined }>) => {
-        const value = e.detail.value;
-        setExpandedAisleId(Array.isArray(value) ? value[0] : value);
+    // One aisle open at a time; tapping the open one folds it again.
+    const toggleAisle = (aisleId: string) =>
+        setExpandedAisleId((current) => (current === aisleId ? undefined : aisleId));
+
+    const setAisleRef = (aisleId: string) => (el: HTMLLIElement | null) => {
+        if (el) aisleRefs.current.set(aisleId, el);
+        else aisleRefs.current.delete(aisleId);
     };
 
     const hasSelection = Boolean(currentAisleId || currentSectionId);
@@ -239,28 +313,18 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
 
     return (
         <IonModal isOpen={isOpen} onDidDismiss={handleDismiss}>
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>Set Location</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={handleDismiss}>
-                            <IonIcon icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
+            <ModalHeader title="Set Location" onClose={handleDismiss}>
                 {!noAisles && (
-                    <IonToolbar>
+                    <div className="picker-header">
                         <IonSearchbar
+                            className="search-field"
                             value={searchText}
                             onIonInput={(e) => setSearchText(e.detail.value || "")}
                             placeholder="Search aisles & sections"
                             debounce={300}
                         />
-                    </IonToolbar>
-                )}
-                {!noAisles && (
-                    <IonToolbar>
                         <IonSegment
+                            className="editor-mode-switch location-picker__modes"
                             value={sortMode}
                             onIonChange={(e) => setSortMode(e.detail.value as AisleSortMode)}
                         >
@@ -271,9 +335,9 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
                                 <IonLabel>Store Order</IonLabel>
                             </IonSegmentButton>
                         </IonSegment>
-                    </IonToolbar>
+                    </div>
                 )}
-            </IonHeader>
+            </ModalHeader>
             <IonContent>
                 {noAisles ? (
                     <TabEmptyState
@@ -286,172 +350,139 @@ export const LocationPicker: React.FC<LocationPickerProps> = ({
                         }
                     />
                 ) : searchText.trim() ? (
-                    <IonList>
-                        {searchResults.length === 0 ? (
-                            <IonItem>
-                                <IonLabel color="medium">No matching aisles or sections</IonLabel>
-                            </IonItem>
-                        ) : (
-                            searchResults.map((entry) =>
-                                entry.kind === "aisle" ? (
-                                    <IonItem
-                                        key={`aisle-${entry.id}`}
-                                        button
-                                        detail={(sectionsByAisle.get(entry.id) ?? []).length > 0}
-                                        detailIcon={chevronDownOutline}
-                                        onClick={() => handleAisleTap(entry.aisle)}
-                                    >
-                                        <IonLabel className="location-picker__aisle-label">
-                                            {entry.label}
-                                        </IonLabel>
-                                        {currentAisleId === entry.id && !currentSectionId && (
-                                            <IonIcon
-                                                icon={checkmarkOutline}
-                                                slot="end"
-                                                color="primary"
-                                            />
-                                        )}
-                                    </IonItem>
-                                ) : (
-                                    <IonItem
-                                        key={`section-${entry.id}`}
-                                        button
-                                        detail={false}
-                                        onClick={() =>
-                                            commit(entry.section.aisleId, entry.section.id)
-                                        }
-                                    >
-                                        <IonLabel className="location-picker__section-label">
-                                            {entry.label}
-                                            <p className="location-picker__search-subtitle">
-                                                In {entry.subtitle}
-                                            </p>
-                                        </IonLabel>
-                                        {currentSectionId === entry.id && (
-                                            <IonIcon
-                                                icon={checkmarkOutline}
-                                                slot="end"
-                                                color="primary"
-                                            />
-                                        )}
-                                    </IonItem>
-                                )
-                            )
-                        )}
-                    </IonList>
+                    searchResults.length === 0 ? (
+                        <p className="picker-empty">No matching aisles or sections</p>
+                    ) : (
+                        <ul
+                            className="location-picker__list"
+                            role="listbox"
+                            aria-label="Matching aisles and sections"
+                        >
+                            {searchResults.map((entry) => {
+                                if (entry.kind === "aisle") {
+                                    const selected =
+                                        currentAisleId === entry.id && !currentSectionId;
+                                    const hasSections =
+                                        (sectionsByAisle.get(entry.id) ?? []).length > 0;
+                                    return (
+                                        <li key={`aisle-${entry.id}`} role="presentation">
+                                            <button
+                                                type="button"
+                                                role="option"
+                                                aria-selected={selected}
+                                                className="row-button location-picker__aisle"
+                                                onClick={() => handleAisleTap(entry.aisle)}
+                                            >
+                                                <AisleRowFace
+                                                    aisle={entry.aisle}
+                                                    selected={selected}
+                                                    trail={hasSections ? "drill" : undefined}
+                                                />
+                                            </button>
+                                        </li>
+                                    );
+                                }
+                                return (
+                                    <li key={`section-${entry.id}`} role="presentation">
+                                        <SectionOption
+                                            name={entry.label}
+                                            aisleName={entry.subtitle}
+                                            selected={currentSectionId === entry.id}
+                                            onSelect={() =>
+                                                commit(entry.section.aisleId, entry.section.id)
+                                            }
+                                        />
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )
                 ) : (
-                    <IonAccordionGroup value={expandedAisleId} onIonChange={handleAccordionChange}>
+                    <ul className="location-picker__list">
                         {sortedAisles.map((aisle) => {
                             const aisleSections = sectionsByAisle.get(aisle.id) ?? [];
 
                             if (aisleSections.length === 0) {
+                                const selected = currentAisleId === aisle.id;
                                 return (
-                                    <IonItem
-                                        key={aisle.id}
-                                        button
-                                        detail={false}
-                                        onClick={() => selectAisleOnly(aisle)}
-                                        ref={(el: HTMLIonItemElement | null) => {
-                                            if (el) aisleRefs.current.set(aisle.id, el);
-                                            else aisleRefs.current.delete(aisle.id);
-                                        }}
-                                    >
-                                        <IonLabel className="location-picker__aisle-label">
-                                            {aisle.name}
-                                        </IonLabel>
-                                        {currentAisleId === aisle.id && (
-                                            <IonIcon
-                                                icon={checkmarkOutline}
-                                                slot="end"
-                                                color="primary"
-                                            />
-                                        )}
-                                    </IonItem>
+                                    <li key={aisle.id} ref={setAisleRef(aisle.id)}>
+                                        <button
+                                            type="button"
+                                            className="row-button location-picker__aisle"
+                                            aria-current={selected || undefined}
+                                            onClick={() => selectAisleOnly(aisle)}
+                                        >
+                                            <AisleRowFace aisle={aisle} selected={selected} />
+                                        </button>
+                                    </li>
                                 );
                             }
 
+                            const expanded = expandedAisleId === aisle.id;
+                            const aisleOnly = currentAisleId === aisle.id && !currentSectionId;
+                            const sectionsId = `location-picker-sections-${aisle.id}`;
                             return (
-                                <IonAccordion
-                                    key={aisle.id}
-                                    value={aisle.id}
-                                    ref={(el) => {
-                                        if (el) aisleRefs.current.set(aisle.id, el);
-                                        else aisleRefs.current.delete(aisle.id);
-                                    }}
-                                >
-                                    <IonItem slot="header" detail={false}>
-                                        <IonLabel className="location-picker__aisle-label">
-                                            {aisle.name}
-                                        </IonLabel>
-                                        {currentAisleId === aisle.id && !currentSectionId && (
-                                            <IonIcon
-                                                icon={checkmarkOutline}
-                                                slot="end"
-                                                color="primary"
-                                            />
-                                        )}
-                                    </IonItem>
-                                    <IonList slot="content">
-                                        <IonItem
-                                            button
-                                            detail={false}
-                                            className="location-picker__no-section-item"
-                                            onClick={() => commit(aisle.id, null)}
+                                <li key={aisle.id} ref={setAisleRef(aisle.id)}>
+                                    <button
+                                        type="button"
+                                        className="row-button location-picker__aisle"
+                                        aria-expanded={expanded}
+                                        aria-controls={sectionsId}
+                                        aria-current={aisleOnly || undefined}
+                                        onClick={() => toggleAisle(aisle.id)}
+                                    >
+                                        <AisleRowFace
+                                            aisle={aisle}
+                                            selected={aisleOnly}
+                                            trail={expanded ? "collapse" : "expand"}
+                                        />
+                                    </button>
+                                    {expanded && (
+                                        <ul
+                                            id={sectionsId}
+                                            className="location-picker__sections"
+                                            role="listbox"
+                                            aria-label={`Sections in ${aisle.name}`}
                                         >
-                                            <IonLabel
-                                                color="medium"
-                                                className="location-picker__no-section-label"
-                                            >
-                                                - no section -
-                                            </IonLabel>
-                                            {currentAisleId === aisle.id && !currentSectionId && (
-                                                <IonIcon
-                                                    icon={checkmarkOutline}
-                                                    slot="end"
-                                                    color="primary"
+                                            <li role="presentation">
+                                                <SectionOption
+                                                    name="No section"
+                                                    none
+                                                    selected={aisleOnly}
+                                                    onSelect={() => commit(aisle.id, null)}
                                                 />
-                                            )}
-                                        </IonItem>
-                                        {aisleSections.map((section) => (
-                                            <IonItem
-                                                key={section.id}
-                                                button
-                                                detail={false}
-                                                className="location-picker__section-item"
-                                                onClick={() => commit(aisle.id, section.id)}
-                                            >
-                                                <IonLabel className="location-picker__section-label">
-                                                    {section.name}
-                                                </IonLabel>
-                                                {currentSectionId === section.id && (
-                                                    <IonIcon
-                                                        icon={checkmarkOutline}
-                                                        slot="end"
-                                                        color="primary"
+                                            </li>
+                                            {aisleSections.map((section) => (
+                                                <li key={section.id} role="presentation">
+                                                    <SectionOption
+                                                        name={section.name}
+                                                        selected={currentSectionId === section.id}
+                                                        onSelect={() =>
+                                                            commit(aisle.id, section.id)
+                                                        }
                                                     />
-                                                )}
-                                            </IonItem>
-                                        ))}
-                                    </IonList>
-                                </IonAccordion>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </li>
                             );
                         })}
-                    </IonAccordionGroup>
+                    </ul>
                 )}
             </IonContent>
             {hasSelection && (
-                <IonFooter>
-                    <IonToolbar>
-                        <IonButton
-                            expand="block"
-                            fill="clear"
-                            color="medium"
-                            onClick={() => commit(null, null)}
-                        >
-                            Clear location
-                        </IonButton>
-                    </IonToolbar>
-                </IonFooter>
+                <EditorFooter>
+                    <IonButton
+                        expand="block"
+                        fill="outline"
+                        color="medium"
+                        className="editor-form__submit"
+                        onClick={() => commit(null, null)}
+                    >
+                        Clear location
+                    </IonButton>
+                </EditorFooter>
             )}
         </IonModal>
     );

@@ -1,0 +1,75 @@
+// Store item row, on the shopping list's row geometry (ShoppingListItem.css): the list indents
+// rows 16px under their headers, the star takes the checkbox's 36px column (centred at x = 50,
+// the plate and checkbox centre line) with a 10px gap, so the name starts at x = 78 like a
+// shopping list item's. The include/unsure toggles end the row, the last glyph pulled onto the
+// gutter (see .route-row__toggles in RouteIngredientsContent.scss).
+
+.store-item-row--editable {
+    cursor: pointer;
+}
+
+// Ionic gives a start slot 32px of end margin; the column carries the row's own 10px instead.
+.store-item-row__fav {
+    display: flex;
+    flex: none;
+    justify-content: center;
+    width: 36px;
+    margin-inline: 0 10px;
+}
+
+.store-item-row__fav-hit {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ion-color-medium);
+    font-size: 1.25rem;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    &--on {
+        color: var(--ion-color-warning);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ion-color-primary);
+        outline-offset: 0;
+    }
+}
+
+// Same vertical rhythm as a shopping list row's label (13px above, 12px below).
+ion-item .store-item-row__label {
+    margin-top: 13px;
+    margin-bottom: 12px;
+}
+
+// Scoped under ion-item: Ionic's label typography (.sc-ion-label-md-s h2) outranks one class.
+ion-item .store-item-row__label .store-item-row__name {
+    margin: 0;
+    font-weight: 500;
+}
+
+// Two 36px icon buttons with 20px glyphs. Ionic's 32px end-slot margin becomes 8px from the
+// name, and the row's end is pulled 8px (the button's own inset) so the unsure glyph's edge
+// lands on the gutter. Nested selectors beat the shared buttons' own margins.
+.store-item-row__toggles {
+    display: flex;
+    flex: none;
+    margin-inline: 8px -8px;
+
+    ion-button {
+        width: 36px;
+        height: 36px;
+        margin: 0;
+        --padding-start: 0;
+        --padding-end: 0;
+
+        ion-icon {
+            font-size: 1.25rem;
+        }
+    }
+}

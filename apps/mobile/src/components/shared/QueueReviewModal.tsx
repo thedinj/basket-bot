@@ -1,22 +1,12 @@
-import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonModal,
-    IonText,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
-import { closeOutline, cloudDoneOutline, trashOutline } from "ionicons/icons";
+import { IonContent, IonModal, useIonAlert } from "@ionic/react";
+import { cloudDoneOutline } from "ionicons/icons";
 import { useState } from "react";
 import { useToast } from "../../hooks/useToast";
 import type { QueuedMutation } from "../../lib/mutationQueue";
 import { mutationQueue } from "../../lib/mutationQueue";
+import { DestructiveAction } from "./DestructiveAction";
+import { ModalHeader } from "./ModalHeader";
+import { RowRemoveButton } from "./RowRemoveButton";
 import TabEmptyState from "./TabEmptyState";
 import "./QueueReviewModal.scss";
 
@@ -25,6 +15,19 @@ interface QueueReviewModalProps {
     onClose: () => void;
 }
 
+// Format timestamp
+const formatTimestamp = (timestamp: number): string => {
+    const date = new Date(timestamp);
+    return date.toLocaleString();
+};
+
+// Format operation name
+const formatOperation = (mutation: QueuedMutation): string => {
+    const method = mutation.method.toUpperCase();
+    const operation = mutation.operation || "Unknown";
+    return `${method}: ${operation}`;
+};
+
 /**
  * Modal to review and manage queued mutations
  * Allows users to see what's pending and clear individual items or the entire queue
@@ -32,6 +35,7 @@ interface QueueReviewModalProps {
 const QueueReviewModal: React.FC<QueueReviewModalProps> = ({ isOpen, onClose }) => {
     const [queue, setQueue] = useState<readonly QueuedMutation[]>([]);
     const { showSuccess, showError } = useToast();
+    const [presentAlert] = useIonAlert();
 
     // Load queue when modal opens
     const handleWillPresent = () => {
@@ -39,7 +43,7 @@ const QueueReviewModal: React.FC<QueueReviewModalProps> = ({ isOpen, onClose }) 
     };
 
     // Clear all mutations
-    const handleClearAll = async () => {
+    const clearAll = async () => {
         try {
             await mutationQueue.clearQueue();
             showSuccess("Cleared all pending changes");
@@ -49,6 +53,26 @@ const QueueReviewModal: React.FC<QueueReviewModalProps> = ({ isOpen, onClose }) 
             console.error("[QueueReviewModal] Failed to clear queue:", error);
             showError("Failed to clear queue");
         }
+    };
+
+    // Discarding the whole queue can't be undone, so it confirms first.
+    const handleClearAll = () => {
+        presentAlert({
+            header: "Discard All Changes",
+            message: `Discard ${queue.length} pending ${
+                queue.length === 1 ? "change" : "changes"
+            }? They will never reach the server.`,
+            buttons: [
+                "Cancel",
+                {
+                    text: "Discard",
+                    role: "destructive",
+                    handler: () => {
+                        void clearAll();
+                    },
+                },
+            ],
+        });
     };
 
     // Remove a specific mutation
@@ -63,32 +87,10 @@ const QueueReviewModal: React.FC<QueueReviewModalProps> = ({ isOpen, onClose }) 
         }
     };
 
-    // Format timestamp
-    const formatTimestamp = (timestamp: number): string => {
-        const date = new Date(timestamp);
-        return date.toLocaleString();
-    };
-
-    // Format operation name
-    const formatOperation = (mutation: QueuedMutation): string => {
-        const method = mutation.method.toUpperCase();
-        const operation = mutation.operation || "Unknown";
-        return `${method}: ${operation}`;
-    };
-
     return (
         <IonModal isOpen={isOpen} onWillPresent={handleWillPresent} onDidDismiss={onClose}>
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>Pending Changes</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={onClose}>
-                            <IonIcon slot="icon-only" icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
-            <IonContent>
+            <ModalHeader title="Pending Changes" onClose={onClose} />
+            <IonContent className={queue.length === 0 ? undefined : "ion-padding"}>
                 {queue.length === 0 ? (
                     <TabEmptyState
                         variant="full"
@@ -97,56 +99,48 @@ const QueueReviewModal: React.FC<QueueReviewModalProps> = ({ isOpen, onClose }) 
                         body="Every change made it through. Nothing is waiting on the network."
                     />
                 ) : (
-                    <>
-                        <div className="queue-header">
-                            <IonText color="medium">
-                                <p>
-                                    {queue.length} pending{" "}
-                                    {queue.length === 1 ? "change" : "changes"}
-                                </p>
-                            </IonText>
-                            <IonButton
-                                size="small"
-                                color="danger"
-                                fill="outline"
-                                onClick={handleClearAll}
-                            >
-                                Clear All
-                            </IonButton>
-                        </div>
-                        <IonList>
-                            {queue.map((mutation) => (
-                                <IonItem key={mutation.id} className="queue-item">
-                                    <div className="queue-item-content">
-                                        <IonLabel>
-                                            <h3>{formatOperation(mutation)}</h3>
-                                            <p className="queue-item-detail">
+                    <div className="queue-review">
+                        <section className="queue-review__section">
+                            <h2 className="ruled-label">
+                                Pending <span className="ruled-label__count">{queue.length}</span>
+                            </h2>
+                            <ul className="queue-review__list">
+                                {queue.map((mutation) => (
+                                    <li key={mutation.id} className="queue-row">
+                                        <div className="queue-row__text">
+                                            <span className="queue-row__operation">
+                                                {formatOperation(mutation)}
+                                            </span>
+                                            <span className="queue-row__meta">
                                                 {formatTimestamp(mutation.timestamp)}
-                                            </p>
-                                            {mutation.retryCount > 0 && (
-                                                <p className="queue-item-retry">
-                                                    Retry count: {mutation.retryCount}
-                                                </p>
-                                            )}
+                                                {mutation.retryCount > 0 && (
+                                                    <>
+                                                        {" · "}
+                                                        <span className="queue-row__retry">
+                                                            Retry count: {mutation.retryCount}
+                                                        </span>
+                                                    </>
+                                                )}
+                                            </span>
                                             {mutation.lastError && (
-                                                <p className="queue-item-error">
+                                                <p className="queue-row__error">
                                                     Last error: {mutation.lastError}
                                                 </p>
                                             )}
-                                        </IonLabel>
-                                        <IonButton
-                                            slot="end"
-                                            fill="clear"
-                                            color="danger"
+                                        </div>
+                                        <RowRemoveButton
                                             onClick={() => handleRemove(mutation.id)}
-                                        >
-                                            <IonIcon slot="icon-only" icon={trashOutline} />
-                                        </IonButton>
-                                    </div>
-                                </IonItem>
-                            ))}
-                        </IonList>
-                    </>
+                                            label={`Discard ${formatOperation(mutation)}`}
+                                        />
+                                    </li>
+                                ))}
+                            </ul>
+                        </section>
+
+                        <DestructiveAction onClick={handleClearAll}>
+                            Discard all changes
+                        </DestructiveAction>
+                    </div>
                 )}
             </IonContent>
         </IonModal>

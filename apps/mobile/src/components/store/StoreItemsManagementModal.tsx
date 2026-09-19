@@ -1,33 +1,21 @@
 import {
     IonAlert,
-    IonButton,
-    IonButtons,
     IonContent,
     IonFab,
     IonFabButton,
     IonHeader,
     IonIcon,
     IonItem,
-    IonItemDivider,
     IonLabel,
-    IonList,
     IonModal,
     IonSearchbar,
     IonSkeletonText,
-    IonText,
     IonTitle,
     IonToolbar,
 } from "@ionic/react";
 import clsx from "clsx";
-import {
-    add,
-    closeOutline,
-    nuclear,
-    pricetagsOutline,
-    searchOutline,
-    star,
-    fileTrayFull,
-} from "ionicons/icons";
+import { add, nuclear, pricetagsOutline, searchOutline, star } from "ionicons/icons";
+import pluralize from "pluralize";
 import React, { Suspense, useCallback, useMemo, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { useStore, useStoreItemsWithDetails } from "../../db/hooks";
@@ -41,6 +29,7 @@ import { FabSpacer } from "../shared/FabSpacer";
 import { GroupedItemList } from "../shared/GroupedItemList";
 import { ItemGroup } from "../shared/grouping.types";
 import { createAisleSectionGroups } from "../shared/grouping.utils";
+import { ModalHeader } from "../shared/ModalHeader";
 import PullToRefresh from "../shared/PullToRefresh";
 import TabEmptyState from "../shared/TabEmptyState";
 import ObliterateUnusedModal from "../storeitem/ObliterateUnusedModal";
@@ -49,6 +38,80 @@ import StoreItemRow from "../storeitem/StoreItemRow";
 import { useShoppingListItemMap } from "../storeitem/useShoppingListItemMap";
 import { useStoreItemOperations } from "../storeitem/useStoreItemOperations";
 import { ItemsBlockHeader } from "./ItemsBlockHeader";
+
+import "./StoreItemsManagementModal.scss";
+
+interface SkeletonPlaceholder {
+    id: string;
+}
+
+const makeSkeletonGroup = (
+    id: string,
+    itemCount: number,
+    sortOrder: number
+): ItemGroup<SkeletonPlaceholder> => ({
+    id,
+    items: Array.from({ length: itemCount }, (_, index) => ({ id: `${id}-${index}` })),
+    header: {
+        label: <IonSkeletonText animated className="store-items-skeleton__aisle" />,
+        badge: "",
+        color: "light",
+        labelClassName: "group-header-label group-header-label--aisle",
+    },
+    sortOrder,
+    indentLevel: 16,
+});
+
+const SKELETON_GROUPS = [
+    makeSkeletonGroup("skeleton-1", 4, 0),
+    makeSkeletonGroup("skeleton-2", 3, 1),
+];
+
+const getSkeletonKey = (item: SkeletonPlaceholder) => item.id;
+
+/** A placeholder in StoreItemRow's geometry: star column, then the name. */
+const renderSkeletonRow = () => (
+    <IonItem className="store-item-row">
+        <div slot="start" className="store-item-row__fav">
+            <IonSkeletonText animated className="store-items-skeleton__star" />
+        </div>
+        <IonLabel className="store-item-row__label">
+            <IonSkeletonText animated className="store-items-skeleton__name" />
+        </IonLabel>
+    </IonItem>
+);
+
+/** Content-shaped loading state, drawn through the same GroupedItemList shell as the list. */
+const StoreItemsSkeleton: React.FC = () => (
+    <GroupedItemList<SkeletonPlaceholder>
+        groups={SKELETON_GROUPS}
+        getItemKey={getSkeletonKey}
+        renderItem={renderSkeletonRow}
+    />
+);
+
+interface ItemsSearchProps {
+    value: string;
+    onChange?: (value: string) => void;
+    itemCount?: number;
+    disabled?: boolean;
+}
+
+/** The search row pinned under the title bar: one 44px field, edge to edge on the gutter. */
+const ItemsSearch: React.FC<ItemsSearchProps> = ({ value, onChange, itemCount, disabled }) => (
+    <div className="store-items-search">
+        <IonSearchbar
+            className="search-field"
+            value={value}
+            onIonInput={(e) => onChange?.(e.detail.value || "")}
+            placeholder={
+                itemCount ? `Search ${itemCount} ${pluralize("item", itemCount)}` : "Search items"
+            }
+            debounce={0}
+            disabled={disabled}
+        />
+    </div>
+);
 
 interface StoreItemsManagementModalProps {
     isOpen: boolean;
@@ -146,6 +209,7 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                     <ActionSlotButton
                         label="Obliterate Unused"
                         icon={nuclear}
+                        color="warning"
                         onClick={openObliterateModal}
                     />
                 );
@@ -257,29 +321,21 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                     queryKeys.shoppingListItems.byStore(storeId),
                 ]}
             >
-                <IonHeader>
-                    <IonToolbar>
-                        <IonTitle>{store?.name || "Store"} Items</IonTitle>
-                        <IonButtons slot="end">
-                            <GlobalActions />
-                            <IonButton onClick={onClose}>
-                                <IonIcon icon={closeOutline} />
-                            </IonButton>
-                        </IonButtons>
-                    </IonToolbar>
-                </IonHeader>
+                <ModalHeader
+                    title={`${store?.name || "Store"} Items`}
+                    onClose={onClose}
+                    actions={<GlobalActions />}
+                >
+                    <ItemsSearch
+                        value={searchTerm}
+                        onChange={setSearchTerm}
+                        itemCount={items?.length}
+                    />
+                </ModalHeader>
                 <IonContent>
                     <PullToRefresh />
-                    <IonSearchbar
-                        value={searchTerm}
-                        onIonInput={(e) => setSearchTerm(e.detail.value || "")}
-                        placeholder="Search items..."
-                        debounce={0}
-                    />
                     {isLoading ? (
-                        <div style={{ padding: "20px", textAlign: "center" }}>
-                            <IonText color="medium">Loading items...</IonText>
-                        </div>
+                        <StoreItemsSkeleton />
                     ) : favoriteGroups.length === 0 && allGroups.length === 0 ? (
                         items?.length === 0 ? (
                             <TabEmptyState
@@ -321,12 +377,7 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                                     {/* Only needs a name when there's a Favorites block to tell
                                         it apart from. */}
                                     {favoriteGroups.length > 0 && (
-                                        <ItemsBlockHeader
-                                            icon={fileTrayFull}
-                                            iconColor="medium"
-                                            label="All Items"
-                                            count={allCount}
-                                        />
+                                        <ItemsBlockHeader label="All Items" count={allCount} />
                                     )}
                                     <GroupedItemList<StoreItemWithDetails>
                                         groups={allGroups}
@@ -392,27 +443,13 @@ const LoadingFallback: React.FC = () => (
         <IonHeader>
             <IonToolbar>
                 <IonTitle>
-                    <IonSkeletonText animated style={{ width: "140px" }} />
+                    <IonSkeletonText animated className="store-items-skeleton__title" />
                 </IonTitle>
             </IonToolbar>
+            <ItemsSearch value="" disabled />
         </IonHeader>
         <IonContent>
-            <IonSearchbar disabled value="" placeholder="Search items..." />
-            <IonItemDivider>
-                <IonLabel>
-                    <IonSkeletonText animated style={{ width: "80px" }} />
-                </IonLabel>
-            </IonItemDivider>
-            <IonList>
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <IonItem key={i}>
-                        <IonLabel>
-                            <IonSkeletonText animated style={{ width: "70%" }} />
-                            <IonSkeletonText animated style={{ width: "40%" }} />
-                        </IonLabel>
-                    </IonItem>
-                ))}
-            </IonList>
+            <StoreItemsSkeleton />
         </IonContent>
     </>
 );

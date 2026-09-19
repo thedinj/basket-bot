@@ -1,8 +1,12 @@
-import { IonIcon, IonInput, IonItem, IonLabel, IonText } from "@ionic/react";
+import { IonIcon } from "@ionic/react";
+import clsx from "clsx";
 import { chevronDownOutline } from "ionicons/icons";
 import { useState } from "react";
 import { naturalSort } from "../../utils/stringUtils";
 import { ClickableSelectionModal, SelectableItem } from "./ClickableSelectionModal";
+import { FormField } from "./FormField";
+
+import "./ClickableSelectionField.scss";
 
 interface ClickableSelectionFieldProps {
     /** Array of items to display in modal */
@@ -11,7 +15,7 @@ interface ClickableSelectionFieldProps {
     value: string | null | undefined;
     /** Callback when an item is selected */
     onSelect: (itemId: string | null) => void;
-    /** Optional stacked label text */
+    /** Optional field label; when given, the box is wrapped in a FormField */
     label?: string;
     /** Text shown when no value is selected */
     placeholder: string;
@@ -29,19 +33,17 @@ interface ClickableSelectionFieldProps {
     disabled?: boolean;
     /** Error message to display below field */
     errorMessage?: string;
-    /** Custom styles for the input field */
-    inputStyle?: React.CSSProperties;
     /** Whether to show chevron icon on the right side */
     showChevron?: boolean;
     /** Optional icon to display at start of field */
     startIcon?: string;
-    /** IonItem lines style (default: full) */
-    lines?: "none" | "full" | "inset";
+    /** Extra classes on the box (e.g. its share of a row it sits in). */
+    className?: string;
 }
 
 /**
- * Reusable field component that combines IonItem with ClickableSelectionModal.
- * Provides consistent UX for selection fields across the app.
+ * A form-system box (`.form-control--button`) that opens a ClickableSelectionModal. It is the
+ * box itself: don't wrap it in another `.form-control`.
  */
 export const ClickableSelectionField: React.FC<ClickableSelectionFieldProps> = ({
     items,
@@ -56,10 +58,9 @@ export const ClickableSelectionField: React.FC<ClickableSelectionFieldProps> = (
     allowClear = true,
     disabled = false,
     errorMessage,
-    inputStyle,
     showChevron = false,
     startIcon,
-    lines,
+    className,
 }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -79,40 +80,53 @@ export const ClickableSelectionField: React.FC<ClickableSelectionFieldProps> = (
 
     // Determine what to display
     const display = displayText ? displayText : value ? selectedItem?.label : placeholder;
+    const isPlaceholder = !displayText && !value;
+
+    const box = (
+        <button
+            type="button"
+            className={clsx("form-control form-control--button selection-field", className)}
+            onClick={handleClick}
+            disabled={disabled || items.length === 0}
+            aria-haspopup="dialog"
+            aria-label={`${label ?? modalTitle}: ${display ?? placeholder}`}
+        >
+            {startIcon && (
+                <IonIcon className="selection-field__icon" icon={startIcon} aria-hidden="true" />
+            )}
+            <span
+                className={clsx(
+                    "form-control__value",
+                    isPlaceholder && "form-control__placeholder"
+                )}
+            >
+                {display}
+            </span>
+            {showChevron && (
+                <IonIcon
+                    className="form-control__trail"
+                    icon={chevronDownOutline}
+                    aria-hidden="true"
+                />
+            )}
+        </button>
+    );
 
     return (
         <>
-            <IonItem
-                button
-                onClick={handleClick}
-                disabled={disabled || items.length === 0}
-                lines={lines}
-            >
-                {startIcon && <IonIcon icon={startIcon} slot="start" color="medium" />}
-                {label && <IonLabel position="stacked">{label}</IonLabel>}
-                <IonInput
-                    value={display}
-                    style={{
-                        color: value ? "var(--ion-color-dark)" : "var(--ion-color-medium)",
-                        cursor: disabled ? "not-allowed" : "pointer",
-                        ...inputStyle,
-                    }}
-                    readonly
-                />
-                {showChevron && (
-                    <IonIcon
-                        icon={chevronDownOutline}
-                        slot="end"
-                        color="medium"
-                        style={{ fontSize: "0.9rem", flexShrink: 0 }}
-                    />
-                )}
-            </IonItem>
-
-            {errorMessage && (
-                <IonText color="danger">
-                    <div style={{ fontSize: "12px", marginLeft: "16px" }}>{errorMessage}</div>
-                </IonText>
+            {label ? (
+                <FormField label={label} error={errorMessage}>
+                    {box}
+                </FormField>
+            ) : (
+                <>
+                    {box}
+                    {errorMessage && (
+                        <p className="form-field__error" role="alert">
+                            {errorMessage}
+                        </p>
+                    )}
+                </>
             )}
 
             <ClickableSelectionModal

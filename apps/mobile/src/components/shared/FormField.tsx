@@ -6,6 +6,8 @@ type FormFieldProps = {
     /** Optional control on the label's line, right-aligned (e.g. Auto-Locate). */
     action?: ReactNode;
     error?: string;
+    /** Secondary text under the control; hidden while an error shows. */
+    hint?: ReactNode;
     className?: string;
     children: ReactNode;
 };
@@ -19,6 +21,7 @@ export const FormField: React.FC<FormFieldProps> = ({
     label,
     action,
     error,
+    hint,
     className,
     children,
 }) => (
@@ -28,6 +31,7 @@ export const FormField: React.FC<FormFieldProps> = ({
             {action}
         </div>
         {children}
+        {hint && !error && <p className="form-field__hint">{hint}</p>}
         {error && (
             <p className="form-field__error" role="alert">
                 {error}

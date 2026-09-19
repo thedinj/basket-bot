@@ -1,19 +1,11 @@
-import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonInput,
-    IonItem,
-    IonLabel,
-    IonModal,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
-import { closeOutline } from "ionicons/icons";
-import React, { useEffect, useState } from "react";
+import { IonButton, IonContent, IonInput, IonModal } from "@ionic/react";
+import React, { useEffect, useRef, useState } from "react";
 import { useUpdateHousehold } from "../../db/hooks";
+import { EditorFooter } from "../shared/EditorFooter";
+import { FormField } from "../shared/FormField";
+import { ModalHeader } from "../shared/ModalHeader";
+
+import "./Households.scss";
 
 interface EditHouseholdDetailsModalProps {
     householdId: string | null;
@@ -30,6 +22,7 @@ const EditHouseholdDetailsModal: React.FC<EditHouseholdDetailsModalProps> = ({
 }) => {
     const updateHousehold = useUpdateHousehold();
     const [name, setName] = useState(currentName);
+    const nameInputRef = useRef<HTMLIonInputElement>(null);
 
     // Reset name when modal opens with new data
     useEffect(() => {
@@ -38,8 +31,11 @@ const EditHouseholdDetailsModal: React.FC<EditHouseholdDetailsModalProps> = ({
         }
     }, [isOpen, currentName]);
 
-    const handleSave = async () => {
-        if (!householdId || !name.trim()) return;
+    const canSave = !!householdId && !!name.trim() && !updateHousehold.isPending;
+
+    const handleSave = async (e?: React.FormEvent) => {
+        e?.preventDefault();
+        if (!householdId || !canSave) return;
 
         await updateHousehold.mutateAsync({ householdId, name: name.trim() });
         onClose();
@@ -51,46 +47,44 @@ const EditHouseholdDetailsModal: React.FC<EditHouseholdDetailsModalProps> = ({
     };
 
     return (
-        <IonModal isOpen={isOpen} onDidDismiss={handleCancel}>
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>Edit Household Details</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={handleCancel}>
-                            <IonIcon icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+        <IonModal
+            isOpen={isOpen}
+            onDidDismiss={handleCancel}
+            onDidPresent={() => nameInputRef.current?.setFocus()}
+        >
+            <ModalHeader
+                title="Edit Household"
+                onClose={handleCancel}
+                closeDisabled={updateHousehold.isPending}
+            />
             <IonContent className="ion-padding">
-                <IonItem>
-                    <IonLabel position="stacked">Household Name</IonLabel>
-                    <IonInput
-                        value={name}
-                        onIonInput={(e) => setName(e.detail.value || "")}
-                        placeholder="Enter household name"
-                        disabled={updateHousehold.isPending}
-                    />
-                </IonItem>
-
-                <div className="ion-padding-top">
-                    <IonButton
-                        expand="block"
-                        onClick={handleSave}
-                        disabled={!name.trim() || updateHousehold.isPending}
-                    >
-                        {updateHousehold.isPending ? "Saving..." : "Save"}
-                    </IonButton>
-                    <IonButton
-                        expand="block"
-                        fill="outline"
-                        onClick={handleCancel}
-                        disabled={updateHousehold.isPending}
-                    >
-                        Cancel
-                    </IonButton>
-                </div>
+                <form className="editor-form" onSubmit={handleSave}>
+                    <FormField label="Name">
+                        <div className="form-control">
+                            <IonInput
+                                ref={nameInputRef}
+                                aria-label="Household name"
+                                value={name}
+                                onIonInput={(e) => setName(e.detail.value || "")}
+                                placeholder="Household name"
+                                autocapitalize="words"
+                                enterkeyhint="done"
+                                disabled={updateHousehold.isPending}
+                            />
+                        </div>
+                    </FormField>
+                </form>
             </IonContent>
+            <EditorFooter>
+                <IonButton
+                    className="editor-form__submit"
+                    expand="block"
+                    onClick={() => handleSave()}
+                    disabled={!canSave}
+                >
+                    {updateHousehold.isPending ? "Saving..." : "Save Changes"}
+                </IonButton>
+            </EditorFooter>
         </IonModal>
     );
 };

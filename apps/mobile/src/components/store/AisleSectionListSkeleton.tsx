@@ -1,22 +1,23 @@
-import { IonLabel, IonList, IonSegment, IonSegmentButton } from "@ionic/react";
-import { Fragment } from "react";
-import { SkeletonListItem } from "../shared/skeleton/SkeletonListItem";
+import { IonLabel, IonSegment, IonSegmentButton, IonSkeletonText } from "@ionic/react";
+import { CSSProperties, Fragment } from "react";
+import "./AisleSectionList.scss";
 
-// Matches the 32x24 reorder-handle/edit-button spacer in AisleItem.tsx / SectionItem.tsx.
-const END_SLOT_SPACER = (
-    <div style={{ width: 32, minWidth: 32, height: 24, display: "inline-block" }} />
-);
+const SKELETON_AISLES = [
+    { width: "50%", sections: ["40%", "55%"] },
+    { width: "35%", sections: ["45%"] },
+    { width: "60%", sections: ["30%", "50%", "40%"] },
+];
 
-const SKELETON_AISLES = [{ sectionCount: 2 }, { sectionCount: 1 }, { sectionCount: 3 }];
+const widthStyle = (width: string) => ({ "--skeleton-width": width }) as CSSProperties;
 
 /**
- * Content-shaped fallback for AisleSectionList — mirrors AisleItem/SectionItem's exact row
- * structure (lines="none", 16px section indent, end-slot spacer) plus the segment toggle,
- * so nothing shifts or pops in once the real aisles/sections load.
+ * Content-shaped fallback for AisleSectionList: the mode switch, then aisle bars and section
+ * rows on the same grid as AisleItem / SectionItem (plate column, 62px name column, the pencil
+ * and reorder columns), so nothing shifts once the real aisles and sections load.
  */
 export const AisleSectionListSkeleton: React.FC = () => (
     <>
-        <div style={{ padding: "16px", paddingBottom: "8px" }}>
+        <div className="aisle-section-list__modes">
             <IonSegment value="sections" disabled>
                 <IonSegmentButton value="sections">
                     <IonLabel>Reorder Sections</IonLabel>
@@ -27,22 +28,38 @@ export const AisleSectionListSkeleton: React.FC = () => (
             </IonSegment>
         </div>
 
-        <IonList>
+        <div aria-hidden="true">
             {SKELETON_AISLES.map((aisle, aisleIndex) => (
                 <Fragment key={aisleIndex}>
-                    <SkeletonListItem lines="none" widths={["50%"]} endSlot={END_SLOT_SPACER} />
-                    {Array.from({ length: aisle.sectionCount }, (_, sectionIndex) => (
-                        <SkeletonListItem
+                    <div className="aisle-row aisle-row--aisle aisle-row--skeleton">
+                        <div className="aisle-row__main">
+                            <IonSkeletonText animated className="aisle-row__skeleton-plate" />
+                            <IonSkeletonText
+                                animated
+                                className="aisle-row__skeleton-text"
+                                style={widthStyle(aisle.width)}
+                            />
+                        </div>
+                        <span className="aisle-row__handle" />
+                    </div>
+                    {aisle.sections.map((width, sectionIndex) => (
+                        <div
                             key={sectionIndex}
-                            lines="none"
-                            indent={16}
-                            widths={["40%"]}
-                            endSlot={END_SLOT_SPACER}
-                        />
+                            className="aisle-row aisle-row--section aisle-row--skeleton"
+                        >
+                            <div className="aisle-row__main">
+                                <IonSkeletonText
+                                    animated
+                                    className="aisle-row__skeleton-text"
+                                    style={widthStyle(width)}
+                                />
+                            </div>
+                            <span className="aisle-row__handle" />
+                        </div>
                     ))}
                 </Fragment>
             ))}
-        </IonList>
+        </div>
     </>
 );
 

@@ -1,6 +1,5 @@
 import { IonButton, IonIcon } from "@ionic/react";
 import { helpCircle, helpCircleOutline } from "ionicons/icons";
-import "./UnsureToggleButton.scss";
 
 interface UnsureToggleButtonProps {
     active: boolean;
@@ -17,7 +16,6 @@ const UnsureToggleButton: React.FC<UnsureToggleButtonProps> = ({ active, onClick
         size="small"
         color={active ? "warning" : "medium"}
         onClick={onClick}
-        className="unsure-toggle-btn"
         aria-label={active ? "Marked unsure if needed" : "Mark unsure if needed"}
     >
         <IonIcon slot="icon-only" icon={active ? helpCircle : helpCircleOutline} />

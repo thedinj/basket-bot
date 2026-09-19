@@ -62,6 +62,7 @@ import "@fontsource/noto-emoji/500.css";
 import "./theme/variables.scss";
 import "./theme/typography.scss";
 import "./theme/forms.scss";
+import "./theme/patterns.scss";
 
 setupIonicReact();
 

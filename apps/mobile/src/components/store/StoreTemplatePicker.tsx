@@ -1,30 +1,35 @@
-import { IonIcon, IonItem, IonLabel, IonList, IonListHeader, IonNote } from "@ionic/react";
-import { checkmarkCircle, ellipseOutline } from "ionicons/icons";
+import { IonIcon, IonSkeletonText } from "@ionic/react";
+import { ellipseOutline } from "ionicons/icons";
 import { useEffect } from "react";
 import { useStoreTemplates } from "../../db/hooks";
-import { SkeletonListItem } from "../shared/skeleton/SkeletonListItem";
+import { FormField } from "../shared/FormField";
+import StoreChoice from "./StoreChoice";
 
-interface StoreTemplatePickerProps {
+import "./StoreSheets.scss";
+
+type StoreTemplatePickerProps = {
     /** Selected template id, or undefined while the catalog is still loading. */
     value: string | undefined;
     onChange: (templateId: string) => void;
-}
+};
 
 /** Placeholder rows while the catalog loads, shaped like the real ones (title + subtitle). */
 const StoreTemplatePickerSkeleton: React.FC = () => (
     <>
         {[0, 1].map((index) => (
-            <SkeletonListItem
-                key={index}
-                widths={["45%", "80%"]}
-                startSlot={<IonIcon icon={ellipseOutline} color="medium" />}
-            />
+            <div key={index} className="store-choice" aria-hidden="true">
+                <IonIcon className="store-choice__mark" icon={ellipseOutline} />
+                <span className="store-choice__text">
+                    <IonSkeletonText animated className="store-choice__skeleton" />
+                    <IonSkeletonText animated className="store-choice__skeleton" />
+                </span>
+            </div>
         ))}
     </>
 );
 
 /**
- * Starting-layout chooser for the New Store form.
+ * Starting-layout chooser for the New Store form: a field whose box is a radio list.
  *
  * The catalog comes from the server (`GET /api/stores/templates`), so nothing here is
  * hardcoded — new store types appear without a client release. If the catalog can't be
@@ -46,44 +51,32 @@ const StoreTemplatePicker: React.FC<StoreTemplatePickerProps> = ({ value, onChan
     }
 
     return (
-        <IonList lines="full" className="store-template-picker">
-            <IonListHeader>
-                <IonLabel>Starting Layout</IonLabel>
-            </IonListHeader>
-            {isLoading || !templates ? (
-                <StoreTemplatePickerSkeleton />
-            ) : (
-                templates.map((template) => {
-                    const isSelected = template.id === value;
-                    return (
-                        <IonItem
+        <FormField label="Starting layout">
+            <div className="boxed-list" role="radiogroup" aria-label="Starting layout">
+                {isLoading || !templates ? (
+                    <StoreTemplatePickerSkeleton />
+                ) : (
+                    templates.map((template) => (
+                        <StoreChoice
                             key={template.id}
-                            button
-                            detail={false}
-                            onClick={() => onChange(template.id)}
-                            aria-selected={isSelected}
-                        >
-                            <IonIcon
-                                slot="start"
-                                icon={isSelected ? checkmarkCircle : ellipseOutline}
-                                color={isSelected ? "primary" : "medium"}
-                            />
-                            <IonLabel className="ion-text-wrap">
-                                <h3>{template.label}</h3>
-                                <p>{template.description}</p>
-                            </IonLabel>
-                            {template.aisleCount > 0 && (
-                                <IonNote slot="end">
-                                    {template.aisleCount} aisles
-                                    {template.sectionCount > 0 &&
-                                        ` · ${template.sectionCount} sections`}
-                                </IonNote>
-                            )}
-                        </IonItem>
-                    );
-                })
-            )}
-        </IonList>
+                            title={template.label}
+                            description={template.description}
+                            meta={
+                                template.aisleCount > 0 && (
+                                    <>
+                                        {template.aisleCount} aisles
+                                        {template.sectionCount > 0 &&
+                                            ` · ${template.sectionCount} sections`}
+                                    </>
+                                )
+                            }
+                            selected={template.id === value}
+                            onSelect={() => onChange(template.id)}
+                        />
+                    ))
+                )}
+            </div>
+        </FormField>
     );
 };
 

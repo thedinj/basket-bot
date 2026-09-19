@@ -1,0 +1,117 @@
+// Aisles & Sections management list, set like the shopping list it configures: aisle rows are
+// bars with their shield plate and a road-sign name, section rows are lilac ruled labels in the
+// aisle name's column (16px gutter + 36px plate column + 10px = 62px).
+//
+// Every row is two columns: the row's main button (plate, name, and the pencil glyph in a 36px
+// column), then a 36px reorder column. The row's end padding is 8px rather than 16px, which
+// pulls the reorder glyph (20px in a 36px box) onto the gutter. The reorder column is always
+// present, empty when the row can't move, so pencils line up down the list in both modes.
+
+.aisle-section-list__modes {
+    padding: 16px 16px 12px;
+}
+
+// `ion-reorder-group >` outranks Ionic's `.reorder-list-active > * { display: block }`, which
+// would otherwise collapse the grid mid-drag.
+ion-reorder-group > .aisle-row,
+.aisle-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 36px;
+    align-items: center;
+    padding-inline: 16px 8px;
+    background: var(--ion-background-color);
+}
+
+// While dragged: Ionic's drop shadow swapped for a hairline ring.
+ion-reorder-group > .aisle-row.reorder-selected {
+    box-shadow: 0 0 0 1px var(--ion-color-step-150);
+}
+
+.aisle-row--aisle {
+    background: var(--ion-color-light);
+    color: var(--ion-color-light-contrast);
+}
+
+// Aisle bars that meet (Reorder Aisles, or an aisle with no sections) get a hairline between.
+.aisle-row--aisle + .aisle-row--aisle {
+    border-top: 1px solid var(--ion-color-step-150);
+}
+
+// The whole row, bar the reorder handle, opens the editor: a .row-button (theme/patterns.scss),
+// which loads after this file, hence the compound selector for its geometry. The skeleton's
+// stand-in is a plain div.
+.aisle-row__main,
+.row-button.aisle-row__main {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) 36px;
+    align-items: center;
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px 0;
+}
+
+// Sections have no plate: their label starts in the aisle name's column.
+.aisle-row--section .aisle-row__main {
+    grid-template-columns: minmax(0, 1fr) 36px;
+    padding-inline-start: 46px;
+}
+
+// Aisle names in the shopping list's sign face: Overpass extra-bold capitals, two lines, then
+// an ellipsis. Empty for a number-only aisle, whose "AISLE 3" plate carries the name.
+.aisle-row__name {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    font-family: var(--app-font-sign);
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+// The hairline runs from the name to the pencil column.
+.ruled-label.aisle-row__section {
+    min-width: 0;
+}
+
+.aisle-row__section-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.aisle-row__edit {
+    justify-self: center;
+    font-size: 1.25rem;
+    color: var(--ion-color-medium);
+}
+
+// Scoped past `.reorder-enabled ion-reorder { display: block }`.
+.aisle-row ion-reorder.aisle-row__handle,
+.aisle-row__handle {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 44px;
+    font-size: 1.25rem;
+    color: var(--ion-color-medium);
+}
+
+// ── Skeleton ─────────────────────────────────────────────────────────────────
+
+.aisle-row__skeleton-plate {
+    width: 36px;
+    height: 28px;
+    margin: 0 10px 0 0;
+    border-radius: 5px;
+}
+
+.aisle-row__skeleton-text {
+    width: var(--skeleton-width, 50%);
+    height: 0.875rem;
+    margin: 0;
+}

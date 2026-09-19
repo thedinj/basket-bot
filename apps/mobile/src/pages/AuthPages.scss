@@ -1,57 +1,112 @@
+// Sign In / Create Account: the robot splash art behind a glass panel holding a form on the
+// shared form system (theme/forms.scss). Only the page frame and the panel live here.
+
+// The art is 1400px webp (it was a 2.7 MB, 2048px jpeg). The page shows it sharp; the panel
+// shows splash-glass.webp, the same art blurred and saturated once at build time, pinned to
+// the viewport so it lines up with the sharp copy behind. That is the frosted glass without a
+// live backdrop-filter, which re-blurred the art on every frame of every focus transition: in a
+// browser drawing without GPU help (a debugger-launched Chrome) painting fell seconds behind,
+// and focus rings appeared to replay earlier taps.
+//
+// Regenerate both from the source art (git history: public/img/splash.jpg) if it changes:
+// 1400px sharp at webp q80; blurred 20px at 1400px, colour x1.15, then 700px at q75.
 .auth-page-content {
-    --background: url(/img/splash.jpg) no-repeat center center / cover;
+    --background: url(/img/splash.webp) no-repeat center center / cover;
 }
 
-.auth-card-container {
+// The art on its own compositing layer, so a repaint above it never re-rasterizes it.
+.auth-page-content::part(background) {
+    will-change: transform;
+}
+
+// The page on the 16px gutter, with the safe area added at the foot.
+.auth-page {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    box-sizing: border-box;
     min-height: 100%;
+    padding: 16px 16px max(32px, calc(env(safe-area-inset-bottom, 0px) + 16px));
 }
 
-.auth-card {
-    max-width: 400px;
+.auth-panel {
+    box-sizing: border-box;
     width: 100%;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.85);
+    max-width: 400px;
+    padding: 20px 16px 8px;
 
-    // The card always sits below the bot's head and on the centre line, in every viewport
+    // The panel always sits below the bot's head and on the centre line, in every viewport
     // shape. One rule rather than an orientation split: there is no breakpoint to tune and
     // nothing to flip on rotation, so no stale state can be left behind.
     //
     // It holds in landscape too. `cover` scales the square art to the viewport width and
     // crops the top and bottom, which puts the visor band at the very top of a short
-    // viewport - so a bottom-anchored card still leaves the eyes reading above it.
+    // viewport - so a bottom-anchored panel still leaves the eyes reading above it.
     //
-    // Auto margins rather than justify-content centring: when the card is taller than the
+    // Auto margins rather than justify-content centring: when the panel is taller than the
     // viewport an auto margin collapses to zero and the page simply scrolls, where
-    // justify-content would push the top of the card past an edge that cannot be scrolled
-    // back to. That case is real - the Register card is taller than a landscape phone.
-    margin-top: auto;
-    margin-bottom: max(2rem, env(safe-area-inset-bottom, 0px));
-    margin-inline: auto;
+    // justify-content would push the top of the panel past an edge that cannot be scrolled
+    // back to. That case is real - the Register panel is taller than a landscape phone.
+    margin: auto auto 0;
 
-    // Glass, so the bot still reads through wherever the card has to overlap it. The
-    // colours are the launcher icon's own: #0f0f23 visor cavity, #bdb5dd shell. ion-card
-    // paints --background on the host and clips the host to its own border-radius, so the
-    // hairline and the blur both follow the card's corners.
-    --background: rgba(15, 15, 35, 0.72);
-    border: 1px solid rgba(189, 181, 221, 0.18);
-    backdrop-filter: blur(14px) saturate(115%);
-    -webkit-backdrop-filter: blur(14px) saturate(115%);
+    // Card frame (14px radius, hairline, no shadow) in frosted glass: the page colour at 74%
+    // over the pre-blurred art, which `fixed` pins to the viewport exactly where the sharp art
+    // sits, so the bot reads through, softened, wherever the panel overlaps it. The tint is the
+    // theme's own colour, so labels and fields keep their contrast in light and dark alike.
+    // (No transform or will-change here: either would detach a fixed background from the
+    // viewport.)
+    --auth-glass-tint: color-mix(in srgb, var(--ion-background-color) 74%, transparent);
+    border: 1px solid var(--ion-color-step-150);
+    border-radius: 14px;
+    background:
+        linear-gradient(var(--auth-glass-tint), var(--auth-glass-tint)),
+        url(/img/splash-glass.webp) center center / cover no-repeat fixed;
 }
 
-// No blur available, or the viewer has asked for less of it: go nearly opaque rather than
-// leave form labels sitting on raw artwork.
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .auth-card {
-        --background: rgba(15, 15, 35, 0.94);
-    }
-}
-
+// Asked for less transparency: nearly solid, the art no longer showing through.
 @media (prefers-reduced-transparency: reduce) {
-    .auth-card {
-        --background: rgba(15, 15, 35, 0.94);
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
+    .auth-panel {
+        --auth-glass-tint: color-mix(in srgb, var(--ion-background-color) 94%, transparent);
     }
+}
+
+// The app's name over the title, in the label register.
+.auth-panel__overline {
+    margin: 0 0 6px;
+    font-family: var(--app-font-display);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+    color: var(--ion-color-secondary);
+}
+
+// Sheet-title size.
+.auth-panel__title {
+    margin: 0 0 20px;
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--ion-text-color);
+}
+
+// The way to the other auth page: a quiet text button under the form, the verb in primary.
+// Element-qualified so it outranks Ionic's own ion-button margins.
+ion-button.auth-panel__switch {
+    height: 44px;
+    margin: 8px 0 0;
+    --color: var(--ion-color-medium);
+    --background-activated: color-mix(in srgb, var(--ion-color-primary) 10%, transparent);
+    --background-focused: color-mix(in srgb, var(--ion-color-primary) 10%, transparent);
+    --border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.auth-panel__switch-action {
+    margin-inline-start: 0.35em;
+    font-weight: 600;
+    color: var(--ion-color-primary);
 }

@@ -1,51 +1,57 @@
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { Capacitor } from "@capacitor/core";
-import {
-    IonButton,
-    IonButtons,
-    IonChip,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonModal,
-    IonText,
-    IonTextarea,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
-import { attach, camera, close } from "ionicons/icons";
+import { IonButton, IonContent, IonIcon, IonModal, IonSpinner, IonTextarea } from "@ionic/react";
+import { attach, camera, close, imageOutline } from "ionicons/icons";
 import React, { useRef, useState } from "react";
-import { useShield } from "../../components/shield/useShield";
-import { useToast } from "../../hooks/useToast";
+import { EditorFooter } from "../../components/shared/EditorFooter";
+import { FormField } from "../../components/shared/FormField";
+import { ModalHeader } from "../../components/shared/ModalHeader";
+import { RobotLine } from "../../components/shared/RobotLine";
+import RobotLoadingContent from "../../components/shared/RobotLoadingContent";
 import { useLLMConfig } from "../config/useLLMConfig";
+import "./LLMChrome.scss";
 import { runLLM } from "./runLLM";
 import type { LLMAttachment } from "./types";
 import { useLLMModalContext } from "./useLLMModalContext";
 
+/**
+ * The generic AI sheet: input step → running → review step.
+ *
+ * Layout contract for `renderOutput`: the sheet's IonContent keeps `ion-padding` (16px) and the
+ * result is rendered as its direct child, with no wrapper, heading or extra padding, so a
+ * renderer lays itself out flush on the 16px gutter. Actions live in the IonFooter.
+ */
 export const LLMModal: React.FC = () => {
     const { isOpen, config, closeModal, response, setResponse } = useLLMModalContext();
-    const { showError } = useToast();
     // `effectiveConfig`, not `config`: the stored one omits every default the user never
     // overrode, so its model fields can be blank.
     const { effectiveConfig: llmConfig, provider, apiKey, isReady } = useLLMConfig();
-    const { raiseShield, lowerShield } = useShield();
     const [attachments, setAttachments] = useState<LLMAttachment[]>([]);
     const [userText, setUserText] = useState("");
     const [interactionState, setInteractionState] = useState<unknown>(undefined);
+    const [isRunning, setIsRunning] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    // Bumped whenever the sheet is reset, so a run that resolves after its sheet was closed
+    // doesn't write a stale result into the next one.
+    const runIdRef = useRef(0);
     const isNative = Capacitor.isNativePlatform();
+
+    const resetState = () => {
+        runIdRef.current += 1;
+        setAttachments([]);
+        setUserText("");
+        setInteractionState(undefined);
+        setIsRunning(false);
+        setError(null);
+    };
 
     const handleClose = () => {
         if (config?.onCancel) {
             config.onCancel();
         }
 
-        // Reset state
-        setAttachments([]);
-        setUserText("");
-        setInteractionState(undefined);
+        resetState();
         closeModal();
     };
 
@@ -53,10 +59,15 @@ export const LLMModal: React.FC = () => {
         if (!response || !config) return;
 
         config.onAccept(response, interactionState);
-        setAttachments([]);
-        setUserText("");
-        setInteractionState(undefined);
+        resetState();
         closeModal();
+    };
+
+    /** Review step → input step, keeping the text and photos so the run can be adjusted. */
+    const handleBackToInput = () => {
+        setResponse(null);
+        setInteractionState(undefined);
+        setError(null);
     };
 
     const handleCameraPhoto = async (source: CameraSource) => {
@@ -77,18 +88,23 @@ export const LLMModal: React.FC = () => {
                     mimeType: `image/${image.format}`,
                 };
                 setAttachments((prev) => [...prev, attachment]);
+                setError(null);
             }
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : String(error);
             // Only swallow genuine user cancellations
             if (message !== "User cancelled photos app" && message !== "No image picked") {
-                showError(`Photo picker error: ${message}`);
+                setError(`Photo picker error: ${message}`);
             }
         }
     };
 
-    const handleAddAttachment = async () => {
+    const handleAddAttachment = () => {
         if (!config) return;
+        if (isNative) {
+            void handleCameraPhoto(CameraSource.Photos);
+            return;
+        }
         fileInputRef.current?.click();
     };
 
@@ -97,6 +113,7 @@ export const LLMModal: React.FC = () => {
         if (!files || files.length === 0) return;
 
         const newAttachments: LLMAttachment[] = [];
+        const failed: string[] = [];
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
@@ -123,11 +140,12 @@ export const LLMModal: React.FC = () => {
                     mimeType: file.type,
                 });
             } catch {
-                showError(`Failed to read file: ${file.name}`);
+                failed.push(file.name);
             }
         }
 
         setAttachments((prev) => [...prev, ...newAttachments]);
+        setError(failed.length > 0 ? `Failed to read file: ${failed.join(", ")}` : null);
 
         // Reset input
         if (fileInputRef.current) {
@@ -140,22 +158,23 @@ export const LLMModal: React.FC = () => {
     };
 
     const handleRunLLM = async () => {
-        if (!config) return;
+        if (!config || isRunning) return;
 
         if (!isReady) {
-            showError(`${provider.label} API key not configured. Please add it in Settings.`);
+            setError(`${provider.label} API key not configured. Please add it in Settings.`);
             return;
         }
 
         // Validate at least one input type is provided
         const trimmedText = userText.trim();
         if (attachments.length === 0 && !trimmedText) {
-            showError("Please provide at least one input: text or attachment.");
+            setError("Please provide at least one input: text or attachment.");
             return;
         }
 
-        const shieldId = `llm-modal-${config.title || "default"}`;
-        raiseShield(shieldId, config.shieldMessage || "Processing with AI...");
+        const runId = ++runIdRef.current;
+        setIsRunning(true);
+        setError(null);
         setResponse(null);
 
         try {
@@ -173,208 +192,184 @@ export const LLMModal: React.FC = () => {
                 llmResponse = await config.postProcess(llmResponse);
             }
 
+            if (runId !== runIdRef.current) return;
             setResponse(llmResponse);
             setInteractionState(config.initialState ? config.initialState(llmResponse) : undefined);
         } catch (error) {
-            showError(error instanceof Error ? error.message : "Failed to call the LLM");
+            if (runId !== runIdRef.current) return;
+            setError(error instanceof Error ? error.message : "Failed to call the LLM");
         } finally {
-            lowerShield(shieldId);
+            if (runId === runIdRef.current) {
+                setIsRunning(false);
+            }
         }
     };
 
     if (!config) return null;
 
-    return (
-        <>
-            <IonModal isOpen={isOpen} onDidDismiss={handleClose}>
-                <IonHeader>
-                    <IonToolbar>
-                        <IonTitle>{config.title || "LLM Assistant"}</IonTitle>
-                        <IonButtons slot="end">
-                            <IonButton onClick={handleClose}>
-                                <IonIcon icon={close} />
-                            </IonButton>
-                        </IonButtons>
-                    </IonToolbar>
-                </IonHeader>
+    const hasInput = attachments.length > 0 || userText.trim().length > 0;
+    const runLabel = error && hasInput ? "Retry" : config.buttonText || "Run";
 
-                <IonContent className="ion-padding">
-                    {/* API Key Warning */}
-                    {!isReady && (
-                        <div
-                            style={{
-                                border: "2px solid var(--ion-color-danger)",
-                                padding: "12px 16px",
-                                borderRadius: "8px",
-                                marginBottom: "16px",
-                            }}
+    const renderInputStep = () => (
+        <div className="editor-form">
+            {config.userInstructions && (
+                <p className="llm-sheet__instructions">{config.userInstructions}</p>
+            )}
+
+            <FormField label="Text">
+                <div className="form-control form-control--multiline">
+                    <IonTextarea
+                        aria-label="Text"
+                        value={userText}
+                        onIonInput={(e) => setUserText(e.detail.value || "")}
+                        placeholder="Paste or type here"
+                        rows={5}
+                        autoGrow
+                    />
+                </div>
+            </FormField>
+
+            <FormField
+                label="Photos"
+                action={
+                    <div className="llm-sheet__actions">
+                        {isNative && (
+                            <button
+                                type="button"
+                                className="form-field__action"
+                                onClick={() => handleCameraPhoto(CameraSource.Camera)}
+                            >
+                                <IonIcon icon={camera} aria-hidden="true" />
+                                Camera
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            className="form-field__action"
+                            onClick={handleAddAttachment}
                         >
-                            <IonText color="danger">
-                                <p style={{ margin: 0, fontWeight: 500 }}>
-                                    ⚠️ {provider.label} API key not configured. Please add it in
-                                    Settings to use this feature.
-                                </p>
-                            </IonText>
-                        </div>
-                    )}
-
-                    {/* Text Input + Attachments + Run Button — hidden once results arrive */}
-                    {response ? (
-                        <div>
-                            <IonItem lines="none">
-                                <IonLabel>
-                                    <h3>Result</h3>
-                                </IonLabel>
-                            </IonItem>
-                            <div style={{ padding: "0 16px" }}>
-                                {config.renderOutput(
-                                    response,
-                                    interactionState,
-                                    setInteractionState
-                                )}
-                            </div>
-
-                            {/* Accept/Cancel Buttons */}
-                            <div
-                                style={{
-                                    marginTop: "20px",
-                                    display: "flex",
-                                    gap: "8px",
-                                }}
-                            >
-                                <IonButton
-                                    expand="block"
-                                    fill="outline"
-                                    onClick={handleClose}
-                                    style={{ flex: 1 }}
-                                >
-                                    Cancel
-                                </IonButton>
-                                <IonButton
-                                    expand="block"
-                                    onClick={handleAccept}
-                                    style={{ flex: 1 }}
-                                >
-                                    Accept
-                                </IonButton>
-                            </div>
-                        </div>
-                    ) : (
-                        <div>
-                            {/* User Instructions Display */}
-                            {config.userInstructions && (
-                                <IonItem lines="none">
-                                    <IonLabel className="ion-text-wrap">
-                                        <IonText color="medium">
-                                            <p>{config.userInstructions}</p>
-                                        </IonText>
-                                    </IonLabel>
-                                </IonItem>
-                            )}
-                            {/* Text Input Section */}
-                            <div style={{ marginTop: "16px" }}>
-                                <IonItem>
-                                    <IonLabel position="stacked">
-                                        <h3>Text Input</h3>
-                                    </IonLabel>
-                                    <IonTextarea
-                                        value={userText}
-                                        onIonInput={(e) => setUserText(e.detail.value || "")}
-                                        placeholder="Enter your text here..."
-                                        rows={4}
-                                    />
-                                </IonItem>
-                            </div>
-
-                            {/* File Attachments Section */}
-                            <div style={{ marginTop: "16px" }}>
-                                <IonItem lines="none">
-                                    <IonLabel>
-                                        <h3>Attachments</h3>
-                                    </IonLabel>
-                                    {isNative ? (
-                                        <>
-                                            <IonButton
-                                                slot="end"
-                                                fill="outline"
-                                                size="small"
-                                                onClick={() =>
-                                                    handleCameraPhoto(CameraSource.Camera)
-                                                }
-                                            >
-                                                <IonIcon icon={camera} slot="start" />
-                                                Camera
-                                            </IonButton>
-                                            <IonButton
-                                                slot="end"
-                                                fill="outline"
-                                                size="small"
-                                                onClick={() =>
-                                                    handleCameraPhoto(CameraSource.Photos)
-                                                }
-                                            >
-                                                <IonIcon icon={attach} slot="start" />
-                                                Gallery
-                                            </IonButton>
-                                        </>
-                                    ) : (
-                                        <IonButton
-                                            slot="end"
-                                            fill="outline"
-                                            size="small"
-                                            onClick={handleAddAttachment}
-                                        >
-                                            <IonIcon icon={attach} slot="start" />
-                                            Add
-                                        </IonButton>
-                                    )}
-                                </IonItem>
-
-                                {attachments.length > 0 && (
-                                    <div
-                                        style={{
-                                            padding: "0 16px",
-                                            display: "flex",
-                                            flexWrap: "wrap",
-                                            gap: "8px",
-                                        }}
-                                    >
-                                        {attachments.map((attachment, index) => (
-                                            <IonChip
-                                                key={index}
-                                                onClick={() => handleRemoveAttachment(index)}
-                                            >
-                                                <IonLabel>{attachment.name}</IonLabel>
-                                                <IonIcon icon={close} />
-                                            </IonChip>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {/* Hidden file input */}
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    multiple
-                                    accept="image/*"
-                                    style={{ display: "none" }}
-                                    onChange={handleFileInputChange}
+                            <IonIcon icon={attach} aria-hidden="true" />
+                            {isNative ? "Gallery" : "Add"}
+                        </button>
+                    </div>
+                }
+            >
+                {attachments.length > 0 ? (
+                    <ul className="llm-sheet__attachments">
+                        {attachments.map((attachment, index) => (
+                            <li key={`${attachment.name}-${index}`} className="form-control">
+                                <IonIcon
+                                    icon={imageOutline}
+                                    className="llm-sheet__attachment-icon"
+                                    aria-hidden="true"
                                 />
-                            </div>
+                                <span className="form-control__value">{attachment.name}</span>
+                                <button
+                                    type="button"
+                                    className="form-control__icon-button form-control__icon-button--end"
+                                    onClick={() => handleRemoveAttachment(index)}
+                                    aria-label={`Remove ${attachment.name}`}
+                                >
+                                    <IonIcon icon={close} aria-hidden="true" />
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <button
+                        type="button"
+                        className="form-control form-control--button"
+                        onClick={handleAddAttachment}
+                    >
+                        <span className="form-control__value form-control__placeholder">
+                            No photos attached
+                        </span>
+                        <IonIcon icon={attach} className="form-control__trail" aria-hidden="true" />
+                    </button>
+                )}
 
-                            {/* Run Button */}
-                            <IonButton
-                                expand="block"
-                                onClick={handleRunLLM}
-                                disabled={!isReady}
-                                style={{ marginTop: "20px" }}
-                            >
-                                {config.buttonText || "Run LLM"}
-                            </IonButton>
-                        </div>
-                    )}
-                </IonContent>
-            </IonModal>
-        </>
+                {/* Hidden file input (web) */}
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="llm-sheet__file-input"
+                    onChange={handleFileInputChange}
+                />
+            </FormField>
+
+            {error && (
+                <p className="form-field__error" role="alert">
+                    {error}
+                </p>
+            )}
+        </div>
+    );
+
+    const renderRunning = () => (
+        <div className="llm-sheet__running" aria-live="polite">
+            <div className="llm-sheet__robot">
+                <RobotLoadingContent message={null} />
+            </div>
+            <RobotLine className="llm-sheet__robot-line">
+                {config.shieldMessage || "Processing. Stand by."}
+            </RobotLine>
+        </div>
+    );
+
+    return (
+        <IonModal
+            isOpen={isOpen}
+            // Only a swipe/backdrop dismiss still has isOpen set; Close and Accept have already
+            // closed (and, for Accept, must not then fire onCancel).
+            onDidDismiss={() => isOpen && handleClose()}
+            canDismiss={!isRunning}
+        >
+            <ModalHeader
+                title={config.title || "AI Assistant"}
+                onClose={handleClose}
+                closeDisabled={isRunning}
+            />
+
+            <IonContent className="ion-padding">
+                {!isReady && !response && !isRunning && (
+                    <p className="llm-sheet__notice" role="alert">
+                        {provider.label} API key not configured. Add it in Settings to use this
+                        feature.
+                    </p>
+                )}
+
+                {isRunning
+                    ? renderRunning()
+                    : response
+                      ? config.renderOutput(response, interactionState, setInteractionState)
+                      : renderInputStep()}
+            </IonContent>
+
+            <EditorFooter
+                onBack={response && !isRunning ? handleBackToInput : undefined}
+                backLabel="Back to input"
+            >
+                {response && !isRunning ? (
+                    <IonButton
+                        expand="block"
+                        className="editor-form__submit"
+                        onClick={handleAccept}
+                    >
+                        Accept
+                    </IonButton>
+                ) : (
+                    <IonButton
+                        expand="block"
+                        className="editor-form__submit"
+                        onClick={handleRunLLM}
+                        disabled={!isReady || isRunning}
+                    >
+                        {isRunning ? <IonSpinner name="dots" /> : runLabel}
+                    </IonButton>
+                )}
+            </EditorFooter>
+        </IonModal>
     );
 };

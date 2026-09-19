@@ -1,20 +1,7 @@
 import type { RecipeWithDetails } from "@basket-bot/core";
-import {
-    IonAlert,
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonFooter,
-    IonHeader,
-    IonIcon,
-    IonModal,
-    IonSpinner,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
+import { IonAlert, IonButton, IonContent, IonIcon, IonModal, IonSpinner } from "@ionic/react";
 import {
     addOutline,
-    arrowBackOutline,
     closeOutline,
     filterOutline,
     refreshOutline,
@@ -31,6 +18,9 @@ import RecipeViewSheet from "../components/meals/RecipeViewSheet";
 import RouteIngredientsContent from "../components/meals/RouteIngredientsContent";
 import ScaleFactorControl from "../components/meals/ScaleFactorControl";
 import TagChip from "../components/meals/TagChip";
+import { EditorFooter } from "../components/shared/EditorFooter";
+import { ModalHeader } from "../components/shared/ModalHeader";
+import { RobotLine } from "../components/shared/RobotLine";
 import { useQuantityUnits, useVisibleStores } from "../db/hooks";
 import {
     useCreatePlan,
@@ -109,9 +99,7 @@ const SlotPoolCount: React.FC<{
     const { data: count } = usePoolCount(householdId, tagIds, maxCookingTimeMinutes);
     if (count === undefined) return null;
     return (
-        <span className={clsx("wizard-slot__pill", count === 0 && "wizard-slot__pill--warn")}>
-            {count} in pool
-        </span>
+        <span className={clsx("info-pill", count === 0 && "info-pill--warn")}>{count} in pool</span>
     );
 };
 
@@ -138,16 +126,6 @@ const StepBar: React.FC<{ step: WizardStep }> = ({ step }) => (
             );
         })}
     </ol>
-);
-
-/** The robot's aside: a terminal line with a lilac prompt and a blinking cursor. */
-const RobotLine: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <p className="wizard-robot-line">
-        <span className="wizard-robot-line__prompt" aria-hidden="true">
-            &gt;
-        </span>
-        {children}
-    </p>
 );
 
 // ── Main wizard ─────────────────────────────────────────────────────────────
@@ -331,21 +309,13 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
         });
     };
 
-    const slotPrimaryAction = (slotNumber: number | null) => {
-        const slot = planData?.slots.find((s) => s.slotNumber === slotNumber);
-        // A pinned slot is skipped by every reroll path, so applying filters to one used to
-        // do nothing visible. Say that the reroll unpins it, and then actually unpin.
-        const label = slot?.pinned
-            ? "Unpin & reroll"
-            : slot?.pickedRecipeId
-              ? "Reroll this slot"
-              : "Fill this slot";
-        return {
-            label,
-            onClick: () => slotNumber !== null && handleRerollSlotWithFilter(slotNumber),
-            isWorking,
-        };
-    };
+    // The slot filter sheet only opens on an empty slot (Filter is disabled once a recipe is
+    // in), so its action always fills.
+    const slotPrimaryAction = (slotNumber: number | null) => ({
+        label: "Fill this slot",
+        onClick: () => slotNumber !== null && handleRerollSlotWithFilter(slotNumber),
+        isWorking,
+    });
 
     const routeIngredients = useMemo(() => {
         if (!planData) return [];
@@ -642,17 +612,9 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
 
     return (
         <IonModal isOpen={isOpen} onWillPresent={handleWillPresent} backdropDismiss={false}>
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>Plan meals</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={handleClose} disabled={isWorking} aria-label="Close">
-                            <IonIcon slot="icon-only" icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
+            <ModalHeader title="Plan meals" onClose={handleClose} closeDisabled={isWorking}>
                 <StepBar step={step} />
-            </IonHeader>
+            </ModalHeader>
 
             <IonContent className="wizard-content">
                 {/* ── Step 1: Pool ─────────────────────────────────────────── */}
@@ -685,7 +647,9 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                 <IonIcon icon={addOutline} />
                             </button>
                         </div>
-                        <RobotLine>{ROBOT_QUIPS[mealCount]}</RobotLine>
+                        <RobotLine className="wizard-robot-line">
+                            {ROBOT_QUIPS[mealCount]}
+                        </RobotLine>
                     </section>
                 )}
 
@@ -699,7 +663,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                             </span>
                             <button
                                 type="button"
-                                className="form-field__action wizard-toolbar__action"
+                                className="form-field__action form-field__action--standalone"
                                 onClick={handleRoll}
                                 disabled={isWorking || !planId || allSlotsPinned}
                             >
@@ -730,6 +694,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                         <article
                                             key={`slot-${slotNumber}-${slotRolls.get(slotNumber) ?? 0}`}
                                             className={clsx(
+                                                "surface-card",
                                                 "wizard-slot",
                                                 "wizard-slot--enter",
                                                 pinned && "wizard-slot--pinned",
@@ -786,7 +751,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                                         ) : null;
                                                     })}
                                                     {filters.maxCookingTimeMinutes != null && (
-                                                        <span className="wizard-slot__pill">
+                                                        <span className="info-pill">
                                                             ≤ {filters.maxCookingTimeMinutes} min
                                                         </span>
                                                     )}
@@ -805,10 +770,10 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                             {/* Always four columns, so the bars line up card
                                                 to card. Pin and Clear wait for a recipe;
                                                 Filter waits for the slot to be empty. */}
-                                            <div className="wizard-slot__actions">
+                                            <div className="card-actions">
                                                 <button
                                                     type="button"
-                                                    className="wizard-slot__action"
+                                                    className="card-actions__btn"
                                                     onClick={() => setPickerSlot(slotNumber)}
                                                     disabled={isWorking}
                                                     aria-label={`Browse recipes for slot ${slotNumber}`}
@@ -818,7 +783,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    className="wizard-slot__action"
+                                                    className="card-actions__btn"
                                                     onClick={() => setFilterPopoverSlot(slotNumber)}
                                                     // Filters steer the next roll into an
                                                     // empty slot; once a recipe is in, Clear
@@ -832,8 +797,8 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                                 <button
                                                     type="button"
                                                     className={clsx(
-                                                        "wizard-slot__action",
-                                                        pinned && "wizard-slot__action--on"
+                                                        "card-actions__btn",
+                                                        pinned && "card-actions__btn--on"
                                                     )}
                                                     onClick={() =>
                                                         handleTogglePin(slotNumber, pinned)
@@ -853,7 +818,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    className="wizard-slot__action"
+                                                    className="card-actions__btn"
                                                     onClick={() => handleClearSlot(slotNumber)}
                                                     disabled={isWorking || !recipe}
                                                     aria-label={`Clear slot ${slotNumber}`}
@@ -869,7 +834,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                         </div>
 
                         {canReview && (
-                            <RobotLine>
+                            <RobotLine className="wizard-robot-line">
                                 {allSlotsFilled
                                     ? `${mealCount} ${pluralize("meal", mealCount)} locked. Proceed, or keep second-guessing yourself.`
                                     : pinnedCount > 0
@@ -918,15 +883,15 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                     <>
                         <section className="wizard-section">
                             <h2 className="ruled-label">Sending</h2>
-                            <dl className="wizard-tally">
+                            <dl className="tally">
                                 <dt>Recipes</dt>
                                 <dd>{pickedRecipes.length}</dd>
                                 <dt>Ingredients</dt>
                                 <dd>{includedCount}</dd>
                                 {routeIngredients.length - includedCount > 0 && (
                                     <>
-                                        <dt className="wizard-tally__quiet">Skipped</dt>
-                                        <dd className="wizard-tally__quiet">
+                                        <dt className="tally__quiet">Skipped</dt>
+                                        <dd className="tally__quiet">
                                             {routeIngredients.length - includedCount}
                                         </dd>
                                     </>
@@ -938,7 +903,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                             <h2 className="ruled-label">
                                 {pluralize("List", storeBreakdown.size)}
                             </h2>
-                            <dl className="wizard-tally">
+                            <dl className="tally">
                                 {[...storeBreakdown.entries()].map(([sId, count]) => (
                                     <React.Fragment key={sId}>
                                         <dt>
@@ -953,7 +918,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                             </dl>
                         </section>
 
-                        <RobotLine>
+                        <RobotLine className="wizard-robot-line">
                             Plan compiled. Dispatching ingredients to designated stores. Cooking is
                             your problem now, human.
                         </RobotLine>
@@ -977,7 +942,7 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                                             )}
                                         </span>
                                         {(scaleFactors.get(recipe.id) ?? 1) !== 1 && (
-                                            <span className="wizard-cook-list__scale">
+                                            <span className="qty">
                                                 ×{scaleFactors.get(recipe.id)}
                                             </span>
                                         )}
@@ -989,61 +954,49 @@ const MealPlanWizard: React.FC<{ isOpen: boolean; onDismiss: () => void }> = ({
                 )}
             </IonContent>
 
-            {/* A back square and the step's primary action filling the rest of the gutter. */}
-            <IonFooter className="wizard-footer">
-                <IonToolbar>
-                    <div className="wizard-footer__row">
-                        {step > 1 && (
-                            <button
-                                type="button"
-                                className="wizard-footer__back"
-                                onClick={
-                                    step === 2
-                                        ? handleBackToStep1
-                                        : () => setStep((step - 1) as WizardStep)
-                                }
-                                disabled={isWorking}
-                                aria-label={step === 4 ? "Back to review" : "Back"}
-                            >
-                                <IonIcon icon={arrowBackOutline} />
-                            </button>
-                        )}
-                        <IonButton
-                            expand="block"
-                            className="editor-form__submit wizard-footer__primary"
-                            onClick={
-                                step === 1
-                                    ? handleNext
-                                    : step === 2
-                                      ? () =>
-                                            allSlotsFilled
-                                                ? handleGoToRoute()
-                                                : setShowPartialAlert(true)
-                                      : step === 3
-                                        ? handleGoToSend
-                                        : handleDispatch
-                            }
-                            disabled={
-                                isWorking ||
-                                (step === 2 && !canReview) ||
-                                (step === 3 && includedCount === 0)
-                            }
-                        >
-                            {isWorking ? (
-                                <IonSpinner name="dots" />
-                            ) : step === 1 ? (
-                                "Next"
-                            ) : step === 2 ? (
-                                "Review ingredients"
-                            ) : step === 3 ? (
-                                `Send ${includedCount} to ${pluralize("list", includedCount)}`
-                            ) : (
-                                "Confirm & send"
-                            )}
-                        </IonButton>
-                    </div>
-                </IonToolbar>
-            </IonFooter>
+            <EditorFooter
+                onBack={
+                    step === 1
+                        ? undefined
+                        : step === 2
+                          ? handleBackToStep1
+                          : () => setStep((step - 1) as WizardStep)
+                }
+                backLabel={step === 4 ? "Back to review" : "Back"}
+                backDisabled={isWorking}
+            >
+                <IonButton
+                    expand="block"
+                    className="editor-form__submit"
+                    onClick={
+                        step === 1
+                            ? handleNext
+                            : step === 2
+                              ? () =>
+                                    allSlotsFilled ? handleGoToRoute() : setShowPartialAlert(true)
+                              : step === 3
+                                ? handleGoToSend
+                                : handleDispatch
+                    }
+                    disabled={
+                        isWorking ||
+                        (step === 2 && !canReview) ||
+                        (step === 3 && includedCount === 0)
+                    }
+                >
+                    {isWorking ? (
+                        <IonSpinner name="dots" />
+                    ) : step === 1 ? (
+                        "Next"
+                    ) : step === 2 ? (
+                        "Review ingredients"
+                    ) : step === 3 ? (
+                        `Send ${includedCount} to ${pluralize("list", includedCount)}`
+                    ) : (
+                        "Confirm & send"
+                    )}
+                </IonButton>
+            </EditorFooter>
             <RecipePickerModal
                 isOpen={pickerSlot !== null}
                 onDismiss={() => setPickerSlot(null)}

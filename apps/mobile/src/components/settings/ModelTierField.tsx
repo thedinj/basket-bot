@@ -1,12 +1,12 @@
 import type { LLMCatalog, LLMTier } from "@basket-bot/core";
-import { IonItem, IonLabel, IonNote, IonToggle } from "@ionic/react";
+import { IonSkeletonText, IonToggle } from "@ionic/react";
 import { Control, Controller, UseFormSetValue } from "react-hook-form";
 import { modelsForTier, resolveProviderCatalog } from "../../llm/config/llmCatalog";
 import { LLM_TIER_META } from "../../llm/config/tierMeta";
 import { MODEL_FIELDS } from "../../settings/llmSettings";
 import type { SettingsFormData } from "../../settings/settingsSchema";
 import { FormModelSelect } from "../form/FormModelSelect";
-import { SkeletonListItem } from "../shared/skeleton/SkeletonListItem";
+import { FormField } from "../shared/FormField";
 
 interface ModelTierFieldProps {
     tier: LLMTier;
@@ -26,6 +26,9 @@ interface ModelTierFieldProps {
  * the user so much as a promise to them: leaving it on stores *nothing*, so the tier keeps
  * following whatever model the server currently recommends, including one chosen after this
  * app was installed. Turning it off is the deliberate act of pinning a name.
+ *
+ * Laid out as one form field: the tier's label, a boxed toggle whose label is its state (the
+ * default it follows, or "Custom"), the picker under it when custom, and what the tier is for.
  */
 export const ModelTierField: React.FC<ModelTierFieldProps> = ({
     tier,
@@ -48,7 +51,13 @@ export const ModelTierField: React.FC<ModelTierFieldProps> = ({
     // Naming the bundled fallback and then silently swapping it for the server's would read
     // as the screen changing its mind about what the default is, so wait instead.
     if (isCatalogLoading) {
-        return <SkeletonListItem widths={["35%", "55%"]} />;
+        return (
+            <FormField label={meta.label} hint={meta.helperText}>
+                <div className="form-control" aria-busy="true">
+                    <IonSkeletonText animated className="settings__skeleton" />
+                </div>
+            </FormField>
+        );
     }
 
     return (
@@ -59,14 +68,12 @@ export const ModelTierField: React.FC<ModelTierFieldProps> = ({
                 const useDefault = field.value !== false;
 
                 return (
-                    <>
-                        <IonItem>
-                            <IonLabel>
-                                <h3>{meta.label}</h3>
-                                <p>{meta.helperText}</p>
-                            </IonLabel>
+                    <FormField label={meta.label} hint={meta.helperText}>
+                        <div className="form-control">
                             <IonToggle
-                                slot="end"
+                                labelPlacement="start"
+                                justify="space-between"
+                                aria-label={`${meta.label}: use default`}
                                 checked={useDefault}
                                 disabled={disabled}
                                 onIonChange={(e) => {
@@ -82,15 +89,16 @@ export const ModelTierField: React.FC<ModelTierFieldProps> = ({
                                     }
                                 }}
                             >
-                                Use default
+                                {/* A fixed label for what "on" means; the default's name
+                                    rides along so it's visible either way. */}
+                                <span className="settings__toggle-label">
+                                    Use default
+                                    <span className="settings__toggle-model">{defaultModel}</span>
+                                </span>
                             </IonToggle>
-                        </IonItem>
+                        </div>
 
-                        {useDefault ? (
-                            <IonItem lines="none">
-                                <IonNote>Default: {defaultModel}</IonNote>
-                            </IonItem>
-                        ) : (
+                        {!useDefault && (
                             <FormModelSelect
                                 name={fields.value}
                                 control={control}
@@ -100,7 +108,7 @@ export const ModelTierField: React.FC<ModelTierFieldProps> = ({
                                 disabled={disabled}
                             />
                         )}
-                    </>
+                    </FormField>
                 );
             }}
         />

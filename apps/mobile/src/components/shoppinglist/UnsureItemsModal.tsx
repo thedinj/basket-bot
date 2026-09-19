@@ -1,18 +1,6 @@
 import type { ShoppingListItemWithDetails } from "@basket-bot/core";
-import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItemDivider,
-    IonLabel,
-    IonModal,
-    IonSkeletonText,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
-import { closeOutline } from "ionicons/icons";
+import { IonContent, IonModal } from "@ionic/react";
+import { checkmarkDoneOutline } from "ionicons/icons";
 import React, { Suspense, useCallback, useMemo } from "react";
 import {
     useDeleteShoppingListItem,
@@ -26,11 +14,19 @@ import { toUpsertPayload } from "../../utils/shoppingListItemPayload";
 import { useAppHeader } from "../layout/useAppHeader";
 import { GroupedItemList } from "../shared/GroupedItemList";
 import { ItemGroup } from "../shared/grouping.types";
+import { ModalHeader } from "../shared/ModalHeader";
+import RobotLoadingContent from "../shared/RobotLoadingContent";
+import TabEmptyState from "../shared/TabEmptyState";
 import { ItemEditorModal } from "./ItemEditorModal";
 import { ShoppingListItem } from "./ShoppingListItem";
 import { ShoppingListProvider } from "./ShoppingListProvider";
 
+import "./UnsureItemsModal.scss";
+
 const MODAL_TITLE = "Review Unsure Items";
+
+// A store heading is the section register (a lilac ruled label), pulled onto the gutter.
+const STORE_LABEL_CLASS = "group-header-label group-header-label--section unsure-review__store";
 
 const UnsureItemsModalContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const storesWithItems = useShoppingListItemsAllStores();
@@ -45,7 +41,13 @@ const UnsureItemsModalContent: React.FC<{ onClose: () => void }> = ({ onClose })
                     id: `store-${store.id}`,
                     items: unsureItems,
                     header: {
-                        label: store.name,
+                        label: (
+                            <>
+                                {store.name}
+                                <span className="group-header-count">{unsureItems.length}</span>
+                            </>
+                        ),
+                        labelClassName: STORE_LABEL_CLASS,
                         sticky: true,
                     },
                     sortOrder: index,
@@ -86,23 +88,22 @@ const UnsureItemsModalContent: React.FC<{ onClose: () => void }> = ({ onClose })
                     queryKeys.shoppingListItems.byStore(store.id)
                 )}
             >
-                <IonHeader>
-                    <IonToolbar>
-                        <IonTitle>{MODAL_TITLE}</IonTitle>
-                        <IonButtons slot="end">
-                            <IonButton onClick={onClose}>
-                                <IonIcon icon={closeOutline} />
-                            </IonButton>
-                        </IonButtons>
-                    </IonToolbar>
-                </IonHeader>
+                <ModalHeader title={MODAL_TITLE} onClose={onClose} />
                 <IonContent>
-                    <GroupedItemList<ShoppingListItemWithDetails>
-                        groups={groups}
-                        renderItem={renderItem}
-                        getItemKey={getItemKey}
-                        emptyMessage="No unsure items — nice and tidy."
-                    />
+                    {groups.length === 0 ? (
+                        <TabEmptyState
+                            variant="full"
+                            icon={checkmarkDoneOutline}
+                            title="Nothing to review"
+                            body="No unsure items — nice and tidy."
+                        />
+                    ) : (
+                        <GroupedItemList<ShoppingListItemWithDetails>
+                            groups={groups}
+                            renderItem={renderItem}
+                            getItemKey={getItemKey}
+                        />
+                    )}
                 </IonContent>
                 <ItemEditorModal storeId={storesWithItems[0]?.store.id ?? ""} />
             </RefreshConfig>
@@ -110,19 +111,13 @@ const UnsureItemsModalContent: React.FC<{ onClose: () => void }> = ({ onClose })
     );
 };
 
-const LoadingFallback: React.FC = () => (
+const LoadingFallback: React.FC<{ onClose: () => void }> = ({ onClose }) => (
     <>
-        <IonHeader>
-            <IonToolbar>
-                <IonTitle>{MODAL_TITLE}</IonTitle>
-            </IonToolbar>
-        </IonHeader>
+        <ModalHeader title={MODAL_TITLE} onClose={onClose} />
         <IonContent>
-            <IonItemDivider>
-                <IonLabel>
-                    <IonSkeletonText animated style={{ width: "80px" }} />
-                </IonLabel>
-            </IonItemDivider>
+            <div className="unsure-review__loading">
+                <RobotLoadingContent />
+            </div>
         </IonContent>
     </>
 );
@@ -134,7 +129,7 @@ export const UnsureItemsModal: React.FC = () => {
     return (
         <IonModal isOpen={isOpen} onDidDismiss={closeModal}>
             {isOpen && (
-                <Suspense fallback={<LoadingFallback />}>
+                <Suspense fallback={<LoadingFallback onClose={closeModal} />}>
                     <UnsureItemsModalContent onClose={closeModal} />
                 </Suspense>
             )}

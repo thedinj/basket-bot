@@ -1,64 +1,137 @@
-.tag-manager-list {
-    --background: transparent;
-    margin: 0 -16px;
+// Manage Tags, on the Highway system.
+//
+// Geometry, at the modal content's 16px gutter:
+//   sheet ....... the tag list and the editor 28px apart
+//   list ........ a .ruled-label with the count, 12px above a .boxed-list (theme/patterns.scss)
+//   row ......... the chip on the box's 12px inset; Edit and the × (36px, 20px glyphs) at the
+//                 end, the last glyph pulled 8px onto the same inset
+//   editor ...... .editor-form fields (theme/forms.scss); the palette spans the gutter, first
+//                 swatch on the left edge and last on the right
+//   footer ...... <EditorFooter>: Create Tag, or a Cancel back square and Save while editing
+
+.tag-manager {
+    display: grid;
+    gap: 28px;
+    padding-top: 4px;
 }
 
-.tag-manager-item {
-    --background: transparent;
-    --padding-start: 16px;
-    --inner-padding-end: 8px;
+.tag-manager__section {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
 }
 
+// ── Rows ─────────────────────────────────────────────────────────────────────
 
-.tag-manager-empty {
-    font-size: 14px;
-    color: var(--ion-color-medium);
-    text-align: center;
-    padding: 32px 0 16px;
-    margin: 0;
+.tag-manager-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    box-sizing: border-box;
+    min-height: 52px;
+    padding: 8px 12px;
+    transition: background-color 0.12s ease-out;
+
+    // The row whose tag is open in the editor below.
+    &--editing {
+        background: color-mix(in srgb, var(--ion-color-secondary) 10%, transparent);
+    }
 }
 
-.tag-manager-new {
-    margin-top: 24px;
-}
-
-.tag-manager-edit {
-    margin-top: 24px;
-    padding: 16px;
-    border: 1px solid var(--ion-border-color, var(--ion-color-step-200));
-    border-radius: 12px;
-}
-
-.tag-manager-palette {
+.tag-manager-row__chip {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 14px 0 8px;
+    min-width: 0;
 }
 
-.tag-palette-swatch {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--swatch-bg);
-    border: 2px solid var(--swatch-border);
-    cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.15s;
-    outline: none;
+.tag-manager-row__actions {
+    display: flex;
+    align-items: center;
+    margin: -4px -8px -4px 0;
+}
 
-    &.selected {
-        transform: scale(1.2);
-        box-shadow: 0 0 0 3px var(--swatch-text);
+// Edit: the × button's geometry, but it lights lilac (not danger) and stays lilac while its tag
+// is being edited.
+.tag-manager-row__edit {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ion-color-medium);
+    font-size: 20px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+        color 0.12s ease-out,
+        background-color 0.12s ease-out;
+
+    &[aria-pressed="true"] {
+        color: var(--ion-color-secondary);
     }
 
     &:active {
-        transform: scale(0.92);
+        background: color-mix(in srgb, var(--ion-color-secondary) 15%, transparent);
+        color: var(--ion-color-secondary);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ion-color-primary);
+        outline-offset: -2px;
     }
 }
 
-.tag-manager-edit-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 8px;
+// ── Palette ──────────────────────────────────────────────────────────────────
+
+// Two rows of five 36px swatches, spread so the outer columns land on the gutter.
+.tag-manager-palette {
+    display: grid;
+    grid-template-columns: repeat(5, 36px);
+    justify-content: space-between;
+    row-gap: 12px;
+    padding-block: 4px;
+}
+
+// The chosen swatch keeps its size (so the rows stay aligned) and gains a ring in its own ink,
+// set off by a gap of page background, plus a check.
+.tag-palette-swatch {
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    width: 36px;
+    height: 36px;
+    margin: 0;
+    padding: 0;
+    border: 2px solid var(--swatch-border);
+    border-radius: 50%;
+    background: var(--swatch-bg);
+    color: var(--swatch-text);
+    font-size: 1.125rem;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: box-shadow 0.12s ease-out;
+
+    &[aria-pressed="true"] {
+        box-shadow:
+            0 0 0 2px var(--ion-background-color),
+            0 0 0 4px var(--swatch-text);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ion-color-primary);
+        outline-offset: 5px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tag-manager-row,
+    .tag-manager-row__edit,
+    .tag-palette-swatch {
+        transition: none;
+    }
 }

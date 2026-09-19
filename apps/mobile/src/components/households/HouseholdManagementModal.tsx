@@ -1,22 +1,12 @@
 import type { Household, InvitationDetail } from "@basket-bot/core";
+import { IonButton, IonContent, IonIcon, IonModal } from "@ionic/react";
 import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonListHeader,
-    IonModal,
-    IonNote,
-    IonSpinner,
-    IonText,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
-import { addOutline, checkmarkOutline, closeOutline, homeOutline } from "ionicons/icons";
+    addOutline,
+    checkmarkOutline,
+    chevronForward,
+    closeOutline,
+    homeOutline,
+} from "ionicons/icons";
 import React, { useState } from "react";
 import {
     useAcceptInvitation,
@@ -26,8 +16,14 @@ import {
 } from "../../db/hooks";
 import { useHousehold } from "../../households/useHousehold";
 import { useAppHeader } from "../layout/useAppHeader";
+import { EditorFooter } from "../shared/EditorFooter";
+import { ModalHeader } from "../shared/ModalHeader";
+import RobotLoadingContent from "../shared/RobotLoadingContent";
+import TabEmptyState from "../shared/TabEmptyState";
 import CreateHouseholdModal from "./CreateHouseholdModal";
 import HouseholdDetailModal from "./HouseholdDetailModal";
+
+import "./Households.scss";
 
 export const HouseholdManagementModal: React.FC = () => {
     const { isModalOpen, closeModal } = useAppHeader();
@@ -37,20 +33,12 @@ export const HouseholdManagementModal: React.FC = () => {
         isLoading: householdsLoading,
         error: householdsError,
     } = useHouseholds();
-    const {
-        data: invitations,
-        isLoading: invitationsLoading,
-        error: invitationsError,
-    } = usePendingInvitations();
+    const { data: invitations, error: invitationsError } = usePendingInvitations();
     const acceptInvitation = useAcceptInvitation();
     const declineInvitation = useDeclineInvitation();
 
     const [selectedHouseholdId, setSelectedHouseholdId] = useState<string | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-    const handleHouseholdClick = (householdId: string) => {
-        setSelectedHouseholdId(householdId);
-    };
 
     const handleAcceptInvitation = async (token: string) => {
         await acceptInvitation.mutateAsync(token);
@@ -61,143 +49,147 @@ export const HouseholdManagementModal: React.FC = () => {
         await declineInvitation.mutateAsync(token);
     };
 
+    const hasInvitations = !!invitations && invitations.length > 0;
+    const hasHouseholds = !!households && households.length > 0;
+
     return (
         <>
             <IonModal isOpen={isModalOpen("households")} onDidDismiss={closeModal}>
-                <IonHeader>
-                    <IonToolbar>
-                        <IonTitle>Households</IonTitle>
-                        <IonButtons slot="end">
-                            <IonButton onClick={closeModal}>
-                                <IonIcon icon={closeOutline} />
-                            </IonButton>
-                        </IonButtons>
-                    </IonToolbar>
-                </IonHeader>
+                <ModalHeader title="Households" onClose={closeModal} />
                 <IonContent className="ion-padding">
-                    {/* Pending Invitations Section */}
-                    {invitationsLoading ? (
-                        <div className="ion-text-center ion-padding">
-                            <IonSpinner />
+                    {householdsLoading ? (
+                        <div className="household-loading">
+                            <RobotLoadingContent />
                         </div>
-                    ) : null}
+                    ) : (
+                        <div className="household-sheet">
+                            {invitationsError ? (
+                                <p className="household-error" role="alert">
+                                    Invitations failed to load.
+                                </p>
+                            ) : null}
 
-                    {invitationsError ? (
-                        <IonText color="danger">
-                            <p className="ion-padding">Failed to load invitations</p>
-                        </IonText>
-                    ) : null}
-
-                    {!invitationsLoading &&
-                        !invitationsError &&
-                        invitations &&
-                        invitations.length > 0 && (
-                            <IonList>
-                                <IonListHeader>
-                                    <h2>Pending Invitations</h2>
-                                </IonListHeader>
-                                {invitations.map((invitation: InvitationDetail) => (
-                                    <div key={invitation.token}>
-                                        <IonItem lines="none">
-                                            <IonLabel>
-                                                <h3>{invitation.householdName}</h3>
-                                                <p>Invited by {invitation.inviterName}</p>
-                                            </IonLabel>
-                                        </IonItem>
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                gap: "8px",
-                                                padding: "0 16px 16px 16px",
-                                            }}
-                                        >
-                                            <IonButton
-                                                expand="block"
-                                                color="success"
-                                                onClick={() =>
-                                                    handleAcceptInvitation(invitation.token)
-                                                }
-                                                disabled={acceptInvitation.isPending}
-                                                style={{ flex: 1 }}
+                            {hasInvitations ? (
+                                <section className="household-section">
+                                    <h2 className="ruled-label">
+                                        Invitations{" "}
+                                        <span className="ruled-label__count">
+                                            {invitations.length}
+                                        </span>
+                                    </h2>
+                                    <div className="household-invites">
+                                        {invitations.map((invitation: InvitationDetail) => (
+                                            <article
+                                                key={invitation.token}
+                                                className="surface-card household-invite"
                                             >
-                                                <IonIcon icon={checkmarkOutline} slot="start" />
-                                                Accept
-                                            </IonButton>
-                                            <IonButton
-                                                expand="block"
-                                                fill="outline"
-                                                color="danger"
-                                                onClick={() =>
-                                                    handleDeclineInvitation(invitation.token)
-                                                }
-                                                disabled={declineInvitation.isPending}
-                                                style={{ flex: 1 }}
-                                            >
-                                                <IonIcon icon={closeOutline} slot="start" />
-                                                Decline
-                                            </IonButton>
-                                        </div>
+                                                <div className="household-invite__body">
+                                                    <h3 className="household-invite__name">
+                                                        {invitation.householdName}
+                                                    </h3>
+                                                    <p className="household-invite__meta">
+                                                        Invited by {invitation.inviterName}
+                                                    </p>
+                                                </div>
+                                                <div className="card-actions">
+                                                    <button
+                                                        type="button"
+                                                        className="card-actions__btn"
+                                                        onClick={() =>
+                                                            handleDeclineInvitation(
+                                                                invitation.token
+                                                            )
+                                                        }
+                                                        disabled={declineInvitation.isPending}
+                                                        aria-label={`Decline invitation to ${invitation.householdName}`}
+                                                    >
+                                                        <IonIcon
+                                                            icon={closeOutline}
+                                                            aria-hidden="true"
+                                                        />
+                                                        Decline
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="card-actions__btn card-actions__btn--primary"
+                                                        onClick={() =>
+                                                            handleAcceptInvitation(invitation.token)
+                                                        }
+                                                        disabled={acceptInvitation.isPending}
+                                                        aria-label={`Accept invitation to ${invitation.householdName}`}
+                                                    >
+                                                        <IonIcon
+                                                            icon={checkmarkOutline}
+                                                            aria-hidden="true"
+                                                        />
+                                                        Accept
+                                                    </button>
+                                                </div>
+                                            </article>
+                                        ))}
                                     </div>
-                                ))}
-                            </IonList>
-                        )}
+                                </section>
+                            ) : null}
 
-                    {/* Households List Section */}
-                    <IonList>
-                        <IonListHeader>
-                            <h2>My Households</h2>
-                        </IonListHeader>
+                            <section className="household-section">
+                                <h2 className="ruled-label">
+                                    My households{" "}
+                                    {hasHouseholds ? (
+                                        <span className="ruled-label__count">
+                                            {households.length}
+                                        </span>
+                                    ) : null}
+                                </h2>
 
-                        {householdsLoading ? (
-                            <div className="ion-text-center ion-padding">
-                                <IonSpinner />
-                            </div>
-                        ) : null}
-
-                        {householdsError ? (
-                            <IonText color="danger">
-                                <p className="ion-padding">Failed to load households</p>
-                            </IonText>
-                        ) : null}
-
-                        {!householdsLoading &&
-                            !householdsError &&
-                            (!households || households.length === 0) && (
-                                <IonItem>
-                                    <IonLabel>
-                                        <IonNote>
-                                            No households yet. Create one to get started!
-                                        </IonNote>
-                                    </IonLabel>
-                                </IonItem>
-                            )}
-
-                        {!householdsLoading &&
-                            !householdsError &&
-                            households &&
-                            households.length > 0 &&
-                            households.map((household: Household) => (
-                                <IonItem
-                                    key={household.id}
-                                    button
-                                    onClick={() => handleHouseholdClick(household.id)}
-                                >
-                                    <IonIcon icon={homeOutline} slot="start" />
-                                    <IonLabel>
-                                        <h3>{household.name}</h3>
-                                    </IonLabel>
-                                </IonItem>
-                            ))}
-
-                        {/* Create Household Button */}
-                        <div className="ion-padding">
-                            <IonButton expand="block" onClick={() => setIsCreateModalOpen(true)}>
-                                <IonIcon icon={addOutline} slot="start" />
-                                Create Household
-                            </IonButton>
+                                {householdsError ? (
+                                    <p className="household-error" role="alert">
+                                        Households failed to load.
+                                    </p>
+                                ) : hasHouseholds ? (
+                                    <ul className="boxed-list">
+                                        {households.map((household: Household) => (
+                                            <li key={household.id}>
+                                                <button
+                                                    type="button"
+                                                    className="row-button household-row"
+                                                    onClick={() =>
+                                                        setSelectedHouseholdId(household.id)
+                                                    }
+                                                >
+                                                    <span className="household-row__name">
+                                                        {household.name}
+                                                    </span>
+                                                    <IonIcon
+                                                        className="household-row__trail"
+                                                        icon={chevronForward}
+                                                        aria-hidden="true"
+                                                    />
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <TabEmptyState
+                                        variant="inline"
+                                        icon={homeOutline}
+                                        title="No households"
+                                        body="None on record. Create one to share recipes, tags and meal plans."
+                                    />
+                                )}
+                            </section>
                         </div>
-                    </IonList>
+                    )}
                 </IonContent>
+                <EditorFooter>
+                    <IonButton
+                        className="editor-form__submit"
+                        expand="block"
+                        onClick={() => setIsCreateModalOpen(true)}
+                    >
+                        <IonIcon icon={addOutline} slot="start" />
+                        Create Household
+                    </IonButton>
+                </EditorFooter>
             </IonModal>
 
             <CreateHouseholdModal

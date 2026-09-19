@@ -1,115 +1,70 @@
-.recipe-import-preview {
-    &__header {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 4px 12px;
-        margin-bottom: 4px;
+// Recipe import review, rendered inside LLMModal's 16px-padded content, so it sits flush on
+// that gutter and adds no side padding of its own.
+//
+// Geometry:
+//   head ....... the recipe's name (1.25rem bold) over a medium meta line
+//   group ...... ruled lilac "Ingredients" with its count, a hint, then the rows
+//   row ........ the shared review row (.review-list / .review-row, theme/patterns.scss): the
+//                name with its amount (.qty), and the shopping-list form, when it differs, as
+//                the row's quiet second line (.review-row__note)
+
+.recipe-import {
+    display: grid;
+    gap: 20px;
+}
+
+.recipe-import__head {
+    display: grid;
+    gap: 4px;
+}
+
+.recipe-import__name {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ion-text-color);
+    overflow-wrap: anywhere;
+}
+
+.recipe-import__meta {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--ion-color-medium);
+}
+
+.recipe-import__group {
+    display: grid;
+    gap: 8px;
+}
+
+.recipe-import__hint {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--ion-color-medium);
+}
+
+// What the shopping list will say instead: the row's note line, behind an arrow.
+.recipe-import-row__buy {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 4px;
+    margin-top: 2px;
+
+    ion-icon {
+        flex: none;
+        align-self: center;
+        font-size: 0.8125rem;
     }
+}
 
-    &__name {
-        font-size: 17px;
-        font-weight: 600;
-        color: var(--ion-text-color);
-        margin: 0;
-        flex: 1 1 auto;
-        min-width: 0;
-        overflow-wrap: break-word;
-    }
-
-    &__count {
-        font-family: "JetBrains Mono", monospace;
-        font-size: 11px;
-        color: var(--ion-color-medium);
-        margin: 0;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-
-    &__count-num {
-        color: var(--ion-color-primary);
-        font-weight: 600;
-    }
-
-    &__hint {
-        font-size: 12px;
-        color: var(--ion-color-medium);
-        margin: 0 0 12px;
-        opacity: 0.7;
-    }
-
-    &__list {
-        --background: transparent;
-        margin: 0;
-        padding: 0;
-    }
-
-    &__item {
-        --background: transparent;
-        --padding-start: 0;
-        --inner-padding-end: 0;
-        --min-height: 44px;
-        transition: opacity 0.15s ease;
-
-        &--excluded {
-            opacity: 0.35;
-        }
-    }
-
-    // IonLabel reset — Ionic applies unwanted transforms
-    &__row {
-        overflow: visible !important;
-        white-space: normal !important;
-        margin: 8px 0 !important;
-    }
-
-    &__ing-name {
-        margin: 0;
-        font-size: 14px;
-        line-height: 1.4;
-        color: var(--ion-text-color);
-        word-break: break-word;
-    }
-
-    &__ing-qty {
-        margin: 2px 0 0;
-        font-family: "JetBrains Mono", monospace;
-        font-size: 12px;
-        color: var(--ion-color-medium);
-        line-height: 1.4;
-    }
-
-    &__qty-empty {
-        opacity: 0.3;
-    }
-
-    &__shopping-override {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        margin: 4px 0 0;
-        font-size: 12px;
-        color: var(--ion-color-primary);
-        line-height: 1.4;
-
-        ion-icon {
-            font-size: 12px;
-            flex-shrink: 0;
-        }
-    }
-
-    &__shopping-qty {
-        font-family: "JetBrains Mono", monospace;
-        flex-shrink: 0;
-    }
-
-    &__shopping-name {
-        word-break: break-word;
-    }
-
-    &__empty {
-        font-size: 14px;
-        margin: 8px 0;
-    }
+.recipe-import-row__buy-qty {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }

@@ -1,22 +1,6 @@
 import type { HouseholdInvitation, HouseholdMemberDetail } from "@basket-bot/core";
-import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonListHeader,
-    IonModal,
-    IonNote,
-    IonText,
-    IonTitle,
-    IonToolbar,
-    useIonAlert,
-} from "@ionic/react";
-import { closeOutline, personAddOutline, trashOutline } from "ionicons/icons";
+import { IonButton, IonContent, IonIcon, IonModal, useIonAlert } from "@ionic/react";
+import { chevronForward, createOutline, personAddOutline } from "ionicons/icons";
 import React, { useState } from "react";
 import { useAuth } from "../../auth/useAuth";
 import {
@@ -28,9 +12,16 @@ import {
 } from "../../db/hooks";
 import { useHousehold } from "../../households/useHousehold";
 import TagManagerModal from "../meals/TagManagerModal";
+import { DestructiveAction } from "../shared/DestructiveAction";
+import { EditorFooter } from "../shared/EditorFooter";
+import { FormField } from "../shared/FormField";
+import { ModalHeader } from "../shared/ModalHeader";
 import RobotLoadingContent from "../shared/RobotLoadingContent";
+import { RowRemoveButton } from "../shared/RowRemoveButton";
 import EditHouseholdDetailsModal from "./EditHouseholdDetailsModal";
 import InviteMemberModal from "./InviteMemberModal";
+
+import "./Households.scss";
 
 interface HouseholdDetailModalProps {
     householdId: string | null;
@@ -137,195 +128,185 @@ const HouseholdDetailModal: React.FC<HouseholdDetailModalProps> = ({
         });
     };
 
+    const pendingInvitations = !invitationsLoading && invitations ? invitations : [];
+
     return (
         <>
             <IonModal isOpen={isOpen} onDidDismiss={onClose}>
-                <IonHeader>
-                    <IonToolbar>
-                        <IonTitle>Household Details</IonTitle>
-                        <IonButtons slot="end">
-                            <IonButton
-                                onClick={handleDeleteHousehold}
-                                disabled={deleteHousehold.isPending}
-                            >
-                                <IonIcon icon={trashOutline} slot="icon-only" />
-                            </IonButton>
-                            <IonButton onClick={onClose}>
-                                <IonIcon icon={closeOutline} />
-                            </IonButton>
-                        </IonButtons>
-                    </IonToolbar>
-                </IonHeader>
+                <ModalHeader title="Household" onClose={onClose} />
                 <IonContent className="ion-padding">
                     {isLoading ? (
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                gap: "1rem",
-                                minHeight: "50vh",
-                                padding: "32px 16px",
-                            }}
-                        >
+                        <div className="household-loading">
                             <RobotLoadingContent />
                         </div>
                     ) : null}
 
                     {error ? (
-                        <IonText color="danger">
-                            <p className="ion-padding">
-                                {error instanceof Error && error.message.includes("404")
-                                    ? "Household not found. It may have been deleted."
-                                    : "Failed to load household details"}
-                            </p>
-                        </IonText>
+                        <p className="household-error" role="alert">
+                            {error instanceof Error && error.message.includes("404")
+                                ? "Household not found. It may have been deleted."
+                                : "Household details failed to load."}
+                        </p>
                     ) : null}
 
                     {!isLoading && !error && household ? (
-                        <>
-                            {/* Household Details Section */}
-                            <IonList>
-                                <IonListHeader>
-                                    <h2>Household Name</h2>
-                                </IonListHeader>
-                                <IonItem>
-                                    <IonLabel>
-                                        <h3>{household.name}</h3>
-                                    </IonLabel>
-                                    <IonButton
-                                        slot="end"
-                                        fill="outline"
-                                        onClick={() => setIsEditDetailsModalOpen(true)}
-                                    >
-                                        Edit
-                                    </IonButton>
-                                </IonItem>
-                            </IonList>
-
-                            {/* Members Section */}
-                            <IonList>
-                                <IonListHeader>
-                                    <h2>Members ({household.members.length})</h2>
-                                </IonListHeader>
-                                <div
-                                    className="ion-padding-horizontal"
-                                    style={{ marginTop: "-8px", marginBottom: "8px" }}
+                        <div className="household-sheet">
+                            <FormField label="Name">
+                                <button
+                                    type="button"
+                                    className="form-control form-control--button"
+                                    onClick={() => setIsEditDetailsModalOpen(true)}
+                                    aria-label={`Rename ${household.name}`}
                                 >
-                                    <IonButton
-                                        expand="block"
-                                        fill="outline"
-                                        onClick={() => setIsInviteModalOpen(true)}
-                                    >
-                                        <IonIcon icon={personAddOutline} slot="start" />
-                                        Invite Member
-                                    </IonButton>
-                                </div>
+                                    <span className="form-control__value">{household.name}</span>
+                                    <IonIcon
+                                        className="form-control__trail"
+                                        icon={createOutline}
+                                        aria-hidden="true"
+                                    />
+                                </button>
+                            </FormField>
 
-                                {household.members.map((member: HouseholdMemberDetail) => {
-                                    const isCurrentUser = member.userId === user?.id;
-                                    return (
-                                        <IonItem key={member.userId}>
-                                            <IonLabel>
-                                                <h3>{member.userName || member.userEmail}</h3>
-                                                <p>{member.userEmail}</p>
-                                            </IonLabel>
-                                            {!isCurrentUser ? (
-                                                <IonButton
-                                                    slot="end"
-                                                    fill="clear"
-                                                    color="danger"
-                                                    onClick={() =>
-                                                        handleRemoveMember(
-                                                            member.userId,
-                                                            member.userName || member.userEmail
-                                                        )
-                                                    }
-                                                    disabled={removeMember.isPending}
-                                                >
-                                                    <IonIcon icon={trashOutline} slot="icon-only" />
-                                                </IonButton>
-                                            ) : null}
-                                        </IonItem>
-                                    );
-                                })}
+                            <section className="household-section">
+                                <h2 className="ruled-label">
+                                    Members{" "}
+                                    <span className="ruled-label__count">
+                                        {household.members.length}
+                                    </span>
+                                </h2>
+                                {household.members.length > 0 ? (
+                                    <ul className="boxed-list">
+                                        {household.members.map((member: HouseholdMemberDetail) => {
+                                            const isCurrentUser = member.userId === user?.id;
+                                            const displayName = member.userName || member.userEmail;
+                                            return (
+                                                <li key={member.userId} className="household-row">
+                                                    <div className="household-row__text">
+                                                        <div className="household-row__title">
+                                                            <span className="household-row__name">
+                                                                {displayName}
+                                                            </span>
+                                                            {isCurrentUser ? (
+                                                                <span className="info-pill">
+                                                                    You
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
+                                                        {member.userName ? (
+                                                            <span className="household-row__meta">
+                                                                {member.userEmail}
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
+                                                    {!isCurrentUser ? (
+                                                        <RowRemoveButton
+                                                            onClick={() =>
+                                                                handleRemoveMember(
+                                                                    member.userId,
+                                                                    displayName
+                                                                )
+                                                            }
+                                                            disabled={removeMember.isPending}
+                                                            label={`Remove ${displayName}`}
+                                                        />
+                                                    ) : null}
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                ) : (
+                                    <p className="household-row__meta">No members.</p>
+                                )}
+                            </section>
 
-                                {household.members.length === 0 ? (
-                                    <IonItem>
-                                        <IonLabel>
-                                            <IonNote>No members yet</IonNote>
-                                        </IonLabel>
-                                    </IonItem>
-                                ) : null}
-                            </IonList>
-
-                            {/* Pending Invitations Section */}
-                            {!invitationsLoading && invitations && invitations.length > 0 ? (
-                                <IonList>
-                                    <IonListHeader>
-                                        <h2>Pending Invitations ({invitations.length})</h2>
-                                    </IonListHeader>
-                                    {invitations.map((invitation: HouseholdInvitation) => (
-                                        <IonItem key={invitation.id}>
-                                            <IonLabel>
-                                                <h3>{invitation.invitedEmail}</h3>
-                                            </IonLabel>
-                                            <IonButton
-                                                slot="end"
-                                                fill="clear"
-                                                color="danger"
-                                                onClick={() =>
-                                                    handleCancelInvitation(
-                                                        invitation.id,
-                                                        invitation.invitedEmail
-                                                    )
-                                                }
-                                                disabled={cancelInvitation.isPending}
-                                            >
-                                                <IonIcon icon={trashOutline} slot="icon-only" />
-                                            </IonButton>
-                                        </IonItem>
-                                    ))}
-                                </IonList>
+                            {pendingInvitations.length > 0 ? (
+                                <section className="household-section">
+                                    <h2 className="ruled-label">
+                                        Invitations{" "}
+                                        <span className="ruled-label__count">
+                                            {pendingInvitations.length}
+                                        </span>
+                                    </h2>
+                                    <ul className="boxed-list">
+                                        {pendingInvitations.map(
+                                            (invitation: HouseholdInvitation) => (
+                                                <li key={invitation.id} className="household-row">
+                                                    <div className="household-row__title">
+                                                        <span className="household-row__name">
+                                                            {invitation.invitedEmail}
+                                                        </span>
+                                                        <span className="info-pill">Pending</span>
+                                                    </div>
+                                                    <RowRemoveButton
+                                                        onClick={() =>
+                                                            handleCancelInvitation(
+                                                                invitation.id,
+                                                                invitation.invitedEmail
+                                                            )
+                                                        }
+                                                        disabled={cancelInvitation.isPending}
+                                                        label={`Retract invitation to ${invitation.invitedEmail}`}
+                                                    />
+                                                </li>
+                                            )
+                                        )}
+                                    </ul>
+                                </section>
                             ) : null}
 
-                            {/* Recipe Tags Section */}
-                            <IonList>
-                                <IonListHeader>
-                                    <h2>Recipe Tags</h2>
-                                </IonListHeader>
-                                <div
-                                    className="ion-padding-horizontal"
-                                    style={{ marginTop: "-8px", marginBottom: "8px" }}
-                                >
-                                    <IonButton
-                                        expand="block"
-                                        fill="outline"
-                                        onClick={() => setIsTagManagerOpen(true)}
-                                    >
-                                        Manage Tags
-                                    </IonButton>
-                                </div>
-                            </IonList>
+                            <section className="household-section">
+                                <h2 className="ruled-label">Recipe tags</h2>
+                                <ul className="boxed-list">
+                                    <li>
+                                        <button
+                                            type="button"
+                                            className="row-button household-row"
+                                            onClick={() => setIsTagManagerOpen(true)}
+                                        >
+                                            <span className="household-row__name">Manage tags</span>
+                                            <IonIcon
+                                                className="household-row__trail"
+                                                icon={chevronForward}
+                                                aria-hidden="true"
+                                            />
+                                        </button>
+                                    </li>
+                                </ul>
+                            </section>
 
-                            {/* Actions Section */}
-                            {household.members.length > 1 && (
-                                <div className="ion-padding">
-                                    <IonButton
-                                        expand="block"
-                                        color="warning"
-                                        fill="outline"
+                            {/* The destructive zone: leave (when others remain to keep it),
+                                then delete. */}
+                            <div className="household-danger">
+                                {household.members.length > 1 && (
+                                    <DestructiveAction
                                         onClick={handleLeaveHousehold}
                                         disabled={removeMember.isPending}
                                     >
-                                        Leave Household
-                                    </IonButton>
-                                </div>
-                            )}
-                        </>
+                                        Leave household
+                                    </DestructiveAction>
+                                )}
+                                <DestructiveAction
+                                    onClick={handleDeleteHousehold}
+                                    busy={deleteHousehold.isPending}
+                                >
+                                    Delete household
+                                </DestructiveAction>
+                            </div>
+                        </div>
                     ) : null}
                 </IonContent>
+                {!isLoading && !error && household ? (
+                    <EditorFooter>
+                        <IonButton
+                            className="editor-form__submit"
+                            expand="block"
+                            onClick={() => setIsInviteModalOpen(true)}
+                        >
+                            <IonIcon icon={personAddOutline} slot="start" />
+                            Invite Member
+                        </IonButton>
+                    </EditorFooter>
+                ) : null}
             </IonModal>
 
             <TagManagerModal

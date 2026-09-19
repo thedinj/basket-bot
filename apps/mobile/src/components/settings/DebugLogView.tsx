@@ -1,7 +1,8 @@
-import { IonButton, IonItem, IonLabel, IonNote } from "@ionic/react";
 import { useEffect, useState } from "react";
 import { useToast } from "../../hooks/useToast";
 import { clientErrorLog, type ClientErrorLogEntry } from "../../lib/clientErrorLog";
+
+import "./DebugLogView.scss";
 
 /**
  * Body of the Black Box modal (app menu > About > 7 taps > Black box).
@@ -32,45 +33,54 @@ const DebugLogView: React.FC = () => {
     };
 
     return (
-        <>
-            <IonItem lines="none">
-                <IonLabel>
-                    <h3>Debug Log</h3>
-                    <p>Recent errors on this device ({entries.length}). Tap an entry to copy it.</p>
-                </IonLabel>
+        <section className="debug-log">
+            <h2 className="ruled-label">
+                Debug log <span className="ruled-label__count">{entries.length}</span>
+            </h2>
+
+            <div className="debug-log__toolbar">
+                <p className="debug-log__meta">
+                    {entries.length === 0
+                        ? "No errors recorded."
+                        : "Recent errors on this device. Tap an entry to copy it."}
+                </p>
                 {entries.length > 0 && (
-                    <IonButton
-                        slot="end"
-                        size="small"
-                        fill="clear"
+                    <button
+                        type="button"
+                        className="form-field__action form-field__action--standalone debug-log__clear"
                         onClick={() => clientErrorLog.clear()}
                     >
                         Clear
-                    </IonButton>
+                    </button>
                 )}
-            </IonItem>
-            {entries.length === 0 && (
-                <IonItem lines="none">
-                    <IonNote>No errors recorded.</IonNote>
-                </IonItem>
+            </div>
+
+            {entries.length > 0 && (
+                <ol className="gutter-rows gutter-rows--ruled debug-log__entries">
+                    {entries.map((entry) => {
+                        const codes = [entry.code ?? entry.status, entry.requestId]
+                            .filter(Boolean)
+                            .join(" · ");
+                        return (
+                            <li key={entry.id}>
+                                <button
+                                    type="button"
+                                    className="row-button debug-log__entry"
+                                    onClick={() => void handleCopy(entry)}
+                                >
+                                    <span className="debug-log__when">
+                                        {new Date(entry.timestamp).toLocaleString()}
+                                        {entry.operation ? ` · ${entry.operation}` : ""}
+                                    </span>
+                                    <span className="debug-log__message">{entry.message}</span>
+                                    {codes && <span className="debug-log__codes">{codes}</span>}
+                                </button>
+                            </li>
+                        );
+                    })}
+                </ol>
             )}
-            {entries.map((entry) => (
-                <IonItem key={entry.id} button detail={false} onClick={() => handleCopy(entry)}>
-                    <IonLabel className="ion-text-wrap">
-                        <p>
-                            {new Date(entry.timestamp).toLocaleString()}
-                            {entry.operation ? ` · ${entry.operation}` : ""}
-                        </p>
-                        <p>{entry.message}</p>
-                        <IonNote style={{ fontSize: "0.75rem" }}>
-                            {[entry.code ?? entry.status, entry.requestId]
-                                .filter(Boolean)
-                                .join(" · ")}
-                        </IonNote>
-                    </IonLabel>
-                </IonItem>
-            ))}
-        </>
+        </section>
     );
 };
 

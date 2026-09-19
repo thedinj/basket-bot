@@ -28,13 +28,6 @@
     color: var(--ion-color-medium);
 }
 
-// Toggle with its state as the label, filling the box so the whole box toggles.
-ion-toggle.recipe-editor__toggle {
-    flex: 1;
-    min-width: 0;
-    font-size: 1rem;
-}
-
 // ── Tags ─────────────────────────────────────────────────────────────────────
 
 .recipe-editor__tags {
@@ -65,17 +58,10 @@ ion-toggle.recipe-editor__toggle {
 }
 
 // ── Ingredients ──────────────────────────────────────────────────────────────
-
-.recipe-ing-list {
-    overflow: hidden;
-    border: 1px solid var(--ion-color-step-200);
-    border-radius: 10px;
-    background: var(--ion-color-step-50);
-}
+// The list is a .boxed-list (theme/patterns.scss), which draws the hairlines between rows.
 
 .recipe-ing {
     padding: 0 12px 12px;
-    border-bottom: 1px solid var(--ion-color-step-150);
 }
 
 // Name line: the same 48px as a field box.
@@ -273,43 +259,19 @@ ion-input.recipe-ing__override-name {
     font-size: 0.9375rem;
 }
 
-// Last line of the box: its icon sits where the rows' text starts.
-.recipe-ing-add {
+// Last line of the box, a .row-button (reset, pressed tint, focus ring): its icon sits where
+// the rows' text starts. Compound so this geometry beats .row-button's, which loads later.
+.row-button.recipe-ing-add {
     display: flex;
     align-items: center;
     gap: 8px;
-    box-sizing: border-box;
-    width: 100%;
     height: 48px;
-    margin: 0;
     padding: 0 12px;
-    border: 0;
-    background: transparent;
     color: var(--ion-color-secondary);
-    font: inherit;
     font-size: 0.9375rem;
     font-weight: 600;
-    cursor: pointer;
 
     ion-icon {
         font-size: 20px;
     }
-
-    &:active {
-        background: color-mix(in srgb, var(--ion-color-primary) 10%, transparent);
-    }
-}
-
-// ── Footer ───────────────────────────────────────────────────────────────────
-// The save button spans the same 16px gutters as the fields above it.
-
-.recipe-editor__footer ion-toolbar {
-    --padding-start: 16px;
-    --padding-end: 16px;
-    --padding-top: 8px;
-    --padding-bottom: 8px;
-}
-
-.recipe-editor__footer .editor-form__submit {
-    margin: 0;
 }

@@ -97,7 +97,6 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
                     <FormField label="Default store">
                         <div className="form-control">
                             <IonSelect
-                                className="route__default-select"
                                 aria-label="Default store"
                                 value={defaultStoreId}
                                 onIonChange={(e) => setDefaultStoreId(e.detail.value)}
@@ -140,7 +139,7 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
                     {labelGroups && (
                         <h3 className="ruled-label route__group-label">{group.recipeName}</h3>
                     )}
-                    <ul className="route__rows">
+                    <ul className="review-list route__rows">
                         {group.rows.map((ri) => {
                             const included = ri.storeId !== null;
                             const amount = formatQuantityWithUnit(
@@ -154,9 +153,9 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
                             return (
                                 <li
                                     key={ri.ingredientId}
-                                    className={clsx("route-row", !included && "route-row--off")}
+                                    className={clsx("review-row", !included && "review-row--off")}
                                 >
-                                    <div className="route-row__toggles">
+                                    <div className="review-row__toggles">
                                         <IncludeToggleButton
                                             included={included}
                                             onClick={() => {
@@ -180,12 +179,12 @@ const RouteIngredientsContent: React.FC<RouteIngredientsContentProps> = ({
                                             }}
                                         />
                                     </div>
-                                    <p className="route-row__text">
-                                        <span className="route-row__name">{ri.name}</span>
+                                    <p className="review-row__text">
+                                        <span className="review-row__name">{ri.name}</span>
                                         {amount && (
-                                            <span className="route-row__qty">
+                                            <span className="qty">
                                                 {scaledFrom && (
-                                                    <span className="route-row__from">
+                                                    <span className="qty__from">
                                                         {scaledFrom} →{" "}
                                                     </span>
                                                 )}

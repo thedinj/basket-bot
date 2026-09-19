@@ -1,32 +1,20 @@
 import type { Store } from "@basket-bot/core";
-import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonListHeader,
-    IonModal,
-    IonNote,
-    IonRadio,
-    IonRadioGroup,
-    IonText,
-    IonTitle,
-    IonToolbar,
-} from "@ionic/react";
-import { closeOutline } from "ionicons/icons";
+import { IonButton, IonContent, IonModal } from "@ionic/react";
 import React, { useState } from "react";
 import { useHouseholds, useUpdateStoreHousehold } from "../../db/hooks";
+import { EditorFooter } from "../shared/EditorFooter";
+import { FormField } from "../shared/FormField";
+import { ModalHeader } from "../shared/ModalHeader";
 import RobotLoadingContent from "../shared/RobotLoadingContent";
+import StoreChoice from "./StoreChoice";
 
-interface StoreHouseholdSharingModalProps {
+import "./StoreSheets.scss";
+
+type StoreHouseholdSharingModalProps = {
     store: Store | null;
     isOpen: boolean;
     onClose: () => void;
-}
+};
 
 const StoreHouseholdSharingModal: React.FC<StoreHouseholdSharingModalProps> = ({
     store,
@@ -62,100 +50,67 @@ const StoreHouseholdSharingModal: React.FC<StoreHouseholdSharingModalProps> = ({
     };
 
     const hasChanges = store && selectedHouseholdId !== (store.householdId || null);
+    const hasHouseholds = !isLoading && !error && !!households && households.length > 0;
 
     return (
         <IonModal isOpen={isOpen} onDidDismiss={handleClose}>
-            <IonHeader>
-                <IonToolbar>
-                    <IonTitle>Share Store</IonTitle>
-                    <IonButtons slot="end">
-                        <IonButton onClick={handleClose}>
-                            <IonIcon icon={closeOutline} />
-                        </IonButton>
-                    </IonButtons>
-                </IonToolbar>
-            </IonHeader>
+            <ModalHeader title="Share Store" onClose={handleClose} />
             <IonContent className="ion-padding">
                 {isLoading ? (
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: "1rem",
-                            minHeight: "50vh",
-                            padding: "32px 16px",
-                        }}
-                    >
+                    <div className="store-sheet-loading">
                         <RobotLoadingContent />
                     </div>
-                ) : null}
-
-                {error ? (
-                    <IonText color="danger">
-                        <p className="ion-padding">Failed to load households</p>
-                    </IonText>
-                ) : null}
-
-                {!isLoading && !error ? (
-                    <IonList>
-                        <IonListHeader>
-                            <h2>Share with Household</h2>
-                        </IonListHeader>
-
-                        {!households || households.length === 0 ? (
-                            <IonItem>
-                                <IonLabel>
-                                    <IonNote>
-                                        No households available. Create a household first to share
-                                        stores.
-                                    </IonNote>
-                                </IonLabel>
-                            </IonItem>
-                        ) : (
-                            <IonRadioGroup
-                                value={selectedHouseholdId || "private"}
-                                onIonChange={(e) =>
-                                    setSelectedHouseholdId(
-                                        e.detail.value === "private" ? null : e.detail.value
-                                    )
-                                }
-                            >
-                                <IonItem>
-                                    <IonLabel>
-                                        <h3>Private</h3>
-                                        <p>Only you can access this store</p>
-                                    </IonLabel>
-                                    <IonRadio slot="end" value="private" />
-                                </IonItem>
-
-                                {households.map((household) => (
-                                    <IonItem key={household.id}>
-                                        <IonLabel>
-                                            <h3>{household.name}</h3>
-                                            <p>All household members can access</p>
-                                        </IonLabel>
-                                        <IonRadio slot="end" value={household.id} />
-                                    </IonItem>
-                                ))}
-                            </IonRadioGroup>
-                        )}
-
-                        {households && households.length > 0 ? (
-                            <div className="ion-padding">
-                                <IonButton
-                                    expand="block"
-                                    onClick={handleSave}
-                                    disabled={!hasChanges || updateStoreHousehold.isPending}
+                ) : error ? (
+                    <p className="store-sheet-message store-sheet-message--error" role="alert">
+                        Failed to load households
+                    </p>
+                ) : (
+                    <div className="editor-form">
+                        <FormField label="Share with household">
+                            {!households || households.length === 0 ? (
+                                <p className="store-sheet-message">
+                                    No households available. Create a household first to share
+                                    stores.
+                                </p>
+                            ) : (
+                                <div
+                                    className="boxed-list"
+                                    role="radiogroup"
+                                    aria-label="Share with household"
                                 >
-                                    {updateStoreHousehold.isPending ? "Saving..." : "Save"}
-                                </IonButton>
-                            </div>
-                        ) : null}
-                    </IonList>
-                ) : null}
+                                    <StoreChoice
+                                        title="Private"
+                                        description="Only you can access this store"
+                                        selected={selectedHouseholdId === null}
+                                        onSelect={() => setSelectedHouseholdId(null)}
+                                    />
+                                    {households.map((household) => (
+                                        <StoreChoice
+                                            key={household.id}
+                                            title={household.name}
+                                            description="All household members can access"
+                                            selected={selectedHouseholdId === household.id}
+                                            onSelect={() => setSelectedHouseholdId(household.id)}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </FormField>
+                    </div>
+                )}
             </IonContent>
+            {hasHouseholds && (
+                <EditorFooter>
+                    <IonButton
+                        className="editor-form__submit"
+                        expand="block"
+                        onClick={handleSave}
+                        disabled={!hasChanges || updateStoreHousehold.isPending}
+                    >
+                        {updateStoreHousehold.isPending ? "Saving..." : "Save"}
+                    </IonButton>
+                </EditorFooter>
+            )}
         </IonModal>
     );
 };

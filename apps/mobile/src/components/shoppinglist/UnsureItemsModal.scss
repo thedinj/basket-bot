@@ -1,0 +1,23 @@
+// Review Unsure Items: every store's pending-unsure rows, one ruled lilac label per store.
+//
+// The rows are the shopping list's own (checkbox column on the gutter, text at 62px), so the
+// store label is the section register pulled back from the section's plate column (46px) onto
+// the gutter itself. Scoped one class past GroupedItemList's (0,3,1) section rule to win.
+ion-item-divider .group-header-label.group-header-label--section.unsure-review__store {
+    margin-inline-start: 0;
+}
+
+// Section labels normally sit on a transparent row; these stick while their store scrolls
+// past, so they need the page behind them or rows would show through.
+ion-item-divider:has(> .group-header-label--section.unsure-review__store) {
+    --background: var(--ion-background-color);
+}
+
+.unsure-review__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    min-height: 100%;
+}

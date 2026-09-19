@@ -1,5 +1,5 @@
-// Block header height is fixed so the aisle headers below can pin exactly under it: a headed
-// block publishes that height as --grouped-list-sticky-top (read by GroupedItemList.scss).
+// Block header height is fixed so the aisle bars below can pin exactly under it: a headed block
+// publishes that height as --grouped-list-sticky-top (read by GroupedItemList.scss).
 $items-block-header-height: 40px;
 
 .store-items-block--headed {
@@ -7,42 +7,33 @@ $items-block-header-height: 40px;
 }
 
 // Ionic's default list top padding would open a strip between the block header and the first
-// aisle header, which items then show through while both are pinned.
+// aisle bar, which items then show through while both are pinned.
 .store-items-block ion-list {
     padding-top: 0;
 }
 
 .store-items-block + .store-items-block {
-    margin-top: 16px;
+    margin-top: 8px;
 }
 
-// Sticky within its own block (the block div is its containing block), so the All Items header
-// pushes Favorites off rather than stacking on it. Sits one tier above the aisle headers.
-.items-block-header {
-    --background: var(--ion-color-step-100);
-    --color: var(--ion-text-color);
-    --min-height: #{$items-block-header-height};
-    height: $items-block-header-height;
-    box-sizing: border-box;
+// A ruled label on the gutter (FAVORITES 12 ───), one tier above the aisle bars: sections sit in
+// the plate column at x = 62, so the two ruled registers never share a column. Sticky within its
+// own block (the block div is its containing block), so the All Items header pushes Favorites
+// off rather than stacking on it. Opaque, so rows scrolling under it don't show through.
+// Compound with .ruled-label, which sets margin: 0 and loads later.
+.ruled-label.items-block-header {
+    position: sticky;
+    top: 0;
     z-index: 3;
-    border-bottom: 1px solid var(--ion-color-step-200);
-
-    ion-icon[slot="start"] {
-        margin-inline-end: 8px;
-        font-size: 1.1rem;
-    }
-
-    ion-label {
-        margin-block: 0;
-        font-size: 1rem;
-        font-weight: 600;
-    }
+    box-sizing: border-box;
+    height: $items-block-header-height;
+    padding-inline: 16px;
+    background: var(--ion-background-color);
 }
 
-.items-block-header__count {
-    margin-inline-end: 16px;
-    font-family: var(--app-font-mono);
-    font-size: 0.8rem;
-    font-variant-numeric: tabular-nums;
-    color: var(--ion-color-medium);
+// The glyph's edge sits on the gutter; 8px to the label reads as one unit with it.
+.items-block-header__icon {
+    flex: none;
+    margin-inline-end: -2px;
+    font-size: 1rem;
 }
