@@ -3,87 +3,123 @@
 }
 
 // ── Plan history ─────────────────────────────────────────────────────────────
+//
+// Cards in the recipe cards' frame (14px radius, step-150 hairline, no shadow) on the 16px
+// gutter, 12px apart. Inside, everything sits on a 12px inset:
+//   header ...... date (bold) and time on one baseline, meal count flush right
+//   slots ....... the recipe sheet's step list: a right-aligned lilac numeral in a 1.25rem
+//                 column, 12px to the name, so 9 and 10 line up
 
 .plans-history {
-    padding: 12px 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
+    padding: 16px 16px 12px;
 }
 
-.plans-history-meta {
-    font-size: 11px;
-    font-family: "JetBrains Mono", monospace;
-    color: var(--ion-color-medium);
-    padding: 4px 0;
+.ruled-label.plans-history__label {
+    margin-bottom: 4px;
 }
 
 .plan-history-card {
-    background: var(--ion-card-background, #1a1a2e);
-    border: 1px solid var(--ion-border-color, #2d3748);
-    border-radius: 10px;
     overflow: hidden;
+    border: 1px solid var(--ion-color-step-150);
+    border-radius: 14px;
+    background: var(--ion-card-background, var(--ion-item-background, var(--ion-background-color)));
 
     &__header {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 14px 8px;
-        border-bottom: 1px solid var(--ion-border-color, #2d3748);
+        align-items: baseline;
+        gap: 8px;
+        padding: 12px 12px 11px;
+        border-bottom: 1px solid var(--ion-color-step-150);
     }
 
     &__date {
-        font-size: 13px;
-        font-weight: 600;
+        font-size: 0.9375rem;
+        font-weight: 700;
+        line-height: 1.2;
         color: var(--ion-text-color);
     }
 
+    &__time,
     &__count {
-        font-size: 11px;
-        font-family: "JetBrains Mono", monospace;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.2;
         color: var(--ion-color-medium);
+        white-space: nowrap;
+    }
+
+    &__count {
+        margin-left: auto;
     }
 
     &__slots {
-        padding: 4px 0;
+        display: grid;
+        gap: 6px;
+        margin: 0;
+        padding: 10px 12px 12px;
+        list-style: none;
     }
 }
 
 .plan-history-slot {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 14px;
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr);
+    align-items: baseline;
+    gap: 12px;
 
     &__num {
-        font-size: 11px;
+        font-size: 0.875rem;
         font-weight: 700;
-        font-family: "JetBrains Mono", monospace;
-        color: var(--ion-color-primary, #7c3aed);
-        min-width: 16px;
-        flex: 0 0 auto;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        color: var(--ion-color-secondary);
     }
 
     &__name {
-        font-size: 13px;
-        color: var(--ion-text-color);
-        flex: 1;
-        min-width: 0;
         overflow: hidden;
-        white-space: nowrap;
+        font-size: 0.9375rem;
+        line-height: 1.35;
+        color: var(--ion-text-color);
         text-overflow: ellipsis;
+        white-space: nowrap;
 
-        em {
-            color: var(--ion-color-medium);
+        &--empty {
             font-style: italic;
+            color: var(--ion-color-medium);
         }
     }
 }
 
-.plans-history-more {
+// A quiet text button, centred under the last card: the same muted Barlow as the filter
+// row's Reset.
+.plans-history__more {
     display: flex;
+    align-items: center;
     justify-content: center;
-    padding: 4px 0 8px;
+    align-self: center;
+    min-width: 120px;
+    height: 40px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--ion-color-medium);
+    cursor: pointer;
+
+    &:disabled {
+        cursor: default;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ion-color-primary);
+    }
 }
 
 .plans-history-loading {

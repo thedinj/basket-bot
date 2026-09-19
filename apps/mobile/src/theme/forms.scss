@@ -1,4 +1,4 @@
-// Editor form system, shared by the item and store-item editors.
+// Editor form system, shared by the item, store-item, aisle and recipe editors.
 //
 // Geometry (at the content's 16px gutter, so every edge in a form lands on x = 16 / width - 16):
 //   field ...... label (13px condensed caps) + 8px + control
@@ -85,6 +85,18 @@
         --min-height: 46px;
         --border-width: 0;
         --inner-border-width: 0;
+    }
+}
+
+// A box holding a growing textarea (recipe steps, notes): the textarea fills it top to bottom
+// instead of centring, and keeps the box's 12px above and below the text.
+.form-control--multiline {
+    align-items: stretch;
+
+    ion-textarea {
+        flex: 1;
+        min-width: 0;
+        line-height: 1.5;
     }
 }
 

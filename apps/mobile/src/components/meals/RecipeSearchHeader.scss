@@ -1,9 +1,12 @@
-// ── Filter bar ───────────────────────────────────────────────────────────────
+// Search + filter header, pinned over the recipe grid. Both edges sit on the 16px gutter, like
+// the grid below. The search field and the filter button are the same 44px height, radius, fill
+// and hairline as the editor fields (theme/forms.scss), so the two read as one control row.
 
 .meals-search-header {
     position: sticky;
     top: 0;
     z-index: 10;
+    padding: 8px 16px 0;
     background: var(--ion-background-color);
 }
 
@@ -11,134 +14,185 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 12px 0 16px;
 
+    // Nested under the bar (and on Ionic's own scoping classes) so these beat Ionic's md
+    // searchbar: 8px padding, a 42px input, the icon at 16px and the text at 55px.
     ion-searchbar {
-        --background: var(--ion-card-background, #1a1a2e);
-        --border-radius: 12px;
-        --box-shadow: none;
-        --color: var(--ion-text-color);
-        --placeholder-color: var(--ion-color-step-500, #a0aec0);
-        --icon-color: var(--ion-color-step-500, #a0aec0);
-        padding: 0;
-        height: 44px;
         flex: 1;
+        min-width: 0;
+        height: 44px;
+        min-height: 44px;
+        padding: 0;
+        --background: var(--ion-color-step-50);
+        --border-radius: 10px;
+        // The hairline is an inset shadow on the input, so it keeps the input's radius and
+        // takes no layout space.
+        --box-shadow: inset 0 0 0 1px var(--ion-color-step-200);
+        --color: var(--ion-text-color);
+        --placeholder-color: var(--ion-color-medium);
+        --placeholder-opacity: 1;
+        --icon-color: var(--ion-color-medium);
+        --clear-button-color: var(--ion-color-medium);
+
+        .searchbar-input-container {
+            height: 44px;
+        }
+
+        // Icon at the fields' 12px inset; text 8px after the 20px icon, at 40px.
+        .searchbar-input.sc-ion-searchbar-md {
+            box-sizing: border-box;
+            height: 44px;
+            padding-block: 0;
+            padding-inline: 40px 44px;
+            font-size: 1rem;
+            line-height: normal;
+        }
+
+        .searchbar-search-icon.sc-ion-searchbar-md {
+            top: 12px;
+            left: 12px;
+            width: 20px;
+            height: 20px;
+        }
+
+        .searchbar-input-container:focus-within .searchbar-input {
+            box-shadow: inset 0 0 0 1px var(--ion-color-primary);
+        }
+    }
+}
+
+.meals-filter-btn {
+    position: relative;
+    display: grid;
+    flex: none;
+    place-items: center;
+    box-sizing: border-box;
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 10px;
+    background: var(--ion-color-step-50);
+    color: var(--ion-color-medium);
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition:
+        border-color 0.12s ease-out,
+        color 0.12s ease-out,
+        background-color 0.12s ease-out;
+
+    &--active {
+        border-color: color-mix(in srgb, var(--ion-color-primary) 55%, transparent);
+        background: color-mix(in srgb, var(--ion-color-primary) 12%, var(--ion-color-step-50));
+        color: var(--ion-color-secondary);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ion-color-primary);
+        outline-offset: 2px;
+    }
+
+    // Count of active filters, on the button's corner.
+    &__badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        box-sizing: border-box;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border: 2px solid var(--ion-background-color);
+        border-radius: 9px;
+        background: var(--ion-color-primary);
+        color: var(--ion-color-primary-contrast);
+        font-family: var(--app-font-mono);
+        font-size: 0.625rem;
+        font-weight: 700;
+        line-height: 14px;
+        text-align: center;
+        pointer-events: none;
     }
 }
 
 // ── Active filter row ────────────────────────────────────────────────────────
+// 28px pills (the same shape as a field action), 8px below the search row; Reset ends the row
+// on the gutter.
 
 .meals-filter-row {
     display: flex;
     align-items: center;
-    padding: 4px 12px 4px 16px;
-    gap: 8px;
-    min-height: 40px;
+    gap: 12px;
+    padding-top: 8px;
 }
 
 .meals-active-filters {
     display: flex;
     flex: 1;
+    gap: 6px;
     min-width: 0;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
-    gap: 6px;
-    padding: 2px 0;
 
     &::-webkit-scrollbar {
         display: none;
     }
 }
 
-.meals-filter-reset {
-    all: unset;
-    cursor: pointer;
-    flex: 0 0 auto;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--ion-color-danger, #f56565);
-    padding: 4px 2px;
-    white-space: nowrap;
-    opacity: 0.8;
-    transition: opacity 0.1s;
-
-    &:active {
-        opacity: 1;
-    }
-}
-
 .meals-active-chip {
-    all: unset;
-    cursor: pointer;
-    flex: 0 0 auto;
     display: inline-flex;
+    flex: none;
     align-items: center;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
+    gap: 6px;
+    box-sizing: border-box;
+    height: 28px;
+    margin: 0;
+    padding: 0 10px 0 12px;
+    border: 1px solid color-mix(in srgb, var(--ion-color-primary) 45%, transparent);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--ion-color-primary) 12%, transparent);
+    color: var(--ion-color-secondary);
+    font: inherit;
+    font-size: 0.8125rem;
     font-weight: 600;
-    color: var(--ion-color-primary, #7c3aed);
-    background: rgba(124, 58, 237, 0.12);
-    border: 1px solid rgba(124, 58, 237, 0.35);
-    border-radius: 6px;
-    padding: 4px 9px;
+    font-variant-numeric: tabular-nums;
     white-space: nowrap;
-    transition: background 0.12s;
+    cursor: pointer;
+    transition: background-color 0.12s ease-out;
 
     &:active {
-        background: rgba(124, 58, 237, 0.22);
+        background: color-mix(in srgb, var(--ion-color-primary) 22%, transparent);
     }
 
     &--sort {
+        border-color: var(--ion-color-step-200);
+        background: var(--ion-color-step-50);
         color: var(--ion-color-medium);
-        background: color-mix(in srgb, var(--ion-text-color) 7%, transparent);
-        border-color: var(--ion-border-color, #2d3748);
     }
 }
 
-.meals-filter-btn {
-    all: unset;
-    cursor: pointer;
-    flex: 0 0 auto;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    border: 1px solid var(--ion-border-color, #2d3748);
-    background: var(--ion-card-background, #1a1a2e);
+.meals-active-chip__x {
+    font-size: 0.875rem;
+    opacity: 0.7;
+}
+
+.meals-filter-reset {
+    flex: none;
+    height: 28px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
     color: var(--ion-color-medium);
-    font-size: 18px;
-    transition:
-        border-color 0.12s,
-        color 0.12s,
-        background 0.12s;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
 
-    &--active {
-        border-color: rgba(124, 58, 237, 0.5);
-        color: var(--ion-color-primary, #7c3aed);
-        background: rgba(124, 58, 237, 0.1);
-    }
-
-    &__badge {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        min-width: 16px;
-        height: 16px;
-        padding: 0 4px;
-        background: var(--ion-color-primary, #7c3aed);
-        color: #fff;
-        border-radius: 100px;
-        font-family: "JetBrains Mono", monospace;
-        font-size: 10px;
-        font-weight: 700;
-        line-height: 16px;
-        text-align: center;
-        pointer-events: none;
+    &:active {
+        color: var(--ion-text-color);
     }
 }

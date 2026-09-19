@@ -130,7 +130,7 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
                 <IonToolbar>
                     <IonTitle>Add to shopping list</IonTitle>
                     <IonButtons slot="end">
-                        <IonButton onClick={onDismiss} disabled={isWorking}>
+                        <IonButton onClick={onDismiss} disabled={isWorking} aria-label="Close">
                             <IonIcon slot="icon-only" icon={closeOutline} />
                         </IonButton>
                     </IonButtons>
@@ -157,20 +157,22 @@ const RouteIngredientsModal: React.FC<RouteIngredientsModalProps> = ({
                 />
             </IonContent>
 
-            <IonFooter>
+            <IonFooter className="wizard-footer">
                 <IonToolbar>
-                    <IonButtons slot="end">
+                    <div className="wizard-footer__row">
                         <IonButton
+                            expand="block"
+                            className="editor-form__submit wizard-footer__primary"
                             onClick={handleConfirm}
                             disabled={isWorking || includedCount === 0}
                         >
                             {isWorking ? (
                                 <IonSpinner name="dots" />
                             ) : (
-                                `Add ${includedCount} to ${pluralize("list", includedCount)} →`
+                                `Add ${includedCount} to ${pluralize("list", includedCount)}`
                             )}
                         </IonButton>
-                    </IonButtons>
+                    </div>
                 </IonToolbar>
             </IonFooter>
         </IonModal>

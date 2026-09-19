@@ -1,0 +1,38 @@
+// Scoped `ion-chip.tag-chip` so these beat Ionic's own chip sizing (32px, 14px, 4px margin).
+ion-chip.tag-chip {
+    --padding-top: 0;
+    --padding-bottom: 0;
+    box-sizing: border-box;
+    margin: 0;
+    border: 1px solid var(--tag-border);
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    font-weight: 600;
+    line-height: 1;
+
+    ion-label {
+        color: var(--tag-text);
+        white-space: nowrap;
+    }
+}
+
+// On cards and in lists: 20px, 12px text. 10px text was below what reads on a phone.
+ion-chip.tag-chip--sm {
+    height: 20px;
+    min-height: 20px;
+    padding: 0 8px;
+    font-size: 0.75rem;
+    letter-spacing: 0.01em;
+}
+
+// In pickers (editor, tag manager): 28px, a comfortable tap target in a wrapping row.
+ion-chip.tag-chip--md {
+    height: 28px;
+    min-height: 28px;
+    padding: 0 12px;
+    font-size: 0.8125rem;
+}
+
+ion-chip.tag-chip--off {
+    opacity: 0.5;
+}

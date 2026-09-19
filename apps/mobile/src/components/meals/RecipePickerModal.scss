@@ -1,9 +1,36 @@
-.recipe-picker-item-source {
-    font-size: 12px;
-    color: var(--ion-color-step-400, #718096);
-    margin: 2px 0 0;
-}
+// Picker rows in the recipe cards' type: bold 16px name, 13px source, 20px tag chips 10px
+// below, on the 16px gutter. Scoped under ion-item so it outranks Ionic's own label styles.
+ion-item.recipe-picker-item {
+    --padding-start: 16px;
+    --inner-padding-end: 16px;
+    --inner-border-width: 0 0 1px 0;
+    --border-color: var(--ion-color-step-150);
 
-.recipe-picker-item-tags {
-    margin-top: 4px;
+    ion-label {
+        margin: 12px 0;
+    }
+
+    .recipe-picker-item-name {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: -0.005em;
+        color: var(--ion-text-color);
+        white-space: normal;
+    }
+
+    .recipe-picker-item-source {
+        margin: 4px 0 0;
+        overflow: hidden;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--ion-color-medium);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .recipe-picker-item-tags {
+        margin-top: 10px;
+    }
 }

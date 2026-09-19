@@ -12,6 +12,13 @@ import {
 
 import "./RecipeSearchHeader.scss";
 
+/** The clear mark on an active-filter chip; the chip itself is the button. */
+const ChipX: React.FC = () => (
+    <span className="meals-active-chip__x" aria-hidden="true">
+        ×
+    </span>
+);
+
 const SORT_LABELS: Record<RecipeSort["by"], string> = {
     name: "Name",
     cookTime: "Time",
@@ -86,7 +93,8 @@ const RecipeSearchHeader: React.FC<RecipeSearchHeaderProps> = ({
                                     onFiltersChange({ ...filters, maxCookingTimeMinutes: null })
                                 }
                             >
-                                ≤{filters.maxCookingTimeMinutes}min ×
+                                ≤ {filters.maxCookingTimeMinutes} min
+                                <ChipX />
                             </button>
                         )}
                         {shows("tags") && filters.tagIds.size > 0 && (
@@ -95,7 +103,8 @@ const RecipeSearchHeader: React.FC<RecipeSearchHeaderProps> = ({
                                 className="meals-active-chip"
                                 onClick={() => onFiltersChange({ ...filters, tagIds: new Set() })}
                             >
-                                {filters.tagIds.size} {pluralize("tag", filters.tagIds.size)} ×
+                                {filters.tagIds.size} {pluralize("tag", filters.tagIds.size)}
+                                <ChipX />
                             </button>
                         )}
                         {shows("pool") && filters.inPoolOnly && (
@@ -104,7 +113,8 @@ const RecipeSearchHeader: React.FC<RecipeSearchHeaderProps> = ({
                                 className="meals-active-chip"
                                 onClick={() => onFiltersChange({ ...filters, inPoolOnly: false })}
                             >
-                                In pool ×
+                                In pool
+                                <ChipX />
                             </button>
                         )}
                         {shows("steps") && filters.hasSteps && (
@@ -113,7 +123,8 @@ const RecipeSearchHeader: React.FC<RecipeSearchHeaderProps> = ({
                                 className="meals-active-chip"
                                 onClick={() => onFiltersChange({ ...filters, hasSteps: false })}
                             >
-                                Has steps ×
+                                Has steps
+                                <ChipX />
                             </button>
                         )}
                         {shows("sort") &&
@@ -123,7 +134,8 @@ const RecipeSearchHeader: React.FC<RecipeSearchHeaderProps> = ({
                                     className="meals-active-chip meals-active-chip--sort"
                                     onClick={() => onSortChange(DEFAULT_SORT)}
                                 >
-                                    {SORT_LABELS[sort.by]} {sort.dir === "asc" ? "↑" : "↓"} ×
+                                    {SORT_LABELS[sort.by]} {sort.dir === "asc" ? "↑" : "↓"}
+                                    <ChipX />
                                 </button>
                             )}
                     </div>

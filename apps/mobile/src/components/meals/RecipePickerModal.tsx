@@ -125,7 +125,7 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                 <IonToolbar>
                     <IonTitle>{title}</IonTitle>
                     <IonButtons slot="end">
-                        <IonButton onClick={handleDismiss}>
+                        <IonButton onClick={handleDismiss} aria-label="Close">
                             <IonIcon slot="icon-only" icon={closeOutline} />
                         </IonButton>
                     </IonButtons>
@@ -152,12 +152,13 @@ const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                             {filtered.map((recipe) => (
                                 <IonItem
                                     key={recipe.id}
+                                    className="recipe-picker-item"
                                     button
                                     detail={false}
                                     onClick={() => handlePick(recipe)}
                                 >
                                     <IonLabel>
-                                        <h3>{recipe.name}</h3>
+                                        <h3 className="recipe-picker-item-name">{recipe.name}</h3>
                                         {recipe.source && (
                                             <p className="recipe-picker-item-source">
                                                 {recipe.source}

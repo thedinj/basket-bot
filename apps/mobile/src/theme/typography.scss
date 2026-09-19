@@ -38,3 +38,36 @@ ion-tab-button ion-label {
     letter-spacing: 0.06em;
     text-transform: uppercase;
 }
+
+// The shopping list's section label as a standalone class: small bold tracked caps in lilac
+// with a hairline running to the edge. Recipe sheets use it for Ingredients / Steps / Notes so
+// a heading inside a sheet reads the same as one in the list. A trailing count goes in
+// .ruled-label__count.
+.ruled-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-family: var(--ion-font-family);
+    font-size: 0.78125rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+    color: var(--ion-color-secondary);
+
+    &::after {
+        content: "";
+        flex: 1 0 24px;
+        height: 1px;
+        background: color-mix(in srgb, var(--ion-color-secondary) 30%, transparent);
+    }
+}
+
+.ruled-label__count {
+    margin-inline-start: -4px;
+    font-family: var(--app-font-mono);
+    font-weight: 400;
+    letter-spacing: 0;
+    opacity: 0.8;
+}

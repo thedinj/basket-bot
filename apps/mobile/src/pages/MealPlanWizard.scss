@@ -1,176 +1,422 @@
-// ── Step indicator ─────────────────────────────────────────────────────────
-
-.wizard-step-bar {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--ion-border-color, var(--ion-color-step-150));
-}
-
-.wizard-step-dots {
-    display: flex;
-    align-items: center;
-}
-
-.wizard-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--ion-color-step-300, #4a5568);
-    flex: 0 0 auto;
-
-    &.done,
-    &.active {
-        background: var(--ion-color-primary, #7c3aed);
-    }
-
-    &.active {
-        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.22);
-    }
-}
-
-.wizard-dot-line {
-    flex: 1;
-    height: 1px;
-    background: var(--ion-color-step-200, #2d3748);
-    margin: 0 4px;
-    min-width: 16px;
-}
-
-.wizard-step-label {
-    font-size: 11px;
-    font-family: "JetBrains Mono", monospace;
-    color: var(--ion-color-medium);
-    margin-top: 8px;
-}
-
-// ── Shared ──────────────────────────────────────────────────────────────────
+// Meal plan wizard, on the same system as the recipe sheets and editors: ruled lilac section
+// labels, Barlow throughout (the robot's terminal lines are the one mono register), and every
+// edge on the 16px gutter. Numbered things (slots, the cook list) share the recipe sheet's
+// numeral column: a right-aligned lilac figure in 1.25rem, 12px from its text.
 
 .wizard-content {
     --background: var(--ion-background-color);
+    --padding-bottom: 24px;
+    --wizard-card-bg: var(
+        --ion-card-background,
+        var(--ion-item-background, var(--ion-background-color))
+    );
 }
 
-.wizard-section-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--ion-color-step-500, #a0aec0);
-    padding: 16px 16px 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+// ── Step indicator ───────────────────────────────────────────────────────────
+//
+// Four equal segments under the title bar: a 3px track each, 4px apart, with the step's number
+// and name in condensed caps below. Lives in the header, so it stays put while a step scrolls.
+
+.wizard-steps {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    margin: 0;
+    padding: 4px 16px 12px;
+    list-style: none;
+    background: var(--ion-toolbar-background, var(--ion-background-color));
+
+    &__step {
+        display: flex;
+        align-items: baseline;
+        gap: 5px;
+        min-width: 0;
+        padding-top: 9px;
+        border-top: 3px solid var(--ion-color-step-200);
+        font-family: var(--app-font-display);
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        line-height: 1;
+        text-transform: uppercase;
+        color: var(--ion-color-medium);
+        white-space: nowrap;
+
+        &--done {
+            border-top-color: color-mix(in srgb, var(--ion-color-primary) 55%, transparent);
+        }
+
+        &--active {
+            border-top-color: var(--ion-color-primary);
+            color: var(--ion-text-color);
+        }
+    }
+
+    &__num {
+        font-variant-numeric: tabular-nums;
+        color: var(--ion-color-secondary);
+    }
 }
 
+// ── Shared ───────────────────────────────────────────────────────────────────
+
+.wizard-section {
+    padding: 20px 16px 0;
+
+    > .ruled-label {
+        margin-bottom: 12px;
+    }
+}
+
+// The robot's aside, in the field frame (10px radius, step-200 hairline, step-50 fill, 12px
+// inset). Mono on purpose: it is a terminal readout, with a lilac prompt and a blinking cursor.
 .wizard-robot-line {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
+    margin: 20px 16px 0;
+    padding: 11px 12px;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 10px;
+    background: var(--ion-color-step-50);
+    font-family: var(--app-font-mono);
+    font-size: 0.75rem;
+    line-height: 1.6;
     color: var(--ion-color-medium);
-    padding: 10px 14px;
-    border: 1px solid var(--ion-border-color, #2d3748);
-    margin: 8px 16px 16px;
-    line-height: 1.55;
-    background: var(--ion-card-background, #1a1a2e);
-    border-radius: 8px;
+
+    &__prompt {
+        margin-inline-end: 1ch;
+        font-weight: 700;
+        color: var(--ion-color-secondary);
+    }
 
     &::after {
         content: " ▊";
         animation: cursor-blink 1.1s step-end infinite;
-        color: var(--ion-color-primary, #7c3aed);
+        color: var(--ion-color-primary);
     }
 }
 
 @keyframes cursor-blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-}
-
-.wizard-loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 64px 0;
-}
-
-.wizard-empty {
-    padding: 32px 16px;
-    text-align: center;
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
 }
 
 // ── Step 1: Pool ─────────────────────────────────────────────────────────────
+//
+// Minus / count / plus across the full gutter: two 56px squares in the field frame, the count
+// centred between them with its unit in condensed caps underneath.
 
-.wizard-count-row {
-    display: flex;
+.wizard-counter {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) 56px;
     align-items: center;
-    gap: 24px;
-    padding: 12px 16px;
-}
+    gap: 12px;
 
-.wizard-count-val {
-    font-size: 52px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    color: var(--ion-text-color);
-    min-width: 60px;
-    text-align: center;
-    line-height: 1;
-}
+    &__btn {
+        display: grid;
+        place-items: center;
+        width: 56px;
+        height: 56px;
+        padding: 0;
+        border: 1px solid var(--ion-color-step-200);
+        border-radius: 10px;
+        background: var(--ion-color-step-50);
+        color: var(--ion-text-color);
+        font-size: 1.5rem;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition:
+            border-color 0.12s ease-out,
+            background-color 0.12s ease-out;
 
-.wizard-tag-pool {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 0 16px 12px;
-}
+        &:active:not(:disabled) {
+            border-color: var(--ion-color-primary);
+            background: color-mix(in srgb, var(--ion-color-primary) 14%, var(--ion-color-step-50));
+        }
 
-.wizard-tag-btn {
-    all: unset;
-    cursor: pointer;
-    border-radius: 100px;
-    opacity: 0.45;
-    transition: opacity 0.15s;
+        &:disabled {
+            cursor: default;
+            opacity: 0.35;
+        }
 
-    &.selected {
-        opacity: 1;
+        &:focus-visible {
+            outline: none;
+            border-color: var(--ion-color-primary);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--ion-color-primary) 22%, transparent);
+        }
     }
-}
 
-.wizard-pool-warn {
-    font-size: 12px;
-    color: var(--ion-color-warning, #e89611);
-    padding: 4px 16px 12px;
+    &__value {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+    }
 
-    &--empty {
-        font-family: "JetBrains Mono", monospace;
-        font-size: 11px;
+    &__num {
+        font-size: 3.5rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
+        line-height: 1;
+        color: var(--ion-text-color);
+    }
+
+    &__unit {
+        font-family: var(--app-font-display);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        line-height: 1;
+        text-transform: uppercase;
         color: var(--ion-color-medium);
-        padding: 8px 14px;
-        border: 1px solid var(--ion-border-color, #2d3748);
-        margin: 0 16px 12px;
-        background: var(--ion-card-background, #1a1a2e);
-        border-radius: 8px;
-        line-height: 1.55;
     }
-}
-
-.wizard-pool-count {
-    font-size: 12px;
-    font-family: "JetBrains Mono", monospace;
-    color: var(--ion-color-medium);
-    padding-left: 12px;
 }
 
 // ── Step 2: Spin ─────────────────────────────────────────────────────────────
 
-.wizard-spin-header {
+// Fill count on the left, Roll on the right, both on the gutter's centre line.
+.wizard-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 4px 4px 16px;
+    gap: 12px;
+    min-height: 44px;
+    padding: 8px 16px 0;
+
+    &__meta {
+        font-size: 0.875rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        color: var(--ion-color-medium);
+    }
+
+    // A label-line action (forms.scss) standing on its own line: no pull into a label's space.
+    &__action {
+        margin: 0;
+    }
 }
 
-.wizard-spin-meta {
-    font-size: 12px;
-    font-family: "JetBrains Mono", monospace;
-    color: var(--ion-color-medium);
+.wizard-slots {
+    display: grid;
+    gap: 12px;
+    padding: 8px 16px 0;
 }
 
-// ── Slot card animations ──────────────────────────────────────────────────────
+// Slot cards, in the recipe cards' frame. Body on a 12px inset, then a 40px bar of four
+// equal actions: always four columns, so bars line up from card to card.
+.wizard-slot {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--ion-color-step-150);
+    border-radius: 14px;
+    background: var(--wizard-card-bg);
+    user-select: none;
+
+    &--pinned {
+        border-color: color-mix(in srgb, var(--ion-color-secondary) 55%, transparent);
+    }
+
+    // Staggered reveal: plays on mount, driven by --slot-n.
+    &--enter {
+        animation: wizard-slot-enter 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation-delay: calc(var(--slot-n, 0) * 50ms);
+    }
+
+    // Scanning shimmer while a roll is in flight.
+    &--scanning::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 40%;
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            color-mix(in srgb, var(--ion-color-primary) 9%, transparent) 50%,
+            transparent 100%
+        );
+        animation: wizard-scan 1.5s ease-in-out infinite;
+        animation-delay: calc(var(--slot-n, 0) * 0.18s);
+        pointer-events: none;
+        will-change: transform;
+    }
+
+    &--scanning .wizard-slot__num {
+        animation: wizard-slot-num-pulse 1.5s ease-in-out infinite;
+        animation-delay: calc(var(--slot-n, 0) * 0.18s);
+    }
+
+    // Numeral column, then the recipe; the filters sit under the recipe, in its column.
+    &__body {
+        display: grid;
+        grid-template-columns: 1.25rem minmax(0, 1fr);
+        align-items: baseline;
+        column-gap: 12px;
+        padding: 14px 12px 12px;
+    }
+
+    &__num {
+        font-size: 1rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+        text-align: right;
+        color: var(--ion-color-secondary);
+    }
+
+    &__recipe {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        text-align: start;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+
+        &:focus-visible {
+            outline: 2px solid var(--ion-color-primary);
+            outline-offset: 4px;
+            border-radius: 4px;
+        }
+
+        &--empty {
+            cursor: default;
+        }
+    }
+
+    &__name {
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: -0.005em;
+        line-height: 1.2;
+        color: var(--ion-text-color);
+        overflow-wrap: anywhere;
+        animation: wizard-name-enter 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    &__recipe--empty &__name {
+        font-weight: 600;
+        color: var(--ion-color-medium);
+    }
+
+    &__source {
+        display: block;
+        margin-top: 4px;
+        overflow: hidden;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        line-height: 1.25;
+        color: var(--ion-color-medium);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+        grid-column: 2;
+        margin-top: 10px;
+
+        &:empty {
+            display: none;
+        }
+    }
+
+    // Time limit and pool count: pills the size of a small tag chip (20px, 12px text).
+    &__pill {
+        display: inline-flex;
+        align-items: center;
+        box-sizing: border-box;
+        height: 20px;
+        padding: 0 8px;
+        border: 1px solid var(--ion-color-step-200);
+        border-radius: 10px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+        color: var(--ion-color-medium);
+        white-space: nowrap;
+
+        &--warn {
+            border-color: color-mix(in srgb, var(--ion-color-warning) 45%, transparent);
+            background: color-mix(in srgb, var(--ion-color-warning) 10%, transparent);
+            color: var(--ion-color-warning);
+        }
+    }
+
+    &__actions {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        border-top: 1px solid var(--ion-color-step-150);
+    }
+
+    &__action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        height: 40px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        font: inherit;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--ion-color-medium);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition:
+            color 0.12s ease-out,
+            background-color 0.12s ease-out;
+
+        & + & {
+            border-inline-start: 1px solid var(--ion-color-step-150);
+        }
+
+        ion-icon {
+            flex: none;
+            font-size: 1rem;
+        }
+
+        &--on {
+            color: var(--ion-color-secondary);
+        }
+
+        &:active:not(:disabled) {
+            color: var(--ion-color-primary);
+            background: color-mix(in srgb, var(--ion-color-primary) 12%, transparent);
+        }
+
+        &:disabled {
+            cursor: default;
+            opacity: 0.35;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ion-color-primary);
+            outline-offset: -2px;
+        }
+    }
+}
 
 @keyframes wizard-slot-enter {
     from {
@@ -184,325 +430,204 @@
 }
 
 @keyframes wizard-scan {
-    from { transform: translateX(-250%); }
-    to   { transform: translateX(300%); }
+    from {
+        transform: translateX(-250%);
+    }
+    to {
+        transform: translateX(300%);
+    }
 }
 
 @keyframes wizard-slot-num-pulse {
-    0%, 100% { opacity: 0.6; }
-    50%       { opacity: 1; color: var(--ion-color-primary, #7c3aed); }
+    0%,
+    100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+        color: var(--ion-color-primary);
+    }
 }
 
 @keyframes wizard-name-enter {
-    from { opacity: 0; transform: translateY(5px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-// ── Slot card ─────────────────────────────────────────────────────────────────
-
-.wizard-slot {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 12px 0 8px 14px;
-    margin: 5px 12px;
-    border-radius: 10px;
-    border: 1px solid var(--ion-border-color, rgba(255, 255, 255, 0.08));
-    background: var(--ion-card-background, #1a1a2e);
-    position: relative;
-    overflow: hidden;
-    user-select: none;
-
-    &.pinned {
-        cursor: default;
-        border-color: rgba(124, 58, 237, 0.4);
+    from {
+        opacity: 0;
+        transform: translateY(5px);
     }
-
-    // Staggered reveal — plays on mount, driven by --slot-n CSS variable
-    &--enter {
-        animation: wizard-slot-enter 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
-        animation-delay: calc(var(--slot-n, 0) * 50ms);
-    }
-
-    // Scanning shimmer while isWorking
-    &--scanning::after {
-        content: "";
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        width: 40%;
-        background: linear-gradient(
-            90deg,
-            transparent 0%,
-            rgba(124, 58, 237, 0.09) 50%,
-            transparent 100%
-        );
-        animation: wizard-scan 1.5s ease-in-out infinite;
-        animation-delay: calc(var(--slot-n, 0) * 0.18s);
-        pointer-events: none;
-        will-change: transform;
-    }
-
-    // Slot number pulses during scan
-    &--scanning .wizard-slot-num {
-        animation: wizard-slot-num-pulse 1.5s ease-in-out infinite;
-        animation-delay: calc(var(--slot-n, 0) * 0.18s);
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-.wizard-slot-num {
-    font-size: 11px;
-    font-weight: 700;
-    font-family: "JetBrains Mono", monospace;
-    color: var(--ion-color-primary, #7c3aed);
-    min-width: 20px;
-    flex: 0 0 auto;
-    padding-top: 3px;
-    opacity: 0.75;
-}
+// ── Step 3: Route ────────────────────────────────────────────────────────────
 
-.wizard-slot-body {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding-bottom: 4px;
-}
-
-.wizard-slot-name {
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: -0.015em;
-    color: var(--ion-text-color);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.3;
-    animation: wizard-name-enter 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.wizard-slot-name--link {
-    cursor: pointer;
-    text-decoration: underline;
-    text-decoration-style: dotted;
-    text-underline-offset: 3px;
-}
-
-.wizard-slot-source {
-    display: block;
-    font-size: 11px;
-    font-weight: 400;
-    color: var(--ion-color-step-400, #718096);
-    text-decoration: none;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    margin-top: 2px;
-}
-
-.wizard-slot-tags {
-    display: flex;
-    flex-wrap: wrap;
-    // TagChip provides its own margin
-}
-
-.wizard-slot-filters {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-wrap: wrap;
-    padding-top: 2px;
-}
-
-.wizard-slot-pool-count {
-    font-size: 11px;
-    font-family: "JetBrains Mono", monospace;
-    color: var(--ion-color-primary, #7c3aed);
-    background: rgba(124, 58, 237, 0.1);
-    border: 1px solid rgba(124, 58, 237, 0.25);
-    border-radius: 4px;
-    padding: 2px 7px;
-    margin-left: auto;
-    white-space: nowrap;
-    flex-shrink: 0;
-
-    &--empty {
-        color: var(--ion-color-warning, #e89611);
-        background: rgba(232, 150, 17, 0.1);
-        border-color: rgba(232, 150, 17, 0.3);
-    }
-}
-
-.wizard-slot-time-chip {
-    font-size: 11px;
-    font-family: "JetBrains Mono", monospace;
-    color: var(--ion-color-medium);
-    background: color-mix(in srgb, var(--ion-text-color) 6%, transparent);
-    border: 1px solid color-mix(in srgb, var(--ion-text-color) 10%, transparent);
-    border-radius: 4px;
-    padding: 2px 7px;
-    white-space: nowrap;
-}
-
-.wizard-slot-empty {
-    font-size: 13px;
-    color: var(--ion-color-warning, #e89611);
-    font-style: italic;
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 0;
-}
-
-.wizard-slot-empty-hint {
-    font-size: 11px;
-    font-style: normal;
-    color: var(--ion-color-medium);
-}
-
-.wizard-slot-actions {
-    display: flex;
-    flex: 0 0 auto;
-    align-self: flex-start;
-}
-
-// ── Step 3: Route ─────────────────────────────────────────────────────────────
-
-.wizard-route-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 16px 4px;
-}
-
-.wizard-route-meta {
-    font-size: 11px;
-    font-family: "JetBrains Mono", monospace;
-    color: var(--ion-color-medium);
-}
-
-.wizard-route-default {
-    font-size: 12px;
-    color: var(--ion-color-medium);
-}
-
-.wizard-default-store-select {
-    font-size: 12px;
-    font-weight: 600;
-    --padding-start: 4px;
-    --padding-end: 0;
-    max-width: 140px;
-    color: var(--ion-color-primary, #7c3aed);
-}
-
-.wizard-route-item {
-    --min-height: 52px;
-}
-
-.wizard-store-select {
-    font-size: 12px;
-    --padding-start: 4px;
-    max-width: 120px;
-    color: var(--ion-color-primary, #7c3aed);
+// One recipe per row, hairline-divided; the control's own gutter is the section's.
+.wizard-scale-list .sfc-root--stacked {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--ion-color-step-150);
 }
 
 // ── Step 4: Send ─────────────────────────────────────────────────────────────
 
-.wizard-confirm-card {
-    margin: 16px;
-    padding: 16px;
-    background: var(--ion-card-background, #1a1a2e);
-    border-radius: 12px;
-    border: 1px solid var(--ion-border-color, #2d3748);
-}
+// Label left, figure right-aligned in tabular digits, one hairline per row.
+.wizard-tally {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    margin: 0;
 
-.wizard-confirm-title {
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 12px;
-    color: var(--ion-text-color);
-}
-
-.wizard-confirm-stat {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 7px 0;
-    font-size: 14px;
-
-    & + & {
-        border-top: 1px solid var(--ion-border-color, #2d3748);
+    dt,
+    dd {
+        margin: 0;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--ion-color-step-150);
+        font-size: 0.9375rem;
+        line-height: 1.3;
     }
 
-    span {
+    dt {
+        overflow: hidden;
+        color: var(--ion-text-color);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    dd {
+        padding-left: 12px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        color: var(--ion-text-color);
+    }
+
+    dt:last-of-type,
+    dd:last-of-type {
+        border-bottom: 0;
+    }
+
+    &__quiet,
+    dd.wizard-tally__quiet {
         color: var(--ion-color-medium);
     }
+}
 
-    b {
-        color: var(--ion-text-color);
+.wizard-cook-list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    &__row {
+        display: grid;
+        grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+        align-items: baseline;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--ion-color-step-150);
+
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+
+    &__num {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        color: var(--ion-color-secondary);
+    }
+
+    &__text {
+        min-width: 0;
+    }
+
+    &__name {
+        display: block;
+        font-size: 1rem;
         font-weight: 600;
+        line-height: 1.3;
+        color: var(--ion-text-color);
+    }
+
+    &__source {
+        display: block;
+        margin-top: 2px;
+        overflow: hidden;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--ion-color-medium);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    // Scale factors: the shopping list's quantity style.
+    &__scale {
+        font-size: 0.90625rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        color: var(--ion-color-secondary);
     }
 }
 
-.wizard-confirm-recipes {
-    margin-bottom: 8px;
+// ── Footer ───────────────────────────────────────────────────────────────────
+//
+// On the gutter: a 48px back square in the field frame, 12px, then the step's primary action
+// (the editors' submit button) filling the rest. Shared by the add-to-list sheet.
+
+.wizard-footer ion-toolbar {
+    --padding-start: 16px;
+    --padding-end: 16px;
+    --padding-top: 8px;
+    --padding-bottom: 8px;
 }
 
-.wizard-confirm-recipe-row {
+.wizard-footer__row {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--ion-border-color, var(--ion-color-step-150));
-    font-size: 14px;
+}
+
+.wizard-footer__back {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 10px;
+    background: var(--ion-color-step-50);
     color: var(--ion-text-color);
+    font-size: 1.375rem;
+    cursor: pointer;
+
+    &:disabled {
+        cursor: default;
+        opacity: 0.4;
+    }
+
+    &:focus-visible {
+        outline: none;
+        border-color: var(--ion-color-primary);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--ion-color-primary) 22%, transparent);
+    }
 }
 
-.wizard-confirm-num {
-    font-weight: 700;
-    color: var(--ion-color-primary, #7c3aed);
-    font-family: "JetBrains Mono", monospace;
-    min-width: 20px;
+.wizard-footer .wizard-footer__primary {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
 }
 
-.wizard-confirm-source {
-    display: block;
-    font-size: 11px;
-    color: var(--ion-color-step-400, #718096);
-    margin-top: 1px;
-}
-
-// ── Recipe scaling ───────────────────────────────────────────────────────────
-
-.wizard-scale-table {
-    background: var(--ion-card-background, #1a1a2e);
-    border-top: 1px solid var(--ion-border-color, #2d3748);
-    border-bottom: 1px solid var(--ion-border-color, #2d3748);
-}
-
-.route-modal-scale-row {
-    background: var(--ion-card-background, #1a1a2e);
-    border-bottom: 1px solid var(--ion-border-color, var(--ion-color-step-150));
-}
-
-.wizard-confirm-scale {
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
-    font-variant-numeric: tabular-nums;
-    color: var(--ion-color-primary, #7c3aed);
-    margin-left: auto;
-    padding-left: 8px;
-}
-
-// ── Reduced motion ────────────────────────────────────────────────────────────
+// ── Reduced motion ───────────────────────────────────────────────────────────
 
 @media (prefers-reduced-motion: reduce) {
     .wizard-slot--enter,
-    .wizard-slot-name,
+    .wizard-slot__name,
     .wizard-slot--scanning::after,
-    .wizard-slot--scanning .wizard-slot-num {
+    .wizard-slot--scanning .wizard-slot__num,
+    .wizard-robot-line::after {
         animation: none;
     }
 }

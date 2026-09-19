@@ -9,8 +9,8 @@ import {
     IonToolbar,
 } from "@ionic/react";
 import { closeOutline, copyOutline } from "ionicons/icons";
-import { useRef } from "react";
 import { useToast } from "../../hooks/useToast";
+import { formatRecipeAsText } from "../../utils/recipeText";
 import RecipeDetailContent from "./RecipeDetailContent";
 
 interface RecipeViewSheetProps {
@@ -21,17 +21,11 @@ interface RecipeViewSheetProps {
 
 const RecipeViewSheet: React.FC<RecipeViewSheetProps> = ({ recipe, unitMap, onDismiss }) => {
     const { showSuccess, showError } = useToast();
-    const headerRef = useRef<HTMLDivElement>(null);
-    const bodyRef = useRef<HTMLDivElement>(null);
 
     const handleCopy = async () => {
-        if (!headerRef.current || !bodyRef.current) return;
+        if (!recipe) return;
         try {
-            const text = [headerRef.current.innerText, bodyRef.current.innerText]
-                .map((section) => section.trim().replace(/\n{3,}/g, "\n\n"))
-                .filter(Boolean)
-                .join("\n\n");
-            await navigator.clipboard.writeText(text);
+            await navigator.clipboard.writeText(formatRecipeAsText(recipe, unitMap));
             showSuccess("Recipe copied");
         } catch {
             showError("Couldn't copy recipe");
@@ -52,22 +46,17 @@ const RecipeViewSheet: React.FC<RecipeViewSheetProps> = ({ recipe, unitMap, onDi
                     <IonHeader>
                         <IonToolbar>
                             <IonButtons slot="end">
-                                <IonButton onClick={handleCopy}>
+                                <IonButton onClick={handleCopy} aria-label="Copy recipe as text">
                                     <IonIcon slot="icon-only" icon={copyOutline} />
                                 </IonButton>
-                                <IonButton onClick={onDismiss}>
+                                <IonButton onClick={onDismiss} aria-label="Close">
                                     <IonIcon slot="icon-only" icon={closeOutline} />
                                 </IonButton>
                             </IonButtons>
                         </IonToolbar>
                     </IonHeader>
                     <IonContent>
-                        <RecipeDetailContent
-                            recipe={recipe}
-                            unitMap={unitMap}
-                            headerRef={headerRef}
-                            bodyRef={bodyRef}
-                        />
+                        <RecipeDetailContent recipe={recipe} unitMap={unitMap} />
                     </IonContent>
                 </>
             )}

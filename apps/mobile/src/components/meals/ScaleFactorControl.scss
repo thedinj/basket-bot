@@ -1,3 +1,7 @@
+// Recipe scale: preset chips and a custom-factor box, all 32px, in the filter sheet's
+// time-preset style (8px radius, 12px inset, lilac when chosen). Stacked (the wizard: recipe
+// name above its controls) or inline (the add-to-list sheet: a "Scale" label beside them).
+
 .sfc-root {
     padding: 10px 16px;
 
@@ -8,112 +12,115 @@
     }
 
     &--stacked {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-
-        & + & {
-            border-top: 1px solid var(--ion-border-color, #2d3748);
-        }
+        display: grid;
+        gap: 10px;
     }
 
     &--modified .sfc-recipe-label {
-        color: var(--ion-color-primary, #7c3aed);
+        color: var(--ion-color-secondary);
     }
 }
 
+// The form system's field label (forms.scss .form-field__label).
 .sfc-static-label {
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--ion-color-step-500, #a0aec0);
     flex-shrink: 0;
+    font-family: var(--app-font-display);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+    color: var(--ion-color-medium);
 }
 
 .sfc-recipe-label {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--ion-text-color);
-    white-space: nowrap;
     overflow: hidden;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--ion-text-color);
     text-overflow: ellipsis;
+    white-space: nowrap;
     transition: color 0.15s;
 }
 
 .sfc-controls {
     display: flex;
+    flex: 1;
     align-items: center;
     gap: 8px;
+    min-width: 0;
 }
 
 .sfc-presets {
     display: flex;
-    gap: 5px;
     flex: 1;
+    gap: 8px;
+}
+
+.sfc-preset,
+.sfc-input {
+    box-sizing: border-box;
+    height: 32px;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--ion-text-color) 5%, transparent);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: var(--ion-color-medium);
 }
 
 .sfc-preset {
-    all: unset;
-    box-sizing: border-box;
-    padding: 5px 12px;
-    border-radius: 999px;
-    border: 1px solid var(--ion-border-color, #2d3748);
-    font-size: 13px;
-    font-variant-numeric: tabular-nums;
-    cursor: pointer;
-    color: var(--ion-color-step-500, #a0aec0);
-    background: transparent;
-    transition: background 0.1s, border-color 0.1s, color 0.1s;
-    line-height: 1;
-    min-height: 32px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    min-width: 44px;
+    padding: 0 12px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+        background-color 0.12s,
+        border-color 0.12s,
+        color 0.12s;
 
     &--active {
-        background: var(--ion-color-primary, #7c3aed);
-        border-color: var(--ion-color-primary, #7c3aed);
-        color: #fff;
+        border-color: color-mix(in srgb, var(--ion-color-secondary) 45%, transparent);
+        background: color-mix(in srgb, var(--ion-color-secondary) 15%, transparent);
+        color: var(--ion-color-secondary);
     }
 
-    @media (hover: hover) {
-        &:hover:not(.sfc-preset--active) {
-            border-color: var(--ion-color-primary, #7c3aed);
-            color: var(--ion-color-primary, #7c3aed);
-        }
+    &:focus-visible {
+        outline: 2px solid var(--ion-color-primary);
+        outline-offset: 1px;
     }
 }
 
+// The custom factor, flush right: a number box whose figures line up with the presets'.
 .sfc-input {
-    width: 50px;
     flex-shrink: 0;
-    background: var(--ion-color-step-50, #1a1a2e);
-    border: 1px solid var(--ion-border-color, #2d3748);
-    border-radius: 6px;
-    color: var(--ion-color-step-500, #a0aec0);
-    font-size: 13px;
-    font-variant-numeric: tabular-nums;
+    width: 56px;
+    padding: 0 10px;
     text-align: right;
-    padding: 5px 8px;
-    min-height: 32px;
+    -moz-appearance: textfield;
 
-    // hide number input spinners
     &::-webkit-outer-spin-button,
     &::-webkit-inner-spin-button {
         -webkit-appearance: none;
         margin: 0;
     }
-    -moz-appearance: textfield;
 
     &--custom {
-        border-color: var(--ion-color-primary, #7c3aed);
-        color: var(--ion-color-primary, #7c3aed);
+        border-color: color-mix(in srgb, var(--ion-color-secondary) 45%, transparent);
+        color: var(--ion-color-secondary);
     }
 
     &:focus {
         outline: none;
-        border-color: var(--ion-color-primary, #7c3aed);
+        border-color: var(--ion-color-primary);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--ion-color-primary) 22%, transparent);
         color: var(--ion-text-color);
     }
 }

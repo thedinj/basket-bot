@@ -1,69 +1,107 @@
 import type { RecipeWithDetails } from "@basket-bot/core";
-import type { RefObject } from "react";
+import { IonIcon } from "@ionic/react";
+import { listOutline, timeOutline } from "ionicons/icons";
+import pluralize from "pluralize";
+import { formatIngredientAmount, splitRecipeSteps } from "../../utils/recipeText";
 import TagChip from "./TagChip";
 import "./RecipeDetailContent.scss";
 
 interface RecipeDetailContentProps {
     recipe: RecipeWithDetails;
     unitMap: Map<string, string>;
-    // Split in two so tags (a UI-only affordance, not part of the recipe's
-    // written content) can sit between them without being picked up when
-    // copying the recipe as text.
-    headerRef?: RefObject<HTMLDivElement | null>;
-    bodyRef?: RefObject<HTMLDivElement | null>;
 }
 
-const RecipeDetailContent: React.FC<RecipeDetailContentProps> = ({
-    recipe,
-    unitMap,
-    headerRef,
-    bodyRef,
-}) => (
-    <div className="recipe-detail-content">
-        <div ref={headerRef}>
-            <h1 className="recipe-detail-title">{recipe.name}</h1>
-            {recipe.source && <p className="recipe-detail-source">{recipe.source}</p>}
-        </div>
+/**
+ * A recipe laid out for reading while cooking: a large name, then a two-column ingredient
+ * table (amounts right-aligned against the names), numbered steps and notes. Copy-as-text is
+ * built from the data by formatRecipeAsText, so this layout is free to use grids.
+ */
+const RecipeDetailContent: React.FC<RecipeDetailContentProps> = ({ recipe, unitMap }) => {
+    const steps = splitRecipeSteps(recipe.steps);
+    const ingredientCount = recipe.ingredients.length;
+    const hasMeta = ingredientCount > 0 || recipe.cookingTimeMinutes !== null;
 
-        {recipe.tags.length > 0 && (
-            <div className="recipe-detail-tags">
-                {recipe.tags.map((tag) => (
-                    <TagChip key={tag.id} tag={tag} />
-                ))}
-            </div>
-        )}
+    return (
+        <div className="recipe-detail">
+            <header className="recipe-detail__head">
+                <h1 className="recipe-detail__title">{recipe.name}</h1>
+                {recipe.source && <p className="recipe-detail__source">{recipe.source}</p>}
+                {hasMeta && (
+                    <p className="recipe-detail__meta">
+                        {recipe.cookingTimeMinutes !== null && (
+                            <span className="recipe-detail__meta-item">
+                                <IonIcon icon={timeOutline} aria-hidden="true" />
+                                {recipe.cookingTimeMinutes} min
+                            </span>
+                        )}
+                        {ingredientCount > 0 && (
+                            <span className="recipe-detail__meta-item">
+                                <IonIcon icon={listOutline} aria-hidden="true" />
+                                {ingredientCount} {pluralize("ingredient", ingredientCount)}
+                            </span>
+                        )}
+                    </p>
+                )}
+                {recipe.tags.length > 0 && (
+                    <div className="recipe-detail__tags">
+                        {recipe.tags.map((tag) => (
+                            <TagChip key={tag.id} tag={tag} />
+                        ))}
+                    </div>
+                )}
+            </header>
 
-        <div ref={bodyRef}>
-            {recipe.ingredients.length > 0 && (
-                <div className="recipe-detail-section">
-                    <p className="recipe-detail-section-title">Ingredients</p>
-                    {recipe.ingredients.map((ing) => (
-                        <div key={ing.id} className="recipe-detail-ingredient">
-                            <span className="recipe-detail-ingredient-qty">
-                                {ing.qty !== null ? ing.qty : ""}
-                                {ing.unitId ? ` ${unitMap.get(ing.unitId) ?? ing.unitId}` : ""}
-                            </span>{" "}
-                            <span className="recipe-detail-ingredient-name">{ing.name}</span>
-                        </div>
-                    ))}
-                </div>
+            {ingredientCount > 0 && (
+                <section className="recipe-detail__section">
+                    <h2 className="ruled-label recipe-detail__label">Ingredients</h2>
+                    <ul className="recipe-detail__ingredients">
+                        {recipe.ingredients.map((ing) => (
+                            <li key={ing.id} className="recipe-detail__ingredient">
+                                <span className="recipe-detail__amount">
+                                    {formatIngredientAmount(ing.qty, ing.unitId, unitMap)}
+                                </span>
+                                <span className="recipe-detail__ingredient-name">
+                                    {ing.name}
+                                    {ing.notes && (
+                                        <span className="recipe-detail__ingredient-notes">
+                                            {ing.notes}
+                                        </span>
+                                    )}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
             )}
 
-            {recipe.steps && (
-                <div className="recipe-detail-section">
-                    <p className="recipe-detail-section-title">Steps</p>
-                    <p className="recipe-detail-steps">{recipe.steps}</p>
-                </div>
+            {steps.length > 0 && (
+                <section className="recipe-detail__section">
+                    <h2 className="ruled-label recipe-detail__label">Steps</h2>
+                    {steps.length === 1 ? (
+                        <p className="recipe-detail__prose">{steps[0]}</p>
+                    ) : (
+                        <ol className="recipe-detail__steps">
+                            {steps.map((step, i) => (
+                                <li key={i} className="recipe-detail__step">
+                                    <span className="recipe-detail__step-num" aria-hidden="true">
+                                        {i + 1}
+                                    </span>
+                                    <span className="recipe-detail__prose">{step}</span>
+                                </li>
+                            ))}
+                        </ol>
+                    )}
+                </section>
             )}
 
             {recipe.description && (
-                <div className="recipe-detail-section">
-                    <p className="recipe-detail-section-title">Notes</p>
-                    <p className="recipe-detail-notes">{recipe.description}</p>
-                </div>
+                <section className="recipe-detail__section">
+                    <h2 className="ruled-label recipe-detail__label">Notes</h2>
+                    <p className="recipe-detail__notes">{recipe.description}</p>
+                </section>
             )}
         </div>
-    </div>
-);
+    );
+};
 
 export default RecipeDetailContent;

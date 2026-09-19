@@ -225,11 +225,13 @@ const RecipeFilterSheet: React.FC<RecipeFilterSheetProps> = ({
                                         <button
                                             key={tag.id}
                                             type="button"
-                                            className={`wizard-tag-btn${filters.tagIds.has(tag.id) ? " selected" : ""}`}
+                                            className="recipe-filter-sheet__tag-btn"
+                                            aria-pressed={filters.tagIds.has(tag.id)}
                                             onClick={() => toggleTag(tag.id)}
                                         >
                                             <TagChip
                                                 tag={tag}
+                                                size="md"
                                                 selected={
                                                     filters.tagIds.size > 0
                                                         ? filters.tagIds.has(tag.id)

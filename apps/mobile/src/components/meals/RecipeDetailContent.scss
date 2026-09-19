@@ -1,88 +1,165 @@
-.recipe-detail-content {
-    padding: 24px 20px;
+// Recipe reading view. Every edge sits on the sheet's 16px gutter; text is sized for reading
+// at arm's length over a counter, so the body is 16px, not the list's 15px.
+
+.recipe-detail {
+    padding: 4px 16px 40px;
 }
 
-.recipe-detail-title {
-    font-size: 20px;
+// ── Head ─────────────────────────────────────────────────────────────────────
+
+.recipe-detail__title {
+    margin: 0;
+    font-size: 1.75rem;
     font-weight: 700;
-    line-height: 1.3;
+    line-height: 1.12;
+    letter-spacing: -0.01em;
     color: var(--ion-text-color);
-    margin: 0 0 16px;
     overflow-wrap: break-word;
 }
 
-.recipe-detail-source {
-    font-size: 13px;
-    color: var(--ion-color-step-400, #718096);
-    margin: 0 0 16px;
-    line-height: 1.4;
+.recipe-detail__source {
+    margin: 6px 0 0;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--ion-color-medium);
 }
 
-.recipe-detail-tags {
+.recipe-detail__meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 32px;
+    gap: 4px 16px;
+    margin: 12px 0 0;
 }
 
-.recipe-detail-section {
-    margin-bottom: 32px;
-
-    &:last-child {
-        margin-bottom: 0;
-    }
-}
-
-.recipe-detail-section-title {
-    font-size: 12px;
+.recipe-detail__meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--ion-color-step-500, #a0aec0);
-    margin: 0 0 12px;
-}
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: var(--ion-color-medium);
 
-.recipe-detail-ingredient {
-    padding: 8px 0;
-    border-bottom: 1px solid var(--ion-border-color, #2d3748);
-
-    &:last-child {
-        border-bottom: none;
+    ion-icon {
+        font-size: 1rem;
     }
 }
 
-// inline-block (not flex/grid) so the qty and name stay on one line when
-// copied via innerText — flex/grid children are always forced onto their
-// own line, even though they'd render inline.
-.recipe-detail-ingredient-qty {
-    display: inline-block;
-    min-width: 72px;
-    margin-right: 12px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    color: var(--ion-color-secondary, #a78bfa);
+.recipe-detail__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+}
+
+// ── Sections ─────────────────────────────────────────────────────────────────
+
+.recipe-detail__section {
+    margin-top: 32px;
+}
+
+.ruled-label.recipe-detail__label {
+    margin-bottom: 4px;
+}
+
+// One grid for the whole table, rows on subgrid, so the amount column is as wide as the
+// widest amount in this recipe and every name starts on the same line. Amounts are right-
+// aligned so each sits against its own name; first baselines align across the two columns.
+.recipe-detail__ingredients {
+    display: grid;
+    grid-template-columns: minmax(2rem, max-content) minmax(0, 1fr);
+    column-gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.recipe-detail__ingredient {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: baseline;
+    padding-block: 11px;
+    border-bottom: 1px solid var(--ion-color-step-150);
+
+    &:last-child {
+        border-bottom: 0;
+    }
+}
+
+// Same register as a shopping-list quantity: Barlow semibold, tabular digits, lilac.
+.recipe-detail__amount {
+    font-size: 0.90625rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
     white-space: nowrap;
-    vertical-align: baseline;
+    color: var(--ion-color-secondary);
 }
 
-.recipe-detail-ingredient-name {
-    font-size: 15px;
+.recipe-detail__ingredient-name {
+    min-width: 0;
+    font-size: 1rem;
+    line-height: 1.35;
     color: var(--ion-text-color);
+    overflow-wrap: break-word;
 }
 
-.recipe-detail-steps {
-    font-size: 15px;
-    line-height: 1.65;
-    color: var(--ion-text-color);
-    white-space: pre-wrap;
-    margin: 0;
-}
-
-.recipe-detail-notes {
-    font-size: 14px;
-    line-height: 1.6;
-    color: var(--ion-color-step-500, #a0aec0);
+.recipe-detail__ingredient-notes {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.8125rem;
     font-style: italic;
+    color: var(--ion-color-medium);
+}
+
+// Steps: numerals right-aligned in a fixed column (so 9 and 10 line up), text hanging on
+// its own edge when it wraps.
+.recipe-detail__steps {
+    display: grid;
+    gap: 14px;
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.recipe-detail__step {
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr);
+    column-gap: 12px;
+    align-items: baseline;
+}
+
+.recipe-detail__step-num {
+    font-size: 1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--ion-color-secondary);
+}
+
+.recipe-detail__prose {
     margin: 0;
+    font-size: 1rem;
+    line-height: 1.55;
+    color: var(--ion-text-color);
+    overflow-wrap: break-word;
+}
+
+// A lone paragraph of steps sits where the first numbered step would.
+p.recipe-detail__prose {
+    margin-top: 12px;
     white-space: pre-wrap;
+}
+
+.recipe-detail__notes {
+    margin: 12px 0 0;
+    font-size: 0.9375rem;
+    font-style: italic;
+    line-height: 1.55;
+    color: var(--ion-color-medium);
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
 }

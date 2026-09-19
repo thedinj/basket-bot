@@ -1,3 +1,10 @@
+// Recipe editor, on the shared form system (theme/forms.scss): condensed-caps labels, 48px
+// boxes, 20px between fields, every edge on the 16px gutter.
+//
+// The ingredient list is one box in the same frame, rows divided by hairlines. Inside it, text
+// starts 12px in (where every other field's text starts), and the right-hand controls (icons,
+// "Shop as", the override's close) all end on the same 12px inset.
+
 .recipe-editor-loading {
     display: flex;
     flex-direction: column;
@@ -8,208 +15,301 @@
     padding: 64px 0;
 }
 
-.recipe-editor-section-label {
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--ion-color-step-500, #a0aec0);
-    margin: 20px 0 8px;
+// Cook time and Randomizer side by side: two half-width fields, 12px apart (the grid gap).
+.recipe-editor__pair {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
 }
 
-// ── Tags ──────────────────────────────────────────────────────────────────────
-
-.recipe-editor-tags-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    .recipe-editor-section-label {
-        margin-bottom: 0;
-    }
+.recipe-editor__suffix {
+    flex: none;
+    font-size: 0.9375rem;
+    color: var(--ion-color-medium);
 }
 
-.recipe-editor-tags-manage {
-    font-size: 12px;
-    letter-spacing: 0;
-    text-transform: none;
-    height: 28px;
-    --color: var(--ion-color-medium);
-    margin-top: 20px;
+// Toggle with its state as the label, filling the box so the whole box toggles.
+ion-toggle.recipe-editor__toggle {
+    flex: 1;
+    min-width: 0;
+    font-size: 1rem;
 }
 
-.recipe-editor-tags {
+// ── Tags ─────────────────────────────────────────────────────────────────────
+
+.recipe-editor__tags {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 4px;
 }
 
-.recipe-editor-tag-btn {
-    all: unset;
+.recipe-editor__tag-btn {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 14px;
+    background: none;
     cursor: pointer;
-    border-radius: 100px;
-    opacity: 0.4;
-    transition: opacity 0.15s;
+    -webkit-tap-highlight-color: transparent;
 
-    &.selected {
-        opacity: 1;
+    &:focus-visible {
+        outline: 2px solid var(--ion-color-primary);
+        outline-offset: 2px;
     }
 }
 
-// ── Ingredients ───────────────────────────────────────────────────────────────
-
-.recipe-editor-ingredients-header {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-
-    .recipe-editor-section-label {
-        margin-bottom: 0;
-    }
+.recipe-editor__empty {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--ion-color-medium);
 }
 
-.recipe-editor-ingredients {
-    display: flex;
-    flex-direction: column;
+// ── Ingredients ──────────────────────────────────────────────────────────────
+
+.recipe-ing-list {
+    overflow: hidden;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 10px;
+    background: var(--ion-color-step-50);
 }
 
-.recipe-editor-ingredient-row {
-    padding: 4px 0;
-    border-bottom: 1px solid var(--ion-border-color, var(--ion-color-step-150));
-
-    &:first-child {
-        border-top: 1px solid var(--ion-border-color, var(--ion-color-step-150));
-    }
+.recipe-ing {
+    padding: 0 12px 12px;
+    border-bottom: 1px solid var(--ion-color-step-150);
 }
 
-.recipe-editor-ingredient-row__top {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-}
-
-.recipe-editor-ingredient-row__recipe-qty {
+// Name line: the same 48px as a field box.
+.recipe-ing__top {
     display: flex;
     align-items: center;
     gap: 4px;
-    padding: 0 0 2px 2px;
+    min-height: 48px;
 }
 
-.recipe-editor-ingredient-row__shop {
-    background: color-mix(in srgb, var(--ion-color-primary, #7c3aed) 8%, transparent);
-    border-radius: 6px;
-    padding: 2px 8px 4px;
-    margin-top: 2px;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-}
-
-.recipe-editor-ingredient-row__shop-name {
-    display: flex;
-    align-items: center;
-}
-
-.recipe-editor-ingredient-row__shop-qty {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.recipe-editor-shop-expand-btn {
-    --padding-start: 2px;
-    --padding-top: 3px;
-    --padding-bottom: 3px;
-    --color: var(--ion-color-step-500, #718096);
-    font-size: 12px;
-    font-weight: 400;
-    text-transform: none;
-    letter-spacing: 0;
-    margin: 1px 0 2px;
-}
-
-.recipe-editor-shop-collapse-btn {
-    flex: 0 0 auto;
-    --padding-start: 4px;
-    --padding-end: 4px;
-    --padding-top: 2px;
-    --padding-bottom: 2px;
-    --color: var(--ion-color-step-400, #a0aec0);
-}
-
-.recipe-editor-ing-name {
+ion-input.recipe-ing__name {
     flex: 1;
-    font-size: 15px;
+    min-width: 0;
+    min-height: 48px;
     --padding-start: 0;
+    --padding-end: 0;
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+    --highlight-height: 0;
+    font-size: 1rem;
+    font-weight: 500;
 }
 
-.recipe-editor-ing-shopping-name {
-    flex: 1;
-    font-size: 13px;
-    --padding-start: 0;
-    --color: var(--ion-color-step-600, #718096);
-    --placeholder-color: var(--ion-color-step-400, #a0aec0);
+// Not going on the list: the cart icon says so; the name steps back to agree with it.
+.recipe-ing--excluded ion-input.recipe-ing__name {
+    color: var(--ion-color-medium);
 }
 
-.recipe-editor-qty--shopping {
-    font-size: 13px;
-    --color: var(--ion-color-step-600, #718096);
-}
+// Three 36px icon buttons, 20px icons. The row's last icon is pulled 8px right (the button's
+// own inset) so its edge lands on the row's 12px inset.
+.recipe-ing__actions {
+    display: flex;
+    flex: none;
+    margin-inline-end: -8px;
 
-.recipe-editor-unit-btn {
-    all: unset;
-    cursor: pointer;
-    font-size: 14px;
-    color: var(--ion-color-step-400, #718096);
-    border: 1px solid var(--ion-border-color, var(--ion-color-step-200));
-    border-radius: 6px;
-    padding: 2px 8px;
-    white-space: nowrap;
-    transition:
-        background 0.1s,
-        border-color 0.1s,
-        color 0.1s;
+    ion-button {
+        width: 36px;
+        height: 36px;
+        margin: 0;
+        --padding-start: 0;
+        --padding-end: 0;
+        font-size: 1rem;
 
-    &.has-value {
-        color: var(--ion-text-color);
-        border-color: var(--ion-color-step-300, #4a5568);
-    }
-
-    &:active {
-        background: var(--ion-color-step-100, #2d3748);
-    }
-
-    &--shopping {
-        font-size: 13px;
-        color: var(--ion-color-step-500, #718096);
-
-        &.has-value {
-            color: var(--ion-color-step-600, #718096);
+        ion-icon {
+            font-size: 20px;
         }
     }
 }
 
-.recipe-editor-qty {
-    flex: 0 0 60px;
-    font-size: 14px;
+// Amount line: a quantity box and a unit picker, both 36px, then "Shop as" on the right.
+.recipe-ing__amounts {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+ion-input.recipe-ing__qty {
+    flex: none;
+    box-sizing: border-box;
+    width: 72px;
+    height: 36px;
+    min-height: 36px;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 8px;
+    background: var(--ion-background-color);
+    --padding-start: 10px;
+    --padding-end: 10px;
+    --padding-top: 0;
+    --padding-bottom: 0;
+    --highlight-height: 0;
+    font-size: 0.9375rem;
+    font-variant-numeric: tabular-nums;
+
+    &.has-focus {
+        border-color: var(--ion-color-primary);
+    }
+}
+
+.recipe-ing__unit {
+    display: inline-flex;
+    flex: 0 1 auto;
+    align-items: center;
+    gap: 6px;
+    box-sizing: border-box;
+    min-width: 88px;
+    max-width: 140px;
+    height: 36px;
+    margin: 0;
+    padding: 0 8px 0 10px;
+    border: 1px solid var(--ion-color-step-200);
+    border-radius: 8px;
+    background: var(--ion-background-color);
+    color: var(--ion-color-medium);
+    font: inherit;
+    font-size: 0.9375rem;
+    cursor: pointer;
+
+    &--set {
+        color: var(--ion-text-color);
+    }
+
+    ion-icon {
+        flex: none;
+        margin-inline-start: auto;
+        font-size: 0.875rem;
+        color: var(--ion-color-medium);
+    }
+
+    &:focus-visible {
+        outline: none;
+        border-color: var(--ion-color-primary);
+    }
+}
+
+.recipe-ing__unit-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recipe-ing__override-btn {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 4px;
+    height: 36px;
+    margin: 0 0 0 auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--ion-color-secondary);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    ion-icon {
+        font-size: 1rem;
+    }
+}
+
+// Shopping override: a tinted panel under the amounts, 10px padding, holding its own name
+// and amount line in the same geometry as the row above it.
+.recipe-ing__override {
+    display: grid;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 6px 10px 10px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--ion-color-primary) 10%, transparent);
+}
+
+.recipe-ing__override-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 28px;
+}
+
+.recipe-ing__override-label {
+    font-family: var(--app-font-display);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+    color: var(--ion-color-secondary);
+}
+
+// 28px target, 18px icon: pulled 5px right so the icon ends on the panel's inset.
+.recipe-ing__override-close {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    margin: 0 -5px 0 0;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ion-color-medium);
+    font-size: 18px;
+    cursor: pointer;
+}
+
+ion-input.recipe-ing__override-name {
+    min-height: 36px;
     --padding-start: 0;
+    --padding-end: 0;
+    --padding-top: 6px;
+    --padding-bottom: 6px;
+    --highlight-height: 0;
+    font-size: 0.9375rem;
 }
 
-.recipe-editor-qty-sep {
-    font-size: 13px;
-    color: var(--ion-color-step-400, #718096);
-    flex: 0 0 auto;
-    user-select: none;
+// Last line of the box: its icon sits where the rows' text starts.
+.recipe-ing-add {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+    width: 100%;
+    height: 48px;
+    margin: 0;
+    padding: 0 12px;
+    border: 0;
+    background: transparent;
+    color: var(--ion-color-secondary);
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    ion-icon {
+        font-size: 20px;
+    }
+
+    &:active {
+        background: color-mix(in srgb, var(--ion-color-primary) 10%, transparent);
+    }
 }
 
-// ── Action buttons ────────────────────────────────────────────────────────────
+// ── Footer ───────────────────────────────────────────────────────────────────
+// The save button spans the same 16px gutters as the fields above it.
 
-.recipe-editor-add-ingredient-btn {
-    margin-top: 8px;
-    --padding-start: 0;
+.recipe-editor__footer ion-toolbar {
+    --padding-start: 16px;
+    --padding-end: 16px;
+    --padding-top: 8px;
+    --padding-bottom: 8px;
 }
 
-.recipe-editor-save-btn {
-    margin: 8px;
+.recipe-editor__footer .editor-form__submit {
+    margin: 0;
 }

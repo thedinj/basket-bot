@@ -1,7 +1,8 @@
 import type { RecipeWithDetails } from "@basket-bot/core";
-import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonIcon } from "@ionic/react";
-import { cartOutline, createOutline } from "ionicons/icons";
+import { IonCard, IonIcon } from "@ionic/react";
+import { cartOutline, createOutline, listOutline, timeOutline } from "ionicons/icons";
 import { motion, useReducedMotion } from "motion/react";
+import pluralize from "pluralize";
 import { forwardRef } from "react";
 import TagChipList from "./TagChipList";
 
@@ -14,6 +15,12 @@ interface RecipeCardProps {
     onEdit?: () => void;
 }
 
+/**
+ * One recipe in the two-column grid. The body is the open-recipe button; the footer is a
+ * separate bar of equal-width actions, so no button sits inside another. The meta line is
+ * pushed to the foot of the body, so in a row of two cards the meta lines and footers align
+ * however long either title runs.
+ */
 const RecipeCard = forwardRef<HTMLDivElement, RecipeCardProps>(
     ({ recipe, onClick, onAddToList, onEdit }, ref) => {
         const reducedMotion = useReducedMotion();
@@ -24,6 +31,7 @@ const RecipeCard = forwardRef<HTMLDivElement, RecipeCardProps>(
             : undefined;
 
         const ingredientCount = recipe.ingredients.length;
+        const hasMeta = ingredientCount > 0 || recipe.cookingTimeMinutes !== null;
 
         return (
             <motion.div
@@ -36,69 +44,63 @@ const RecipeCard = forwardRef<HTMLDivElement, RecipeCardProps>(
                         : { duration: 0.24, ease: [0.22, 1, 0.36, 1] }
                 }
                 whileTap={
-                    reducedMotion ? undefined : { scale: 0.965, transition: { duration: 0.09 } }
+                    reducedMotion ? undefined : { scale: 0.975, transition: { duration: 0.09 } }
                 }
                 className="recipe-card-motion"
             >
                 <IonCard
-                    button
-                    onClick={onClick}
                     className="recipe-card"
                     style={cardBg ? ({ "--background": cardBg } as React.CSSProperties) : undefined}
                 >
-                    <IonCardHeader className="recipe-card__header">
-                        <IonCardTitle className="recipe-card__title">{recipe.name}</IonCardTitle>
-                        {recipe.source && <p className="recipe-card__source">{recipe.source}</p>}
+                    <button type="button" className="recipe-card__body" onClick={onClick}>
+                        <span className="recipe-card__title">{recipe.name}</span>
+                        {recipe.source && (
+                            <span className="recipe-card__source">{recipe.source}</span>
+                        )}
                         {recipe.tags.length > 0 && (
                             <TagChipList tags={recipe.tags} max={3} className="recipe-card__tags" />
                         )}
-                    </IonCardHeader>
-                    <IonCardContent className="recipe-card__content">
-                        {(ingredientCount > 0 || recipe.cookingTimeMinutes) && (
-                            <div className="recipe-card__meta">
+                        {hasMeta && (
+                            <span className="recipe-card__meta">
+                                {recipe.cookingTimeMinutes !== null && (
+                                    <span className="recipe-card__meta-item">
+                                        <IonIcon icon={timeOutline} aria-hidden="true" />
+                                        {recipe.cookingTimeMinutes} min
+                                    </span>
+                                )}
                                 {ingredientCount > 0 && (
                                     <span className="recipe-card__meta-item">
-                                        {ingredientCount}&thinsp;
-                                        {ingredientCount === 1 ? "ingredient" : "ingredients"}
+                                        <IonIcon icon={listOutline} aria-hidden="true" />
+                                        {ingredientCount}
+                                        <span className="recipe-card__sr">
+                                            {" "}
+                                            {pluralize("ingredient", ingredientCount)}
+                                        </span>
                                     </span>
                                 )}
-                                {recipe.cookingTimeMinutes && (
-                                    <span className="recipe-card__meta-item">
-                                        {recipe.cookingTimeMinutes}&thinsp;min
-                                    </span>
-                                )}
-                            </div>
+                            </span>
                         )}
-                    </IonCardContent>
+                    </button>
                     {(onEdit || onAddToList) && (
                         <div className="recipe-card__footer">
                             {onEdit && (
                                 <button
                                     type="button"
-                                    className="recipe-card__add-btn"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onEdit();
-                                    }}
-                                    aria-label="Edit recipe"
+                                    className="recipe-card__action"
+                                    onClick={onEdit}
+                                    aria-label={`Edit ${recipe.name}`}
                                 >
-                                    <IonIcon
-                                        icon={createOutline}
-                                        className="recipe-card__add-icon"
-                                    />
+                                    <IonIcon icon={createOutline} aria-hidden="true" />
                                 </button>
                             )}
                             {onAddToList && (
                                 <button
                                     type="button"
-                                    className="recipe-card__add-btn"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onAddToList();
-                                    }}
-                                    aria-label="Add to shopping list"
+                                    className="recipe-card__action"
+                                    onClick={onAddToList}
+                                    aria-label={`Add ${recipe.name} to shopping list`}
                                 >
-                                    <IonIcon icon={cartOutline} className="recipe-card__add-icon" />
+                                    <IonIcon icon={cartOutline} aria-hidden="true" />
                                 </button>
                             )}
                         </div>

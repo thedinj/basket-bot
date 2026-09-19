@@ -7,9 +7,6 @@ import {
     IonHeader,
     IonIcon,
     IonInput,
-    IonItem,
-    IonLabel,
-    IonList,
     IonModal,
     IonSpinner,
     IonTextarea,
@@ -18,10 +15,17 @@ import {
     IonToolbar,
 } from "@ionic/react";
 import { ClickableSelectionModal } from "../shared/ClickableSelectionModal";
+import { FormField } from "../shared/FormField";
 import IncludeToggleButton from "../shared/IncludeToggleButton";
 import RobotLoadingContent from "../shared/RobotLoadingContent";
 import UnsureToggleButton from "../shared/UnsureToggleButton";
-import { addOutline, closeOutline, pricetagOutline, trashOutline } from "ionicons/icons";
+import {
+    addOutline,
+    chevronDown,
+    closeOutline,
+    pricetagOutline,
+    trashOutline,
+} from "ionicons/icons";
 import { useEffect, useRef, useState } from "react";
 import { useUnitItems } from "../../hooks/useUnitItems";
 import {
@@ -92,6 +96,39 @@ const emptyRow = (): IngredientRow => ({
     isUnsure: false,
     shopExpanded: false,
 });
+
+interface AmountFieldsProps {
+    qty: string;
+    unitLabel: string | null | undefined;
+    onQtyChange: (value: string) => void;
+    onPickUnit: () => void;
+}
+
+/**
+ * The quantity box and unit picker under an ingredient (and under its shopping override): two
+ * 36px boxes on one line, so every amount in the list starts on the same edge.
+ */
+const AmountFields: React.FC<AmountFieldsProps> = ({ qty, unitLabel, onQtyChange, onPickUnit }) => (
+    <>
+        <IonInput
+            className="recipe-ing__qty"
+            type="number"
+            inputMode="decimal"
+            placeholder="Qty"
+            value={qty}
+            onIonInput={(e) => onQtyChange(e.detail.value ?? "")}
+            aria-label="Quantity"
+        />
+        <button
+            type="button"
+            className={`recipe-ing__unit${unitLabel ? " recipe-ing__unit--set" : ""}`}
+            onClick={onPickUnit}
+        >
+            <span className="recipe-ing__unit-text">{unitLabel ?? "Unit"}</span>
+            <IonIcon icon={chevronDown} aria-hidden="true" />
+        </button>
+    </>
+);
 
 interface RecipeEditorModalProps {
     isOpen: boolean;
@@ -476,170 +513,190 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                         <RobotLoadingContent />
                     </div>
                 ) : (
-                    <>
-                        {/* Name + Cooking time + Pool toggle */}
-                        <IonList>
-                            <IonItem>
-                                <IonLabel position="stacked">Name</IonLabel>
+                    <div className="editor-form recipe-editor">
+                        <FormField label="Name">
+                            <div className="form-control">
                                 <IonInput
                                     ref={nameInputRef}
                                     value={name}
                                     onIonInput={(e) => setName(e.detail.value ?? "")}
-                                    placeholder="Enter recipe name"
+                                    placeholder="Recipe name"
                                     autocapitalize="words"
+                                    aria-label="Name"
                                 />
-                            </IonItem>
-                            <IonItem>
-                                <IonLabel position="stacked">Source</IonLabel>
+                            </div>
+                        </FormField>
+
+                        <FormField label="Source">
+                            <div className="form-control">
                                 <IonInput
                                     value={source}
                                     onIonInput={(e) => setSource(e.detail.value ?? "")}
                                     placeholder="Book, website, or creator"
                                     autocapitalize="words"
+                                    aria-label="Source"
                                 />
-                            </IonItem>
-                            <IonItem>
-                                <IonLabel position="stacked">Cooking time (minutes)</IonLabel>
-                                <IonInput
-                                    type="number"
-                                    inputMode="numeric"
-                                    value={cookingTimeMinutes}
-                                    onIonInput={(e) => setCookingTimeMinutes(e.detail.value ?? "")}
-                                    placeholder="Optional"
-                                    min="1"
-                                />
-                            </IonItem>
-                            <IonItem>
-                                <IonLabel>Include in meal randomizer</IonLabel>
-                                <IonToggle
-                                    slot="end"
-                                    checked={!isPoolExcluded}
-                                    onIonChange={(e) => setIsPoolExcluded(!e.detail.checked)}
-                                />
-                            </IonItem>
-                        </IonList>
-
-                        {/* Notes */}
-                        <IonList>
-                            <IonItem>
-                                <IonLabel position="stacked">Notes</IonLabel>
-                                <IonTextarea
-                                    value={description}
-                                    onIonInput={(e) => setDescription(e.detail.value ?? "")}
-                                    placeholder="Enter notes or variations"
-                                    autoGrow
-                                    rows={3}
-                                />
-                            </IonItem>
-                        </IonList>
-
-                        {/* Tags */}
-                        <div className="recipe-editor-tags-header">
-                            <p className="recipe-editor-section-label">Tags</p>
-                            <IonButton
-                                fill="clear"
-                                size="small"
-                                color="medium"
-                                onClick={() => setTagManagerOpen(true)}
-                                className="recipe-editor-tags-manage"
-                            >
-                                <IonIcon slot="start" icon={pricetagOutline} />
-                                {allTags.length === 0 ? "Create tags" : "Manage"}
-                            </IonButton>
-                        </div>
-                        {allTags.length > 0 && (
-                            <div className="recipe-editor-tags">
-                                {allTags.map((tag) => (
-                                    <button
-                                        key={tag.id}
-                                        type="button"
-                                        className={`recipe-editor-tag-btn${selectedTagIds.has(tag.id) ? " selected" : ""}`}
-                                        onClick={() => toggleTag(tag.id)}
-                                    >
-                                        <TagChip tag={tag} size="md" />
-                                    </button>
-                                ))}
                             </div>
-                        )}
+                        </FormField>
 
-                        {/* Ingredients */}
-                        <div className="recipe-editor-ingredients-header">
-                            <p className="recipe-editor-section-label">Ingredients</p>
+                        <div className="recipe-editor__pair">
+                            <FormField label="Cook time">
+                                <div className="form-control">
+                                    <IonInput
+                                        type="number"
+                                        inputMode="numeric"
+                                        value={cookingTimeMinutes}
+                                        onIonInput={(e) =>
+                                            setCookingTimeMinutes(e.detail.value ?? "")
+                                        }
+                                        placeholder="Optional"
+                                        min="1"
+                                        aria-label="Cook time in minutes"
+                                    />
+                                    <span className="recipe-editor__suffix">min</span>
+                                </div>
+                            </FormField>
+                            <FormField label="Randomizer">
+                                <div className="form-control">
+                                    <IonToggle
+                                        className="recipe-editor__toggle"
+                                        labelPlacement="start"
+                                        justify="space-between"
+                                        checked={!isPoolExcluded}
+                                        onIonChange={(e) => setIsPoolExcluded(!e.detail.checked)}
+                                    >
+                                        {isPoolExcluded ? "Left out" : "In pool"}
+                                    </IonToggle>
+                                </div>
+                            </FormField>
                         </div>
-                        <div className="recipe-editor-ingredients">
-                            {ingredients.map((row) => (
-                                <div key={row.rowKey} className="recipe-editor-ingredient-row">
-                                    <div className="recipe-editor-ingredient-row__top">
-                                        <IonInput
-                                            className="recipe-editor-ing-name"
-                                            placeholder="Ingredient name"
-                                            value={row.name}
-                                            onIonInput={(e) =>
-                                                updateRow(row.rowKey, "name", e.detail.value ?? "")
-                                            }
-                                            autocapitalize="sentences"
-                                        />
-                                        <IncludeToggleButton
-                                            included={!row.excluded}
-                                            onClick={() => toggleRowExcluded(row.rowKey)}
-                                            label={row.name || "this ingredient"}
-                                        />
-                                        <UnsureToggleButton
-                                            active={row.isUnsure}
-                                            onClick={() => toggleRowIsUnsure(row.rowKey)}
-                                        />
-                                        <IonButton
-                                            fill="clear"
-                                            size="small"
-                                            color="medium"
-                                            onClick={() => removeRow(row.rowKey)}
-                                            aria-label="Remove ingredient"
-                                        >
-                                            <IonIcon slot="icon-only" icon={closeOutline} />
-                                        </IonButton>
-                                    </div>
-                                    <div className="recipe-editor-ingredient-row__recipe-qty">
-                                        <IonInput
-                                            className="recipe-editor-qty"
-                                            type="number"
-                                            placeholder="Qty"
-                                            value={row.qty}
-                                            onIonInput={(e) =>
-                                                updateRow(row.rowKey, "qty", e.detail.value ?? "")
-                                            }
-                                        />
-                                        <span className="recipe-editor-qty-sep">·</span>
+
+                        <FormField
+                            label="Tags"
+                            action={
+                                <button
+                                    type="button"
+                                    className="form-field__action"
+                                    onClick={() => setTagManagerOpen(true)}
+                                >
+                                    <IonIcon icon={pricetagOutline} aria-hidden="true" />
+                                    {allTags.length === 0 ? "Create tags" : "Manage"}
+                                </button>
+                            }
+                        >
+                            {allTags.length > 0 ? (
+                                <div className="recipe-editor__tags">
+                                    {allTags.map((tag) => (
                                         <button
+                                            key={tag.id}
                                             type="button"
-                                            className={`recipe-editor-unit-btn${row.unitId ? " has-value" : ""}`}
-                                            onClick={() =>
-                                                setUnitPickerState({
-                                                    rowKey: row.rowKey,
-                                                    field: "unitId",
-                                                })
-                                            }
+                                            className="recipe-editor__tag-btn"
+                                            aria-pressed={selectedTagIds.has(tag.id)}
+                                            onClick={() => toggleTag(tag.id)}
                                         >
-                                            {row.unitId
-                                                ? (unitMap.get(row.unitId) ?? "Unit")
-                                                : "Unit"}
+                                            <TagChip
+                                                tag={tag}
+                                                size="md"
+                                                selected={selectedTagIds.has(tag.id)}
+                                            />
                                         </button>
-                                    </div>
-                                    {row.name.trim() && !row.shopExpanded && (
-                                        <IonButton
-                                            fill="clear"
-                                            size="small"
-                                            className="recipe-editor-shop-expand-btn"
-                                            onClick={() => toggleShopExpanded(row.rowKey)}
-                                        >
-                                            <IonIcon slot="start" icon={addOutline} />
-                                            Shopping override
-                                        </IonButton>
-                                    )}
-                                    {row.name.trim() && row.shopExpanded && (
-                                        <div className="recipe-editor-ingredient-row__shop">
-                                            <div className="recipe-editor-ingredient-row__shop-name">
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="recipe-editor__empty">No tags yet.</p>
+                            )}
+                        </FormField>
+
+                        <FormField label="Ingredients">
+                            <div className="recipe-ing-list">
+                                {ingredients.map((row) => (
+                                    <div
+                                        key={row.rowKey}
+                                        className={`recipe-ing${row.excluded ? " recipe-ing--excluded" : ""}`}
+                                    >
+                                        <div className="recipe-ing__top">
+                                            <IonInput
+                                                className="recipe-ing__name"
+                                                placeholder="Ingredient"
+                                                value={row.name}
+                                                onIonInput={(e) =>
+                                                    updateRow(
+                                                        row.rowKey,
+                                                        "name",
+                                                        e.detail.value ?? ""
+                                                    )
+                                                }
+                                                autocapitalize="sentences"
+                                                aria-label="Ingredient name"
+                                            />
+                                            <div className="recipe-ing__actions">
+                                                <IncludeToggleButton
+                                                    included={!row.excluded}
+                                                    onClick={() => toggleRowExcluded(row.rowKey)}
+                                                    label={row.name || "this ingredient"}
+                                                />
+                                                <UnsureToggleButton
+                                                    active={row.isUnsure}
+                                                    onClick={() => toggleRowIsUnsure(row.rowKey)}
+                                                />
+                                                <IonButton
+                                                    fill="clear"
+                                                    size="small"
+                                                    color="medium"
+                                                    onClick={() => removeRow(row.rowKey)}
+                                                    aria-label="Remove ingredient"
+                                                >
+                                                    <IonIcon slot="icon-only" icon={closeOutline} />
+                                                </IonButton>
+                                            </div>
+                                        </div>
+                                        <div className="recipe-ing__amounts">
+                                            <AmountFields
+                                                qty={row.qty}
+                                                unitLabel={
+                                                    row.unitId ? unitMap.get(row.unitId) : null
+                                                }
+                                                onQtyChange={(v) => updateRow(row.rowKey, "qty", v)}
+                                                onPickUnit={() =>
+                                                    setUnitPickerState({
+                                                        rowKey: row.rowKey,
+                                                        field: "unitId",
+                                                    })
+                                                }
+                                            />
+                                            {row.name.trim() && !row.shopExpanded && (
+                                                <button
+                                                    type="button"
+                                                    className="recipe-ing__override-btn"
+                                                    onClick={() => toggleShopExpanded(row.rowKey)}
+                                                >
+                                                    <IonIcon icon={addOutline} aria-hidden="true" />
+                                                    Shop as
+                                                </button>
+                                            )}
+                                        </div>
+                                        {row.name.trim() && row.shopExpanded && (
+                                            <div className="recipe-ing__override">
+                                                <div className="recipe-ing__override-head">
+                                                    <span className="recipe-ing__override-label">
+                                                        Shop as
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        className="recipe-ing__override-close"
+                                                        onClick={() =>
+                                                            toggleShopExpanded(row.rowKey)
+                                                        }
+                                                        aria-label="Collapse shopping override"
+                                                    >
+                                                        <IonIcon
+                                                            icon={closeOutline}
+                                                            aria-hidden="true"
+                                                        />
+                                                    </button>
+                                                </div>
                                                 <IonInput
-                                                    className="recipe-editor-ing-shopping-name"
+                                                    className="recipe-ing__override-name"
                                                     placeholder="Shopping name (if different)"
                                                     value={row.shoppingName}
                                                     onIonInput={(e) =>
@@ -650,89 +707,78 @@ const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                                                         )
                                                     }
                                                     autocapitalize="sentences"
+                                                    aria-label="Shopping name"
                                                 />
-                                                <IonButton
-                                                    fill="clear"
-                                                    size="small"
-                                                    color="medium"
-                                                    className="recipe-editor-shop-collapse-btn"
-                                                    onClick={() => toggleShopExpanded(row.rowKey)}
-                                                    aria-label="Collapse shopping override"
-                                                >
-                                                    <IonIcon slot="icon-only" icon={closeOutline} />
-                                                </IonButton>
+                                                <div className="recipe-ing__amounts">
+                                                    <AmountFields
+                                                        qty={row.shoppingQty}
+                                                        unitLabel={
+                                                            row.shoppingUnitId
+                                                                ? unitMap.get(row.shoppingUnitId)
+                                                                : null
+                                                        }
+                                                        onQtyChange={(v) =>
+                                                            updateRow(row.rowKey, "shoppingQty", v)
+                                                        }
+                                                        onPickUnit={() =>
+                                                            setUnitPickerState({
+                                                                rowKey: row.rowKey,
+                                                                field: "shoppingUnitId",
+                                                            })
+                                                        }
+                                                    />
+                                                </div>
                                             </div>
-                                            <div className="recipe-editor-ingredient-row__shop-qty">
-                                                <IonInput
-                                                    className="recipe-editor-qty recipe-editor-qty--shopping"
-                                                    type="number"
-                                                    placeholder="Qty"
-                                                    value={row.shoppingQty}
-                                                    onIonInput={(e) =>
-                                                        updateRow(
-                                                            row.rowKey,
-                                                            "shoppingQty",
-                                                            e.detail.value ?? ""
-                                                        )
-                                                    }
-                                                />
-                                                <span className="recipe-editor-qty-sep">·</span>
-                                                <button
-                                                    type="button"
-                                                    className={`recipe-editor-unit-btn recipe-editor-unit-btn--shopping${row.shoppingUnitId ? " has-value" : ""}`}
-                                                    onClick={() =>
-                                                        setUnitPickerState({
-                                                            rowKey: row.rowKey,
-                                                            field: "shoppingUnitId",
-                                                        })
-                                                    }
-                                                >
-                                                    {row.shoppingUnitId
-                                                        ? (unitMap.get(row.shoppingUnitId) ??
-                                                          "Unit")
-                                                        : "Unit"}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                            <IonButton
-                                fill="clear"
-                                size="small"
-                                color="primary"
-                                className="recipe-editor-add-ingredient-btn"
-                                onClick={() => setIngredients((prev) => [...prev, emptyRow()])}
-                            >
-                                <IonIcon slot="start" icon={addOutline} />
-                                Add ingredient
-                            </IonButton>
-                        </div>
+                                        )}
+                                    </div>
+                                ))}
+                                <button
+                                    type="button"
+                                    className="recipe-ing-add"
+                                    onClick={() => setIngredients((prev) => [...prev, emptyRow()])}
+                                >
+                                    <IonIcon icon={addOutline} aria-hidden="true" />
+                                    Add ingredient
+                                </button>
+                            </div>
+                        </FormField>
 
-                        {/* Steps */}
-                        <IonList>
-                            <IonItem>
-                                <IonLabel position="stacked">Steps</IonLabel>
+                        <FormField label="Steps">
+                            <div className="form-control form-control--multiline">
                                 <IonTextarea
                                     value={steps}
                                     onIonInput={(e) => setSteps(e.detail.value ?? "")}
-                                    placeholder="Enter cooking steps"
+                                    placeholder="One step per line"
                                     autoGrow
-                                    rows={4}
+                                    rows={5}
+                                    aria-label="Steps"
                                 />
-                            </IonItem>
-                        </IonList>
-                    </>
+                            </div>
+                        </FormField>
+
+                        <FormField label="Notes">
+                            <div className="form-control form-control--multiline">
+                                <IonTextarea
+                                    value={description}
+                                    onIonInput={(e) => setDescription(e.detail.value ?? "")}
+                                    placeholder="Variations, substitutions, verdicts"
+                                    autoGrow
+                                    rows={3}
+                                    aria-label="Notes"
+                                />
+                            </div>
+                        </FormField>
+                    </div>
                 )}
             </IonContent>
 
-            <IonFooter>
+            <IonFooter className="recipe-editor__footer">
                 <IonToolbar>
                     <IonButton
                         expand="block"
                         onClick={handleSave}
                         disabled={saving || !name.trim()}
-                        className="recipe-editor-save-btn"
+                        className="editor-form__submit"
                     >
                         {saving ? (
                             <IonSpinner name="dots" />

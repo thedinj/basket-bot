@@ -11,9 +11,9 @@
     // ── Heading ────────────────────────────────────────────────────────────────
     // Only rendered where the sheet needs to name what it is filtering (a plan slot).
     &__heading {
-        font-family: "JetBrains Mono", monospace;
-        font-size: 13px;
+        font-size: 1.0625rem;
         font-weight: 700;
+        line-height: 1.25;
         color: var(--ion-text-color);
         padding: 16px 16px 0;
     }
@@ -27,14 +27,16 @@
     }
 
     // ── Section labels ─────────────────────────────────────────────────────────
+    // The editor's field label (theme/forms.scss .form-field__label): condensed caps, 13px.
     &__section-label {
-        font-size: 10px;
-        font-weight: 700;
-        font-family: "JetBrains Mono", monospace;
-        color: var(--ion-color-step-400, #718096);
+        font-family: var(--app-font-display);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        line-height: 1;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
-        padding: 14px 16px 6px;
+        color: var(--ion-color-medium);
+        padding: 18px 16px 10px;
         margin: 0;
     }
 
@@ -49,20 +51,24 @@
     &__sort-chips {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
+        gap: 8px;
         flex: 1;
     }
 
     &__sort-chip {
         all: unset;
         cursor: pointer;
-        font-size: 13px;
+        box-sizing: border-box;
+        display: inline-flex;
+        align-items: center;
+        height: 32px;
+        font-size: 0.875rem;
         font-weight: 500;
         color: var(--ion-color-medium);
         background: color-mix(in srgb, var(--ion-text-color) 5%, transparent);
         border: 1px solid var(--ion-border-color, #2d3748);
         border-radius: 8px;
-        padding: 7px 13px;
+        padding: 0 12px;
         transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
         line-height: 1;
 
@@ -82,14 +88,17 @@
         all: unset;
         cursor: pointer;
         flex: 0 0 auto;
-        font-family: "JetBrains Mono", monospace;
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--ion-color-primary, #7c3aed);
+        box-sizing: border-box;
+        display: inline-flex;
+        align-items: center;
+        height: 32px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--ion-color-secondary);
         background: rgba(124, 58, 237, 0.1);
         border: 1px solid rgba(124, 58, 237, 0.3);
         border-radius: 8px;
-        padding: 7px 11px;
+        padding: 0 12px;
         line-height: 1;
         transition: background 0.12s, transform 0.08s;
         white-space: nowrap;
@@ -116,14 +125,18 @@
     &__time-preset {
         all: unset;
         cursor: pointer;
-        font-family: "JetBrains Mono", monospace;
-        font-size: 12px;
-        font-weight: 700;
+        box-sizing: border-box;
+        display: inline-flex;
+        align-items: center;
+        height: 32px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
         color: var(--ion-color-medium);
         background: color-mix(in srgb, var(--ion-text-color) 5%, transparent);
         border: 1px solid var(--ion-border-color, #2d3748);
         border-radius: 8px;
-        padding: 7px 14px;
+        padding: 0 12px;
         line-height: 1;
         transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
 
@@ -141,16 +154,13 @@
     &__time-clear {
         all: unset;
         cursor: pointer;
-        font-family: "JetBrains Mono", monospace;
-        font-size: 11px;
+        font-size: 0.8125rem;
         font-weight: 600;
-        color: var(--ion-color-danger, #f56565);
+        color: var(--ion-color-medium);
         padding: 4px 2px;
-        opacity: 0.8;
-        transition: opacity 0.1s;
 
         &:active {
-            opacity: 1;
+            color: var(--ion-text-color);
         }
     }
 
@@ -177,9 +187,9 @@
         all: unset;
         width: 44px;
         text-align: right;
-        font-family: "JetBrains Mono", monospace;
-        font-size: 16px;
+        font-size: 1rem;
         font-weight: 600;
+        font-variant-numeric: tabular-nums;
         color: var(--ion-text-color);
 
         &::placeholder {
@@ -197,34 +207,44 @@
     }
 
     &__time-unit {
-        font-size: 13px;
-        font-family: "JetBrains Mono", monospace;
+        font-size: 0.875rem;
         color: var(--ion-color-step-500, #a0aec0);
     }
 
     // ── Tags ───────────────────────────────────────────────────────────────────
+    // The header owns the label's padding so the label and the any/all switch share one
+    // centre line; the switch's negative margins keep it from making this row taller than the
+    // other sections' labels.
     &__tags-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding-right: 16px;
+        padding: 18px 16px 10px;
+
+        .recipe-filter-sheet__section-label {
+            padding: 0;
+        }
     }
 
     &__tag-mode {
         display: flex;
         gap: 4px;
-        padding-bottom: 6px;
+        margin-block: -8px;
     }
 
     &__mode-btn {
         all: unset;
         cursor: pointer;
-        font-size: 11px;
+        box-sizing: border-box;
+        display: inline-flex;
+        align-items: center;
+        height: 28px;
+        font-size: 0.8125rem;
         font-weight: 600;
         color: var(--ion-color-medium);
         border: 1px solid var(--ion-border-color, #2d3748);
         border-radius: 6px;
-        padding: 4px 10px;
+        padding: 0 10px;
         transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
 
         &.active {
@@ -241,8 +261,25 @@
     &__tags {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
+        gap: 8px;
         padding: 0 16px 10px;
+    }
+
+    // The chip draws its own on/off state (TagChip `selected`); the button is only the hit
+    // area. It used to dim itself as well, which left every tag at 45% before any was picked.
+    &__tag-btn {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 14px;
+        background: none;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+
+        &:focus-visible {
+            outline: 2px solid var(--ion-color-primary);
+            outline-offset: 2px;
+        }
     }
 
     &__tags-empty {

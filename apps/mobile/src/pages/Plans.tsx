@@ -4,7 +4,6 @@ import {
     IonFab,
     IonFabButton,
     IonIcon,
-    IonNote,
     IonPage,
     IonSpinner,
 } from "@ionic/react";
@@ -85,61 +84,71 @@ const PlansHistory: React.FC<{ householdId: string | null }> = ({ householdId })
 
     return (
         <div className="plans-history">
-            <div className="plans-history-meta">
-                {data && (
-                    <IonNote>
-                        {total} dispatched {pluralize("plan", total)}
-                    </IonNote>
-                )}
-            </div>
+            {data && (
+                <h2 className="ruled-label plans-history__label">
+                    Dispatched <span className="ruled-label__count">{total}</span>
+                </h2>
+            )}
 
             {plans.map((plan) => {
-                const date = plan.dispatchedAt
-                    ? new Date(plan.dispatchedAt).toLocaleString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
-                      })
-                    : null;
+                const dispatched = plan.dispatchedAt ? new Date(plan.dispatchedAt) : null;
 
                 return (
-                    <div key={plan.id} className="plan-history-card">
-                        <div className="plan-history-card__header">
-                            <span className="plan-history-card__date">{date ?? "—"}</span>
+                    <article key={plan.id} className="plan-history-card">
+                        <header className="plan-history-card__header">
+                            <span className="plan-history-card__date">
+                                {dispatched
+                                    ? dispatched.toLocaleDateString(undefined, {
+                                          weekday: "short",
+                                          month: "short",
+                                          day: "numeric",
+                                          year: "numeric",
+                                      })
+                                    : "—"}
+                            </span>
+                            {dispatched && (
+                                <span className="plan-history-card__time">
+                                    {dispatched.toLocaleTimeString(undefined, {
+                                        hour: "numeric",
+                                        minute: "2-digit",
+                                    })}
+                                </span>
+                            )}
                             <span className="plan-history-card__count">
                                 {plan.slotCount} {pluralize("meal", plan.slotCount)}
                             </span>
-                        </div>
-                        <div className="plan-history-card__slots">
+                        </header>
+                        <ol className="plan-history-card__slots">
                             {plan.slots.map((slot) => (
-                                <div key={slot.slotNumber} className="plan-history-slot">
-                                    <span className="plan-history-slot__num">
+                                <li key={slot.slotNumber} className="plan-history-slot">
+                                    <span className="plan-history-slot__num" aria-hidden="true">
                                         {slot.slotNumber}
                                     </span>
-                                    <span className="plan-history-slot__name">
-                                        {slot.recipeName ?? <em>empty</em>}
+                                    <span
+                                        className={
+                                            slot.recipeName
+                                                ? "plan-history-slot__name"
+                                                : "plan-history-slot__name plan-history-slot__name--empty"
+                                        }
+                                    >
+                                        {slot.recipeName ?? "Empty"}
                                     </span>
-                                </div>
+                                </li>
                             ))}
-                        </div>
-                    </div>
+                        </ol>
+                    </article>
                 );
             })}
 
             {hasNextPage && (
-                <div className="plans-history-more">
-                    <IonButton
-                        fill="clear"
-                        size="small"
-                        color="medium"
-                        onClick={() => fetchNextPage()}
-                        disabled={isFetching}
-                    >
-                        {isFetching ? <IonSpinner name="dots" /> : "Load more"}
-                    </IonButton>
-                </div>
+                <button
+                    type="button"
+                    className="plans-history__more"
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetching}
+                >
+                    {isFetching ? <IonSpinner name="dots" /> : "Load more"}
+                </button>
             )}
         </div>
     );
