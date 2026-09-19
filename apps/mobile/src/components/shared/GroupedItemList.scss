@@ -29,8 +29,9 @@
 // Aisle names (also Ideas / Checked Items / Uncategorized): free text up to 100 chars, so wrap
 // to two lines, then ellipsize. Set like a road sign, in Overpass extra-bold capitals.
 ion-item-divider .group-header-label.group-header-label--aisle {
+    margin-block: 12px;
     font-family: var(--app-font-sign);
-    font-size: 0.9375rem;
+    font-size: 1rem;
     font-weight: 800;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -101,6 +102,13 @@ ion-item-divider .group-header-label.group-header-label--section {
     opacity: 0.8;
 }
 
+// Every aisle bar is at least 44px, whatever its plate holds. A number-only aisle's label is
+// empty (the "AISLE 3" plate carries the name), so without a floor its bar collapsed to the
+// plate's height and sat shorter than the named aisles around it. A two-line name still grows.
+ion-item-divider:has(> .group-header-label--aisle) {
+    min-height: 44px;
+}
+
 // Section rows sit on the list's own background with no fill of their own, so only aisle
 // headers read as bars.
 ion-item-divider:has(> .group-header-label--section) {
@@ -112,7 +120,7 @@ ion-item-divider:has(> .group-header-label--section) {
 }
 
 // Header action buttons (Obliterate, Auto-Categorize): Ionic's small clear button is 27px
-// tall; give it a 44px touch target without growing the 41px header bar it sits in.
+// tall; give it a 44px touch target without growing the 44px header bar it sits in.
 .action-slot-button {
     height: 44px;
     margin-block: -2px;

@@ -6,7 +6,7 @@
     display: grid;
     place-items: center;
     width: 36px;
-    height: 26px;
+    height: 28px;
     box-sizing: border-box;
     margin-inline-end: 10px;
     border: 1.5px solid var(--badge-color, var(--ion-color-secondary));
@@ -27,7 +27,7 @@
             transparent
         );
         font-family: var(--ion-font-family);
-        font-size: 1.0625rem;
+        font-size: 1.1875rem;
         font-weight: 700;
         letter-spacing: -0.01em;
         color: var(--ion-text-color);
@@ -53,14 +53,14 @@
     &__word {
         position: relative;
         top: 1px;
-        font-size: 0.625rem;
+        font-size: 0.6875rem;
         letter-spacing: 0.12em;
         text-transform: uppercase;
         color: color-mix(in srgb, var(--ion-text-color) 72%, transparent);
     }
 
     &__num {
-        font-size: 1.0625rem;
+        font-size: 1.1875rem;
     }
 
     // Ideas / Checked Items carry an icon instead of a number, in their own color.
