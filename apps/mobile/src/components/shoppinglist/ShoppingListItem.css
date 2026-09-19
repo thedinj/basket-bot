@@ -97,12 +97,15 @@ ion-item .item-label .item-checked-by {
     color: var(--ion-color-medium);
 }
 
-/* Quantity: the data register. Never splits across lines ("¼ / cup"). */
+/* Quantity. Barlow semibold with fixed-width digits rather than the mono data face: at this size
+   JetBrains Mono's thin strokes and letter-wide space ("5  ct") were harder to read beside the
+   item name. Never splits across lines ("0.25 / cup"). */
 ion-item .item-label .item-qty {
     margin-left: 2px;
-    font-family: var(--app-font-mono);
-    font-size: 0.8125rem;
-    font-weight: 400;
+    font-family: var(--ion-font-family);
+    font-size: 0.90625rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
     white-space: nowrap;
     color: var(--ion-color-secondary);
 }

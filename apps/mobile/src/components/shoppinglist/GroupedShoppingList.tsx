@@ -10,6 +10,7 @@ import { useToast } from "../../hooks/useToast";
 import { useBatchAutoCategorize } from "../../llm/features/useBatchAutoCategorize";
 import { LLM_ICON_SRC } from "../../llm/shared/constants";
 import { formatErrorMessage } from "../../utils/errorUtils";
+import { unsureFirst } from "../../utils/shoppingListDerivations";
 import ActionSlotButton from "../shared/ActionSlotButton";
 import { GroupedItemList } from "../shared/GroupedItemList";
 import { ItemGroup } from "../shared/grouping.types";
@@ -218,7 +219,9 @@ export const GroupedShoppingList = ({
 
         // Partition items by checked status
         const checkedItems = items.filter((item) => item.isChecked);
-        const uncheckedItems = items.filter((item) => !item.isChecked);
+        // Unsure items lead within their own aisle/section (and the Ideas group); grouping keeps
+        // incoming order, so sorting once here is enough.
+        const uncheckedItems = unsureFirst(items.filter((item) => !item.isChecked));
 
         // Add checked items group if any exist
         if (checkedItems.length > 0) {

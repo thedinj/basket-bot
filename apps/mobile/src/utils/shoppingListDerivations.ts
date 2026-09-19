@@ -43,6 +43,18 @@ export const isPendingUnsure = (item: ShoppingListItemWithDetails): boolean =>
     !item.isChecked && item.isUnsure === true;
 
 /**
+ * Pending-unsure items first, everything else after, each keeping its existing order. Applied
+ * before grouping, so within every aisle, section and the Ideas group the items still needing a
+ * yes/no sit at the top where they get settled first.
+ */
+export const unsureFirst = (
+    items: ShoppingListItemWithDetails[]
+): ShoppingListItemWithDetails[] => [
+    ...items.filter(isPendingUnsure),
+    ...items.filter((item) => !isPendingUnsure(item)),
+];
+
+/**
  * Fraction of the trip that's checked off, or `null` when there's nothing to shop for (the
  * header renders no progress line rather than an empty 0% one).
  */

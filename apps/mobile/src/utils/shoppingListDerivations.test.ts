@@ -1,6 +1,11 @@
 import type { ShoppingListItemWithDetails } from "@basket-bot/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { computeTripProgress, isPendingUnsure, partitionBySnooze } from "./shoppingListDerivations";
+import {
+    computeTripProgress,
+    isPendingUnsure,
+    partitionBySnooze,
+    unsureFirst,
+} from "./shoppingListDerivations";
 
 // Frozen "today" so snooze boundaries are deterministic regardless of when the suite runs.
 const TODAY = new Date("2026-03-15T09:00:00.000Z");
@@ -170,5 +175,28 @@ describe("isPendingUnsure", () => {
     it("treats a null flag as not unsure, and returns a real boolean", () => {
         // isUnsure is nullable in the schema; a raw `&&` would leak null into `.filter` callers.
         expect(isPendingUnsure(makeItem({ isChecked: false, isUnsure: null }))).toBe(false);
+    });
+});
+
+describe("unsureFirst", () => {
+    const item = (id: string, isUnsure: boolean | null, isChecked = false) =>
+        makeItem({ id, isUnsure, isChecked });
+
+    it("moves pending-unsure items to the front, keeping each part's order", () => {
+        const result = unsureFirst([
+            item("a", false),
+            item("b", true),
+            item("c", null),
+            item("d", true),
+        ]);
+
+        expect(result.map((i) => i.id)).toEqual(["b", "d", "a", "c"]);
+    });
+
+    // A checked item's question is settled, so its stale flag doesn't lift it.
+    it("leaves a checked unsure item where it was", () => {
+        const result = unsureFirst([item("a", false), item("b", true, true)]);
+
+        expect(result.map((i) => i.id)).toEqual(["a", "b"]);
     });
 });
