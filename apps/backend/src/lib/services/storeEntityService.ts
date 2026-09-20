@@ -15,6 +15,7 @@ import {
     NotFoundError,
     ValidationError,
 } from "@basket-bot/core";
+import { publishStoreChange } from "../realtime/storeEvents";
 import * as aisleRepo from "../repos/aisleRepo";
 import * as itemRepo from "../repos/itemRepo";
 import * as sectionRepo from "../repos/sectionRepo";
@@ -33,6 +34,77 @@ function verifyStoreAccess(storeId: string, userId: string): void {
         // still string-match `error.message === "Access denied"` keep working.
         throw new AuthorizationError("Access denied");
     }
+}
+
+/**
+ * Rejects an aisle/section/item id that exists but belongs to a different store than the URL's.
+ * Reported as a 404 — the same as a missing row — so the caller learns nothing about another
+ * store's contents. A row that doesn't exist at all is left to each operation's existing
+ * behaviour (usually `null`/`false`, which the route turns into a 404 or an idempotent success).
+ */
+function assertRowInStore(row: { storeId: string } | null, storeId: string, what: string): void {
+    if (row && row.storeId !== storeId) {
+        throw new NotFoundError(`${what} not found`);
+    }
+}
+
+/**
+ * Requires a loaded row to exist and belong to `storeId`. Missing and foreign rows are the same
+ * 404, so an id from another store can't be probed or written through this one. Used both for
+ * the row a request acts on and for foreign keys supplied in its body.
+ */
+function requireRowInStore<T extends { storeId: string }>(
+    row: T | null,
+    storeId: string,
+    what: string
+): T {
+    if (!row || row.storeId !== storeId) {
+        throw new NotFoundError(`${what} not found`);
+    }
+    return row;
+}
+
+function getListItemInStore(id: string, storeId: string): ShoppingListItem {
+    return requireRowInStore(
+        shoppingListRepo.getShoppingListItemById(id),
+        storeId,
+        "Shopping list item"
+    );
+}
+
+/** A body-supplied aisle id (the target of a section or item) must be one of this store's. */
+function requireAisleInStore(aisleId: string, storeId: string): StoreAisle {
+    return requireRowInStore(aisleRepo.getAisleById(aisleId), storeId, "Aisle");
+}
+
+/**
+ * Validates an item location from a request body before it is written. Each non-null id must be
+ * this store's (404 otherwise). When both are given, the section's aisle is authoritative — the
+ * item's own `aisleId` is stored as NULL — so an `aisleId` that contradicts the section is a
+ * malformed request rather than something to silently discard.
+ */
+function assertItemLocationInStore(
+    storeId: string,
+    aisleId: string | null | undefined,
+    sectionId: string | null | undefined
+): void {
+    if (aisleId) requireAisleInStore(aisleId, storeId);
+    if (sectionId) {
+        const section = requireRowInStore(
+            sectionRepo.getSectionById(sectionId),
+            storeId,
+            "Section"
+        );
+        if (aisleId && section.aisleId !== aisleId) {
+            throw new ValidationError("Section does not belong to the given aisle");
+        }
+    }
+}
+
+/** Keeps only the `{ id }` updates whose row is one of `ownIds` (the store's own rows). */
+function onlyOwnRows<T extends { id: string }>(updates: T[], ownIds: Iterable<string>): T[] {
+    const own = new Set(ownIds);
+    return updates.filter((update) => own.has(update.id));
 }
 
 // ========== Aisle Operations ==========
@@ -70,13 +142,15 @@ export function createAisle(params: {
     const emoji = parseAisleEmoji(params.emoji);
     const maxOrder = aisleRepo.getMaxSortOrder(params.storeId);
 
-    return aisleRepo.createAisle({
+    const aisle = aisleRepo.createAisle({
         storeId: params.storeId,
         name: params.name,
         emoji: emoji ?? null,
         sortOrder: maxOrder + 1,
         createdById: params.userId,
     });
+    publishStoreChange([aisle.storeId], "layout");
+    return aisle;
 }
 
 export function getAislesByStore(storeId: string, userId: string): StoreAisle[] {
@@ -93,6 +167,7 @@ export function updateAisle(params: {
     userId: string;
 }): StoreAisle | null {
     verifyStoreAccess(params.storeId, params.userId);
+    assertRowInStore(aisleRepo.getAisleById(params.id), params.storeId, "Aisle");
 
     const nameNorm = normalizeItemName(params.name);
     const conflict = aisleRepo.findAisleByNameNorm(params.storeId, nameNorm, params.id);
@@ -103,12 +178,14 @@ export function updateAisle(params: {
         );
     }
 
-    return aisleRepo.updateAisle({
+    const aisle = aisleRepo.updateAisle({
         id: params.id,
         name: params.name,
         emoji: parseAisleEmoji(params.emoji),
         updatedById: params.userId,
     });
+    if (aisle) publishStoreChange([aisle.storeId], "layout");
+    return aisle;
 }
 
 export function updateAisleSortOrder(params: {
@@ -118,12 +195,15 @@ export function updateAisleSortOrder(params: {
     userId: string;
 }): StoreAisle | null {
     verifyStoreAccess(params.storeId, params.userId);
+    assertRowInStore(aisleRepo.getAisleById(params.id), params.storeId, "Aisle");
 
-    return aisleRepo.updateAisleSortOrder({
+    const aisle = aisleRepo.updateAisleSortOrder({
         id: params.id,
         sortOrder: params.sortOrder,
         updatedById: params.userId,
     });
+    if (aisle) publishStoreChange([aisle.storeId], "layout");
+    return aisle;
 }
 
 export function reorderAisles(params: {
@@ -132,12 +212,23 @@ export function reorderAisles(params: {
     userId: string;
 }): void {
     verifyStoreAccess(params.storeId, params.userId);
-    aisleRepo.reorderAisles(params.updates);
+    // Ids from another store are dropped rather than renumbered through this one.
+    const updates = onlyOwnRows(
+        params.updates,
+        aisleRepo.getAislesByStore(params.storeId).map((aisle) => aisle.id)
+    );
+    if (updates.length === 0) return;
+    aisleRepo.reorderAisles(updates);
+    publishStoreChange([params.storeId], "layout");
 }
 
 export function deleteAisle(id: string, storeId: string, userId: string): boolean {
     verifyStoreAccess(storeId, userId);
-    return aisleRepo.deleteAisle(id);
+    const existing = aisleRepo.getAisleById(id);
+    assertRowInStore(existing, storeId, "Aisle");
+    const deleted = aisleRepo.deleteAisle(id);
+    if (deleted && existing) publishStoreChange([existing.storeId], "layout");
+    return deleted;
 }
 
 // ========== Section Operations ==========
@@ -149,6 +240,7 @@ export function createSection(params: {
     userId: string;
 }): StoreSection {
     verifyStoreAccess(params.storeId, params.userId);
+    requireAisleInStore(params.aisleId, params.storeId);
 
     const nameNorm = normalizeItemName(params.name);
     const conflict = sectionRepo.findSectionByNameNorm(
@@ -166,13 +258,15 @@ export function createSection(params: {
 
     const maxOrder = sectionRepo.getMaxSortOrder(params.aisleId);
 
-    return sectionRepo.createSection({
+    const section = sectionRepo.createSection({
         storeId: params.storeId,
         aisleId: params.aisleId,
         name: params.name,
         sortOrder: maxOrder + 1,
         createdById: params.userId,
     });
+    publishStoreChange([section.storeId], "layout");
+    return section;
 }
 
 export function getSectionsByStore(storeId: string, userId: string): StoreSection[] {
@@ -188,9 +282,11 @@ export function updateSection(params: {
     userId: string;
 }): StoreSection | null {
     verifyStoreAccess(params.storeId, params.userId);
+    const existing = sectionRepo.getSectionById(params.id);
+    assertRowInStore(existing, params.storeId, "Section");
+    if (params.aisleId !== undefined) requireAisleInStore(params.aisleId, params.storeId);
 
     if (params.name !== undefined || params.aisleId !== undefined) {
-        const existing = sectionRepo.getSectionById(params.id);
         const nameNorm = normalizeItemName(params.name ?? existing?.name ?? "");
         const aisleId = params.aisleId ?? existing?.aisleId ?? "";
         const conflict = sectionRepo.findSectionByNameNorm(
@@ -207,12 +303,14 @@ export function updateSection(params: {
         }
     }
 
-    return sectionRepo.updateSection({
+    const section = sectionRepo.updateSection({
         id: params.id,
         name: params.name,
         aisleId: params.aisleId,
         updatedById: params.userId,
     });
+    if (section) publishStoreChange([section.storeId], "layout");
+    return section;
 }
 
 export function updateSectionLocation(params: {
@@ -225,6 +323,8 @@ export function updateSectionLocation(params: {
     verifyStoreAccess(params.storeId, params.userId);
 
     const existing = sectionRepo.getSectionById(params.id);
+    assertRowInStore(existing, params.storeId, "Section");
+    requireAisleInStore(params.aisleId, params.storeId);
     if (existing) {
         const conflict = sectionRepo.findSectionByNameNorm(
             params.storeId,
@@ -240,12 +340,14 @@ export function updateSectionLocation(params: {
         }
     }
 
-    return sectionRepo.updateSectionLocation({
+    const section = sectionRepo.updateSectionLocation({
         id: params.id,
         aisleId: params.aisleId,
         sortOrder: params.sortOrder,
         updatedById: params.userId,
     });
+    if (section) publishStoreChange([section.storeId], "layout");
+    return section;
 }
 
 export function reorderSections(params: {
@@ -254,12 +356,23 @@ export function reorderSections(params: {
     userId: string;
 }): void {
     verifyStoreAccess(params.storeId, params.userId);
-    sectionRepo.reorderSections(params.updates);
+    // Ids from another store are dropped rather than renumbered through this one.
+    const updates = onlyOwnRows(
+        params.updates,
+        sectionRepo.getSectionsByStore(params.storeId).map((section) => section.id)
+    );
+    if (updates.length === 0) return;
+    sectionRepo.reorderSections(updates);
+    publishStoreChange([params.storeId], "layout");
 }
 
 export function deleteSection(id: string, storeId: string, userId: string): boolean {
     verifyStoreAccess(storeId, userId);
-    return sectionRepo.deleteSection(id);
+    const existing = sectionRepo.getSectionById(id);
+    assertRowInStore(existing, storeId, "Section");
+    const deleted = sectionRepo.deleteSection(id);
+    if (deleted && existing) publishStoreChange([existing.storeId], "layout");
+    return deleted;
 }
 
 // ========== Item Operations ==========
@@ -272,6 +385,7 @@ export function createItem(params: {
     userId: string;
 }): StoreItem {
     verifyStoreAccess(params.storeId, params.userId);
+    assertItemLocationInStore(params.storeId, params.aisleId, params.sectionId);
 
     const nameNorm = normalizeItemName(params.name);
     const conflict = itemRepo.findItemByNameNorm(params.storeId, nameNorm, "");
@@ -282,13 +396,15 @@ export function createItem(params: {
         );
     }
 
-    return itemRepo.createItem({
+    const item = itemRepo.createItem({
         storeId: params.storeId,
         name: params.name,
         aisleId: params.aisleId ?? null,
         sectionId: params.sectionId ?? null,
         createdById: params.userId,
     });
+    publishStoreChange([item.storeId], "layout");
+    return item;
 }
 
 export function getItemsByStore(storeId: string, userId: string): StoreItem[] {
@@ -313,7 +429,25 @@ export function updateItem(params: {
     userId: string;
 }): StoreItem | null {
     verifyStoreAccess(params.storeId, params.userId);
+    assertRowInStore(itemRepo.getItemById(params.id), params.storeId, "Item");
+    // Checked even though a rename onto an existing name merges and ignores the location: a
+    // request naming another store's aisle or section is refused either way.
+    assertItemLocationInStore(params.storeId, params.aisleId, params.sectionId);
 
+    const item = applyItemUpdate(params);
+    if (item) publishStoreChange([item.storeId], "layout");
+    return item;
+}
+
+/** `updateItem` minus the access check and the event, shared with `mergeItems`. */
+function applyItemUpdate(params: {
+    id: string;
+    storeId: string;
+    name: string;
+    aisleId?: string | null;
+    sectionId?: string | null;
+    userId: string;
+}): StoreItem | null {
     const nameNorm = normalizeItemName(params.name);
     const conflict = itemRepo.findItemByNameNorm(params.storeId, nameNorm, params.id);
     if (conflict) {
@@ -374,11 +508,12 @@ export function mergeItems(params: {
     }
 
     if (!params.canonicalName || normalizeItemName(params.canonicalName) === merged.nameNorm) {
+        publishStoreChange([merged.storeId], "layout");
         return merged;
     }
 
     // The survivor keeps its own location — a rename must not move it.
-    const renamed = updateItem({
+    const renamed = applyItemUpdate({
         id: merged.id,
         storeId: params.storeId,
         name: params.canonicalName,
@@ -387,17 +522,27 @@ export function mergeItems(params: {
         userId: params.userId,
     });
 
-    return renamed ?? merged;
+    const survivor = renamed ?? merged;
+    publishStoreChange([survivor.storeId], "layout");
+    return survivor;
 }
 
 export function toggleItemFavorite(id: string, storeId: string, userId: string): StoreItem | null {
     verifyStoreAccess(storeId, userId);
-    return itemRepo.toggleItemFavorite(id, userId);
+    assertRowInStore(itemRepo.getItemById(id), storeId, "Item");
+    const item = itemRepo.toggleItemFavorite(id, userId);
+    if (item) publishStoreChange([item.storeId], "layout");
+    return item;
 }
 
 export function deleteItem(id: string, storeId: string, userId: string): boolean {
     verifyStoreAccess(storeId, userId);
-    return itemRepo.deleteItem(id);
+    const existing = itemRepo.getItemById(id);
+    assertRowInStore(existing, storeId, "Item");
+    const deleted = itemRepo.deleteItem(id);
+    // Deleting a store item cascades to the list rows that pointed at it; "layout" refetches both.
+    if (deleted && existing) publishStoreChange([existing.storeId], "layout");
+    return deleted;
 }
 
 /** Items nobody has categorized, favorited, or placed on any list — the obliteration preview. */
@@ -413,6 +558,7 @@ export function deleteOrphanItems(
 ): { deletedCount: number; skippedCount: number } {
     verifyStoreAccess(storeId, userId);
     const deletedCount = itemRepo.deleteOrphanItems(storeId, itemIds);
+    if (deletedCount > 0) publishStoreChange([storeId], "layout");
     return { deletedCount, skippedCount: itemIds.length - deletedCount };
 }
 
@@ -434,6 +580,7 @@ export function getOrCreateStoreItemByName(params: {
     userId: string;
 }): StoreItem {
     verifyStoreAccess(params.storeId, params.userId);
+    assertItemLocationInStore(params.storeId, params.aisleId, params.sectionId);
 
     return itemRepo.getOrCreateStoreItemByName({
         storeId: params.storeId,
@@ -458,8 +605,18 @@ export function upsertShoppingListItem(
     params: ShoppingListItemInput & { userId: string }
 ): ShoppingListItem {
     verifyStoreAccess(params.storeId, params.userId);
+    if (params.id) {
+        // The update branch acts on the id alone; it must not reach into another store's list.
+        getListItemInStore(params.id, params.storeId);
+    }
+    // The row may only point at this store's catalogue. Ideas carry no store item (the repo nulls
+    // it), so a stray id on one is dropped rather than refused. The input's `aisleId`/`sectionId`
+    // are not written by this operation, so they are not checked here.
+    if (params.storeItemId && params.isIdea !== true) {
+        requireRowInStore(itemRepo.getItemById(params.storeItemId), params.storeId, "Item");
+    }
 
-    return shoppingListRepo.upsertShoppingListItem({
+    const item = shoppingListRepo.upsertShoppingListItem({
         id: params.id,
         storeId: params.storeId,
         storeItemId: params.storeItemId ?? null,
@@ -474,6 +631,8 @@ export function upsertShoppingListItem(
         snoozedUntil: params.snoozedUntil ?? null,
         userId: params.userId,
     });
+    publishStoreChange([item.storeId], "list");
+    return item;
 }
 
 export function toggleShoppingListItemChecked(
@@ -483,7 +642,11 @@ export function toggleShoppingListItemChecked(
     userId: string
 ): CheckConflictResult {
     verifyStoreAccess(storeId, userId);
-    return shoppingListRepo.toggleShoppingListItemChecked(id, isChecked, userId);
+    const row = getListItemInStore(id, storeId);
+    const result = shoppingListRepo.toggleShoppingListItemChecked(id, isChecked, userId);
+    // A conflict means someone else already checked it and nothing was written.
+    if (!result.conflict) publishStoreChange([row.storeId], "list");
+    return result;
 }
 
 /**
@@ -491,7 +654,9 @@ export function toggleShoppingListItemChecked(
  */
 export function removeShoppingListItem(id: string, storeId: string, userId: string): void {
     verifyStoreAccess(storeId, userId);
+    const row = getListItemInStore(id, storeId);
     shoppingListRepo.removeShoppingListItem(id, userId);
+    publishStoreChange([row.storeId], "list");
 }
 
 /**
@@ -499,10 +664,17 @@ export function removeShoppingListItem(id: string, storeId: string, userId: stri
  */
 export function deleteShoppingListItem(id: string, storeId: string, userId: string): boolean {
     verifyStoreAccess(storeId, userId);
-    return shoppingListRepo.deleteShoppingListItem(id, userId);
+    const row = getListItemInStore(id, storeId);
+    const deleted = shoppingListRepo.deleteShoppingListItem(id, userId);
+    // The store item goes too, so this is a catalogue change as well as a list change; "layout"
+    // refetches both (it is a superset of "list" on the client).
+    if (deleted) publishStoreChange([row.storeId], row.storeItemId ? "layout" : "list");
+    return deleted;
 }
 
 export function clearCheckedShoppingListItems(storeId: string, userId: string): number {
     verifyStoreAccess(storeId, userId);
-    return shoppingListRepo.clearCheckedShoppingListItems(storeId, userId);
+    const cleared = shoppingListRepo.clearCheckedShoppingListItems(storeId, userId);
+    if (cleared > 0) publishStoreChange([storeId], "list");
+    return cleared;
 }

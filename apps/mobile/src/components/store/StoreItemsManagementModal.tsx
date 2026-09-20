@@ -59,7 +59,6 @@ const makeSkeletonGroup = (
         labelClassName: "group-header-label group-header-label--aisle",
     },
     sortOrder,
-    indentLevel: 16,
 });
 
 const SKELETON_GROUPS = [
@@ -173,7 +172,6 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                       showAisleHeaders: true,
                       showSectionHeaders: true,
                       sortOrderOffset: 0,
-                      sectionIndentLevel: 16,
                   })
                 : [];
 
@@ -184,7 +182,6 @@ const StoreItemsManagementModalContent: React.FC<StoreItemsManagementModalConten
                       showAisleHeaders: true,
                       showSectionHeaders: true,
                       sortOrderOffset: 0,
-                      sectionIndentLevel: 16,
                   })
                 : [];
 

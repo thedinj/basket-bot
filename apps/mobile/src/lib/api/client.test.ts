@@ -226,3 +226,127 @@ describe("base URL", () => {
         expect(serverReachability.setBaseUrl).toHaveBeenCalledWith("https://custom.example");
     });
 });
+
+describe("openStream", () => {
+    const streamPath = "/api/stores/store-1/events";
+
+    it("sends the bearer token and resolves with the open response", async () => {
+        const client = authedClient();
+        const ok = response(200);
+        fetchMock.mockResolvedValueOnce(ok);
+
+        const controller = new AbortController();
+        await expect(client.openStream(streamPath, controller.signal)).resolves.toBe(ok);
+
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toMatch(/\/api\/stores\/store-1\/events$/);
+        expect(init.headers["Authorization"]).toBe("Bearer stale-access-token");
+        expect(init.headers["Accept"]).toBe("text/event-stream");
+        // The caller's signal, not a timeout controller: the stream must stay open.
+        expect(init.signal).toBe(controller.signal);
+        expect(serverReachability.reportReachable).toHaveBeenCalled();
+    });
+
+    it("applies no request timeout", async () => {
+        vi.useFakeTimers();
+        try {
+            const client = authedClient();
+            let seenSignal: AbortSignal | undefined;
+            fetchMock.mockImplementationOnce(async (_url: string, init: RequestInit) => {
+                seenSignal = init.signal ?? undefined;
+                return response(200);
+            });
+
+            await client.openStream(streamPath, new AbortController().signal);
+            await vi.advanceTimersByTimeAsync(60_000);
+
+            expect(seenSignal?.aborted).toBe(false);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("waits for auth to be ready before connecting", async () => {
+        const client = new ApiClient();
+        client.setAccessToken("token");
+        fetchMock.mockResolvedValue(response(200));
+
+        const pending = client.openStream(streamPath, new AbortController().signal);
+        await Promise.resolve();
+        expect(fetchMock).not.toHaveBeenCalled();
+
+        client.markAuthReady();
+        await pending;
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("refreshes once on an invalid token and retries with the new one", async () => {
+        const client = authedClient();
+        const ok = response(200);
+        fetchMock
+            .mockResolvedValueOnce(expiredAccessToken())
+            .mockResolvedValueOnce(response(200, { accessToken: "fresh-access-token" }))
+            .mockResolvedValueOnce(ok);
+
+        await expect(client.openStream(streamPath, new AbortController().signal)).resolves.toBe(ok);
+
+        expect(fetchMock.mock.calls[1][0]).toMatch(/\/api\/auth\/refresh$/);
+        expect(fetchMock.mock.calls[2][1].headers["Authorization"]).toBe(
+            "Bearer fresh-access-token"
+        );
+    });
+
+    it("does not loop when the retried stream is refused again", async () => {
+        const client = authedClient();
+        fetchMock
+            .mockResolvedValueOnce(expiredAccessToken())
+            .mockResolvedValueOnce(response(200, { accessToken: "fresh-access-token" }))
+            .mockResolvedValueOnce(expiredAccessToken());
+
+        const error = (await client
+            .openStream(streamPath, new AbortController().signal)
+            .catch((e: unknown) => e)) as ApiError;
+
+        expect(error).toBeInstanceOf(ApiError);
+        expect(error.status).toBe(401);
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    it("rejects with the status for a forbidden store", async () => {
+        const client = authedClient();
+        fetchMock.mockResolvedValueOnce(response(403, { code: "FORBIDDEN", message: "No" }));
+
+        const error = (await client
+            .openStream(streamPath, new AbortController().signal)
+            .catch((e: unknown) => e)) as ApiError;
+
+        expect(error.status).toBe(403);
+        expect(error.isNetworkError).toBe(false);
+    });
+
+    it("reports a connection failure as unreachable", async () => {
+        const client = authedClient();
+        fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+
+        const error = (await client
+            .openStream(streamPath, new AbortController().signal)
+            .catch((e: unknown) => e)) as ApiError;
+
+        expect(error.isNetworkError).toBe(true);
+        expect(serverReachability.reportUnreachable).toHaveBeenCalled();
+    });
+
+    it("passes a caller abort through without blaming the server", async () => {
+        const client = authedClient();
+        const controller = new AbortController();
+        fetchMock.mockImplementationOnce(async () => {
+            controller.abort();
+            throw new DOMException("The operation was aborted.", "AbortError");
+        });
+
+        const error = await client.openStream(streamPath, controller.signal).catch((e) => e);
+
+        expect((error as Error).name).toBe("AbortError");
+        expect(serverReachability.reportUnreachable).not.toHaveBeenCalled();
+    });
+});

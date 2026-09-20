@@ -12,6 +12,7 @@ import pluralize from "pluralize";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type AnimationEffect, pickStrike } from "../animations/effects";
 import { preloadStrikeSound } from "../animations/strikeAudio";
+import { useAuth } from "../auth/useAuth";
 import { AppHeader } from "../components/layout/AppHeader";
 import { GlobalActionConfig } from "../components/layout/AppHeaderContext";
 import { GlobalActions } from "../components/layout/GlobalActions";
@@ -41,6 +42,7 @@ import { useShowSnoozedItems } from "../hooks/useShowSnoozedItems";
 import { useShowUnsureItems } from "../hooks/useShowUnsureItems";
 import { useSnoozePartition } from "../hooks/useSnoozePartition";
 import { LLMFabButton } from "../llm/shared";
+import { useStoreEvents } from "../realtime/useStoreEvents";
 import { computeTripProgress, isPendingUnsure } from "../utils/shoppingListDerivations";
 
 import "./ShoppingList.scss";
@@ -243,6 +245,10 @@ interface ShoppingListShellProps {
  * Keep it that way: don't reintroduce an onActionsChange-style callback from the body.
  */
 const ShoppingListShell: React.FC<ShoppingListShellProps> = ({ storeId }) => {
+    // Live updates from other people shopping this store. Never suspends; see useStoreEvents.
+    const { isAuthenticated } = useAuth();
+    useStoreEvents(storeId, isAuthenticated);
+
     const { data: stores } = useStores();
     const multipleStores = stores && stores.length > 1;
     const { showSnoozed, toggleShowSnoozed } = useShowSnoozedItems();

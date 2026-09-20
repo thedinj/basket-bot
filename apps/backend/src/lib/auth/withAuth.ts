@@ -1,5 +1,5 @@
 import { AuthenticationError, AuthorizationError, JwtPayload } from "@basket-bot/core";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { toErrorResponse } from "../errors/handleRouteError";
 import { verifyAccessToken } from "./jwt";
 
@@ -7,10 +7,14 @@ export type AuthenticatedRequest = NextRequest & {
     auth: JwtPayload;
 };
 
-export type RouteHandler<T = unknown> = (
+/**
+ * Returns a plain `Response` rather than `NextResponse` so a handler can stream (the store event
+ * stream returns `new Response(ReadableStream)`); every `NextResponse` is still a `Response`.
+ */
+export type RouteHandler = (
     req: AuthenticatedRequest,
     context: { params: Promise<Record<string, string>> }
-) => Promise<NextResponse<T>>;
+) => Promise<Response>;
 
 export function withAuth(handler: RouteHandler, options?: { requireScopes?: string[] }) {
     return async (req: NextRequest, context: { params: Promise<Record<string, string>> }) => {

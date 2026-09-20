@@ -1,8 +1,8 @@
-// Store item row, on the shopping list's row geometry (ShoppingListItem.css): the list indents
-// rows 16px under their headers, the star takes the checkbox's 36px column (centred at x = 50,
-// the plate and checkbox centre line) with a 10px gap, so the name starts at x = 78 like a
-// shopping list item's. The include/unsure toggles end the row, the last glyph pulled onto the
-// gutter (see .route-row__toggles in RouteIngredientsContent.scss).
+// Store item row, on the shopping list's row geometry (ShoppingListItem.css): the star takes
+// the checkbox's 36px column (x = 16 to 52, the aisle plate's own column) with a 10px gap, so
+// the name starts at x = 62 like a shopping list item's, in the same column as the aisle and
+// section labels above it. The include/unsure toggles end the row, the last glyph pulled onto
+// the gutter (see .route-row__toggles in RouteIngredientsContent.scss).
 
 .store-item-row--editable {
     cursor: pointer;

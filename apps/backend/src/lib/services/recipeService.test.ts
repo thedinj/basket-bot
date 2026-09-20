@@ -10,6 +10,7 @@ import {
     seedTagAssignment,
     seedUser,
 } from "../../../test/support/fixtures";
+import { recordStoreEvents } from "../../../test/support/recordStoreEvents";
 import { resetDb } from "../../../test/support/resetDb";
 import { db } from "../db/db";
 import * as recipeService from "./recipeService";
@@ -384,5 +385,72 @@ describe("addRecipeToShoppingList", () => {
             .prepare(`SELECT id FROM StoreItem WHERE storeId = ?`)
             .all(storeId) as unknown[];
         expect(items).toHaveLength(1);
+    });
+});
+
+describe("addRecipeToShoppingList store scoping and events", () => {
+    const countRows = (table: "ShoppingListItem" | "StoreItem", storeId: string) =>
+        (
+            db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE storeId = ?`).get(storeId) as {
+                n: number;
+            }
+        ).n;
+
+    it("refuses a store the user cannot access, writing nothing anywhere", () => {
+        const mine = seedStore({ ownerId: member });
+        const theirs = seedStore({ ownerId: stranger });
+        const carrot = seedIngredient({ recipeId, name: "Carrot", ownerId: member });
+        const onion = seedIngredient({ recipeId, name: "Onion", ownerId: member });
+        const recorder = recordStoreEvents(mine, theirs);
+
+        expect(() =>
+            recipeService.addRecipeToShoppingList(
+                householdId,
+                recipeId,
+                {
+                    factor: 1,
+                    routes: [
+                        { ingredientId: carrot, storeId: mine },
+                        { ingredientId: onion, storeId: theirs },
+                    ],
+                },
+                member
+            )
+        ).toThrow(AuthorizationError);
+
+        expect(countRows("ShoppingListItem", mine)).toBe(0);
+        expect(countRows("ShoppingListItem", theirs)).toBe(0);
+        expect(countRows("StoreItem", theirs)).toBe(0);
+        expect(recorder.events).toEqual([]);
+        recorder.stop();
+    });
+
+    it("publishes `list` once per target store", () => {
+        const first = seedStore({ ownerId: member });
+        const second = seedStore({ ownerId: member });
+        const carrot = seedIngredient({ recipeId, name: "Carrot", ownerId: member });
+        const onion = seedIngredient({ recipeId, name: "Onion", ownerId: member });
+        const leek = seedIngredient({ recipeId, name: "Leek", ownerId: member });
+        const recorder = recordStoreEvents(first, second);
+
+        recipeService.addRecipeToShoppingList(
+            householdId,
+            recipeId,
+            {
+                factor: 1,
+                routes: [
+                    { ingredientId: carrot, storeId: first },
+                    { ingredientId: onion, storeId: second },
+                    { ingredientId: leek, storeId: first },
+                ],
+            },
+            member
+        );
+
+        expect(recorder.pairs()).toEqual([
+            [first, "list"],
+            [second, "list"],
+        ]);
+        recorder.stop();
     });
 });

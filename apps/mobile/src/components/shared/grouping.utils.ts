@@ -33,11 +33,6 @@ interface AisleSectionGroupConfig {
      * Base sort order offset for these groups (allows interleaving with other group types)
      */
     sortOrderOffset?: number;
-
-    /**
-     * Indent level for items within sections (in pixels)
-     */
-    sectionIndentLevel?: number;
 }
 
 interface AisleGroupInternal {
@@ -84,12 +79,7 @@ export function createAisleSectionGroups<T extends GroupableItem>(
     items: T[],
     config: AisleSectionGroupConfig
 ): ItemGroup<T>[] {
-    const {
-        showAisleHeaders,
-        showSectionHeaders,
-        sortOrderOffset = 0,
-        sectionIndentLevel = 16,
-    } = config;
+    const { showAisleHeaders, showSectionHeaders, sortOrderOffset = 0 } = config;
 
     // Group items by aisle and section
     const aisleMap = new Map<number | string | null, AisleGroupInternal>();
@@ -179,7 +169,6 @@ export function createAisleSectionGroups<T extends GroupableItem>(
                 id: `section-${section.sectionId}`,
                 items: section.items as T[],
                 sortOrder: section.sectionSortOrder,
-                indentLevel: showSectionHeaders ? sectionIndentLevel : 0,
             };
 
             // Every named section gets its own ruled header, even when it's the aisle's only

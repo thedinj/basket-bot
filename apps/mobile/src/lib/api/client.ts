@@ -80,6 +80,10 @@ export const isNetworkErrorLike = (error: unknown): boolean =>
  */
 const UNREACHABLE_STATUSES = new Set([502, 503, 504]);
 
+/** The server's "your access token is bad or expired" answer — the cue to refresh and retry. */
+const isInvalidTokenResponse = (response: Response): boolean =>
+    response.status === 401 && response.headers.get("X-Token-Status") === "invalid";
+
 export class ApiClient {
     private baseUrl: string = DEFAULT_API_BASE_URL;
     private accessToken: string | null = null;
@@ -301,102 +305,120 @@ export class ApiClient {
     ): Promise<T> {
         let responseToUse = response;
 
-        // If 401 with invalid token header, access token is definitely invalid - clear it immediately
+        // If 401 with invalid token header, access token is definitely invalid - refresh and
+        // retry once
         const requestHeaders = options.headers as Record<string, string> | undefined;
         const tokenStatus = responseToUse.headers.get("X-Token-Status");
 
-        if (
-            responseToUse.status === 401 &&
-            tokenStatus === "invalid" &&
-            !requestHeaders?.["X-Retry-After-Refresh"]
-        ) {
-            // Clear the invalid access token immediately
-            this.accessToken = null;
+        if (isInvalidTokenResponse(responseToUse) && !requestHeaders?.["X-Retry-After-Refresh"]) {
+            const newAccessToken = await this.refreshAfterInvalidToken(endpoint);
 
-            // Try to refresh if we have a refresh token
-            if (this.refreshToken) {
-                try {
-                    const newAccessToken = await this.refreshAccessToken();
+            // Retry the original request with new token
+            headers["Authorization"] = `Bearer ${newAccessToken}`;
+            headers["X-Retry-After-Refresh"] = "true";
 
-                    // Retry the original request with new token
-                    headers["Authorization"] = `Bearer ${newAccessToken}`;
-                    headers["X-Retry-After-Refresh"] = "true";
+            // Set up new timeout for retry
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-                    // Set up new timeout for retry
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
-                    try {
-                        responseToUse = await fetch(`${this.baseUrl}${endpoint}`, {
-                            ...options,
-                            headers,
-                            signal: controller.signal,
-                        });
-                        clearTimeout(timeoutId);
-                    } catch (retryError: unknown) {
-                        clearTimeout(timeoutId);
-                        if (retryError instanceof Error && retryError.name === "AbortError") {
-                            throw new ApiError(
-                                "Request timed out after token refresh",
-                                "TIMEOUT",
-                                null,
-                                408,
-                                true
-                            );
-                        }
-                        throw retryError;
-                    }
-                } catch (refreshError) {
-                    // Refresh token was already cleared in refreshAccessToken if needed.
-                    // Only a refusal by the server means the session is over. A refresh that
-                    // never reached the server says nothing about the token's validity, and
-                    // calling it "expired" here is what used to log the user out during an
-                    // outage — `AuthProvider` deletes stored tokens on `tokenStatus: "invalid"`.
-                    if (refreshError instanceof ApiError) {
-                        throw refreshError;
-                    }
-                    if (isNetworkErrorLike(refreshError)) {
-                        serverReachability.reportUnreachable();
-                        throw new ApiError(
-                            "Cannot reach the server.",
-                            "REFRESH_UNREACHABLE",
-                            null,
-                            undefined,
-                            true,
-                            null,
-                            endpoint
-                        );
-                    }
+            try {
+                responseToUse = await fetch(`${this.baseUrl}${endpoint}`, {
+                    ...options,
+                    headers,
+                    signal: controller.signal,
+                });
+            } catch (retryError: unknown) {
+                if (retryError instanceof Error && retryError.name === "AbortError") {
                     throw new ApiError(
-                        "Session expired, please log in again",
-                        "SESSION_EXPIRED",
-                        "invalid",
-                        401
+                        "Request timed out after token refresh",
+                        "TIMEOUT",
+                        null,
+                        408,
+                        true
                     );
                 }
-            } else {
-                // No refresh token available
-                throw new ApiError(
-                    "Session expired, please log in again",
-                    "SESSION_EXPIRED",
-                    "invalid",
-                    401
-                );
+                throw retryError;
+            } finally {
+                clearTimeout(timeoutId);
             }
         }
 
+        await this.assertOk(responseToUse, endpoint, tokenStatus);
+
+        return responseToUse.json();
+    }
+
+    /**
+     * The access token was refused (401 + `X-Token-Status: invalid`): drop it and get a new one
+     * through the single-flight refresh, so the caller can retry once.
+     *
+     * Only a refusal by the server means the session is over. A refresh that never reached the
+     * server says nothing about the token's validity, and calling it "expired" is what used to
+     * log the user out during an outage — `AuthProvider` deletes stored tokens on
+     * `tokenStatus: "invalid"`.
+     */
+    private async refreshAfterInvalidToken(endpoint: string): Promise<string> {
+        // Clear the invalid access token immediately
+        this.accessToken = null;
+
+        if (!this.refreshToken) {
+            throw new ApiError(
+                "Session expired, please log in again",
+                "SESSION_EXPIRED",
+                "invalid",
+                401
+            );
+        }
+
+        try {
+            return await this.refreshAccessToken();
+        } catch (refreshError) {
+            // Refresh token was already cleared in refreshAccessToken if needed.
+            if (refreshError instanceof ApiError) {
+                throw refreshError;
+            }
+            if (isNetworkErrorLike(refreshError)) {
+                serverReachability.reportUnreachable();
+                throw new ApiError(
+                    "Cannot reach the server.",
+                    "REFRESH_UNREACHABLE",
+                    null,
+                    undefined,
+                    true,
+                    null,
+                    endpoint
+                );
+            }
+            throw new ApiError(
+                "Session expired, please log in again",
+                "SESSION_EXPIRED",
+                "invalid",
+                401
+            );
+        }
+    }
+
+    /**
+     * Report reachability for an answered request and throw an `ApiError` for anything but a
+     * 2xx. `tokenStatus` is the one read off the *first* response, as it always has been.
+     */
+    private async assertOk(
+        response: Response,
+        endpoint: string,
+        tokenStatus: string | null
+    ): Promise<void> {
         // A proxy answering for a dead app server is an outage, not a request the server
         // considered and rejected. Its body is the proxy's HTML, so there is no useful code to
         // parse out of it; tag it as a network error so it queues and surfaces like one.
-        if (UNREACHABLE_STATUSES.has(responseToUse.status)) {
+        if (UNREACHABLE_STATUSES.has(response.status)) {
             serverReachability.reportUnreachable();
             throw new ApiError(
                 "Cannot reach the server.",
                 "SERVER_UNAVAILABLE",
                 null,
-                responseToUse.status,
+                response.status,
                 true,
-                responseToUse.headers.get("X-Request-Id"),
+                response.headers.get("X-Request-Id"),
                 endpoint
             );
         }
@@ -404,25 +426,89 @@ export class ApiClient {
         // Any other answer — including a 404 or a 400 — proves the server is alive.
         serverReachability.reportReachable();
 
-        if (!responseToUse.ok) {
-            const error = await responseToUse.json().catch(() => ({
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({
                 code: "UNKNOWN_ERROR",
                 message: "An unknown error occurred",
             }));
-            const requestId = responseToUse.headers.get("X-Request-Id") ?? error.requestId ?? null;
+            const requestId = response.headers.get("X-Request-Id") ?? error.requestId ?? null;
             throw new ApiError(
                 error.message || "Request failed",
                 error.code || "UNKNOWN_ERROR",
                 tokenStatus,
-                responseToUse.status,
+                response.status,
                 false,
                 requestId,
                 endpoint,
                 error.details
             );
         }
+    }
 
-        return responseToUse.json();
+    /**
+     * Open a long-lived streaming GET (server-sent events) and resolve with the 2xx `Response`
+     * as soon as its headers arrive; the caller reads `response.body` and ends it via `signal`.
+     *
+     * Same auth and error rules as `request()` — bearer token, waits for auth readiness, one
+     * single-flight refresh + retry on a 401 `X-Token-Status: invalid`, reachability reporting —
+     * except there is **no request timeout**: the response is meant to stay open indefinitely.
+     * Failures (including an HTTP error status) reject with an `ApiError`. An abort through
+     * `signal` rejects with the fetch's own `AbortError`, untouched: the caller asked for it,
+     * and it says nothing about the server.
+     */
+    async openStream(endpoint: string, signal: AbortSignal): Promise<Response> {
+        await this.authReadyPromise;
+
+        const send = (accessToken: string | null): Promise<Response> => {
+            const headers: Record<string, string> = { Accept: "text/event-stream" };
+            if (accessToken) {
+                headers["Authorization"] = `Bearer ${accessToken}`;
+            }
+            return this.fetchStream(endpoint, headers, signal);
+        };
+
+        let response = await send(this.accessToken);
+        const tokenStatus = response.headers.get("X-Token-Status");
+
+        if (isInvalidTokenResponse(response)) {
+            const newAccessToken = await this.refreshAfterInvalidToken(endpoint);
+            response = await send(newAccessToken);
+        }
+
+        await this.assertOk(response, endpoint, tokenStatus);
+        return response;
+    }
+
+    private async fetchStream(
+        endpoint: string,
+        headers: Record<string, string>,
+        signal: AbortSignal
+    ): Promise<Response> {
+        try {
+            return await fetch(`${this.baseUrl}${endpoint}`, {
+                method: "GET",
+                headers,
+                signal,
+                cache: "no-store",
+            });
+        } catch (error: unknown) {
+            if (signal.aborted) {
+                throw error;
+            }
+            if (isNetworkErrorLike(error)) {
+                serverReachability.reportUnreachable();
+                throw new ApiError(
+                    "Network error. Please check your connection.",
+                    "NETWORK_ERROR",
+                    null,
+                    undefined,
+                    true,
+                    null,
+                    endpoint
+                );
+            }
+            throw error;
+        }
     }
 
     async get<T>(endpoint: string): Promise<T> {

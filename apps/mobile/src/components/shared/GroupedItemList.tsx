@@ -1,5 +1,5 @@
 import { IonIcon, IonItemDivider, IonLabel, IonList } from "@ionic/react";
-import { CSSProperties, ReactNode, useCallback, useMemo } from "react";
+import { ReactNode, useCallback, useMemo } from "react";
 import { AislePlate } from "./AislePlate";
 import { AnimatedGroup } from "./AnimatedGroup";
 import "./GroupedItemList.scss";
@@ -65,13 +65,10 @@ const RenderedGroup = <T,>({ group, renderItem, getItemKey }: RenderedGroupProps
                     itemClassName={group.header.sticky ? "grouped-list__sticky-header" : undefined}
                 />
             )}
-            {/* The indent reaches the rows through --group-indent (added to each IonItem's own
-                start padding) rather than as padding on this wrapper, so a row's background
-                (unsure/private tints) still spans the full width. */}
-            <div
-                className="grouped-list__items"
-                style={{ "--group-indent": `${group.indentLevel || 0}px` } as CSSProperties}
-            >
+            {/* Rows are not indented under their header: a row's checkbox column sits in the
+                same place as the header's plate column, so headers and items share one text
+                column (GroupedItemList.scss). */}
+            <div className="grouped-list__items">
                 <AnimatedGroup
                     items={group.items}
                     getKey={getItemKey}

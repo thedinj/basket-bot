@@ -10,10 +10,8 @@ interface SkeletonPlaceholder {
     widths: string[];
 }
 
-// Same values the real list uses (GroupedShoppingList / grouping.utils): item rows step in 16px
-// under their aisle or section header, and every aisle header is a sticky "light" bar with the
-// plate column and the road-sign label class.
-const INDENT_LEVEL = 16;
+// Same values the real list uses (GroupedShoppingList / grouping.utils): every aisle header is
+// a sticky "light" bar with the plate column and the road-sign label class.
 const AISLE_LABEL_CLASS = "group-header-label group-header-label--aisle";
 const SECTION_LABEL_CLASS = "group-header-label group-header-label--section";
 
@@ -48,7 +46,6 @@ const sectionGroup = (
     id,
     items: rows(id, widths),
     sortOrder,
-    indentLevel: INDENT_LEVEL,
     header: labelWidth
         ? {
               label: (

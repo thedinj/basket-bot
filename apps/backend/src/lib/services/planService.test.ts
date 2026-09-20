@@ -11,6 +11,7 @@ import {
     seedTagAssignment,
     seedUser,
 } from "../../../test/support/fixtures";
+import { recordStoreEvents } from "../../../test/support/recordStoreEvents";
 import { resetDb } from "../../../test/support/resetDb";
 import { db } from "../db/db";
 import * as planService from "./planService";
@@ -576,5 +577,72 @@ describe("getPoolCount", () => {
 
         expect(planService.getPoolCount(householdId, member, [tag])).toBe(2);
         expect(planService.getPoolCount(householdId, member, [tag], 30)).toBe(1);
+    });
+});
+
+describe("dispatchPlan store scoping and events", () => {
+    const countRows = (table: "ShoppingListItem" | "StoreItem", storeId: string) =>
+        (
+            db.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE storeId = ?`).get(storeId) as {
+                n: number;
+            }
+        ).n;
+
+    /** A plan whose two ingredients are routed to `first` and `second`. */
+    const planRoutedTo = (first: string, second: string) => {
+        const recipeId = seedRecipe({ householdId, name: "Soup", ownerId: member });
+        const carrot = seedIngredient({ recipeId, name: "Carrot", ownerId: member });
+        const onion = seedIngredient({ recipeId, name: "Onion", ownerId: member });
+        const planId = seedPlan({ householdId, ownerId: member });
+        planService.updateRoutes(householdId, planId, member, [
+            { ingredientId: carrot, storeId: first, isUnsure: null },
+            { ingredientId: onion, storeId: second, isUnsure: null },
+        ]);
+        return planId;
+    };
+
+    it("refuses to dispatch into a store the user cannot access, writing nothing anywhere", () => {
+        const mine = seedStore({ ownerId: member });
+        const theirs = seedStore({ ownerId: stranger });
+        const planId = planRoutedTo(mine, theirs);
+        const recorder = recordStoreEvents(mine, theirs);
+
+        expect(() => planService.dispatchPlan(householdId, planId, member)).toThrow(
+            AuthorizationError
+        );
+
+        expect(countRows("ShoppingListItem", mine)).toBe(0);
+        expect(countRows("ShoppingListItem", theirs)).toBe(0);
+        expect(countRows("StoreItem", theirs)).toBe(0);
+        expect(planService.getPlanWithDetails(householdId, planId, member)?.state).toBe("draft");
+        expect(recorder.events).toEqual([]);
+        recorder.stop();
+    });
+
+    it("publishes `list` once per target store, after the transaction commits", () => {
+        const first = seedStore({ ownerId: member });
+        const second = seedStore({ ownerId: member });
+        const planId = planRoutedTo(first, second);
+        const recorder = recordStoreEvents(first, second);
+
+        planService.dispatchPlan(householdId, planId, member);
+
+        expect(recorder.pairs()).toEqual([
+            [first, "list"],
+            [second, "list"],
+        ]);
+        expect(recorder.events.every((event) => !event.inTransaction)).toBe(true);
+        recorder.stop();
+    });
+
+    it("publishes once for a store that several routes target", () => {
+        const store = seedStore({ ownerId: member });
+        const planId = planRoutedTo(store, store);
+        const recorder = recordStoreEvents(store);
+
+        planService.dispatchPlan(householdId, planId, member);
+
+        expect(recorder.pairs()).toEqual([[store, "list"]]);
+        recorder.stop();
     });
 });

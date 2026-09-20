@@ -1,11 +1,13 @@
 import type { Plan, PlanWithDetails, RecipeIngredient } from "@basket-bot/core";
 import { AuthorizationError, ConflictError, NotFoundError } from "@basket-bot/core";
 import { db } from "../db/db";
+import { publishStoreChange } from "../realtime/storeEvents";
 import * as householdRepo from "../repos/householdRepo";
 import * as itemRepo from "../repos/itemRepo";
 import * as planRepo from "../repos/planRepo";
 import * as recipeRepo from "../repos/recipeRepo";
 import * as shoppingListRepo from "../repos/shoppingListRepo";
+import * as storeRepo from "../repos/storeRepo";
 import { roundFactor } from "../utils/math";
 import { buildRecipeNote } from "../utils/recipeNote";
 
@@ -226,9 +228,21 @@ export function dispatchPlan(
     assertPlanBelongs(plan, householdId);
     if (plan.state !== "draft") throw new ConflictError("Only draft plans can be dispatched");
 
+    // Routes name their target store by id, and household membership says nothing about stores:
+    // every target must be one this user can write to before anything is added anywhere.
+    const targetStoreIds = [
+        ...new Set(plan.routes.map((route) => route.storeId).filter((id): id is string => !!id)),
+    ];
+    for (const storeId of targetStoreIds) {
+        if (!storeRepo.userHasAccessToStore(userId, storeId)) {
+            throw new AuthorizationError("Access denied");
+        }
+    }
+
     let itemsAdded = 0;
     let itemsSkipped = 0;
     const now = new Date().toISOString();
+    const touchedStoreIds = new Set<string>();
 
     const dispatchAll = db.transaction(() => {
         for (const route of plan.routes) {
@@ -278,7 +292,7 @@ export function dispatchPlan(
                 createdById: userId,
             });
 
-            shoppingListRepo.upsertShoppingListItem({
+            const listItem = shoppingListRepo.upsertShoppingListItem({
                 storeId: route.storeId,
                 storeItemId: storeItem.id,
                 qty: scaledQty,
@@ -291,12 +305,15 @@ export function dispatchPlan(
                 isUnsure: route.isUnsure,
                 userId,
             });
+            touchedStoreIds.add(listItem.storeId);
 
             itemsAdded++;
         }
     });
 
     dispatchAll();
+    // After the transaction has committed, so a listener that refetches sees the new rows.
+    publishStoreChange([...touchedStoreIds], "list");
 
     const updatedPlan = planRepo.updatePlan({
         id: planId,

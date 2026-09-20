@@ -144,33 +144,6 @@ describe("createAisleSectionGroups", () => {
         expect(groups[0].children?.[0].header).toBeUndefined();
     });
 
-    it("indents section groups only when section headers are shown", () => {
-        const twoSections = [
-            item({ id: "a", aisleId: "A1", sectionId: "S1" }),
-            item({ id: "b", aisleId: "A1", sectionId: "S2" }),
-        ];
-        const [withHeaders] = createAisleSectionGroups(twoSections, BOTH_HEADERS);
-        const [withoutHeaders] = createAisleSectionGroups(twoSections, {
-            showAisleHeaders: true,
-            showSectionHeaders: false,
-        });
-
-        expect(withHeaders.children?.[0].indentLevel).toBe(16);
-        expect(withoutHeaders.children?.[0].indentLevel).toBe(0);
-    });
-
-    it("honours a custom section indent", () => {
-        const groups = createAisleSectionGroups(
-            [
-                item({ id: "a", aisleId: "A1", sectionId: "S1" }),
-                item({ id: "b", aisleId: "A1", sectionId: "S2" }),
-            ],
-            { ...BOTH_HEADERS, sectionIndentLevel: 32 }
-        );
-
-        expect(groups[0].children?.[0].indentLevel).toBe(32);
-    });
-
     /**
      * Aisle and section sort orders are *not* the same kind of number, which is surprising
      * enough to be worth pinning: an aisle group's `sortOrder` is a running index offset by

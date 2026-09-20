@@ -1,6 +1,8 @@
 import type { Household, HouseholdMemberDetail, HouseholdWithMembers } from "@basket-bot/core";
 import { AuthorizationError, NotFoundError } from "@basket-bot/core";
+import { publishStoreChange } from "../realtime/storeEvents";
 import * as householdRepo from "../repos/householdRepo";
+import * as storeRepo from "../repos/storeRepo";
 
 /**
  * Get all households a user is a member of
@@ -62,10 +64,13 @@ export function deleteHousehold(householdId: string, userId: string): void {
         throw new AuthorizationError("User is not a member of this household");
     }
 
+    // Read before the delete: the FK's ON DELETE SET NULL unshares these stores.
+    const sharedStoreIds = storeRepo.getStoreIdsByHousehold(householdId);
     const deleted = householdRepo.deleteHousehold(householdId);
     if (!deleted) {
         throw new NotFoundError("Household not found");
     }
+    publishStoreChange(sharedStoreIds, "access");
 }
 
 /**
@@ -98,10 +103,17 @@ export function removeMember(
         throw new NotFoundError("Target user is not a member of this household");
     }
 
+    // Read before any delete: removing the last member deletes the household, which unshares
+    // these stores (ON DELETE SET NULL).
+    const sharedStoreIds = storeRepo.getStoreIdsByHousehold(householdId);
+
     householdRepo.removeMember(householdId, targetUserId);
 
     const remainingMembers = householdRepo.countMembers(householdId);
     if (remainingMembers === 0) {
         householdRepo.deleteHousehold(householdId);
     }
+
+    // The removed member loses the household's stores; their open streams close themselves.
+    publishStoreChange(sharedStoreIds, "access");
 }

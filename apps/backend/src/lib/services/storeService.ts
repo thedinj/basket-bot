@@ -5,6 +5,7 @@ import {
     getStoreTemplate,
     listStoreTemplateSummaries,
 } from "../data/storeTemplates";
+import { publishStoreChange } from "../realtime/storeEvents";
 import * as householdRepo from "../repos/householdRepo";
 import * as storeRepo from "../repos/storeRepo";
 
@@ -92,6 +93,14 @@ export function getStoreById(id: string, userId: string): Store | null {
 }
 
 /**
+ * Whether the user can currently see the store. Used by the event stream to notice a revocation
+ * (store deleted, unshared, or the user left the household) while it is open.
+ */
+export function userHasAccessToStore(storeId: string, userId: string): boolean {
+    return storeRepo.userHasAccessToStore(userId, storeId);
+}
+
+/**
  * Update a store name (requires access)
  */
 export function updateStore(params: { id: string; name: string; userId: string }): Store | null {
@@ -100,11 +109,13 @@ export function updateStore(params: { id: string; name: string; userId: string }
         throw new AuthorizationError("Access denied");
     }
 
-    return storeRepo.updateStore({
+    const store = storeRepo.updateStore({
         id: params.id,
         name: params.name,
         updatedById: params.userId,
     });
+    if (store) publishStoreChange([store.id], "layout");
+    return store;
 }
 
 /**
@@ -116,7 +127,10 @@ export function deleteStore(id: string, userId: string): boolean {
         throw new AuthorizationError("Access denied");
     }
 
-    return storeRepo.deleteStore(id);
+    const deleted = storeRepo.deleteStore(id);
+    // Open streams re-check access on "access", find the store gone, and close themselves.
+    if (deleted) publishStoreChange([id], "access");
+    return deleted;
 }
 
 /**
@@ -171,11 +185,14 @@ export function updateStoreHousehold(params: {
         }
     }
 
-    return storeRepo.updateStoreHousehold({
+    const updated = storeRepo.updateStoreHousehold({
         storeId: params.storeId,
         householdId: params.householdId,
         updatedById: params.userId,
     });
+    // Who can see the store changed: streams of users who lost it close themselves.
+    if (updated) publishStoreChange([updated.id], "access");
+    return updated;
 }
 
 /**

@@ -176,10 +176,15 @@ Create `/etc/caddy/Caddyfile`:
 ```caddy
 # Replace with your actual domain
 basketbot.yourdomain.com {
-    # Reverse proxy to Next.js backend
-    reverse_proxy localhost:3000
+    # Reverse proxy to Next.js backend.
+    # flush_interval -1 passes streamed responses through unbuffered — required for the live
+    # shopping list's Server-Sent Events (GET /api/stores/{id}/events).
+    reverse_proxy localhost:3000 {
+        flush_interval -1
+    }
 
-    # Enable gzip compression
+    # Enable gzip compression (the event stream sends Cache-Control: no-transform, so it is
+    # never held back for compression)
     encode gzip
 
     # Security headers
@@ -355,6 +360,25 @@ echo | openssl s_client -servername basketbot.yourdomain.com -connect basketbot.
 3. Review backend logs: `sudo journalctl -u basket-bot-backend -n 50`
 4. Confirm Caddyfile reverse proxy target is correct: `reverse_proxy localhost:3000`
 
+### Live Shopping List Updates Arrive Late (or Only on Refresh)
+
+**Problem:** A change made on one phone takes a long time to show on another phone viewing the
+same store, or shows up in bursts.
+
+**Cause:** The proxy is buffering the Server-Sent Events stream at `/api/stores/{id}/events`.
+
+**Solutions:**
+
+1. Caddy: the `/api/*` `reverse_proxy` needs `flush_interval -1` (see the Caddyfile above).
+2. nginx: the `location` needs `proxy_buffering off;`.
+3. Check the stream end to end — it should print `event: ready` immediately, `: hb` every
+   25 seconds, and a `change` event as soon as something changes:
+
+    ```bash
+    curl -N -H "Authorization: Bearer <access token>" \
+        https://basketbot.yourdomain.com/api/stores/<storeId>/events
+    ```
+
 ### Rate Limit Errors
 
 **Problem:** Let's Encrypt rate limit exceeded.
@@ -443,6 +467,13 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
+
+        # Pass streamed responses through unbuffered — required for the live shopping list's
+        # Server-Sent Events (GET /api/stores/{id}/events). The stream also sends
+        # X-Accel-Buffering: no, but this keeps every response path honest.
+        proxy_buffering off;
+        # Heartbeats arrive every 25 s; keep the idle timeout comfortably above that.
+        proxy_read_timeout 1h;
     }
 }
 ```

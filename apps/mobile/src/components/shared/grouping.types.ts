@@ -26,11 +26,6 @@ export interface ItemGroup<T> {
     header?: GroupHeader;
 
     /**
-     * Indentation level for items in this group (in pixels or undefined for no indent)
-     */
-    indentLevel?: number;
-
-    /**
      * Sort order for this group (lower numbers appear first)
      */
     sortOrder: number;

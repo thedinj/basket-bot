@@ -4,7 +4,7 @@ import {
     NotFoundError,
     ValidationError,
 } from "@basket-bot/core";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
     seedAisle,
     seedHousehold,
@@ -15,6 +15,7 @@ import {
     seedStore,
     seedUser,
 } from "../../../test/support/fixtures";
+import { recordStoreEvents } from "../../../test/support/recordStoreEvents";
 import { resetDb } from "../../../test/support/resetDb";
 import { db } from "../db/db";
 import * as storeEntityService from "./storeEntityService";
@@ -535,5 +536,674 @@ describe("aisle emoji", () => {
         expect(() =>
             storeEntityService.createAisle({ storeId, name: "Deli", emoji, userId: owner })
         ).toThrow(ValidationError);
+    });
+});
+
+describe("store scoping of ids", () => {
+    /**
+     * The URL's store is where access is checked, so an id from another store must not be
+     * reachable through it: the caller could otherwise write to (and publish events for) a store
+     * they have no claim on. A foreign id reads as a 404, the same as a missing one.
+     */
+    let otherStore: string;
+    let foreignListItem: string;
+    let foreignStoreItem: string;
+
+    const listRow = (id: string) =>
+        db.prepare(`SELECT isChecked, notes FROM ShoppingListItem WHERE id = ?`).get(id) as
+            | { isChecked: number | null; notes: string | null }
+            | undefined;
+
+    beforeEach(() => {
+        otherStore = seedStore({ ownerId: stranger });
+        foreignStoreItem = seedItem({ storeId: otherStore, ownerId: stranger, name: "Theirs" });
+        foreignListItem = seedListItem({
+            storeId: otherStore,
+            storeItemId: foreignStoreItem,
+            notes: "original",
+            ownerId: stranger,
+        });
+    });
+
+    it("toggle refuses a list item from another store and changes nothing", () => {
+        expect(() =>
+            storeEntityService.toggleShoppingListItemChecked(foreignListItem, true, storeId, owner)
+        ).toThrow(NotFoundError);
+        expect(listRow(foreignListItem)?.isChecked).toBeNull();
+    });
+
+    it("remove refuses a list item from another store and changes nothing", () => {
+        expect(() =>
+            storeEntityService.removeShoppingListItem(foreignListItem, storeId, owner)
+        ).toThrow(NotFoundError);
+        expect(listRow(foreignListItem)).toBeDefined();
+    });
+
+    it("delete-with-item refuses a list item from another store and changes nothing", () => {
+        expect(() =>
+            storeEntityService.deleteShoppingListItem(foreignListItem, storeId, owner)
+        ).toThrow(NotFoundError);
+        expect(listRow(foreignListItem)).toBeDefined();
+        expect(
+            db.prepare(`SELECT 1 FROM StoreItem WHERE id = ?`).get(foreignStoreItem)
+        ).toBeDefined();
+    });
+
+    it("the update branch of upsert refuses a list item from another store", () => {
+        expect(() =>
+            storeEntityService.upsertShoppingListItem({
+                id: foreignListItem,
+                storeId,
+                notes: "hijacked",
+                userId: owner,
+            })
+        ).toThrow(NotFoundError);
+        expect(listRow(foreignListItem)?.notes).toBe("original");
+    });
+
+    it("still reports a missing list item as not found", () => {
+        expect(() =>
+            storeEntityService.toggleShoppingListItemChecked(
+                crypto.randomUUID(),
+                true,
+                storeId,
+                owner
+            )
+        ).toThrow(NotFoundError);
+    });
+
+    it("refuses aisle, section and item ids from another store", () => {
+        const aisle = seedAisle({ storeId: otherStore, ownerId: stranger, name: "Theirs" });
+        const section = seedSection({
+            storeId: otherStore,
+            aisleId: aisle,
+            ownerId: stranger,
+            name: "Theirs",
+        });
+        const attempts: Array<() => unknown> = [
+            () => storeEntityService.updateAisle({ id: aisle, storeId, name: "X", userId: owner }),
+            () =>
+                storeEntityService.updateAisleSortOrder({
+                    id: aisle,
+                    storeId,
+                    sortOrder: 5,
+                    userId: owner,
+                }),
+            () => storeEntityService.deleteAisle(aisle, storeId, owner),
+            () =>
+                storeEntityService.updateSection({
+                    id: section,
+                    storeId,
+                    name: "X",
+                    userId: owner,
+                }),
+            () =>
+                storeEntityService.updateSectionLocation({
+                    id: section,
+                    storeId,
+                    aisleId: aisle,
+                    sortOrder: 5,
+                    userId: owner,
+                }),
+            () => storeEntityService.deleteSection(section, storeId, owner),
+            () =>
+                storeEntityService.updateItem({
+                    id: foreignStoreItem,
+                    storeId,
+                    name: "X",
+                    userId: owner,
+                }),
+            () => storeEntityService.toggleItemFavorite(foreignStoreItem, storeId, owner),
+            () => storeEntityService.deleteItem(foreignStoreItem, storeId, owner),
+        ];
+
+        for (const attempt of attempts) {
+            expect(attempt).toThrow(NotFoundError);
+        }
+        expect(db.prepare(`SELECT name FROM StoreAisle WHERE id = ?`).get(aisle)).toEqual({
+            name: "Theirs",
+        });
+        expect(db.prepare(`SELECT name FROM StoreSection WHERE id = ?`).get(section)).toEqual({
+            name: "Theirs",
+        });
+        expect(db.prepare(`SELECT name FROM StoreItem WHERE id = ?`).get(foreignStoreItem)).toEqual(
+            { name: "Theirs" }
+        );
+    });
+
+    it("reorder ignores ids from another store", () => {
+        const mine = seedAisle({ storeId, ownerId: owner, name: "Mine", sortOrder: 0 });
+        const theirs = seedAisle({
+            storeId: otherStore,
+            ownerId: stranger,
+            name: "Theirs",
+            sortOrder: 0,
+        });
+
+        storeEntityService.reorderAisles({
+            storeId,
+            updates: [
+                { id: mine, sortOrder: 3 },
+                { id: theirs, sortOrder: 9 },
+            ],
+            userId: owner,
+        });
+
+        const sortOf = (id: string) =>
+            (
+                db.prepare(`SELECT sortOrder FROM StoreAisle WHERE id = ?`).get(id) as {
+                    sortOrder: number;
+                }
+            ).sortOrder;
+        expect(sortOf(mine)).toBe(3);
+        expect(sortOf(theirs)).toBe(0);
+    });
+});
+
+describe("store scoping of body foreign keys", () => {
+    /**
+     * The row a request acts on is checked above; these are the ids it *points at* — an item's
+     * aisle/section, a section's target aisle, a list row's store item. Each must be the URL
+     * store's own, or the write would link this store's rows to another store's (and leak that
+     * store's names back through the joined read models). A foreign id is the same 404 as a
+     * missing one; nothing is written and nothing is published.
+     */
+    let otherStore: string;
+    let myAisle: string;
+    let myOtherAisle: string;
+    let mySection: string;
+    let myItem: string;
+    let myListItem: string;
+    let foreignAisle: string;
+    let foreignSection: string;
+    let foreignItem: string;
+
+    const tableCounts = () =>
+        Object.fromEntries(
+            ["StoreAisle", "StoreSection", "StoreItem", "ShoppingListItem"].map((table) => [
+                table,
+                (db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n,
+            ])
+        );
+    const snapshot = () => ({
+        counts: tableCounts(),
+        section: db.prepare(`SELECT * FROM StoreSection WHERE id = ?`).get(mySection),
+        item: db.prepare(`SELECT * FROM StoreItem WHERE id = ?`).get(myItem),
+        listItem: db.prepare(`SELECT * FROM ShoppingListItem WHERE id = ?`).get(myListItem),
+    });
+
+    beforeEach(() => {
+        otherStore = seedStore({ ownerId: stranger });
+        myAisle = seedAisle({ storeId, ownerId: owner, name: "Mine" });
+        myOtherAisle = seedAisle({ storeId, ownerId: owner, name: "Mine too", sortOrder: 1 });
+        mySection = seedSection({ storeId, aisleId: myAisle, ownerId: owner, name: "Mine" });
+        myItem = seedItem({ storeId, ownerId: owner, name: "Milk" });
+        myListItem = seedListItem({ storeId, storeItemId: myItem, ownerId: owner });
+        foreignAisle = seedAisle({ storeId: otherStore, ownerId: stranger, name: "Theirs" });
+        foreignSection = seedSection({
+            storeId: otherStore,
+            aisleId: foreignAisle,
+            ownerId: stranger,
+            name: "Theirs",
+        });
+        foreignItem = seedItem({ storeId: otherStore, ownerId: stranger, name: "Theirs" });
+    });
+
+    /** Each writer, called with one body foreign key pointing at another store's row. */
+    const foreignWrites: Array<[string, () => unknown]> = [
+        [
+            "createSection with a foreign aisleId",
+            () =>
+                storeEntityService.createSection({
+                    storeId,
+                    aisleId: foreignAisle,
+                    name: "New",
+                    userId: owner,
+                }),
+        ],
+        [
+            "updateSection with a foreign aisleId",
+            () =>
+                storeEntityService.updateSection({
+                    id: mySection,
+                    storeId,
+                    aisleId: foreignAisle,
+                    userId: owner,
+                }),
+        ],
+        [
+            "updateSection with a foreign aisleId and a rename",
+            () =>
+                storeEntityService.updateSection({
+                    id: mySection,
+                    storeId,
+                    name: "Renamed",
+                    aisleId: foreignAisle,
+                    userId: owner,
+                }),
+        ],
+        [
+            "updateSectionLocation with a foreign aisleId",
+            () =>
+                storeEntityService.updateSectionLocation({
+                    id: mySection,
+                    storeId,
+                    aisleId: foreignAisle,
+                    sortOrder: 4,
+                    userId: owner,
+                }),
+        ],
+        [
+            "createItem with a foreign aisleId",
+            () =>
+                storeEntityService.createItem({
+                    storeId,
+                    name: "Bread",
+                    aisleId: foreignAisle,
+                    userId: owner,
+                }),
+        ],
+        [
+            "createItem with a foreign sectionId",
+            () =>
+                storeEntityService.createItem({
+                    storeId,
+                    name: "Bread",
+                    sectionId: foreignSection,
+                    userId: owner,
+                }),
+        ],
+        [
+            "updateItem with a foreign aisleId",
+            () =>
+                storeEntityService.updateItem({
+                    id: myItem,
+                    storeId,
+                    name: "Milk",
+                    aisleId: foreignAisle,
+                    userId: owner,
+                }),
+        ],
+        [
+            "updateItem with a foreign sectionId",
+            () =>
+                storeEntityService.updateItem({
+                    id: myItem,
+                    storeId,
+                    name: "Milk",
+                    sectionId: foreignSection,
+                    userId: owner,
+                }),
+        ],
+        [
+            "getOrCreateStoreItemByName (new item) with a foreign aisleId",
+            () =>
+                storeEntityService.getOrCreateStoreItemByName({
+                    storeId,
+                    name: "Bread",
+                    aisleId: foreignAisle,
+                    userId: owner,
+                }),
+        ],
+        [
+            "getOrCreateStoreItemByName (existing item) with a foreign sectionId",
+            () =>
+                storeEntityService.getOrCreateStoreItemByName({
+                    storeId,
+                    name: "Milk",
+                    sectionId: foreignSection,
+                    userId: owner,
+                }),
+        ],
+        [
+            "upsertShoppingListItem (insert) with a foreign storeItemId",
+            () =>
+                storeEntityService.upsertShoppingListItem({
+                    storeId,
+                    storeItemId: foreignItem,
+                    userId: owner,
+                }),
+        ],
+        [
+            "upsertShoppingListItem (update) with a foreign storeItemId",
+            () =>
+                storeEntityService.upsertShoppingListItem({
+                    id: myListItem,
+                    storeId,
+                    storeItemId: foreignItem,
+                    userId: owner,
+                }),
+        ],
+    ];
+
+    it.each(foreignWrites)("%s is refused as not found and writes nothing", (_name, write) => {
+        const before = snapshot();
+        const recorder = recordStoreEvents(storeId, otherStore);
+
+        expect(write).toThrow(NotFoundError);
+
+        expect(snapshot()).toEqual(before);
+        expect(recorder.events).toEqual([]);
+        recorder.stop();
+    });
+
+    it.each(foreignWrites)("%s gets the same 404 once the id no longer exists", (_name, write) => {
+        // Deleting the other store cascades its rows away, turning every foreign id into a
+        // missing one: the caller must not be able to tell the two cases apart.
+        db.prepare(`DELETE FROM Store WHERE id = ?`).run(otherStore);
+        expect(write).toThrow(NotFoundError);
+    });
+
+    it("accepts same-store aisle, section and store item ids", () => {
+        const section = storeEntityService.createSection({
+            storeId,
+            aisleId: myAisle,
+            name: "Dairy",
+            userId: owner,
+        });
+        expect(section.aisleId).toBe(myAisle);
+
+        expect(
+            storeEntityService.updateSection({
+                id: section.id,
+                storeId,
+                aisleId: myOtherAisle,
+                userId: owner,
+            })?.aisleId
+        ).toBe(myOtherAisle);
+
+        expect(
+            storeEntityService.updateSectionLocation({
+                id: section.id,
+                storeId,
+                aisleId: myAisle,
+                sortOrder: 2,
+                userId: owner,
+            })?.aisleId
+        ).toBe(myAisle);
+
+        const bread = storeEntityService.createItem({
+            storeId,
+            name: "Bread",
+            aisleId: myAisle,
+            userId: owner,
+        });
+        expect(bread.aisleId).toBe(myAisle);
+
+        // Section plus its own aisle: the section wins and the item's aisleId is stored NULL.
+        const updated = storeEntityService.updateItem({
+            id: bread.id,
+            storeId,
+            name: "Bread",
+            aisleId: myAisle,
+            sectionId: mySection,
+            userId: owner,
+        });
+        expect(updated).toMatchObject({ aisleId: null, sectionId: mySection });
+
+        expect(
+            storeEntityService.getOrCreateStoreItemByName({
+                storeId,
+                name: "Eggs",
+                sectionId: mySection,
+                userId: owner,
+            })
+        ).toMatchObject({ aisleId: null, sectionId: mySection });
+
+        const listItem = storeEntityService.upsertShoppingListItem({
+            storeId,
+            storeItemId: bread.id,
+            userId: owner,
+        });
+        expect(listItem.storeItemId).toBe(bread.id);
+    });
+
+    it("keeps null and omitted location ids working", () => {
+        const item = storeEntityService.createItem({
+            storeId,
+            name: "Bread",
+            aisleId: null,
+            sectionId: null,
+            userId: owner,
+        });
+        expect(item).toMatchObject({ aisleId: null, sectionId: null });
+        expect(
+            storeEntityService.upsertShoppingListItem({
+                storeId,
+                storeItemId: null,
+                isIdea: true,
+                notes: "something for dinner",
+                userId: owner,
+            }).storeItemId
+        ).toBeNull();
+    });
+
+    it("drops rather than refuses a stray storeItemId on an idea, which never stores one", () => {
+        const idea = storeEntityService.upsertShoppingListItem({
+            storeId,
+            storeItemId: foreignItem,
+            isIdea: true,
+            notes: "something for dinner",
+            userId: owner,
+        });
+        expect(idea.storeItemId).toBeNull();
+    });
+
+    const mismatchedLocations: Array<[string, () => unknown]> = [
+        [
+            "createItem",
+            () =>
+                storeEntityService.createItem({
+                    storeId,
+                    name: "Bread",
+                    aisleId: myOtherAisle,
+                    sectionId: mySection,
+                    userId: owner,
+                }),
+        ],
+        [
+            "updateItem",
+            () =>
+                storeEntityService.updateItem({
+                    id: myItem,
+                    storeId,
+                    name: "Milk",
+                    aisleId: myOtherAisle,
+                    sectionId: mySection,
+                    userId: owner,
+                }),
+        ],
+        [
+            "getOrCreateStoreItemByName",
+            () =>
+                storeEntityService.getOrCreateStoreItemByName({
+                    storeId,
+                    name: "Milk",
+                    aisleId: myOtherAisle,
+                    sectionId: mySection,
+                    userId: owner,
+                }),
+        ],
+    ];
+
+    it.each(mismatchedLocations)(
+        "%s refuses a section that is not in the given aisle",
+        (_name, write) => {
+            const before = snapshot();
+            const recorder = recordStoreEvents(storeId);
+
+            expect(write).toThrow(ValidationError);
+
+            expect(snapshot()).toEqual(before);
+            expect(recorder.events).toEqual([]);
+            recorder.stop();
+        }
+    );
+});
+
+describe("store change events", () => {
+    /**
+     * Every writer tells the store's open streams what changed, keyed on the store the row
+     * belongs to. Recorded on the real bus, so this is what a connected phone would hear.
+     */
+    let recorder: ReturnType<typeof recordStoreEvents>;
+
+    beforeEach(() => {
+        recorder = recordStoreEvents(storeId);
+    });
+
+    afterEach(() => {
+        recorder.stop();
+    });
+
+    it("publishes `list` for adding and editing a list item", () => {
+        const item = storeEntityService.upsertShoppingListItem({
+            storeId,
+            storeItemId: seedItem({ storeId, ownerId: owner, name: "Milk" }),
+            userId: owner,
+        });
+        storeEntityService.upsertShoppingListItem({
+            id: item.id,
+            storeId,
+            notes: "2%",
+            userId: owner,
+        });
+
+        expect(recorder.pairs()).toEqual([
+            [storeId, "list"],
+            [storeId, "list"],
+        ]);
+    });
+
+    it("publishes `list` for a check and an uncheck", () => {
+        const id = seedListItem({ storeId, ownerId: owner });
+
+        storeEntityService.toggleShoppingListItemChecked(id, true, storeId, owner);
+        storeEntityService.toggleShoppingListItemChecked(id, false, storeId, owner);
+
+        expect(recorder.pairs()).toEqual([
+            [storeId, "list"],
+            [storeId, "list"],
+        ]);
+    });
+
+    it("publishes nothing for a check that conflicts, since nothing was written", () => {
+        const member = seedUser({ name: "Member" });
+        const householdId = seedHousehold({ ownerId: owner });
+        seedHouseholdMember({ householdId, userId: owner });
+        seedHouseholdMember({ householdId, userId: member });
+        db.prepare(`UPDATE Store SET householdId = ? WHERE id = ?`).run(householdId, storeId);
+        const id = seedListItem({ storeId, ownerId: owner });
+        storeEntityService.toggleShoppingListItemChecked(id, true, storeId, owner);
+        recorder.events.length = 0;
+
+        const result = storeEntityService.toggleShoppingListItemChecked(id, true, storeId, member);
+
+        expect(result.conflict).toBe(true);
+        expect(recorder.events).toEqual([]);
+    });
+
+    it("publishes `list` for remove and clear-checked, and nothing for an empty clear", () => {
+        const id = seedListItem({ storeId, ownerId: owner });
+        seedListItem({ storeId, ownerId: owner, isChecked: true });
+
+        storeEntityService.removeShoppingListItem(id, storeId, owner);
+        storeEntityService.clearCheckedShoppingListItems(storeId, owner);
+        storeEntityService.clearCheckedShoppingListItems(storeId, owner);
+
+        expect(recorder.pairs()).toEqual([
+            [storeId, "list"],
+            [storeId, "list"],
+        ]);
+    });
+
+    it("publishes `layout` for delete-with-item, which also deletes the store item", () => {
+        const storeItemId = seedItem({ storeId, ownerId: owner, name: "Milk" });
+        const id = seedListItem({ storeId, storeItemId, ownerId: owner });
+
+        storeEntityService.deleteShoppingListItem(id, storeId, owner);
+
+        expect(recorder.pairs()).toEqual([[storeId, "layout"]]);
+    });
+
+    it("publishes `layout` for aisle and section writes", () => {
+        const aisle = storeEntityService.createAisle({ storeId, name: "Dairy", userId: owner });
+        storeEntityService.updateAisle({ id: aisle.id, storeId, name: "Milk", userId: owner });
+        storeEntityService.updateAisleSortOrder({
+            id: aisle.id,
+            storeId,
+            sortOrder: 4,
+            userId: owner,
+        });
+        storeEntityService.reorderAisles({
+            storeId,
+            updates: [{ id: aisle.id, sortOrder: 1 }],
+            userId: owner,
+        });
+        const section = storeEntityService.createSection({
+            storeId,
+            aisleId: aisle.id,
+            name: "Cheese",
+            userId: owner,
+        });
+        storeEntityService.updateSection({ id: section.id, storeId, name: "Brie", userId: owner });
+        storeEntityService.updateSectionLocation({
+            id: section.id,
+            storeId,
+            aisleId: aisle.id,
+            sortOrder: 2,
+            userId: owner,
+        });
+        storeEntityService.reorderSections({
+            storeId,
+            updates: [{ id: section.id, sortOrder: 0 }],
+            userId: owner,
+        });
+        storeEntityService.deleteSection(section.id, storeId, owner);
+        storeEntityService.deleteAisle(aisle.id, storeId, owner);
+
+        expect(recorder.pairs()).toEqual(Array(10).fill([storeId, "layout"]));
+    });
+
+    it("publishes `layout` for item writes, once per merge", () => {
+        const milk = storeEntityService.createItem({ storeId, name: "Milk", userId: owner });
+        const soy = seedItem({ storeId, ownerId: owner, name: "Soy milk" });
+        const oat = seedItem({ storeId, ownerId: owner, name: "Oat milk" });
+        storeEntityService.updateItem({ id: milk.id, storeId, name: "Whole milk", userId: owner });
+        storeEntityService.toggleItemFavorite(milk.id, storeId, owner);
+        storeEntityService.mergeItems({
+            loserId: soy,
+            intoItemId: milk.id,
+            storeId,
+            canonicalName: "Milk",
+            userId: owner,
+        });
+        storeEntityService.deleteItem(oat, storeId, owner);
+
+        expect(recorder.pairs()).toEqual(Array(5).fill([storeId, "layout"]));
+    });
+
+    it("publishes `layout` for deleting orphans, and nothing when none were deleted", () => {
+        const orphan = seedItem({ storeId, ownerId: owner, name: "Lonely" });
+
+        storeEntityService.deleteOrphanItems(storeId, [orphan], owner);
+        storeEntityService.deleteOrphanItems(storeId, [orphan], owner);
+
+        expect(recorder.pairs()).toEqual([[storeId, "layout"]]);
+    });
+
+    it("publishes nothing when a write is refused", () => {
+        expect(() =>
+            storeEntityService.createAisle({ storeId, name: "X", userId: stranger })
+        ).toThrow(AuthorizationError);
+        expect(recorder.events).toEqual([]);
+    });
+
+    it("publishes nothing for reads", () => {
+        storeEntityService.getShoppingListItems(storeId, owner);
+        storeEntityService.getItemsByStoreWithDetails(storeId, owner);
+        storeEntityService.getAislesByStore(storeId, owner);
+
+        expect(recorder.events).toEqual([]);
     });
 });

@@ -1,10 +1,19 @@
-import { ValidationError } from "@basket-bot/core";
+import { AuthorizationError, ValidationError } from "@basket-bot/core";
 import { beforeEach, describe, expect, it } from "vitest";
-import { seedAisle, seedSection, seedStore, seedUser } from "../../../test/support/fixtures";
+import {
+    seedAisle,
+    seedHousehold,
+    seedHouseholdMember,
+    seedSection,
+    seedStore,
+    seedUser,
+} from "../../../test/support/fixtures";
+import { recordStoreEvents } from "../../../test/support/recordStoreEvents";
 import { resetDb } from "../../../test/support/resetDb";
 import { countTemplateSections, getStoreTemplate, STORE_TEMPLATES } from "../data/storeTemplates";
 import { db } from "../db/db";
 import { normalizeItemName } from "../utils/stringUtils";
+import * as householdService from "./householdService";
 import * as storeService from "./storeService";
 
 /**
@@ -256,5 +265,76 @@ describe("template aisle emoji", () => {
 
         expect(byName.get("Produce")).toBe("🥬");
         expect(byName.get("Deli")).toBe("🧀");
+    });
+});
+
+describe("store change events", () => {
+    it("publishes `layout` for a rename", () => {
+        const storeId = seedStore({ ownerId: owner });
+        const recorder = recordStoreEvents(storeId);
+
+        storeService.updateStore({ id: storeId, name: "Renamed", userId: owner });
+
+        expect(recorder.pairs()).toEqual([[storeId, "layout"]]);
+        recorder.stop();
+    });
+
+    it("publishes `access` for a delete and for a household change", () => {
+        const householdId = seedHousehold({ ownerId: owner });
+        seedHouseholdMember({ householdId, userId: owner });
+        const shared = seedStore({ ownerId: owner });
+        const doomed = seedStore({ ownerId: owner });
+        const recorder = recordStoreEvents(shared, doomed);
+
+        storeService.updateStoreHousehold({ storeId: shared, householdId, userId: owner });
+        storeService.deleteStore(doomed, owner);
+
+        expect(recorder.pairs()).toEqual([
+            [shared, "access"],
+            [doomed, "access"],
+        ]);
+        recorder.stop();
+    });
+
+    it("publishes nothing for a refused write", () => {
+        const stranger = seedUser({ name: "Stranger" });
+        const storeId = seedStore({ ownerId: owner });
+        const recorder = recordStoreEvents(storeId);
+
+        expect(() => storeService.deleteStore(storeId, stranger)).toThrow(AuthorizationError);
+
+        expect(recorder.events).toEqual([]);
+        recorder.stop();
+    });
+
+    it("publishes `access` to every store of a household when a member is removed", () => {
+        const member = seedUser({ name: "Member" });
+        const householdId = seedHousehold({ ownerId: owner });
+        seedHouseholdMember({ householdId, userId: owner });
+        seedHouseholdMember({ householdId, userId: member });
+        const first = seedStore({ ownerId: owner, householdId });
+        const second = seedStore({ ownerId: owner, householdId });
+        const unrelated = seedStore({ ownerId: owner });
+        const recorder = recordStoreEvents(first, second, unrelated);
+
+        householdService.removeMember(householdId, member, owner);
+
+        expect(recorder.pairs()).toEqual([
+            [first, "access"],
+            [second, "access"],
+        ]);
+        recorder.stop();
+    });
+
+    it("publishes `access` to every store of a deleted household", () => {
+        const householdId = seedHousehold({ ownerId: owner });
+        seedHouseholdMember({ householdId, userId: owner });
+        const shared = seedStore({ ownerId: owner, householdId });
+        const recorder = recordStoreEvents(shared);
+
+        householdService.deleteHousehold(householdId, owner);
+
+        expect(recorder.pairs()).toEqual([[shared, "access"]]);
+        recorder.stop();
     });
 });

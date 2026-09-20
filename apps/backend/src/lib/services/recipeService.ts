@@ -10,12 +10,14 @@ import type {
     UpdateRecipeRequest,
 } from "@basket-bot/core";
 import { AuthorizationError, NotFoundError } from "@basket-bot/core";
+import { publishStoreChange } from "../realtime/storeEvents";
 import * as householdRepo from "../repos/householdRepo";
 import * as itemRepo from "../repos/itemRepo";
 import * as recipeIngredientRepo from "../repos/recipeIngredientRepo";
 import * as recipeRepo from "../repos/recipeRepo";
 import * as recipeTagRepo from "../repos/recipeTagRepo";
 import * as shoppingListRepo from "../repos/shoppingListRepo";
+import * as storeRepo from "../repos/storeRepo";
 import { roundFactor } from "../utils/math";
 import { buildRecipeNote } from "../utils/recipeNote";
 
@@ -172,8 +174,17 @@ export function addRecipeToShoppingList(
     // ingredients are allowed here since the client explicitly opted them in.
     const ingredientSet = new Set(recipe.ingredients.map((i) => i.id));
 
+    // Household membership says nothing about stores: every target store must be one this user
+    // can write to before anything is added anywhere.
+    for (const storeId of new Set(data.routes.map((route) => route.storeId))) {
+        if (!storeRepo.userHasAccessToStore(userId, storeId)) {
+            throw new AuthorizationError("Access denied");
+        }
+    }
+
     let itemsCreated = 0;
     let itemsSkipped = 0;
+    const touchedStoreIds = new Set<string>();
 
     for (const route of data.routes) {
         if (!ingredientSet.has(route.ingredientId)) {
@@ -194,7 +205,7 @@ export function addRecipeToShoppingList(
             createdById: userId,
         });
 
-        shoppingListRepo.upsertShoppingListItem({
+        const listItem = shoppingListRepo.upsertShoppingListItem({
             storeId: route.storeId,
             storeItemId: storeItem.id,
             qty: scaledQty,
@@ -203,9 +214,11 @@ export function addRecipeToShoppingList(
             isUnsure: route.isUnsure ?? ingredient.isUnsure ?? null,
             userId,
         });
+        touchedStoreIds.add(listItem.storeId);
 
         itemsCreated++;
     }
 
+    publishStoreChange([...touchedStoreIds], "list");
     return { itemsCreated, itemsSkipped };
 }

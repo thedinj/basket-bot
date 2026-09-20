@@ -26,9 +26,6 @@ interface GroupedShoppingListProps {
 
 const HEADER_LABEL_CLASS = "group-header-label group-header-label--aisle";
 
-// Item rows step in 16px under their header (aisle bar or section label), so aisle, section and
-// item read as three levels at a glance rather than one flat column (see ShoppingListItem.css).
-const INDENT_LEVEL = 16;
 const IDEAS_SORT_ORDER = 0;
 const AISLE_SORT_ORDER_OFFSET = 100;
 
@@ -63,7 +60,6 @@ const createCheckedItemsGroup = (
         ),
     },
     sortOrder: 0,
-    indentLevel: INDENT_LEVEL,
 });
 
 const createIdeasGroup = (
@@ -81,7 +77,6 @@ const createIdeasGroup = (
         labelStyle: { color: "var(--app-color-ideas)" },
     },
     sortOrder: IDEAS_SORT_ORDER,
-    indentLevel: INDENT_LEVEL,
 });
 
 export const GroupedShoppingList = ({
@@ -243,7 +238,6 @@ export const GroupedShoppingList = ({
                 showAisleHeaders: true,
                 showSectionHeaders: true,
                 sortOrderOffset: AISLE_SORT_ORDER_OFFSET,
-                sectionIndentLevel: INDENT_LEVEL,
             });
 
             // Inject auto-categorize button for uncategorized aisle

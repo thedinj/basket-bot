@@ -17,9 +17,12 @@
     z-index: 2;
 }
 
-// Group indent, applied inside each row rather than around it (see RenderedGroup).
+// Rows start on the page gutter, like their headers: the row's 36px checkbox column then sits
+// exactly where the header's plate column does, which puts item text, aisle names and section
+// labels all on x = 62. Rows used to step in 16px, which set the section label (62) 16px left
+// of the item names it introduces (78) and slid the checkboxes off the plates' centre line.
 .grouped-list__items ion-item {
-    --padding-start: calc(16px + var(--group-indent, 0px));
+    --padding-start: 16px;
 }
 
 // Label rules are scoped `ion-item-divider .group-header-label.group-header-label--x`
@@ -47,8 +50,9 @@ ion-item-divider .group-header-label.group-header-label--aisle {
     }
 }
 
-// Section rows: a ruled label. Small tracked caps in the aisle name's column (past the badge
-// plate: 36px + 10px gap), then a hairline to the edge, so a section reads as a divider that
+// Section rows: a ruled label. Small tracked caps in the aisle name's column, which is also the
+// item names' (past the badge plate: 36px + 10px gap, so x = 62 in all three), then a hairline
+// to the edge, so a section reads as a divider that
 // encloses the rows below it rather than as one more row. More space above (16px) than below
 // (4px) attaches it to its own items; directly under the aisle bar it needs less (10px).
 // Regular-width Barlow Bold, not the condensed display face: at this size condensed caps have

@@ -110,6 +110,17 @@ can round-trip back to you. Full pattern, status-code table, and a migration che
 - **Mutation queuing** persists failed mutations and retries on reconnect
 - **Shield system** blocks UI during long-running operations
 
+**Live sync (SSE).** While the Shopping List tab shows a store, `useStoreEvents`
+([`apps/mobile/src/realtime/useStoreEvents.ts`](apps/mobile/src/realtime/useStoreEvents.ts))
+holds `GET /api/stores/{storeId}/events` open, so other people's changes appear within about a
+second. Events carry **no data** — only `change` with a kind (`list` | `layout` | `access`) — and
+the client invalidates by kind (map in `realtime/storeSync.ts`, table in
+[`apps/mobile/docs/CACHE_KEYS.md`](apps/mobile/docs/CACHE_KEYS.md) § 6), refetching through the
+normal privacy-filtered GETs. Backend services publish after the write succeeds, keyed on the
+**DB row's** store id (never the URL's). **Any new backend writer of shopping-list rows, or of
+anything the list groups/labels by (items, aisles, sections, store name), must publish** the
+matching kind, or other phones silently go stale until their next refetch.
+
 **A tab page must render its `IonPage` before anything that can suspend.** Ionic's router
 outlet only transitions a page in once that page registers itself, so a tab route component
 that calls a suspense hook (`usePreference`, `useStores`, `useRecipes`, …) _above_ its
