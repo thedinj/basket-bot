@@ -91,10 +91,22 @@ ion-item .item-label .item-snoozed-info {
     color: var(--ion-color-secondary);
 }
 
-ion-item .item-label .item-checked-by {
-    margin-top: 2px;
-    margin-bottom: 0;
-    font-size: 0.75rem;
+/* The other shopper's name in the row's end column, in the label register. Height-neutral on
+   purpose: it sits on the title's own line, so a row is the same height checked or not and a
+   check-off by someone else moves nothing. Long names ellipsize rather than wrap. */
+ion-item .item-checked-by {
+    flex: none;
+    max-width: 7.5rem;
+    margin-inline-start: 8px;
+    overflow: hidden;
+    font-family: var(--app-font-display);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
     color: var(--ion-color-medium);
 }
 

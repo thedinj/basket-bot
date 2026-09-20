@@ -8,6 +8,7 @@ import AppErrorBoundary from "./components/AppErrorBoundary";
 import Auth from "./components/Auth";
 import LoadingFallback from "./components/LoadingFallback";
 import Main from "./components/Main";
+import { useInteractionGate } from "./hooks/useInteractionGate";
 import ServerRecoveryEffect from "./components/ServerRecoveryEffect";
 import ServerUnreachable from "./components/ServerUnreachable";
 import NetworkStatusBanner from "./components/shared/NetworkStatusBanner";
@@ -134,6 +135,10 @@ const AppRoutes: React.FC = () => {
 };
 
 const App: React.FC = () => {
+    // Whether a finger is on the screen, which live sync and every animated list consult
+    // before moving anything (utils/interactionGate.ts).
+    useInteractionGate();
+
     return (
         <IonApp>
             <IonReactRouter>

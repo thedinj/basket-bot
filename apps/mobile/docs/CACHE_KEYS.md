@@ -350,6 +350,11 @@ Rules (`startStoreSync`):
   are invalidated once.
 - **Never mid-mutation**: while `queryClient.isMutating() > 0` the pending invalidation is held
   (re-checked every 300 ms), so a refetch cannot overwrite an in-flight optimistic update.
+- **Never mid-tap**: while a finger is on the screen, or within 600 ms of one leaving
+  (`utils/interactionGate.ts`, fed by `useInteractionGate` at the app root), the invalidation is held
+  the same way — a refetch that reflows the list between aiming at a row and touching it sends
+  the tap to whatever slid into that row's place. Capped at 5 s (`MAX_INTERACTION_HOLD_MS`), so a
+  continuously worked list still catches up.
 - **Resume**: `@capacitor/app` `appStateChange` → active forces a reconnect, whose `ready` resyncs.
 - Invalidation goes straight to `queryClient`, not `RefreshConfig.refresh`, so no pull-to-refresh
   spinner appears.
@@ -357,3 +362,11 @@ Rules (`startStoreSync`):
 Other screens reading the same `byStore` keys (Unsure Items, store-item maps) update for free
 while mounted over the shopping list; no separate stream is opened for them. Nothing here is a
 mutation hook, so the cascade tests' coverage guards do not apply to it.
+
+**A row that the refetch moves, or adds, takes no taps until it settles.** Applying someone
+else's change rearranges the list, which is how a tap ends up on the wrong item — you aim at a
+row, it shifts, and your finger lands on its replacement. `AnimatedGroup` gives every row that
+moves (a layout animation) or arrives (a key that wasn't there before) about 700 ms of
+`pointer-events: none`, dimmed so the row visibly says it isn't taking taps yet. Rows moving
+while `interactionGate.isActive()` are exempt: those are the user's own doing, and shielding
+them would make checking several items in a row feel like wading.

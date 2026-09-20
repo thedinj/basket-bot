@@ -1,5 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../db/queryKeys";
+import { interactionGate, MAX_INTERACTION_HOLD_MS } from "../utils/interactionGate";
 import {
     connectStoreEvents,
     type StoreChangeKind,
@@ -17,6 +18,10 @@ import {
  * - Nothing is invalidated while any mutation is in flight: a refetch landing mid-mutation
  *   would overwrite that mutation's optimistic update with pre-write server data. The pending
  *   invalidation is held (re-checked every `DEBOUNCE_MS`) until mutations settle.
+ * - Nothing is invalidated while a finger is on the screen either (`interactionGate`), so a
+ *   remote change can't move a row out from under a tap that is already being aimed. That
+ *   hold is capped at `MAX_INTERACTION_HOLD_MS`, after which the update goes in regardless —
+ *   a list being worked continuously must still catch up eventually.
  * - Every `ready` (connect or reconnect) resyncs the list, since events may have been missed.
  * - While not connected, the list is refetched every `FALLBACK_POLL_MS` so a blocked or
  *   unsupported stream degrades to polling rather than to nothing.
@@ -70,14 +75,27 @@ export type StoreSync = {
     stop: () => void;
 };
 
+export type StoreSyncOptions = {
+    /** Defaults to the shared `interactionGate`. */
+    isInteracting?: () => boolean;
+    now?: () => number;
+};
+
 export const startStoreSync = (
     storeId: string,
     queryClient: QueryClient,
-    streamOptions?: StoreEventStreamOptions
+    streamOptions?: StoreEventStreamOptions,
+    syncOptions: StoreSyncOptions = {}
 ): StoreSync => {
+    const isInteracting = syncOptions.isInteracting ?? (() => interactionGate.isActive());
+    const now = syncOptions.now ?? (() => Date.now());
+
     let stopped = false;
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     let pollTimer: ReturnType<typeof setInterval> | null = null;
+    // When the current batch was first held back by a touch, for the cap. Null when nothing
+    // is being held.
+    let heldSince: number | null = null;
     // Kinds awaiting the debounce; "resync" is the list refetch alone.
     const pending = new Set<StoreChangeKind | "resync">();
 
@@ -90,6 +108,15 @@ export const startStoreSync = (
             schedule();
             return;
         }
+        if (isInteracting()) {
+            const at = now();
+            heldSince ??= at;
+            if (at - heldSince < MAX_INTERACTION_HOLD_MS) {
+                schedule();
+                return;
+            }
+        }
+        heldSince = null;
 
         // Merge by key so a key named by two kinds is invalidated once, refetching if either
         // kind wants it refetched.

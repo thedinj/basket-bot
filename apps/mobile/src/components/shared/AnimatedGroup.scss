@@ -1,0 +1,21 @@
+// A row that is moving, or has just stopped, takes no taps (see TAP_GUARD_MS in
+// AnimatedGroup.tsx). It says so by dimming, the same way anything else out of action does.
+//
+// The dim goes on the row's contents, not the wrapper: the wrapper's own opacity is animated by
+// Framer (enter and exit) and written inline, where a class can't reach it.
+.settling-row > * {
+    opacity: 0.6;
+    transition: opacity 0.12s ease-out;
+}
+
+// Coming back is the quieter half: the row is usable again, which needs no announcement.
+.grouped-list__items > *:not(.settling-row) > * {
+    transition: opacity 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .settling-row > *,
+    .grouped-list__items > *:not(.settling-row) > * {
+        transition: none;
+    }
+}

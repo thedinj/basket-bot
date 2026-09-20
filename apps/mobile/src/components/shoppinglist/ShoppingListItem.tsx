@@ -357,18 +357,18 @@ export const ShoppingListItem = ({
                                 Snoozed until {formattedSnoozeDate}
                             </p>
                         )}
-                        {item.isChecked && item.checkedBy !== user?.id && item.checkedByName && (
-                            <p
-                                className={clsx(
-                                    "item-checked-by",
-                                    isChecked && "item-text--checked"
-                                )}
-                            >
-                                Checked by {item.checkedByName}
-                            </p>
-                        )}
                     </>
                 </IonLabel>
+
+                {/* Who checked it rides at the end of the row, never on a line of its own: a
+                    row that grows by a line pushes every row below it down, which is exactly
+                    the movement that sends a tap to the wrong item. */}
+                {item.isChecked && item.checkedBy !== user?.id && item.checkedByName && (
+                    <span slot="end" className="item-checked-by">
+                        <span className="sr-only">Checked by </span>
+                        {item.checkedByName}
+                    </span>
+                )}
 
                 {onConfirmUnsure && (
                     // One segmented control in the field frame: Drop (quiet) | Keep (lilac).

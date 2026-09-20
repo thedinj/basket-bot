@@ -21,7 +21,14 @@ vi.mock("../lib/serverReachability", () => ({
 
 import { queryKeys } from "../db/queryKeys";
 import { ApiError } from "../lib/api/client";
-import { DEBOUNCE_MS, FALLBACK_POLL_MS, invalidationsForKind, startStoreSync } from "./storeSync";
+import { MAX_INTERACTION_HOLD_MS } from "../utils/interactionGate";
+import {
+    DEBOUNCE_MS,
+    FALLBACK_POLL_MS,
+    invalidationsForKind,
+    startStoreSync,
+    type StoreSyncOptions,
+} from "./storeSync";
 
 const STORE = "store-1";
 
@@ -51,17 +58,22 @@ let queryClient: QueryClient;
 let invalidateSpy: MockInstance<QueryClient["invalidateQueries"]>;
 let openStream: ReturnType<typeof vi.fn>;
 
-const start = () =>
-    startStoreSync(STORE, queryClient, {
-        openStream: (path, signal) => openStream(path, signal),
-        random: () => 1,
-    });
+const start = (syncOptions?: StoreSyncOptions) =>
+    startStoreSync(
+        STORE,
+        queryClient,
+        {
+            openStream: (path, signal) => openStream(path, signal),
+            random: () => 1,
+        },
+        syncOptions
+    );
 
 /** Start a sync whose first connection is live and has said `ready` (and flush that resync). */
-const startConnected = async () => {
+const startConnected = async (syncOptions?: StoreSyncOptions) => {
     const body = liveBody();
     openStream.mockResolvedValueOnce(body.response);
-    const sync = start();
+    const sync = start(syncOptions);
     await vi.advanceTimersByTimeAsync(0);
     body.send(READY);
     await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
@@ -247,5 +259,42 @@ describe("startStoreSync", () => {
 
         expect(invalidateSpy).not.toHaveBeenCalled();
         expect(openStream).toHaveBeenCalledTimes(1);
+    });
+
+    // A refetch that lands between aiming at a row and touching it moves that row away, and
+    // the tap goes to whatever slid into its place.
+    it("holds a change while the screen is being touched, and applies it once the hand lifts", async () => {
+        let touching = true;
+        const { body } = await startConnected({ isInteracting: () => touching });
+
+        body.send(change("list"));
+        await vi.advanceTimersByTimeAsync(DEBOUNCE_MS * 4);
+
+        expect(invalidateSpy).not.toHaveBeenCalled();
+
+        touching = false;
+        await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+
+        expect(invalidated(invalidateSpy)).toContainEqual([
+            queryKeys.shoppingListItems.byStore(STORE),
+            "active",
+        ]);
+    });
+
+    // A list being worked continuously must still catch up eventually.
+    it("applies a held change once the cap passes, even with the screen still in use", async () => {
+        const { body } = await startConnected({ isInteracting: () => true });
+
+        body.send(change("list"));
+        await vi.advanceTimersByTimeAsync(MAX_INTERACTION_HOLD_MS - DEBOUNCE_MS);
+
+        expect(invalidateSpy).not.toHaveBeenCalled();
+
+        await vi.advanceTimersByTimeAsync(DEBOUNCE_MS * 2);
+
+        expect(invalidated(invalidateSpy)).toContainEqual([
+            queryKeys.shoppingListItems.byStore(STORE),
+            "active",
+        ]);
     });
 });

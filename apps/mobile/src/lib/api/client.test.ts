@@ -324,7 +324,11 @@ describe("openStream", () => {
         expect(error.isNetworkError).toBe(false);
     });
 
-    it("reports a connection failure as unreachable", async () => {
+    // A stream that cannot connect says nothing about the server: the socket is dropped
+    // routinely (backgrounded app, idle proxy, expired JWT) and the caller reconnects on its
+    // own backoff. Reporting it raised the "Network down" banner - and so shifted the whole
+    // list down and back - on every app resume.
+    it("does not report a connection failure as unreachable", async () => {
         const client = authedClient();
         fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
 
@@ -333,7 +337,20 @@ describe("openStream", () => {
             .catch((e: unknown) => e)) as ApiError;
 
         expect(error.isNetworkError).toBe(true);
-        expect(serverReachability.reportUnreachable).toHaveBeenCalled();
+        expect(serverReachability.reportUnreachable).not.toHaveBeenCalled();
+    });
+
+    it("does not report a proxy outage status as unreachable", async () => {
+        const client = authedClient();
+        fetchMock.mockResolvedValueOnce(response(503));
+
+        const error = (await client
+            .openStream(streamPath, new AbortController().signal)
+            .catch((e: unknown) => e)) as ApiError;
+
+        expect(error.isNetworkError).toBe(true);
+        expect(error.status).toBe(503);
+        expect(serverReachability.reportUnreachable).not.toHaveBeenCalled();
     });
 
     it("passes a caller abort through without blaming the server", async () => {

@@ -405,13 +405,16 @@ export class ApiClient {
     private async assertOk(
         response: Response,
         endpoint: string,
-        tokenStatus: string | null
+        tokenStatus: string | null,
+        reportsUnreachable = true
     ): Promise<void> {
         // A proxy answering for a dead app server is an outage, not a request the server
         // considered and rejected. Its body is the proxy's HTML, so there is no useful code to
         // parse out of it; tag it as a network error so it queues and surfaces like one.
         if (UNREACHABLE_STATUSES.has(response.status)) {
-            serverReachability.reportUnreachable();
+            if (reportsUnreachable) {
+                serverReachability.reportUnreachable();
+            }
             throw new ApiError(
                 "Cannot reach the server.",
                 "SERVER_UNAVAILABLE",
@@ -450,8 +453,16 @@ export class ApiClient {
      * as soon as its headers arrive; the caller reads `response.body` and ends it via `signal`.
      *
      * Same auth and error rules as `request()` — bearer token, waits for auth readiness, one
-     * single-flight refresh + retry on a 401 `X-Token-Status: invalid`, reachability reporting —
-     * except there is **no request timeout**: the response is meant to stay open indefinitely.
+     * single-flight refresh + retry on a 401 `X-Token-Status: invalid` — except for two things:
+     * there is **no request timeout** (the response is meant to stay open indefinitely), and a
+     * failure here never reports the server unreachable.
+     *
+     * The stream is the one request the app expects to fail routinely: the OS kills the socket
+     * while the app is backgrounded, a proxy closes an idle one, the JWT expires. It reconnects
+     * itself with its own backoff, so letting a failed connect raise the "Network down" banner
+     * only flashed a strip across the top of the list on every resume — an outage the app was
+     * never in. A stream that *does* open still reports the server reachable: that is evidence.
+     *
      * Failures (including an HTTP error status) reject with an `ApiError`. An abort through
      * `signal` rejects with the fetch's own `AbortError`, untouched: the caller asked for it,
      * and it says nothing about the server.
@@ -475,7 +486,7 @@ export class ApiClient {
             response = await send(newAccessToken);
         }
 
-        await this.assertOk(response, endpoint, tokenStatus);
+        await this.assertOk(response, endpoint, tokenStatus, false);
         return response;
     }
 
@@ -496,7 +507,7 @@ export class ApiClient {
                 throw error;
             }
             if (isNetworkErrorLike(error)) {
-                serverReachability.reportUnreachable();
+                // Deliberately not reported to `serverReachability` — see `openStream`.
                 throw new ApiError(
                     "Network error. Please check your connection.",
                     "NETWORK_ERROR",
