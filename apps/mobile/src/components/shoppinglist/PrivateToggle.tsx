@@ -15,8 +15,8 @@ export const PrivateToggle = () => {
     const canTogglePrivate = !editingItem || editingItem.createdById === currentUserId;
     const creatorName = editingItem?.createdByName ?? "the item's creator";
     const disabledMessage =
-        `Only ${creatorName} can toggle this — Incognito hides an item from everyone but ` +
-        "its creator. Add your own copy to control it.";
+        `Only ${creatorName} can toggle this — an eyes-only item is visible to its creator ` +
+        "and nobody else. Add your own copy to control it.";
 
     return (
         <>
@@ -25,12 +25,12 @@ export const PrivateToggle = () => {
                 control={control}
                 render={({ field }) => (
                     <ItemFlagTile
-                        src={field.value ? "/img/private.svg" : "/img/private-filled.svg"}
-                        label="Incognito"
-                        description="Incognito — hidden from everyone else on this store"
+                        src="/img/private.svg"
+                        label="Eyes only"
+                        description="Eyes only — hidden from everyone else on this store"
                         checked={field.value ?? false}
                         onChange={field.onChange}
-                        tone="secondary"
+                        tone="classified"
                         disabled={!canTogglePrivate}
                         disabledMessage={disabledMessage}
                         onDisabledTap={(event) => {

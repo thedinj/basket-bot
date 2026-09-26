@@ -1,4 +1,4 @@
-/* A flag on the item (Unsure, Incognito) as a field box: 48px, 10px radius, step-200 border,
+/* A flag on the item (Unsure, Eyes only) as a field box: 48px, 10px radius, step-200 border,
    step-50 fill, content on the 12px inset. A 20px glyph, the fixed label naming what "on"
    does, then the switch ending on the inset. The whole tile is the tap target, so the switch
    itself ignores the pointer. */
@@ -39,7 +39,7 @@
     flex: 1;
     min-width: 0;
     font-size: 0.9375rem;
-    /* Tall enough that overflow:hidden below doesn't clip descenders (e.g. the "g" in "Incognito") */
+    /* Tall enough that overflow:hidden below doesn't clip descenders (e.g. a "y" or "g") */
     line-height: 1.4;
     color: var(--ion-color-step-500);
     overflow: hidden;
@@ -75,6 +75,35 @@
 .item-flag-tile--secondary.item-flag-tile--active .item-flag-tile__icon,
 .item-flag-tile--secondary.item-flag-tile--active .item-flag-tile__label {
     color: var(--ion-color-secondary);
+}
+
+/* Eyes only, switched on, is the dossier the list row becomes: the classified surface and its
+   ink, rather than a tint of an accent. The off state stays a plain field box — nothing is
+   classified until you say so. */
+.item-flag-tile--classified.item-flag-tile--active {
+    background: var(--app-classified-surface);
+    border-color: color-mix(in srgb, var(--app-classified-ink) 45%, transparent);
+}
+
+.item-flag-tile--classified.item-flag-tile--active .item-flag-tile__icon,
+.item-flag-tile--classified.item-flag-tile--active .item-flag-tile__label {
+    color: var(--app-classified-ink);
+}
+
+/* The switch itself, so the one lit control on the tile isn't still wearing the old lilac.
+   The handle is always the *ink* and the track is that ink muted into the surface — never the
+   surface itself. Inverting them per theme looked right on paper and broke in dark mode, where
+   the ink is the bone: the handle took the near-black surface and the knob disappeared into
+   the tile behind it, leaving a bone track with a bite out of one end.
+   (`--track-background-checked`, not `--background-checked`: Ionic 8 renamed it, and the old
+   name silently leaves Ionic's own primary on the track.) */
+.item-flag-tile--classified.item-flag-tile--active .item-flag-tile__toggle {
+    --track-background-checked: color-mix(
+        in srgb,
+        var(--app-classified-ink) 38%,
+        var(--app-classified-surface)
+    );
+    --handle-background-checked: var(--app-classified-ink);
 }
 
 /* Sits in the editor form's grid (theme/forms.scss), which supplies the spacing. */

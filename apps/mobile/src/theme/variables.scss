@@ -104,6 +104,19 @@ http://ionicframework.com/docs/theming/ */
     --ion-text-color: #1a202c;
     --ion-text-color-rgb: 26, 32, 44;
 
+    /* A row that is marked (unsure, private) sits *below* the page rather than on a band above
+       it: an aisle header is always lighter than its surroundings, so anything lighter reads as
+       a header. Per theme, because "a shade darker" is a different amount of black on a near
+       white page than on a near black one. */
+    --app-row-recess: #ebeff3;
+
+    /* Eyes-only items are a dossier, not a colour. Every hue is already spoken for — amber is
+       unsure, lilac is sections, purple is primary, red is danger, green is success — so this
+       borrows none of them: paper and ink, inverted per theme. Light mode is the manila folder,
+       dark mode is the ink it was photographed in. */
+    --app-classified-surface: #efe9d8;
+    --app-classified-ink: #3b352a;
+
     --ion-color-step-50: #f7fafc;
     --ion-color-step-100: #edf2f7;
     --ion-color-step-150: #e2e8f0;
@@ -152,6 +165,15 @@ body.ion-palette-dark {
 
     /* Card/Surface backgrounds */
     --ion-card-background: #1a1a2e;
+
+    /* See the light-mode note: below the page, never above it. */
+    --app-row-recess: #07071a;
+
+    /* The dossier, inverted: the darkest surface in the app, with the paper in the type.
+       Not absolute black — at #030308 the row read as a hole punched in the list rather than a
+       page laid into it. */
+    --app-classified-surface: #0b0a12;
+    --app-classified-ink: #efe9d8;
 
     /* Stepped background colors for layering */
     --ion-color-step-50: #1a1a2e;

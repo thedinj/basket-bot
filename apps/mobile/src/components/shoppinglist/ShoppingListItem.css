@@ -205,31 +205,50 @@ ion-item .item-label .item-qty {
     vertical-align: middle;
 }
 
-/* Unsure items: subtle amber background tint to prompt a pre-trip check */
+/* Unsure items: a warm tint, mixed into the recessed base rather than the page, so the row
+   sits below the list instead of banding across it. A tint lighter than the page is read as an
+   aisle header first and a marked row second — same shape, same span, and (at 9% amber over
+   #0f0f23, which lands on #231a25) almost exactly the header's lightness. */
 .shopping-list-item--unsure:not(.shopping-list-item--checked) {
-    --background: color-mix(in srgb, var(--ion-color-warning) 9%, var(--ion-background-color));
+    --background: color-mix(in srgb, var(--ion-color-warning) 8%, var(--app-row-recess));
 }
 
-/* Private (surprise) icon */
-.private-icon {
-    font-size: 1.05em;
-    color: var(--ion-color-secondary);
-    margin-left: 4px;
-    vertical-align: middle;
-}
-
-/* Private items: subtle purple background tint, so a surprise reads differently at a glance */
+/* Eyes-only items are a dossier page: the classified surface, the item's name set in its ink,
+   and an EYES ONLY stamp in the end column. No hue at all — every one of them already means
+   something else in this app, and a lilac name in particular asked the section label's
+   question. See `--app-classified-surface` in variables.scss. */
 .shopping-list-item--private:not(.shopping-list-item--checked) {
-    --background: color-mix(in srgb, var(--ion-color-secondary) 9%, var(--ion-background-color));
+    --background: var(--app-classified-surface);
 }
 
-/* Unsure AND private: blend both tints into their own distinct signature */
+/* Unsure AND eyes-only: the unsure tint over the dossier, because a decision still to be made
+   outranks who can see it. */
 .shopping-list-item--unsure.shopping-list-item--private:not(.shopping-list-item--checked) {
-    --background: color-mix(
-        in srgb,
-        var(--ion-color-warning) 7%,
-        color-mix(in srgb, var(--ion-color-secondary) 7%, var(--ion-background-color))
-    );
+    --background: color-mix(in srgb, var(--ion-color-warning) 7%, var(--app-classified-surface));
+}
+
+.shopping-list-item--private:not(.shopping-list-item--checked) .item-title,
+.shopping-list-item--private:not(.shopping-list-item--checked) .item-notes {
+    color: var(--app-classified-ink);
+}
+
+/* The stamp, in the row's end column. That column is free on an eyes-only row by construction:
+   nobody else can see the item, so it can never carry a "checked by" attribution. Condensed
+   caps in the label register — a marking, not a chip. */
+ion-item .classified-stamp {
+    flex: none;
+    margin-inline-start: 10px;
+    padding: 3px 6px;
+    border: 1px solid color-mix(in srgb, var(--app-classified-ink) 45%, transparent);
+    border-radius: 3px;
+    font-family: var(--app-font-display);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    line-height: 1;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--app-classified-ink) 80%, transparent);
+    white-space: nowrap;
 }
 
 /* Move to store confirmation */

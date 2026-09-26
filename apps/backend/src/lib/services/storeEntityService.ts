@@ -582,13 +582,16 @@ export function getOrCreateStoreItemByName(params: {
     verifyStoreAccess(params.storeId, params.userId);
     assertItemLocationInStore(params.storeId, params.aisleId, params.sectionId);
 
-    return itemRepo.getOrCreateStoreItemByName({
+    const item = itemRepo.getOrCreateStoreItemByName({
         storeId: params.storeId,
         name: params.name,
         aisleId: params.aisleId,
         sectionId: params.sectionId,
         createdById: params.userId,
     });
+    // Either a new item or a moved one: both change what the list groups and labels by.
+    publishStoreChange([item.storeId], "layout");
+    return item;
 }
 
 // ========== Shopping List Operations ==========

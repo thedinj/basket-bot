@@ -96,6 +96,18 @@ Palette roles (see `variables.scss`; light and dark are both defined, so **only 
 - Surfaces and lines: `--ion-background-color` for pages; `--ion-color-step-50` fills field
   boxes; `--ion-color-step-150` is the **hairline** (dividers, card borders);
   `--ion-color-step-200` borders field boxes.
+- `--app-row-recess`: **a marked row sits below the page, never on a band above it.** An aisle
+  header is a fill spanning the full gutter, so any other full-width fill of similar lightness
+  reads as a header first — which is what a 9% amber wash over the page did. An unsure row mixes
+  its amber into `--app-row-recess` instead. One value per theme, because "a shade darker" is a
+  different amount of black on a near-white page than a near-black one.
+- `--app-classified-surface` / `--app-classified-ink`: **eyes-only items are a dossier, not a
+  colour.** Every hue is taken — amber is unsure, lilac is sections, purple is primary, red is
+  danger, green is success — so an eyes-only row borrows none of them: the classified surface,
+  the name set in its ink, and an `EYES ONLY` stamp (`.classified-stamp`) in the row's end
+  column. Paper and ink invert per theme: manila folder in light, the ink it was photographed in
+  for dark. The end column is free on such a row by construction — nobody else can see the item,
+  so it can never carry a "checked by" attribution.
 - Card surface: `var(--ion-card-background, var(--ion-item-background, var(--ion-background-color)))`.
 - Tints come from `color-mix(in srgb, <token> N%, transparent)`, never from rgba literals of a
   hex (`rgba(124, 58, 237, .2)` is wrong in light mode; the purple differs).

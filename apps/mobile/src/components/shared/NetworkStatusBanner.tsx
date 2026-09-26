@@ -41,8 +41,19 @@ export const NetworkStatusBanner: React.FC = () => {
     const { queueSize, isProcessing } = useMutationQueue();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [hasSettled, setHasSettled] = useState(false);
-    /** When the app last came back to the foreground; null if it hasn't this session. */
-    const [resumedAt, setResumedAt] = useState<number | null>(null);
+    /**
+     * When the app last came to the foreground. Starts at mount, because a cold launch is the
+     * same situation as a resume: the radio may still be waking.
+     */
+    const [resumedAt, setResumedAt] = useState<number>(() => Date.now());
+    /**
+     * Whether the app is actually on screen. Nothing about the strip runs while it isn't: the
+     * wait must not run down out of sight, or the strip is already up on the first frame the
+     * user sees and flashes away as the grace re-arms — which is the very thing being fixed.
+     */
+    const [isForeground, setIsForeground] = useState(
+        () => typeof document === "undefined" || document.visibilityState !== "hidden"
+    );
 
     // Don't show banner if everything is healthy and nothing is queued
     const isHealthy = !isOffline && !isUnreachable && queueSize === 0;
@@ -50,20 +61,26 @@ export const NetworkStatusBanner: React.FC = () => {
     // Coming back starts the wait again, so a strip raised while the screen was off (where the
     // wait ran down unseen) isn't the first thing on screen.
     useEffect(() => {
-        const onResume = () => {
+        const onForeground = () => {
             setResumedAt(Date.now());
             setHasSettled(false);
+            setIsForeground(true);
         };
+        const onBackground = () => setIsForeground(false);
         const onVisibilityChange = () => {
             if (document.visibilityState === "visible") {
-                onResume();
+                onForeground();
+            } else {
+                onBackground();
             }
         };
 
         document.addEventListener("visibilitychange", onVisibilityChange);
         const listener = CapacitorApp.addListener("appStateChange", ({ isActive }) => {
             if (isActive) {
-                onResume();
+                onForeground();
+            } else {
+                onBackground();
             }
         });
 
@@ -75,20 +92,20 @@ export const NetworkStatusBanner: React.FC = () => {
 
     // Appearing waits out the delay; recovering hides it at once.
     useEffect(() => {
-        if (isHealthy) {
+        if (isHealthy || !isForeground) {
             setHasSettled(false);
             return;
         }
 
-        const sinceResume = resumedAt === null ? Infinity : Date.now() - resumedAt;
+        const sinceResume = Date.now() - resumedAt;
         const delay =
             sinceResume < RESUME_GRACE_MS ? RESUME_GRACE_MS - sinceResume : APPEARANCE_DELAY_MS;
         const timer = setTimeout(() => setHasSettled(true), delay);
 
         return () => clearTimeout(timer);
-    }, [isHealthy, resumedAt]);
+    }, [isHealthy, isForeground, resumedAt]);
 
-    const isHidden = isHealthy || !hasSettled;
+    const isHidden = isHealthy || !isForeground || !hasSettled;
 
     // The banner is pinned (see the .scss); this is what reserves its space by pushing the
     // tab shell down. Same body-class approach Main.tsx uses for `has-tabs`.

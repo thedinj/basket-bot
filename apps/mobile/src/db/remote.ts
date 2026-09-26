@@ -523,44 +523,32 @@ export class RemoteDatabase implements Database {
         return response.items;
     }
 
+    /**
+     * Resolve a store item by name, creating it only if the store hasn't got one.
+     *
+     * One server call on purpose. This used to search and then create when the search came back
+     * without an exact match, which failed on items the user had just picked from their own
+     * autocomplete: the search returns a ranked, truncated list (it asked for one row), skips
+     * hidden items, and was compared by lowercased display name — while uniqueness is on
+     * `nameNorm`. Every one of those misses ended in a create for a name that exists and an
+     * `ITEM_NAME_CONFLICT` the user could do nothing about. The server does the lookup on the
+     * column the constraint uses, in the same step as the insert.
+     */
     async getOrCreateStoreItemByName(
         storeId: string,
         name: string,
         aisleId?: string | null,
         sectionId?: string | null
     ): Promise<StoreItem> {
-        // Backend's getOrCreateStoreItemByName is not exposed as a separate endpoint
-        // It's used internally by upsertShoppingListItem
-        // For now, search first, then create if not found
-        const searchResults = await this.searchStoreItems(storeId, name, 1);
-        const exactMatch = searchResults.find(
-            (item) => item.name.toLowerCase() === name.toLowerCase()
-        );
-
-        if (exactMatch) {
-            // Apply section-aisle normalization: prefer section over aisle
-            const normalizedSectionId = sectionId ?? null;
-            const normalizedAisleId = sectionId ? null : (aisleId ?? null);
-
-            // Update the item if location information differs
-            const needsUpdate =
-                normalizedSectionId !== (exactMatch.sectionId ?? null) ||
-                normalizedAisleId !== (exactMatch.aisleId ?? null);
-
-            if (needsUpdate) {
-                return this.updateItem(
-                    storeId,
-                    exactMatch.id,
-                    exactMatch.name,
-                    normalizedAisleId,
-                    normalizedSectionId
-                );
+        const response = await apiClient.post<{ item: StoreItem }>(
+            `/api/stores/${storeId}/items/get-or-create`,
+            {
+                name,
+                aisleId: aisleId ?? null,
+                sectionId: sectionId ?? null,
             }
-
-            return exactMatch;
-        }
-
-        return this.insertItem(storeId, name, aisleId, sectionId);
+        );
+        return response.item;
     }
 
     // ========== ShoppingList Operations ==========

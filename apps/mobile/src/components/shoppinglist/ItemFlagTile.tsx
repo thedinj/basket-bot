@@ -11,7 +11,7 @@ interface ItemFlagTileProps {
     description: string;
     checked: boolean;
     onChange: (checked: boolean) => void;
-    tone: "warning" | "secondary";
+    tone: "warning" | "secondary" | "classified";
     disabled?: boolean;
     disabledMessage?: string;
     onDisabledTap?: (event: React.MouseEvent) => void;
@@ -68,9 +68,14 @@ export const ItemFlagTile = ({
             <IonIcon icon={icon} src={src} className="item-flag-tile__icon" />
             <span className="item-flag-tile__label">{label}</span>
             {disabled && <IonIcon icon={lockClosedOutline} className="item-flag-tile__lock-icon" />}
+            {/* `tone` doubles as an Ionic colour name for the two that are one. "classified"
+                is not — it is the dossier's own paper and ink — so the toggle takes its
+                colours from the tile's CSS instead (ItemFlagTile.css). Passing it as a colour
+                made Ionic look up a palette that does not exist, and the switch rendered
+                fully transparent. */}
             <IonToggle
                 checked={checked}
-                color={tone}
+                color={tone === "classified" ? undefined : tone}
                 disabled={disabled}
                 className="item-flag-tile__toggle"
                 aria-hidden="true"

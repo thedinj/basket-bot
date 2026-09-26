@@ -1207,3 +1207,75 @@ describe("store change events", () => {
         expect(recorder.events).toEqual([]);
     });
 });
+
+/**
+ * The bug this covers came from the client faking get-or-create: it searched, found no exact
+ * match in the one row it asked for, and asked to create a name that already existed. The data
+ * that broke it is below — a store where a *longer* name outranks the exact one because it has
+ * been used more.
+ */
+describe("getOrCreateStoreItemByName", () => {
+    it("returns the existing item even when better-used items share its prefix", () => {
+        const exact = seedItem({
+            storeId,
+            name: "Chocolate chips",
+            usageCount: 1,
+            ownerId: owner,
+        });
+        seedItem({ storeId, name: "Chocolate chips, mini", usageCount: 2, ownerId: owner });
+        seedItem({ storeId, name: "Semi-sweet chocolate chips", usageCount: 1, ownerId: owner });
+
+        const item = storeEntityService.getOrCreateStoreItemByName({
+            storeId,
+            name: "Chocolate chips",
+            userId: owner,
+        });
+
+        expect(item.id).toBe(exact);
+    });
+
+    // Search skips hidden items; the uniqueness constraint does not. Resolving by name has to
+    // see what the constraint sees, or the item is unaddable for good.
+    it("returns a hidden item rather than trying to create a second one", () => {
+        const hidden = seedItem({
+            storeId,
+            name: "Chocolate chips",
+            isHidden: true,
+            ownerId: owner,
+        });
+
+        const item = storeEntityService.getOrCreateStoreItemByName({
+            storeId,
+            name: "Chocolate chips",
+            userId: owner,
+        });
+
+        expect(item.id).toBe(hidden);
+    });
+
+    // `nameNorm` collapses whitespace and case; a display-name comparison does not.
+    it("matches on the normalized name, not the display name", () => {
+        const existing = seedItem({ storeId, name: "Chocolate chips", ownerId: owner });
+
+        const item = storeEntityService.getOrCreateStoreItemByName({
+            storeId,
+            name: "  CHOCOLATE   chips ",
+            userId: owner,
+        });
+
+        expect(item.id).toBe(existing);
+    });
+
+    it("creates the item when the store really hasn't got one", () => {
+        const item = storeEntityService.getOrCreateStoreItemByName({
+            storeId,
+            name: "Chocolate chips",
+            userId: owner,
+        });
+
+        expect(item.name).toBe("Chocolate chips");
+        expect(
+            db.prepare(`SELECT COUNT(*) AS n FROM "StoreItem" WHERE storeId = ?`).get(storeId)
+        ).toEqual({ n: 1 });
+    });
+});

@@ -333,13 +333,6 @@ export const ShoppingListItem = ({
                                     title="Unsure if needed"
                                 />
                             ) : null}
-                            {item.isPrivate ? (
-                                <IonIcon
-                                    src="/img/private.svg"
-                                    className="private-icon"
-                                    title="Incognito — only visible to you"
-                                />
-                            ) : null}
                         </h2>
 
                         {notesToUse && (
@@ -359,6 +352,16 @@ export const ShoppingListItem = ({
                         )}
                     </>
                 </IonLabel>
+
+                {/* The marking on an eyes-only item, in place of a glyph beside the name: a
+                    stamp says "this is a classified page" where an icon only decorates it.
+                    Safe to share the end column with the attribution below — an item nobody
+                    else can see is an item nobody else can check. */}
+                {item.isPrivate ? (
+                    <span slot="end" className="classified-stamp">
+                        <span className="sr-only">This item is </span>Eyes only
+                    </span>
+                ) : null}
 
                 {/* Who checked it rides at the end of the row, never on a line of its own: a
                     row that grows by a line pushes every row below it down, which is exactly
